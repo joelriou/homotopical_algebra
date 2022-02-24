@@ -10,7 +10,7 @@ open category_theory
 open category_theory.category
 open opposite
 
-variables {C C' D : Type*} [category C] [category C'] [category D]
+variables {C C' C'' D : Type*} [category C] [category C'] [category C''] [category D]
 
 namespace quiver.hom
 
@@ -27,14 +27,39 @@ end hom_class
 
 namespace category_theory
 
-structure is_localization (F : C ⥤ C') (W : hom_class C) : Prop :=
+lemma functor.assoc {C D E F : Type*} [category C] [category D]
+  [category E] [category F] (φ : C ⥤ D)
+  (φ' : D ⥤ E) (φ'' : E ⥤ F) : (φ ⋙ φ') ⋙ φ'' = φ ⋙ (φ' ⋙ φ'') :=
+by refl
+
+structure is_localization (F : C ⥤ C') (W : hom_class C) :=
   (inverts_W : W.is_inverted_by F)
-  (universal₁ : ∀ {D : Type*} [category D] (G : C ⥤ D), W.is_inverted_by G → ∃ (G' : C' ⥤ D), G = F ⋙ G')
-  (universal₂ : ∀ {D : Type*} [category D] (G' G'' : C' ⥤ D), F ⋙ G' = F ⋙ G'' → G' = G'')
+  (lift : Π {D : Type*} [category D] (G : C ⥤ D) (hG : W.is_inverted_by G), C' ⥤ D)
+  (fac : ∀ {D : Type*} [category D] (G : C ⥤ D) (hG : W.is_inverted_by G), G = F ⋙ lift G hG)
+  (uniq : ∀ {D : Type*} [category D] (G' G'' : C' ⥤ D), F ⋙ G' = F ⋙ G'' → G' = G'')
 
 def localization_wrt_isomorphisms : is_localization (𝟭 C) hom_class.isomorphisms :=
 { inverts_W := λ X Y f hf, hf,
-  universal₁ := λ D hD G hG, by { use G, rw functor.id_comp, },
-  universal₂ := λ D hD G' G'' h, by simpa [functor.id_comp] using h }
+  lift := λ D hD G hG, G,
+  fac := λ D hD H hG, by rw functor.id_comp,
+  uniq := λ D hD G' G'' h, by simpa [functor.id_comp] using h, }
+
+def localization_is_ess_unique {W : hom_class C} {F₁ : C ⥤ C'} {F₂ : C ⥤ C''}
+  (L₁ : is_localization F₁ W) (L₂ : is_localization F₂ W) : C' ≌ C'' :=
+{ functor := L₁.lift F₂ L₂.inverts_W,
+  inverse := L₂.lift F₁ L₁.inverts_W,
+  unit_iso := eq_to_iso begin
+    apply L₁.uniq,
+    rw [← functor.assoc, ← L₁.fac F₂ L₂.inverts_W, ← L₂.fac F₁ L₁.inverts_W, functor.comp_id],
+  end,
+  counit_iso := eq_to_iso begin
+    apply L₂.uniq,
+    rw [← functor.assoc, ← L₂.fac F₁ L₁.inverts_W, ← L₁.fac F₂ L₂.inverts_W, functor.comp_id],
+  end,
+  functor_unit_iso_comp' := sorry }
+
+namespace is_localization
+
+end is_localization
 
 end category_theory
