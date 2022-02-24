@@ -136,6 +136,8 @@ def op : hom_class Cᵒᵖ := λ X Y f, F Y.unop X.unop f.unop
 lemma unop_op : F.op.unop = F := by refl
 lemma op_unop : F'.unop.op = F' := by refl
 
+def isomorphisms : hom_class C := λ X Y f, is_iso f
+
 def contains_isomorphisms := ∀ (X Y : C) (f : X ⟶ Y), is_iso f → f ∈ F X Y
 
 lemma contains_isomorphismsm_iff_op : F.contains_isomorphisms ↔ F.op.contains_isomorphisms :=
