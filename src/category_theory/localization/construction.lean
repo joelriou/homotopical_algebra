@@ -5,7 +5,7 @@ Authors: Joël Riou
 -/
 
 import category_theory.localization.basic
-import algebraic_topology.homotopical_algebra.model_category
+import category_theory.hom_class
 import category_theory.quotient
 import category_theory.path_category
 import category_theory.category.Quiv
@@ -19,7 +19,10 @@ universes v v' u u'
 
 variables {C : Type u} [category.{v} C] (W : hom_class C)
 
+namespace localization
+
 include W
+
 
 structure preloc := (as : C)
 
@@ -57,10 +60,16 @@ def relations : hom_rel (paths (preloc W)) :=
 λ X Y f g, belongs_to f g (relations₀ W) ∨ belongs_to f g (relations₁ W) ∨
   belongs_to f g (relations₂ W) ∨ belongs_to f g (relations₃ W)
 
-def localization : Type u := category_theory.quotient (relations W)
+end localization
 
+variable (W)
 
-instance : category.{max u v} (localization W) := (infer_instance : category (category_theory.quotient (relations W)))
+def localization : Type u := category_theory.quotient (localization.relations W)
+
+instance : category (localization W) :=
+(infer_instance : category (category_theory.quotient (localization.relations W)))
+
+namespace localization
 
 def Q : C ⥤ localization W :=
 { obj := λ X, (quotient.functor (relations W)).obj (φ W X),
@@ -93,8 +102,6 @@ def Wiso {X Y : C} (g : X ⟶ Y) (hg : W X Y g) : iso ((Q W).obj X) ((Q W).obj Y
     exact or.inr (or.inr (or.inr ⟨ρ₂₃ W g hg, rfl⟩)),
   end }
 
-omit W
-
 lemma congr_obj {D₁ D₂ : Type*} [category D₁] [category D₂] {F G : D₁ ⥤ D₂}
 (h : F = G) : ∀ X : D₁, F.obj X = G.obj X :=
 by { intro X, rw h, }
@@ -103,6 +110,12 @@ lemma congr_map_conjugate {D₁ D₂ : Type*} [category D₁] [category D₂] {F
 (h : F = G) {X Y : D₁} (f : X ⟶ Y) : F.map f =
 eq_to_hom (by rw h) ≫ G.map f ≫ eq_to_hom (by rw h) :=
 by { subst h, erw [id_comp, comp_id], }
+
+lemma conjugate_inv_of_congr_map_conjugate {D₁ D₂ : Type*} [category D₁] [category D₂] (F G : D₁ ⥤ D₂)
+  {X Y : D₁} (e : X ≅ Y) (hX : F.obj X = G.obj X) (hY : F.obj Y = G.obj Y)
+  (h₂ : F.map e.hom = eq_to_hom (by rw hX) ≫ G.map e.hom ≫ eq_to_hom (by rw hY)) :
+F.map e.inv = eq_to_hom (by rw hY) ≫ G.map e.inv ≫ eq_to_hom (by rw hX) :=
+by simp only [← is_iso.iso.inv_hom e, functor.map_inv, h₂, is_iso.inv_comp, inv_eq_to_hom, assoc]
 
 lemma congr_map {D D' : Type*} [category D] [category D'] (F : D ⥤ D')
 {X Y : D} {f g : X ⟶ Y} (h : f = g) : F.map f = F.map g :=
@@ -118,22 +131,26 @@ noncomputable def lift_quiver {D : Type*} [category D] (G : C ⥤ D) (hG : W.is_
       exact inv (G.map g), },
   end }
 
+/-- Fix category_theory.theory.Quiv.lean-/
+noncomputable def functor_quiver {D : Type u'} [category.{v'} D] (G : C ⥤ D) (hG : W.is_inverted_by G) :
+  paths (preloc W) ⥤ D :=
+{ obj := λ X, (lift_quiver G hG).obj X,
+  map := λ X Y f, compose_path ((lift_quiver G hG).map_path f), }
+
 @[simp]
 lemma lift_quiver_map_ψ₁ {D : Type*} [category D] (G : C ⥤ D) (hG : W.is_inverted_by G)
-  {X Y : C} (f : X ⟶ Y) : (Quiv.lift (lift_quiver G hG)).map (ψ₁ W f) = G.map f:=
-by { dsimp [lift_quiver, ψ₁, quiver.hom.to_path], simpa only [id_comp], }
+  {X Y : C} (f : X ⟶ Y) : (functor_quiver G hG).map (ψ₁ W f) = G.map f:=
+by { dsimp [functor_quiver, ψ₁, quiver.hom.to_path], simpa only [id_comp], }
 
 lemma lift_quiver_map_ψ₂ {D : Type*} [category D] (G : C ⥤ D) (hG : W.is_inverted_by G)
-  {X Y : C} (g : X ⟶ Y) (hg : W _ _ g) : (Quiv.lift (lift_quiver G hG)).map (ψ₂ W g hg) = 
+  {X Y : C} (g : X ⟶ Y) (hg : W _ _ g) : (functor_quiver G hG).map (ψ₂ W g hg) = 
   (by { haveI : is_iso (G.map g) := hG _ _ g hg, exact inv (G.map g), }) :=
-begin
-  sorry
-end
+by { dsimp [functor_quiver, ψ₂, quiver.hom.to_path, lift_quiver], simpa only [id_comp], }
 
-noncomputable def lift {D : Type*} [category D] (G : C ⥤ D) (hG : W.is_inverted_by G) :
+noncomputable def lift {D : Type u'} [category.{v'} D] (G : C ⥤ D) (hG : W.is_inverted_by G) :
   localization W ⥤ D :=
 begin
-  apply quotient.lift (relations W) (Quiv.lift (lift_quiver G hG)),
+  apply quotient.lift (relations W) (functor_quiver G hG),
   { rintro ⟨X⟩ ⟨Y⟩ f f' r,
     rcases r with (_|_|_|_),
     { rcases r with ⟨X', r⟩,
@@ -185,8 +202,13 @@ begin
       cases f,
       { convert congr_map_conjugate h f, },
       { rcases f with ⟨g, hg⟩,
-        dsimp at *,
-        sorry, }, },
+        dsimp at g hg,
+        have hα : (Wiso g hg).hom = (Q W).map g := rfl,
+        have h' := congr_map_conjugate h g,
+        simp only [functor.comp_map, ← hα] at h',
+        refine conjugate_inv_of_congr_map_conjugate G₁ G₂ _ _ _ h',
+        { convert congr_obj h Y, },
+        { convert congr_obj h X, }, }, },
     { ext X,
       cases X,
       have eq := congr_obj h X,
@@ -194,22 +216,29 @@ begin
       convert eq, }, },
 end
 
-theorem localisation_is_localisation : is_localization' (Q W) W :=
+noncomputable
+def localisation_is_localisation : is_localization (Q W) W :=
 { inverts_W := λ X Y g hg, is_iso.of_iso (Wiso g hg),
   lift := begin
     intro D,
     introI,
     intros G hG,
-    have foo := lift G hG,
-    sorry,
+    exact lift G hG,
   end,
-/-  lift := λ D, begin
+  fac := begin
+    intro D,
     introI,
     intros G hG,
-    have foo := @lift C infer_instance W,
-    sorry,
+    apply functor.ext,
+    { intros X Y f,
+      dsimp [lift, functor_quiver, lift_quiver, Q, ψ₁, quiver.hom.to_path],
+      erw [id_comp, comp_id, id_comp],
+      refl, },
+    { intro X,
+      refl, }
   end,
-  fac := sorry,-/
   uniq := λ D, by { introI, exact uniq, } }
+
+end localization
 
 end category_theory

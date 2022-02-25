@@ -7,6 +7,7 @@ Authors: Joël Riou
 import category_theory.limits.shapes.finite_limits
 import category_theory.limits.shapes.pullbacks
 import category_theory.limits.opposites
+import category_theory.localization.construction
 
 open category_theory
 open category_theory.category
@@ -14,8 +15,6 @@ open category_theory.limits
 open opposite
 
 variables (C : Type*) [category C]
-
-abbreviation hom_class := Π (X Y : C), set (X ⟶ Y)
 
 @[ext]
 structure category_with_fib_cof_we := (fibrations cofibrations weak_equivalences : hom_class C)
@@ -135,8 +134,6 @@ def op : hom_class Cᵒᵖ := λ X Y f, F Y.unop X.unop f.unop
 
 lemma unop_op : F.op.unop = F := by refl
 lemma op_unop : F'.unop.op = F' := by refl
-
-def isomorphisms : hom_class C := λ X Y f, is_iso f
 
 def contains_isomorphisms := ∀ (X Y : C) (f : X ⟶ Y), is_iso f → f ∈ F X Y
 
@@ -400,7 +397,7 @@ structure model_category
 
 namespace model_category
 
-variables (M : model_category C)
+variables (M : model_category C) {C}
 
 def fibrations := M.1.fibrations
 def cofibrations := M.1.cofibrations
@@ -424,5 +421,17 @@ def unop [has_finite_limits C] [has_finite_colimits C]
   CM3 := by { simpa only [← M'.1.CM3_iff_unop] using M'.CM3, },
   CM4 := by { simpa only [← M'.1.CM4_iff_unop] using M'.CM4, },
   CM5 := by { simpa only [← M'.1.CM5_iff_unop] using M'.CM5, }, }
+
+#check 42
+
+def Ho := localization M.weak_equivalences
+
+instance : category (Ho M) := (infer_instance : category (localization M.weak_equivalences))
+
+notation `Ho(`M`)` := Ho M
+
+variable {M}
+
+def Q : C ⥤ Ho M := category_theory.localization.Q _
 
 end model_category

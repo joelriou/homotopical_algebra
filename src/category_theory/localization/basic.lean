@@ -4,7 +4,9 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Joël Riou
 -/
 
-import algebraic_topology.homotopical_algebra.model_category
+import category_theory.hom_class
+import category_theory.equivalence
+import category_theory.eq_to_hom
 
 open category_theory
 open category_theory.category
@@ -62,14 +64,6 @@ def localization_is_ess_unique {W : hom_class C} {F₁ : C ⥤ C'} {F₂ : C ⥤
     intro X,
     simpa only [eq_to_iso.hom, eq_to_hom_app, eq_to_hom_map, eq_to_hom_trans, eq_to_hom_refl],
   end }
-
-structure is_localization' (F : C ⥤ C') (W : hom_class C) : Prop :=
-  (inverts_W : W.is_inverted_by F)
-  (lift : ∀ {D : Type u'} [category.{v'} D] (G : C ⥤ D) (hG : W.is_inverted_by G),
-    ∃ (F' : C' ⥤ D), G = F ⋙ F')
-  (uniq : ∀ {D : Type u'} [category.{v'} D] (G' G'' : C' ⥤ D), F ⋙ G' = F ⋙ G'' → G' = G'')
-
-
 
 namespace is_localization
 
