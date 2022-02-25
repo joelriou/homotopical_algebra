@@ -10,7 +10,9 @@ open category_theory
 open category_theory.category
 open opposite
 
-variables {C C' C'' D : Type*} [category C] [category C'] [category C''] [category D]
+universes v' u'
+variables {C C'' D : Type*} [category C] [category C''] [category D]
+variables {C' : Type u'} [category.{v'} C']
 
 namespace quiver.hom
 
@@ -56,7 +58,18 @@ def localization_is_ess_unique {W : hom_class C} {F₁ : C ⥤ C'} {F₂ : C ⥤
     apply L₂.uniq,
     rw [← functor.assoc, ← L₂.fac F₁ L₁.inverts_W, ← L₁.fac F₂ L₂.inverts_W, functor.comp_id],
   end,
-  functor_unit_iso_comp' := sorry }
+  functor_unit_iso_comp' := begin
+    intro X,
+    simpa only [eq_to_iso.hom, eq_to_hom_app, eq_to_hom_map, eq_to_hom_trans, eq_to_hom_refl],
+  end }
+
+structure is_localization' (F : C ⥤ C') (W : hom_class C) : Prop :=
+  (inverts_W : W.is_inverted_by F)
+  (lift : ∀ {D : Type u'} [category.{v'} D] (G : C ⥤ D) (hG : W.is_inverted_by G),
+    ∃ (F' : C' ⥤ D), G = F ⋙ F')
+  (uniq : ∀ {D : Type u'} [category.{v'} D] (G' G'' : C' ⥤ D), F ⋙ G' = F ⋙ G'' → G' = G'')
+
+
 
 namespace is_localization
 
