@@ -14,23 +14,25 @@ open opposite
 
 namespace algebraic_topology
 
-variables (C : Type*) [category C]
+variables (D : Type*) [category D]
 
 @[ext]
-structure category_with_fib_cof_we := (fibrations cofibrations weak_equivalences : hom_class C)
+structure category_with_fib_cof_we := (fibrations cofibrations weak_equivalences : hom_class D)
 
-variable {C}
+variable {D}
 
 namespace category_with_fib_cof_we
 
-variables (data : category_with_fib_cof_we C) (data' : category_with_fib_cof_we Cᵒᵖ)
+variables (data : category_with_fib_cof_we D) (data' : category_with_fib_cof_we Dᵒᵖ)
 
-def op : (category_with_fib_cof_we Cᵒᵖ) :=
+@[simps]
+def op : (category_with_fib_cof_we Dᵒᵖ) :=
 { fibrations := data.cofibrations.op,
   cofibrations := data.fibrations.op,
   weak_equivalences := data.weak_equivalences.op }
 
-def unop : category_with_fib_cof_we C :=
+@[simps]
+def unop : category_with_fib_cof_we D :=
 { fibrations := data'.cofibrations.unop,
   cofibrations := data'.fibrations.unop,
   weak_equivalences := data'.weak_equivalences.unop }
@@ -41,25 +43,11 @@ by { ext1; refl, }
 lemma op_unop : data'.unop.op = data' :=
 by { ext1; refl, }
 
-def trivial_fibrations : hom_class C :=
+def trivial_fibrations : hom_class D :=
   λ X Y, data.fibrations X Y ∩ data.weak_equivalences X Y
 
-def trivial_cofibrations : hom_class C :=
+def trivial_cofibrations : hom_class D :=
   λ X Y, data.cofibrations X Y ∩ data.weak_equivalences X Y
-
-variable (C)
-def CM1 := has_finite_limits C ∧ has_finite_colimits C
-
-variable {C}
-
-lemma CM1_op_of_CM1 (hC : CM1 C) : CM1 Cᵒᵖ :=
-begin
-  haveI := hC.left,
-  haveI := hC.right,
-  split,
-  { apply has_finite_limits_opposite, },
-  { apply has_finite_colimits_opposite, },
-end
 
 def CM2 := data.weak_equivalences.three_of_two
 
@@ -114,11 +102,11 @@ by { dsimp only [CM4], rw [data.CM4a_iff_op, data.CM4b_iff_op], finish, }
 lemma CM4_iff_unop : data'.CM4 ↔ data'.unop.CM4 :=
 by { rw [CM4_iff_op data'.unop, data'.op_unop], }
 
-def CM5a := ∀ (X Y : C) (f : X ⟶ Y), ∃ (Z : C) (i : X ⟶ Z) (p : Z ⟶ Y),
-  i ∈ data.trivial_cofibrations X Z ∧ p ∈ data.fibrations Z Y ∧ f = i ≫ p
+def CM5a := ∀ (X Y : D) (f : X ⟶ Y), ∃ (Z : D) (i : X ⟶ Z) (p : Z ⟶ Y),
+  data.trivial_cofibrations.contains i ∧ data.fibrations.contains p ∧ f = i ≫ p
 
-def CM5b := ∀ (X Y : C) (f : X ⟶ Y), ∃ (Z : C) (i : X ⟶ Z) (p : Z ⟶ Y),
-  i ∈ data.cofibrations X Z ∧ p ∈ data.trivial_fibrations Z Y ∧ f = i ≫ p
+def CM5b := ∀ (X Y : D) (f : X ⟶ Y), ∃ (Z : D) (i : X ⟶ Z) (p : Z ⟶ Y),
+  data.cofibrations.contains i ∧ data.trivial_fibrations.contains p ∧ f = i ≫ p
 
 def CM5 := data.CM5a ∧ data.CM5b
 
@@ -156,43 +144,62 @@ by { rw [CM5_iff_op data'.unop, data'.op_unop], }
 
 end category_with_fib_cof_we
 
-variables (C) 
-
-structure model_category [has_finite_limits C] [has_finite_colimits C]
-  extends category_with_fib_cof_we C :=
---  (CM1 : category_with_fib_cof_we.CM1 C)
-  (CM2 : to_category_with_fib_cof_we.CM2)
-  (CM3 : to_category_with_fib_cof_we.CM3)
-  (CM4 : to_category_with_fib_cof_we.CM4)
-  (CM5 : to_category_with_fib_cof_we.CM5)
+structure model_category :=
+(C : Type*) [hC : category C]
+(fib_cof_we : category_with_fib_cof_we C)
+(CM1 : has_finite_limits C ∧ has_finite_colimits C)
+(CM2 : fib_cof_we.CM2)
+(CM3 : fib_cof_we.CM3)
+(CM4 : fib_cof_we.CM4)
+(CM5 : fib_cof_we.CM5)
 
 namespace model_category
 
-variables {C} [has_finite_limits C] [has_finite_colimits C] (M : model_category C)
+variable (M : model_category)
 
-def fibrations := M.1.fibrations
-def cofibrations := M.1.cofibrations
-def weak_equivalences := M.1.weak_equivalences
-def trivial_fibrations := M.1.trivial_fibrations
-def trivial_cofibrations := M.1.trivial_cofibrations
+instance : category M.C := M.hC
+instance : has_finite_limits M.C := M.CM1.1
+instance : has_finite_colimits M.C := M.CM1.2
 
-def op [has_finite_limits C] [has_finite_colimits C] [has_finite_limits Cᵒᵖ] [has_finite_colimits Cᵒᵖ] :
-  model_category Cᵒᵖ :=
-{ to_category_with_fib_cof_we := M.to_category_with_fib_cof_we.op,
---  CM1 := category_with_fib_cof_we.CM1_op_of_CM1 M.CM1,
-  CM2 := by simpa only [← M.1.CM2_iff_op] using M.CM2,
-  CM3 := by simpa only [← M.1.CM3_iff_op] using M.CM3,
-  CM4 := by simpa only [← M.1.CM4_iff_op] using M.CM4,
-  CM5 := by simpa only [← M.1.CM5_iff_op] using M.CM5, }
+def fibrations := M.fib_cof_we.fibrations
+def cofibrations := M.fib_cof_we.cofibrations
+def weak_equivalences := M.fib_cof_we.weak_equivalences
+def trivial_fibrations := M.fib_cof_we.trivial_fibrations
+def trivial_cofibrations := M.fib_cof_we.trivial_cofibrations
 
-def unop [has_finite_limits C] [has_finite_colimits C] [has_finite_limits Cᵒᵖ] [has_finite_colimits Cᵒᵖ]
-  (M' : model_category Cᵒᵖ) : model_category C :=
-{ to_category_with_fib_cof_we := M'.to_category_with_fib_cof_we.unop,
---  CM1 := ⟨infer_instance, infer_instance⟩,
-  CM2 := by { simpa only [← M'.1.CM2_iff_unop] using M'.CM2, },
-  CM3 := by { simpa only [← M'.1.CM3_iff_unop] using M'.CM3, },
-  CM4 := by { simpa only [← M'.1.CM4_iff_unop] using M'.CM4, },
-  CM5 := by { simpa only [← M'.1.CM5_iff_unop] using M'.CM5, }, }
+def CM2a := M.CM2.1
+def CM2b := M.CM2.2.1
+def CM2c := M.CM2.2.2
+def CM3a := M.CM3.1
+def CM3b := M.CM3.2.1
+def CM3c := M.CM3.2.2
+def CM4a := M.CM4.1
+def CM4b := M.CM4.2
+def CM5a := M.CM5.1
+def CM5b := M.CM5.2
+
+lemma cof_comp_stable : M.cofibrations.is_stable_by_composition := sorry
+lemma triv_cof_comp_stable : M.trivial_cofibrations.is_stable_by_composition := sorry
+lemma fib_comp_stable : M.fibrations.is_stable_by_composition := sorry
+lemma triv_fib_comp_stable : M.trivial_fibrations.is_stable_by_composition := sorry
+
+lemma cof_contains_iso : M.cofibrations.contains_isomorphisms := sorry
+lemma triv_cof_contains_iso : M.trivial_cofibrations.contains_isomorphisms := sorry
+lemma fib_contains_iso : M.fibrations.contains_isomorphisms := sorry
+lemma triv_fib_contains_iso : M.trivial_fibrations.contains_isomorphisms := sorry
+
+@[simps]
+def op : model_category :=
+{ C := M.Cᵒᵖ,
+  fib_cof_we := M.fib_cof_we.op,
+  CM1 := ⟨has_finite_limits_opposite, has_finite_colimits_opposite⟩,
+  CM2 := by simpa only [← M.fib_cof_we.CM2_iff_op] using M.CM2,
+  CM3 := by simpa only [← M.fib_cof_we.CM3_iff_op] using M.CM3,
+  CM4 := by simpa only [← M.fib_cof_we.CM4_iff_op] using M.CM4,
+  CM5 := by simpa only [← M.fib_cof_we.CM5_iff_op] using M.CM5, }
+
+@[simp]
+def op_obj (X : M.C) : M.op.C := opposite.op X
 
 def Ho := localization M.weak_equivalences
 
@@ -200,7 +207,7 @@ instance : category (Ho M) := (infer_instance : category (localization M.weak_eq
 
 variable {M}
 
-def Q : C ⥤ Ho M := category_theory.localization.Q _
+def Q : M.C ⥤ Ho M := category_theory.localization.Q _
 
 end model_category
 

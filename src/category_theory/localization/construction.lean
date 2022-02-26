@@ -5,46 +5,54 @@ Authors: Joël Riou
 -/
 
 import category_theory.localization.basic
-import category_theory.hom_class
+import category_theory.arrow_class
 import category_theory.quotient
 import category_theory.path_category
 import category_theory.category.Quiv
 
 open category_theory
 open category_theory.category
+open_locale big_operators
 
 namespace category_theory
 
 universes v v' u u'
 
-variables {C : Type u} [category.{v} C] (W : hom_class C)
+variables {C : Type u} [category.{v} C] (W : arrow_class C)
 
 namespace localization
 
-include W
+lemma arrow_mk (f : arrow C) : arrow.mk f.hom = f :=
+by { cases f, dsimp [arrow.mk], refl, }
 
+include W
 
 structure preloc := (as : C)
 
-instance : quiver.{v+1} (preloc W) := { hom := λ A B,  (A.as ⟶ B.as) ⊕ (W B.as A.as) }
+instance : quiver.{v+1} (preloc W) :=
+{ hom := λ A B,  (A.as ⟶ B.as) ⊕  { f : B.as ⟶ A.as // arrow.mk f ∈ W} }
 
-variable (W)
+omit W
 
 def R₁ := Σ (T : C × C × C), (T.1 ⟶ T.2.1) × (T.2.1 ⟶ T.2.2)
-def R₂ := Σ (T : C × C), (W T.1 T.2 : Type v)
+--def R₁' := { F : arrow C × arrow C // F.1.right = F.2.left }
+def R₂ := Σ (T : C × C), { f : T.1 ⟶ T.2 // arrow.mk f ∈ W }
+--def R₂' := W
 def R₃ := R₂ W
-def ρ₁ {X Y Z : C} (f : X ⟶ Y) (g : Y ⟶ Z) : R₁ W := ⟨⟨X, ⟨Y, Z⟩⟩, ⟨f, g⟩⟩
-def ρ₂₃ {X Y : C} (g : X ⟶ Y) (hg : W X Y g) : R₂ W := ⟨⟨X,Y⟩, ⟨g, hg⟩⟩
+
+def ρ₁ {X Y Z : C} (f : X ⟶ Y) (g : Y ⟶ Z) : R₁ := ⟨⟨X, ⟨Y, Z⟩⟩, ⟨f, g⟩⟩
+def ρ₂₃ (g : arrow C) (hg : g ∈ W) : R₂ W :=
+⟨⟨g.left, g.right⟩, ⟨g.hom, (by { convert hg, rw arrow_mk, })⟩⟩
 
 def F := Σ (D : paths (preloc W) × paths (preloc W)), (D.1 ⟶ D.2) × (D.1 ⟶ D.2)
 
 def φ (X : C) : paths (preloc W) := paths.of.obj { as := X }
 
 def ψ₁ {X Y : C} (f : X ⟶ Y) : φ W X ⟶ φ W Y := paths.of.map (sum.inl f)
-def ψ₂ {X Y : C} (g : X ⟶ Y) (hg : W X Y g): φ W Y ⟶ φ W X := paths.of.map (sum.inr ⟨g, hg⟩)
+def ψ₂ (g : arrow C) (hg : g ∈ W) : φ W g.right ⟶ φ W g.left :=  paths.of.map (sum.inr (ρ₂₃ W g hg).2)
 
 def relations₀ : C → F W := by { intro X, exact ⟨⟨⟨X⟩, ⟨X⟩⟩, ⟨ψ₁ W (𝟙 _), 𝟙 _⟩⟩, }
-def relations₁ : R₁ W → F W :=
+def relations₁ : R₁ → F W :=
 by { rintro ⟨⟨X,⟨Y,Z⟩⟩, ⟨f,g⟩⟩, exact ⟨⟨⟨X⟩, ⟨Z⟩⟩, ⟨ψ₁ W (f ≫ g), ψ₁ W f ≫ ψ₁ W g⟩⟩, }
 def relations₂ : R₂ W → F W :=
 by { rintro ⟨⟨X, Y⟩, ⟨w, hw⟩⟩, exact ⟨⟨⟨X⟩, ⟨X⟩⟩, ⟨ψ₁ W w ≫ ψ₂ W w hw, 𝟙 _⟩⟩, }
@@ -80,24 +88,25 @@ def Q : C ⥤ localization W :=
   end,
   map_comp' := λ X Y Z f g, begin
     apply quotient.sound (relations W),
-    exact or.inr (or.inl (⟨ρ₁ W f g, rfl⟩)),
+    exact or.inr (or.inl (⟨ρ₁ f g, rfl⟩)),
   end }
 
 variable {W}
 
-def Winv {X Y : C} (g : X ⟶ Y) (hg : W X Y g) : (Q W).obj Y ⟶ (Q W).obj X :=
-(quotient.functor (relations W)).map (ψ₂ W g hg)
+def Winv (g : arrow C) (hg : g ∈ W) : (Q W).obj g.right ⟶ (Q W).obj g.left :=
+(quotient.functor (relations W)).map (paths.of.map (sum.inr 
+⟨g.hom, (by { convert hg, rw arrow_mk, })⟩))
 
-def Wiso {X Y : C} (g : X ⟶ Y) (hg : W X Y g) : iso ((Q W).obj X) ((Q W).obj Y) :=
-{ hom := (Q W).map g,
+def Wiso (g : arrow C) (hg : g ∈ W) : iso ((Q W).obj g.left) ((Q W).obj g.right) :=
+{ hom := (Q W).map g.hom,
   inv := Winv g hg,
   hom_inv_id' := begin
-    erw ← (quotient.functor (relations W)).map_comp (ψ₁ W g) (ψ₂ W g hg),
+    erw ← (quotient.functor (relations W)).map_comp (ψ₁ W g.hom) (ψ₂ W g hg),
     apply quotient.sound (relations W),
     exact or.inr (or.inr (or.inl ⟨ρ₂₃ W g hg, rfl⟩)),
   end,
   inv_hom_id' := begin
-    erw ← (quotient.functor (relations W)).map_comp (ψ₂ W g hg) (ψ₁ W g),
+    erw ← (quotient.functor (relations W)).map_comp (ψ₂ W g hg) (ψ₁ W g.hom),
     apply quotient.sound (relations W),
     exact or.inr (or.inr (or.inr ⟨ρ₂₃ W g hg, rfl⟩)),
   end }
@@ -127,7 +136,7 @@ noncomputable def lift_quiver {D : Type*} [category D] (G : C ⥤ D) (hG : W.is_
   map := begin
     rintros ⟨X⟩ ⟨Y⟩ (f|⟨g, hg⟩),
     { exact G.map f, },
-    { haveI : is_iso (G.map g) := hG _ _ g hg,
+    { haveI : is_iso (G.map g) := hG g hg,
       exact inv (G.map g), },
   end }
 
@@ -143,8 +152,8 @@ lemma lift_quiver_map_ψ₁ {D : Type*} [category D] (G : C ⥤ D) (hG : W.is_in
 by { dsimp [functor_quiver, ψ₁, quiver.hom.to_path], simpa only [id_comp], }
 
 lemma lift_quiver_map_ψ₂ {D : Type*} [category D] (G : C ⥤ D) (hG : W.is_inverted_by G)
-  {X Y : C} (g : X ⟶ Y) (hg : W _ _ g) : (functor_quiver G hG).map (ψ₂ W g hg) = 
-  (by { haveI : is_iso (G.map g) := hG _ _ g hg, exact inv (G.map g), }) :=
+  {X Y : C} (g : X ⟶ Y) (hg : arrow.mk g ∈ W) : (functor_quiver G hG).map (ψ₂ W g hg) = 
+  (by { haveI : is_iso (G.map g) := hG g hg, exact inv (G.map g), }) :=
 by { dsimp [functor_quiver, ψ₂, quiver.hom.to_path, lift_quiver], simpa only [id_comp], }
 
 noncomputable def lift {D : Type u'} [category.{v'} D] (G : C ⥤ D) (hG : W.is_inverted_by G) :
@@ -203,7 +212,7 @@ begin
       { convert congr_map_conjugate h f, },
       { rcases f with ⟨g, hg⟩,
         dsimp at g hg,
-        have hα : (Wiso g hg).hom = (Q W).map g := rfl,
+        have hα : (Wiso (arrow.mk g) hg).hom = (Q W).map g := rfl,
         have h' := congr_map_conjugate h g,
         simp only [functor.comp_map, ← hα] at h',
         refine conjugate_inv_of_congr_map_conjugate G₁ G₂ _ _ _ h',
@@ -218,7 +227,7 @@ end
 
 noncomputable
 def localisation_is_localisation : is_localization (Q W) W :=
-{ inverts_W := λ X Y g hg, is_iso.of_iso (Wiso g hg),
+{ inverts_W := λ g hg, is_iso.of_iso (Wiso g hg),
   lift := begin
     intro D,
     introI,

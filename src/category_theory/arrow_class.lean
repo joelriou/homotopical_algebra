@@ -8,6 +8,7 @@ import category_theory.isomorphism
 import category_theory.limits.opposites
 import category_theory.limits.shapes.finite_limits
 import category_theory.limits.shapes.pullbacks
+import category_theory.arrow
 
 open category_theory
 open category_theory.limits
@@ -15,22 +16,46 @@ open opposite
 
 variables (C : Type*) [category C]
 
-abbreviation hom_class := Π (X Y : C), set (X ⟶ Y)
 
-namespace hom_class
+namespace category_theory
+
+abbreviation arrow_class := set (arrow C)
+
+namespace arrow_class
 
 variables {C}
-variables (F : hom_class C) (F' : hom_class Cᵒᵖ)
+variables (F : arrow_class C) (F' : arrow_class Cᵒᵖ)
 
-def isomorphisms : hom_class C := λ X Y f, is_iso f
+def isomorphisms : arrow_class C := λ f, is_iso f.hom
 
-def unop : hom_class C := λ X Y f, F' (op Y) (op X) f.op
-def op : hom_class Cᵒᵖ := λ X Y f, F Y.unop X.unop f.unop
+#exit
+def arrow_eq_op : arrow C ≌ (arrow Cᵒᵖ)ᵒᵖ :=
+{ functor :=
+  { obj := λ f, opposite.op (arrow.mk f.hom.op),
+    map := λ f g φ, begin
+      apply λ (ψ : _ ⟶ _), ψ.op,
+      apply arrow.hom_mk',
+      symmetry,
+      convert congr_arg (λ (ψ : _ ⟶ _), ψ.op) φ.w',
+      sorry,
+    end,
+  },
+  inverse := sorry,
+  unit_iso := sorry,
+  counit_iso := sorry }
 
+#exit
+@[simp] def unop : arrow_class C := λ f, begin
+  have foo := equivalence.op
+  sorry
+end
+
+--@[simp] def op : hom_class Cᵒᵖ := λ f, F f.unop
+#exit
 lemma unop_op : F.op.unop = F := by refl
 lemma op_unop : F'.unop.op = F' := by refl
 
-def contains_isomorphisms := ∀ (X Y : C) (f : X ⟶ Y), is_iso f → f ∈ F X Y
+def contains_isomorphisms := ∀ (X Y : C) (f : X ⟶ Y), is_iso f → F.contains f
 
 lemma contains_isomorphismsm_iff_op : F.contains_isomorphisms ↔ F.op.contains_isomorphisms :=
 begin
@@ -47,7 +72,10 @@ end
 
 def is_stable_by_composition :=
   ∀ (X Y Z : C) (f : X ⟶ Y) (g : Y ⟶ Z),
-    f ∈ F X Y → g ∈ F Y Z → (f ≫ g) ∈ F X Z
+    F.contains f → F.contains g → F.contains (f ≫ g)
+
+lemma stability_by_composition [hF : F.is_stable_by_composition] {X Y Z : C} (f : X ⟶ Y) (g : Y ⟶ Z) :
+  F.contains f → F.contains g → F.contains (f ≫ g) := hF _ _ _ _ _
 
 lemma is_stable_by_composition_iff_op : F.is_stable_by_composition ↔ F.op.is_stable_by_composition :=
 begin
@@ -60,11 +88,11 @@ end
 
 def three_of_two1 :=
   ∀ (X Y Z : C) (f : X ⟶ Y) (g : Y ⟶ Z),
-    (f ≫ g) ∈ F X Z → g ∈ F Y Z → f ∈ F X Y
-
+    F.contains (f ≫ g) → F.contains g → F.contains f
+    
 def three_of_two2 :=
   ∀ (X Y Z : C) (f : X ⟶ Y) (g : Y ⟶ Z),
-    (f ≫ g) ∈ F X Z → f ∈ F X Y → g ∈ F Y Z
+    F.contains (f ≫ g) → F.contains f → F.contains g
 
 lemma three_of_two1_iff_op : F.three_of_two1 ↔ F.op.three_of_two2 :=
 begin
@@ -94,11 +122,11 @@ begin
 end
 
 def is_stable_by_base_change [has_pullbacks C] :=
-  ∀ (X Y Y' : C) (f : X ⟶ Y) (g : Y' ⟶ Y), f ∈ F X Y → pullback.snd ∈ F (pullback f g) Y'
+  ∀ (X Y Y' : C) (f : X ⟶ Y) (g : Y' ⟶ Y), F.contains f → F.contains (pullback.snd : pullback f g ⟶ Y')
 
 def is_stable_by_cobase_change [has_pushouts C] :=
-  ∀ (X X' Y : C) (f : X ⟶ Y) (g : X ⟶ X'), f ∈ F X Y → pushout.inr ∈ F X' (pushout f g)
-
+  ∀ (X X' Y : C) (f : X ⟶ Y) (g : X ⟶ X'), F.contains f → F.contains (pushout.inr : X' ⟶ pushout f g)
 
 end hom_class
 
+end category_theory

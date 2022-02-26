@@ -44,7 +44,7 @@ end quiver.hom
 namespace hom_class
 
 def is_stable_by_retract (F : hom_class C) := ∀ (X Y : C) (f : X ⟶ Y),
-  (∃ (X' Y' : C) (f' : X' ⟶ Y') (hf' : f' ∈ F X' Y'), f.is_retract f') → f ∈ F X Y    
+  (∃ (X' Y' : C) (f' : X' ⟶ Y') (hf' : F.contains f'), f.is_retract f') → f ∈ F X Y    
 
 lemma is_stable_by_retract_iff_op (F : hom_class C) :
   is_stable_by_retract F ↔ is_stable_by_retract F.op :=

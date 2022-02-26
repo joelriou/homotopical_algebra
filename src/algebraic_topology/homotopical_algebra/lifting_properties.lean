@@ -92,11 +92,10 @@ by { rw i.left_lifting_property_iff_op, apply has_left_lifting_property_of_is_is
 
 end quiver.hom
 
-
 namespace hom_class
 
 def left_lifting_property (F G : hom_class C) := ∀ (A B X Y : C) (i : A ⟶ B) (p : X ⟶ Y),
-  i ∈ F A B → p ∈ G X Y → i.left_lifting_property p
+  F.contains i → G.contains p → i.left_lifting_property p
 
 def left_lifting_property_iff_op (F G : hom_class C) :
   F.left_lifting_property G ↔ G.op.left_lifting_property F.op :=

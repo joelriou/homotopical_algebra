@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Joël Riou
 -/
 
-import category_theory.hom_class
+import category_theory.arrow_class
 import category_theory.equivalence
 import category_theory.eq_to_hom
 
@@ -16,39 +16,38 @@ universes v' u'
 variables {C C'' D : Type*} [category C] [category C''] [category D]
 variables {C' : Type u'} [category.{v'} C']
 
-namespace quiver.hom
-
-def is_inverted_by {X Y : C} (f : X ⟶ Y) (F : C ⥤ D) : Prop := is_iso (F.map f)
-
-end quiver.hom
-
-namespace hom_class
-
-def is_inverted_by (W : hom_class C) (F : C ⥤ D) : Prop :=
-∀ (X Y : C) (f : X ⟶ Y), W X Y f → f.is_inverted_by F
-
-end hom_class
-
 namespace category_theory
+namespace arrow
+
+def is_inverted_by (f : arrow C) (F : C ⥤ D) : Prop := is_iso (F.map f.hom)
+
+end arrow
+
+namespace arrow_class
+
+def is_inverted_by (W : arrow_class C) (F : C ⥤ D) : Prop :=
+∀ (f : arrow C), f ∈ W → f.is_inverted_by F
+
+end arrow_class
 
 lemma functor.assoc {C D E F : Type*} [category C] [category D]
   [category E] [category F] (φ : C ⥤ D)
   (φ' : D ⥤ E) (φ'' : E ⥤ F) : (φ ⋙ φ') ⋙ φ'' = φ ⋙ (φ' ⋙ φ'') :=
 by refl
 
-structure is_localization (F : C ⥤ C') (W : hom_class C) :=
+structure is_localization (F : C ⥤ C') (W : arrow_class C) :=
   (inverts_W : W.is_inverted_by F)
   (lift : Π {D : Type*} [category D] (G : C ⥤ D) (hG : W.is_inverted_by G), C' ⥤ D)
   (fac : ∀ {D : Type*} [category D] (G : C ⥤ D) (hG : W.is_inverted_by G), G = F ⋙ lift G hG)
   (uniq : ∀ {D : Type*} [category D] (G' G'' : C' ⥤ D), F ⋙ G' = F ⋙ G'' → G' = G'')
 
-def localization_wrt_isomorphisms : is_localization (𝟭 C) hom_class.isomorphisms :=
-{ inverts_W := λ X Y f hf, hf,
+def localization_wrt_isomorphisms : is_localization (𝟭 C) arrow_class.isomorphisms :=
+{ inverts_W := λ f hf, hf,
   lift := λ D hD G hG, G,
   fac := λ D hD H hG, by rw functor.id_comp,
   uniq := λ D hD G' G'' h, by simpa [functor.id_comp] using h, }
 
-def localization_is_ess_unique {W : hom_class C} {F₁ : C ⥤ C'} {F₂ : C ⥤ C''}
+def localization_is_ess_unique {W : arrow_class C} {F₁ : C ⥤ C'} {F₂ : C ⥤ C''}
   (L₁ : is_localization F₁ W) (L₂ : is_localization F₂ W) : C' ≌ C'' :=
 { functor := L₁.lift F₂ L₂.inverts_W,
   inverse := L₂.lift F₁ L₁.inverts_W,
