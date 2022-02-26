@@ -29,7 +29,7 @@ include W
 structure preloc := (as : C)
 
 instance : quiver (preloc W) :=
-{ hom := λ A B,  (A.as ⟶ B.as) ⊕  { f : B.as ⟶ A.as // arrow.mk f ∈ W} }
+{ hom := λ A B,  (A.as ⟶ B.as) ⊕ { f : B.as ⟶ A.as // arrow.mk f ∈ W} }
 
 omit W
 
@@ -43,15 +43,17 @@ def F := Σ (D : paths (preloc W) × paths (preloc W)), (D.1 ⟶ D.2) × (D.1 �
 
 def φ (X : C) : paths (preloc W) := paths.of.obj { as := X }
 def ψ₁ (f : arrow C) : φ W f.left ⟶ φ W f.right := paths.of.map (sum.inl f.hom)
-def ψ₂ (g : arrow C) (hg : g ∈ W) : φ W g.right ⟶ φ W g.left :=  paths.of.map (sum.inr ⟨g.hom, (by { convert hg, rw arrow_mk, })⟩)
+def ψ₂' (g : arrow C) (hg : g ∈ W) : φ W g.right ⟶ φ W g.left := paths.of.map (sum.inr ⟨g.hom, (by { convert hg, rw arrow_mk, })⟩)
+def ψ₂ (w : W) : φ W w.1.right ⟶ φ W w.1.left :=
+paths.of.map (sum.inr ⟨w.1.hom, (by { convert w.2, rw arrow_mk, })⟩)
 
 def relations₀ : C → F W := by { intro X, exact ⟨⟨⟨X⟩, ⟨X⟩⟩, ⟨ψ₁ W (arrow.mk (𝟙 _)), 𝟙 _⟩⟩, }
 def relations₁ : R₁ → F W :=
 by { rintro ⟨⟨X,⟨Y,Z⟩⟩, ⟨f,g⟩⟩, exact ⟨⟨⟨X⟩, ⟨Z⟩⟩, ⟨ψ₁ W (arrow.mk (f ≫ g)), ψ₁ W (arrow.mk f) ≫ ψ₁ W (arrow.mk g)⟩⟩, }
-def relations₂ : W → F W :=
-by { rintro ⟨g, hg⟩, refine ⟨⟨⟨g.left⟩, ⟨g.left⟩⟩ , ψ₁ W g ≫ ψ₂ W g hg, 𝟙 _⟩, }
-def relations₃ : W → F W :=
-by { rintro ⟨g, hg⟩, refine ⟨⟨⟨g.right⟩, ⟨g.right⟩⟩ , ψ₂ W g hg ≫ ψ₁ W g, 𝟙 _⟩, }
+def relations₂ (w : W) : F W :=
+by { refine ⟨⟨⟨w.1.left⟩, ⟨w.1.left⟩⟩ , ψ₁ W w.1 ≫ ψ₂ W w, 𝟙 _⟩, }
+def relations₃ (w : W) : F W :=
+by { refine ⟨⟨⟨w.1.right⟩, ⟨w.1.right⟩⟩ , ψ₂ W w ≫ ψ₁ W w.1, 𝟙 _⟩, }
 
 variable {W}
 def belongs_to {A B : paths (preloc W)} (f g : A ⟶ B) {D : Type*} (relations : D → F W) : Prop :=
@@ -87,22 +89,19 @@ def Q : C ⥤ localization W :=
 
 variable {W}
 
-def Winv (g : arrow C) (hg : g ∈ W) : (Q W).obj g.right ⟶ (Q W).obj g.left :=
-(quotient.functor (relations W)).map (paths.of.map (sum.inr 
-⟨g.hom, (by { convert hg, rw arrow_mk, })⟩))
-
-def Wiso (g : arrow C) (hg : g ∈ W) : iso ((Q W).obj g.left) ((Q W).obj g.right) :=
-{ hom := (Q W).map g.hom,
-  inv := Winv g hg,
+def Wiso (w : W) : iso ((Q W).obj w.1.left) ((Q W).obj w.1.right) :=
+{ hom := (Q W).map w.1.hom,
+  inv := (quotient.functor (relations W)).map (paths.of.map
+    (sum.inr ⟨w.1.hom, (by { convert w.2, rw arrow_mk, })⟩)),
   hom_inv_id' := begin
-    erw ← (quotient.functor (relations W)).map_comp (ψ₁ W g) (ψ₂ W g hg),
+    erw ← (quotient.functor (relations W)).map_comp (ψ₁ W w.1) (ψ₂ W w),
     apply quotient.sound (relations W),
-    refine or.inr (or.inr (or.inl ⟨⟨g, hg⟩, rfl⟩)),
+    refine or.inr (or.inr (or.inl ⟨w, rfl⟩)),
   end,
   inv_hom_id' := begin
-    erw ← (quotient.functor (relations W)).map_comp (ψ₂ W g hg) (ψ₁ W g),
+    erw ← (quotient.functor (relations W)).map_comp (ψ₂ W w) (ψ₁ W w.1),
     apply quotient.sound (relations W),
-    exact or.inr (or.inr (or.inr ⟨⟨g, hg⟩, rfl⟩)),
+    exact or.inr (or.inr (or.inr ⟨w, rfl⟩)),
   end }
 
 lemma congr_obj {D₁ D₂ : Type*} [category D₁] [category D₂] {F G : D₁ ⥤ D₂}
@@ -130,7 +129,7 @@ noncomputable def lift_quiver {D : Type*} [category D] (G : C ⥤ D) (hG : W.is_
   map := begin
     rintros ⟨X⟩ ⟨Y⟩ (f|⟨g, hg⟩),
     { exact G.map f, },
-    { haveI : is_iso (G.map g) := hG g hg,
+    { haveI : is_iso (G.map g) := hG ⟨arrow.mk g, hg⟩,
       exact inv (G.map g), },
   end }
 
@@ -147,8 +146,8 @@ by { dsimp [functor_quiver, ψ₁, quiver.hom.to_path], simpa only [id_comp], }
 
 @[simp]
 lemma lift_quiver_map_ψ₂ {D : Type*} [category D] (G : C ⥤ D) (hG : W.is_inverted_by G)
-  (g : arrow C) (hg : g ∈ W) : (functor_quiver G hG).map (ψ₂ W g hg) = 
-  (by { haveI : is_iso (G.map g.hom) := hG g hg, exact inv (G.map g.hom), }) :=
+  (w : W) : (functor_quiver G hG).map (ψ₂ W w) = 
+  (by { haveI : is_iso (G.map w.1.hom) := hG w, exact inv (G.map w.1.hom), }) :=
 by { dsimp [functor_quiver, ψ₂, quiver.hom.to_path, lift_quiver], simpa only [id_comp], }
 
 noncomputable def lift {D : Type u'} [category.{v'} D] (G : C ⥤ D) (hG : W.is_inverted_by G) :
@@ -174,10 +173,10 @@ begin
       have eq₂ := eq_of_heq (sigma.mk.inj r).2,
       rw [← (prod.mk.inj eq₂).1, ← (prod.mk.inj eq₂).2, functor.map_comp],
       simpa only [lift_quiver_map_ψ₁, ← G.map_comp], },
-    { rcases r with ⟨⟨g, hg⟩, r⟩,
+    { rcases r with ⟨w, r⟩,
       have eq₁ := congr_arg sigma.fst r,
-      have eqX : g.left = X := congr_arg preloc.as (prod.mk.inj eq₁).1,
-      have eqY : g.left = Y := congr_arg preloc.as (prod.mk.inj eq₁).2,
+      have eqX : w.1.left = X := congr_arg preloc.as (prod.mk.inj eq₁).1,
+      have eqY : w.1.left = Y := congr_arg preloc.as (prod.mk.inj eq₁).2,
       substs eqX eqY,
       have eq₂ := eq_of_heq (sigma.mk.inj r).2,
       rw [← (prod.mk.inj eq₂).1, ← (prod.mk.inj eq₂).2],
@@ -208,7 +207,7 @@ begin
       { convert congr_map_conjugate h f, },
       { rcases f with ⟨g, hg⟩,
         dsimp at g hg,
-        have hα : (Wiso (arrow.mk g) hg).hom = (Q W).map g := rfl,
+        have hα : (Wiso ⟨arrow.mk g, hg⟩).hom = (Q W).map g := rfl,
         have h' := congr_map_conjugate h g,
         simp only [functor.comp_map, ← hα] at h',
         refine conjugate_inv_of_congr_map_conjugate G₁ G₂ _ _ _ h',
@@ -223,7 +222,7 @@ end
 
 noncomputable
 def localisation_is_localisation : is_localization (Q W) W :=
-{ inverts_W := λ g hg, is_iso.of_iso (Wiso g hg),
+{ inverts_W := λ w, is_iso.of_iso (Wiso w),
   lift := begin
     intro D,
     introI,
@@ -243,6 +242,8 @@ def localisation_is_localisation : is_localization (Q W) W :=
       refl, }
   end,
   uniq := λ D, by { introI, exact uniq, } }
+
+instance (w : W) : is_iso ((Q W).map w.1.hom) := is_iso.of_iso (Wiso w)
 
 end localization
 

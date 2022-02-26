@@ -26,7 +26,7 @@ end arrow
 namespace arrow_class
 
 def is_inverted_by (W : arrow_class C) (F : C ⥤ D) : Prop :=
-∀ (f : arrow C), f ∈ W → f.is_inverted_by F
+∀ (f : W), f.1.is_inverted_by F
 
 end arrow_class
 
@@ -42,7 +42,7 @@ structure is_localization (F : C ⥤ C') (W : arrow_class C) :=
   (uniq : ∀ {D : Type*} [category D] (G' G'' : C' ⥤ D), F ⋙ G' = F ⋙ G'' → G' = G'')
 
 def localization_wrt_isomorphisms : is_localization (𝟭 C) arrow_class.isomorphisms :=
-{ inverts_W := λ f hf, hf,
+{ inverts_W := λ w, w.2,
   lift := λ D hD G hG, G,
   fac := λ D hD H hG, by rw functor.id_comp,
   uniq := λ D hD G' G'' h, by simpa [functor.id_comp] using h, }
