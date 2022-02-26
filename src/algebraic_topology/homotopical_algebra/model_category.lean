@@ -12,6 +12,8 @@ open category_theory.category
 open category_theory.limits
 open opposite
 
+namespace algebraic_topology
+
 variables (C : Type*) [category C]
 
 @[ext]
@@ -156,9 +158,9 @@ end category_with_fib_cof_we
 
 variables (C) 
 
-structure model_category
+structure model_category [has_finite_limits C] [has_finite_colimits C]
   extends category_with_fib_cof_we C :=
-  (CM1 : category_with_fib_cof_we.CM1 C)
+--  (CM1 : category_with_fib_cof_we.CM1 C)
   (CM2 : to_category_with_fib_cof_we.CM2)
   (CM3 : to_category_with_fib_cof_we.CM3)
   (CM4 : to_category_with_fib_cof_we.CM4)
@@ -166,7 +168,7 @@ structure model_category
 
 namespace model_category
 
-variables (M : model_category C) {C}
+variables {C} [has_finite_limits C] [has_finite_colimits C] (M : model_category C)
 
 def fibrations := M.1.fibrations
 def cofibrations := M.1.cofibrations
@@ -174,18 +176,19 @@ def weak_equivalences := M.1.weak_equivalences
 def trivial_fibrations := M.1.trivial_fibrations
 def trivial_cofibrations := M.1.trivial_cofibrations
 
-def op : model_category Cᵒᵖ :=
+def op [has_finite_limits C] [has_finite_colimits C] [has_finite_limits Cᵒᵖ] [has_finite_colimits Cᵒᵖ] :
+  model_category Cᵒᵖ :=
 { to_category_with_fib_cof_we := M.to_category_with_fib_cof_we.op,
-  CM1 := category_with_fib_cof_we.CM1_op_of_CM1 M.CM1,
+--  CM1 := category_with_fib_cof_we.CM1_op_of_CM1 M.CM1,
   CM2 := by simpa only [← M.1.CM2_iff_op] using M.CM2,
   CM3 := by simpa only [← M.1.CM3_iff_op] using M.CM3,
   CM4 := by simpa only [← M.1.CM4_iff_op] using M.CM4,
   CM5 := by simpa only [← M.1.CM5_iff_op] using M.CM5, }
 
-def unop [has_finite_limits C] [has_finite_colimits C]
+def unop [has_finite_limits C] [has_finite_colimits C] [has_finite_limits Cᵒᵖ] [has_finite_colimits Cᵒᵖ]
   (M' : model_category Cᵒᵖ) : model_category C :=
 { to_category_with_fib_cof_we := M'.to_category_with_fib_cof_we.unop,
-  CM1 := ⟨infer_instance, infer_instance⟩,
+--  CM1 := ⟨infer_instance, infer_instance⟩,
   CM2 := by { simpa only [← M'.1.CM2_iff_unop] using M'.CM2, },
   CM3 := by { simpa only [← M'.1.CM3_iff_unop] using M'.CM3, },
   CM4 := by { simpa only [← M'.1.CM4_iff_unop] using M'.CM4, },
@@ -200,3 +203,5 @@ variable {M}
 def Q : C ⥤ Ho M := category_theory.localization.Q _
 
 end model_category
+
+end algebraic_topology
