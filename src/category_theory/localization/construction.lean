@@ -12,7 +12,6 @@ import category_theory.category.Quiv
 
 open category_theory
 open category_theory.category
-open_locale big_operators
 
 namespace category_theory
 
@@ -29,35 +28,30 @@ include W
 
 structure preloc := (as : C)
 
-instance : quiver.{v+1} (preloc W) :=
+instance : quiver (preloc W) :=
 { hom := λ A B,  (A.as ⟶ B.as) ⊕  { f : B.as ⟶ A.as // arrow.mk f ∈ W} }
 
 omit W
 
 def R₁ := Σ (T : C × C × C), (T.1 ⟶ T.2.1) × (T.2.1 ⟶ T.2.2)
---def R₁' := { F : arrow C × arrow C // F.1.right = F.2.left }
 def R₂ := Σ (T : C × C), { f : T.1 ⟶ T.2 // arrow.mk f ∈ W }
---def R₂' := W
 def R₃ := R₂ W
 
 def ρ₁ {X Y Z : C} (f : X ⟶ Y) (g : Y ⟶ Z) : R₁ := ⟨⟨X, ⟨Y, Z⟩⟩, ⟨f, g⟩⟩
-def ρ₂₃ (g : arrow C) (hg : g ∈ W) : R₂ W :=
-⟨⟨g.left, g.right⟩, ⟨g.hom, (by { convert hg, rw arrow_mk, })⟩⟩
 
 def F := Σ (D : paths (preloc W) × paths (preloc W)), (D.1 ⟶ D.2) × (D.1 ⟶ D.2)
 
 def φ (X : C) : paths (preloc W) := paths.of.obj { as := X }
+def ψ₁ (f : arrow C) : φ W f.left ⟶ φ W f.right := paths.of.map (sum.inl f.hom)
+def ψ₂ (g : arrow C) (hg : g ∈ W) : φ W g.right ⟶ φ W g.left :=  paths.of.map (sum.inr ⟨g.hom, (by { convert hg, rw arrow_mk, })⟩)
 
-def ψ₁ {X Y : C} (f : X ⟶ Y) : φ W X ⟶ φ W Y := paths.of.map (sum.inl f)
-def ψ₂ (g : arrow C) (hg : g ∈ W) : φ W g.right ⟶ φ W g.left :=  paths.of.map (sum.inr (ρ₂₃ W g hg).2)
-
-def relations₀ : C → F W := by { intro X, exact ⟨⟨⟨X⟩, ⟨X⟩⟩, ⟨ψ₁ W (𝟙 _), 𝟙 _⟩⟩, }
+def relations₀ : C → F W := by { intro X, exact ⟨⟨⟨X⟩, ⟨X⟩⟩, ⟨ψ₁ W (arrow.mk (𝟙 _)), 𝟙 _⟩⟩, }
 def relations₁ : R₁ → F W :=
-by { rintro ⟨⟨X,⟨Y,Z⟩⟩, ⟨f,g⟩⟩, exact ⟨⟨⟨X⟩, ⟨Z⟩⟩, ⟨ψ₁ W (f ≫ g), ψ₁ W f ≫ ψ₁ W g⟩⟩, }
-def relations₂ : R₂ W → F W :=
-by { rintro ⟨⟨X, Y⟩, ⟨w, hw⟩⟩, exact ⟨⟨⟨X⟩, ⟨X⟩⟩, ⟨ψ₁ W w ≫ ψ₂ W w hw, 𝟙 _⟩⟩, }
-def relations₃ : R₃ W → F W :=
-by { rintro ⟨⟨X, Y⟩, ⟨w, hw⟩⟩, exact ⟨⟨⟨Y⟩, ⟨Y⟩⟩, ⟨ψ₂ W w hw ≫ ψ₁ W w, 𝟙 _⟩⟩, }
+by { rintro ⟨⟨X,⟨Y,Z⟩⟩, ⟨f,g⟩⟩, exact ⟨⟨⟨X⟩, ⟨Z⟩⟩, ⟨ψ₁ W (arrow.mk (f ≫ g)), ψ₁ W (arrow.mk f) ≫ ψ₁ W (arrow.mk g)⟩⟩, }
+def relations₂ : W → F W :=
+by { rintro ⟨g, hg⟩, refine ⟨⟨⟨g.left⟩, ⟨g.left⟩⟩ , ψ₁ W g ≫ ψ₂ W g hg, 𝟙 _⟩, }
+def relations₃ : W → F W :=
+by { rintro ⟨g, hg⟩, refine ⟨⟨⟨g.right⟩, ⟨g.right⟩⟩ , ψ₂ W g hg ≫ ψ₁ W g, 𝟙 _⟩, }
 
 variable {W}
 def belongs_to {A B : paths (preloc W)} (f g : A ⟶ B) {D : Type*} (relations : D → F W) : Prop :=
@@ -101,14 +95,14 @@ def Wiso (g : arrow C) (hg : g ∈ W) : iso ((Q W).obj g.left) ((Q W).obj g.righ
 { hom := (Q W).map g.hom,
   inv := Winv g hg,
   hom_inv_id' := begin
-    erw ← (quotient.functor (relations W)).map_comp (ψ₁ W g.hom) (ψ₂ W g hg),
+    erw ← (quotient.functor (relations W)).map_comp (ψ₁ W g) (ψ₂ W g hg),
     apply quotient.sound (relations W),
-    exact or.inr (or.inr (or.inl ⟨ρ₂₃ W g hg, rfl⟩)),
+    refine or.inr (or.inr (or.inl ⟨⟨g, hg⟩, rfl⟩)),
   end,
   inv_hom_id' := begin
-    erw ← (quotient.functor (relations W)).map_comp (ψ₂ W g hg) (ψ₁ W g.hom),
+    erw ← (quotient.functor (relations W)).map_comp (ψ₂ W g hg) (ψ₁ W g),
     apply quotient.sound (relations W),
-    exact or.inr (or.inr (or.inr ⟨ρ₂₃ W g hg, rfl⟩)),
+    exact or.inr (or.inr (or.inr ⟨⟨g, hg⟩, rfl⟩)),
   end }
 
 lemma congr_obj {D₁ D₂ : Type*} [category D₁] [category D₂] {F G : D₁ ⥤ D₂}
@@ -148,12 +142,13 @@ noncomputable def functor_quiver {D : Type u'} [category.{v'} D] (G : C ⥤ D) (
 
 @[simp]
 lemma lift_quiver_map_ψ₁ {D : Type*} [category D] (G : C ⥤ D) (hG : W.is_inverted_by G)
-  {X Y : C} (f : X ⟶ Y) : (functor_quiver G hG).map (ψ₁ W f) = G.map f:=
+  (f : arrow C) : (functor_quiver G hG).map (ψ₁ W f) = G.map f.hom :=
 by { dsimp [functor_quiver, ψ₁, quiver.hom.to_path], simpa only [id_comp], }
 
+@[simp]
 lemma lift_quiver_map_ψ₂ {D : Type*} [category D] (G : C ⥤ D) (hG : W.is_inverted_by G)
-  {X Y : C} (g : X ⟶ Y) (hg : arrow.mk g ∈ W) : (functor_quiver G hG).map (ψ₂ W g hg) = 
-  (by { haveI : is_iso (G.map g) := hG g hg, exact inv (G.map g), }) :=
+  (g : arrow C) (hg : g ∈ W) : (functor_quiver G hG).map (ψ₂ W g hg) = 
+  (by { haveI : is_iso (G.map g.hom) := hG g hg, exact inv (G.map g.hom), }) :=
 by { dsimp [functor_quiver, ψ₂, quiver.hom.to_path, lift_quiver], simpa only [id_comp], }
 
 noncomputable def lift {D : Type u'} [category.{v'} D] (G : C ⥤ D) (hG : W.is_inverted_by G) :
@@ -169,28 +164,29 @@ begin
       substs eqX eqY,
       have eq₂ := eq_of_heq (sigma.mk.inj r).2,
       rw [← (prod.mk.inj eq₂).1, ← (prod.mk.inj eq₂).2],
-      simpa only [lift_quiver_map_ψ₁, functor.map_id], },
-    { rcases r with ⟨⟨⟨X',⟨Z, Y'⟩⟩, ⟨g,g'⟩⟩, r⟩,
+      simp only [lift_quiver_map_ψ₁, functor.map_id, arrow.mk_hom],
+      exact G.map_id X, },
+    { rcases r with ⟨⟨⟨X', ⟨Z, Y'⟩⟩, ⟨g, g'⟩⟩, r⟩,
       have eq₁ := congr_arg sigma.fst r,
       have eqX : X = X' := congr_arg preloc.as (prod.mk.inj eq₁).1.symm,
       have eqY : Y = Y' := congr_arg preloc.as (prod.mk.inj eq₁).2.symm,
       substs eqX eqY,
       have eq₂ := eq_of_heq (sigma.mk.inj r).2,
-      rw [← (prod.mk.inj eq₂).1, ← (prod.mk.inj eq₂).2],
-      simp only [functor.map_comp, lift_quiver_map_ψ₁], },
-    { rcases r with ⟨⟨⟨X', Z⟩, ⟨w, hw⟩⟩, r⟩,
+      rw [← (prod.mk.inj eq₂).1, ← (prod.mk.inj eq₂).2, functor.map_comp],
+      simpa only [lift_quiver_map_ψ₁, ← G.map_comp], },
+    { rcases r with ⟨⟨g, hg⟩, r⟩,
       have eq₁ := congr_arg sigma.fst r,
-      have eqX : X = X' := congr_arg preloc.as (prod.mk.inj eq₁).1.symm,
-      have eqY : X' = Y := congr_arg preloc.as (prod.mk.inj eq₁).2,
+      have eqX : g.left = X := congr_arg preloc.as (prod.mk.inj eq₁).1,
+      have eqY : g.left = Y := congr_arg preloc.as (prod.mk.inj eq₁).2,
       substs eqX eqY,
       have eq₂ := eq_of_heq (sigma.mk.inj r).2,
       rw [← (prod.mk.inj eq₂).1, ← (prod.mk.inj eq₂).2],
       simp only [functor.map_comp, functor.map_id, lift_quiver_map_ψ₁, lift_quiver_map_ψ₂,
         is_iso.hom_inv_id], },
-    { rcases r with ⟨⟨⟨Z, X'⟩, ⟨w, hw⟩⟩, r⟩,
+    { rcases r with ⟨⟨g, hg⟩, r⟩,
       have eq₁ := congr_arg sigma.fst r,
-      have eqX : X = X' := congr_arg preloc.as (prod.mk.inj eq₁).1.symm,
-      have eqY : X' = Y := congr_arg preloc.as (prod.mk.inj eq₁).2,
+      have eqX : g.right = X := congr_arg preloc.as (prod.mk.inj eq₁).1,
+      have eqY : g.right = Y := congr_arg preloc.as (prod.mk.inj eq₁).2,
       substs eqX eqY,
       have eq₂ := eq_of_heq (sigma.mk.inj r).2,
       rw [← (prod.mk.inj eq₂).1, ← (prod.mk.inj eq₂).2],
