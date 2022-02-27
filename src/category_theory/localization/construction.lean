@@ -9,6 +9,7 @@ import category_theory.arrow_class
 import category_theory.quotient
 import category_theory.path_category
 import category_theory.category.Quiv
+import category_theory.equivalence
 
 open category_theory
 open category_theory.category
@@ -17,7 +18,9 @@ namespace category_theory
 
 universes v v' u u'
 
-variables {C : Type u} [category.{v} C] (W : arrow_class C)
+variables {C : Type u} [category.{v} C]
+variable (W : arrow_class C)
+
 
 namespace localization
 
@@ -150,6 +153,8 @@ lemma lift_quiver_map_ψ₂ {D : Type*} [category D] (G : C ⥤ D) (hG : W.is_in
   (by { haveI : is_iso (G.map w.1.hom) := hG w, exact inv (G.map w.1.hom), }) :=
 by { dsimp [functor_quiver, ψ₂, quiver.hom.to_path, lift_quiver], simpa only [id_comp], }
 
+lemma W_is_inverted_by_Q : W.is_inverted_by (Q W) := λ w, is_iso.of_iso (Wiso w)
+
 noncomputable def lift {D : Type u'} [category.{v'} D] (G : C ⥤ D) (hG : W.is_inverted_by G) :
   localization W ⥤ D :=
 begin
@@ -193,6 +198,19 @@ begin
         is_iso.inv_hom_id], }, },
 end
 
+@[simp]
+lemma fac {D : Type u'} [category.{v'} D] (G : C ⥤ D) (hG : W.is_inverted_by G) :
+  Q W ⋙ lift G hG = G :=
+begin
+  apply functor.ext,
+  { intros X Y f,
+    dsimp [lift, functor_quiver, lift_quiver, Q, ψ₁, quiver.hom.to_path],
+    erw [id_comp, comp_id, id_comp],
+    refl, },
+  { intro X,
+    refl, }
+end
+
 lemma uniq {D : Type*} [category D] (G₁ G₂ : localization W ⥤ D) (h : Q W ⋙ G₁ = Q W ⋙ G₂) : G₁ = G₂ :=
 begin
   suffices h' : (quotient.functor (relations W)) ⋙ G₁ = (quotient.functor (relations W)) ⋙ G₂,
@@ -220,31 +238,21 @@ begin
       convert eq, }, },
 end
 
-noncomputable
-def localisation_is_localisation : is_localization (Q W) W :=
-{ inverts_W := λ w, is_iso.of_iso (Wiso w),
-  lift := begin
-    intro D,
-    introI,
-    intros G hG,
-    exact lift G hG,
-  end,
-  fac := begin
-    intro D,
-    introI,
-    intros G hG,
-    apply functor.ext,
-    { intros X Y f,
-      dsimp [lift, functor_quiver, lift_quiver, Q, ψ₁, quiver.hom.to_path],
-      erw [id_comp, comp_id, id_comp],
-      refl, },
-    { intro X,
-      refl, }
-  end,
-  uniq := λ D, by { introI, exact uniq, } }
 
 instance (w : W) : is_iso ((Q W).map w.1.hom) := is_iso.of_iso (Wiso w)
 
+
 end localization
+
+variables {D : Type v'} [category.{u'} D]
+variable (L : C ⥤ D)
+
+structure is_localization (L : C ⥤ D) (W : arrow_class C):=
+(inverts_W : W.is_inverted_by L)
+(is_equivalence : is_equivalence (localization.lift L inverts_W))
+
+structure is_strict_localization (L : C ⥤ D) (W : arrow_class C) extends is_localization L W :=
+(is_isomorphism : (localization.lift L inverts_W ⋙ is_equivalence.inverse).obj = id
+  ∧ (is_equivalence.inverse ⋙ localization.lift L inverts_W).obj = id)
 
 end category_theory
