@@ -67,11 +67,11 @@ end arrow
 
 namespace arrow_class
 
-def left_lifting_property (F G : arrow_class C) := ∀ (i p : arrow C),
+def has_lifting_property (F G : arrow_class C) := ∀ (i p : arrow C),
   i ∈ F → p ∈ G → has_lifting_property i p
 
-def left_lifting_property_iff_op (F G : arrow_class C) :
-  F.left_lifting_property G ↔ G.op.left_lifting_property F.op :=
+def has_lifting_property_iff_op (F G : arrow_class C) :
+  F.has_lifting_property G ↔ G.op.has_lifting_property F.op :=
 begin
   split,
   { intro h,
@@ -86,3 +86,6 @@ begin
 end
 
 end arrow_class
+
+end category_theory
+

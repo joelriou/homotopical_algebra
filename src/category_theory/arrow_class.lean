@@ -9,21 +9,46 @@ import category_theory.limits.opposites
 import category_theory.limits.shapes.finite_limits
 import category_theory.limits.shapes.pullbacks
 import category_theory.comma_op
+import category_theory.epi_mono
+import category_theory.retracts
+import category_theory.cartesian_square
 
 open category_theory
 open category_theory.limits
 open opposite
 
-variables (C : Type*) [category C]
-
-
 namespace category_theory
+
+variables (C : Type*) [category C]
 
 abbreviation arrow_class := set (arrow C)
 
+variables {C}
+
+namespace arrow
+
+def is_retract_iff_op (f : arrow C) (f' : arrow C) :
+  is_retract f f' ↔ is_retract f.op f'.op :=
+begin
+  let e := equivalence_arrow_op C,
+  haveI := is_equivalence.of_equivalence e,
+  have eq₁ := is_retract_iff_op f.op f'.op,
+  have eq₂ := is_retract_iff_of_is_equivalence e.functor f f',
+  exact eq₂.trans eq₁.symm,
+end
+
+def is_retract_iff_unop (f : arrow Cᵒᵖ) (f' : arrow Cᵒᵖ) :
+  is_retract f f' ↔ is_retract f.unop f'.unop :=
+begin
+  have eq₁ := is_retract_iff_of_isos (eq_to_iso f.op_unop.symm) (eq_to_iso f'.op_unop.symm),
+  have eq₂ := is_retract_iff_op f.unop f'.unop,
+  exact eq₁.trans eq₂.symm,    
+end
+
+end arrow
+
 namespace arrow_class
 
-variables {C}
 variables (F : arrow_class C) (F' : arrow_class Cᵒᵖ)
 
 def isomorphisms : arrow_class C := λ f, is_iso f.hom
@@ -90,50 +115,87 @@ begin
   apply_instance,
 end
 
-#exit
+def is_stable_by_retract (F : arrow_class C) : Prop := ∀ (f f' : arrow C),
+  f' ∈ F → is_retract f f' → f ∈ F
 
+lemma is_stable_by_retract_iff_op (F : arrow_class C) :
+  is_stable_by_retract F ↔ is_stable_by_retract F.op :=
+begin
+  split,
+  { intros h f f' hf' hff',
+    rw mem_op_iff at ⊢ hf',
+    apply h f.unop f'.unop hf',
+    rw ← arrow.is_retract_iff_unop,
+    exact hff', },
+  { intros h f f' hf hff',
+    rw [← arrow.unop_op f,← mem_op_iff],
+    rw ← arrow.unop_op f' at hf,
+    apply h f.op f'.op hf,
+    rw ← arrow.is_retract_iff_op,
+    exact hff', }
+end
 
-def three_of_two1 :=
-  ∀ (X Y Z : C) (f : X ⟶ Y) (g : Y ⟶ Z),
-    F.contains (f ≫ g) → F.contains g → F.contains f
-    
-def three_of_two2 :=
-  ∀ (X Y Z : C) (f : X ⟶ Y) (g : Y ⟶ Z),
-    F.contains (f ≫ g) → F.contains f → F.contains g
+def three_of_two_of_comp_left (F : arrow_class C) : Prop :=
+∀ {X Y Z : C} (f : X ⟶ Y) (g : Y ⟶ Z),
+    arrow.mk f ∈ F → arrow.mk (f ≫ g) ∈ F → arrow.mk g ∈ F
 
-lemma three_of_two1_iff_op : F.three_of_two1 ↔ F.op.three_of_two2 :=
+def three_of_two_of_comp_right (F : arrow_class C) : Prop :=
+∀ {X Y Z : C} (f : X ⟶ Y) (g : Y ⟶ Z),
+    arrow.mk g ∈ F → arrow.mk (f ≫ g) ∈ F → arrow.mk f ∈ F
+
+structure three_of_two (F : arrow_class C) : Prop :=
+  (of_comp : F.is_stable_by_composition)
+  (of_comp_left : F.three_of_two_of_comp_left)
+  (of_comp_right : F.three_of_two_of_comp_right)
+
+lemma three_of_two_of_comp_left_iff_op : F.three_of_two_of_comp_left ↔ F.op.three_of_two_of_comp_right :=
 begin
   split,
   { intros hF X Y Z f g hfg hf,
-    exact hF _ _ _ g.unop f.unop hfg hf, },
+    exact hF g.unop f.unop hfg hf, },
   { intros hF X Y Z f g hfg hg,
-    exact hF _ _ _ g.op f.op hfg hg, }
+    exact hF g.op f.op hfg hg, }
 end
 
-lemma three_of_two2_iff_op : F.three_of_two2 ↔ F.op.three_of_two1 :=
+lemma three_of_two_of_comp_right_iff_op : F.three_of_two_of_comp_right ↔ F.op.three_of_two_of_comp_left :=
 begin
   split,
   { intros hF X Y Z f g hfg hg,
-    exact hF _ _ _ g.unop f.unop hfg hg, },
+    exact hF g.unop f.unop hfg hg, },
   { intros hF X Y Z f g hfg hf,
-    exact hF _ _ _ g.op f.op hfg hf, }
+    exact hF g.op f.op hfg hf, }
 end
 
-def three_of_two := is_stable_by_composition F ∧ three_of_two1 F ∧ three_of_two2 F
+lemma three_of_two_iff (F : arrow_class C) : F.three_of_two ↔
+F.is_stable_by_composition ∧ F.three_of_two_of_comp_left ∧ F.three_of_two_of_comp_right :=
+begin
+  split,
+  { intro h,
+    cases h,
+    finish, },
+  { rintro ⟨h₁, h₂, h₃⟩,
+    dsimp [three_of_two_of_comp_left] at h₂,
+    exact {
+      of_comp := h₁,
+      of_comp_left := λ _ _ _ , h₂,
+      of_comp_right := λ _ _ _ , h₃, } }
+end
+
 
 lemma three_of_two_iff_op : F.three_of_two ↔ F.op.three_of_two :=
 begin
-  dsimp only [three_of_two],
-  rw [← is_stable_by_composition_iff_op, ← three_of_two1_iff_op, ← three_of_two2_iff_op],
+  simp only [three_of_two_iff],
+  rw [← is_stable_by_composition_iff_op, ← three_of_two_of_comp_left_iff_op,
+    ← three_of_two_of_comp_right_iff_op],
   finish,
 end
 
-def is_stable_by_base_change [has_pullbacks C] :=
-  ∀ (X Y Y' : C) (f : X ⟶ Y) (g : Y' ⟶ Y), F.contains f → F.contains (pullback.snd : pullback f g ⟶ Y')
+def is_stable_by_base_change :=
+  ∀ {f' f : arrow C} (sq : f' ⟶ f) (hsq : is_cartesian sq), f ∈ F → f' ∈ F
 
-def is_stable_by_cobase_change [has_pushouts C] :=
-  ∀ (X X' Y : C) (f : X ⟶ Y) (g : X ⟶ X'), F.contains f → F.contains (pushout.inr : X' ⟶ pushout f g)
+def is_stable_by_cobase_change :=
+  ∀ {f f' : arrow C} (sq : f ⟶ f') (hsq : is_cocartesian sq), f ∈ F → f' ∈ F
 
-end hom_class
+end arrow_class
 
 end category_theory
