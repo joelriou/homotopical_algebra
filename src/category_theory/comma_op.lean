@@ -9,6 +9,7 @@ import category_theory.arrow
 import category_theory.opposites
 
 open category_theory
+open category_theory.category
 open opposite
 
 namespace category_theory
@@ -76,6 +77,25 @@ def unop (f : arrow Tᵒᵖ) : arrow T := (equivalence_arrow_op T).inverse.obj (
 
 lemma unop_op (f : arrow T) : f.op.unop = f := by { cases f, refl, }
 lemma op_unop (f : arrow Tᵒᵖ) : f.unop.op = f := by { cases f, refl, }
+
+def op_hom {f g : arrow T} (sq : f ⟶ g) : g.op ⟶ f.op :=
+((equivalence_arrow_op T).functor.map sq).unop
+
+def unop_hom' {f g : arrow Tᵒᵖ} (sq : f ⟶ g) : g.unop ⟶ f.unop :=
+((equivalence_arrow_op T).inverse.map sq.op)
+
+def unop_hom {f g : arrow T} (sq : f.op ⟶ g.op) : g ⟶ f :=
+eq_to_hom g.unop_op.symm ≫ unop_hom' sq ≫ eq_to_hom f.unop_op
+
+def op_unop_hom {f g : arrow T} (sq : f.op ⟶ g.op) : sq = op_hom (unop_hom sq) :=
+begin
+  cases f,
+  cases g,
+  cases sq,
+  dsimp only [unop_hom],
+  erw [id_comp, comp_id],
+  congr,
+end
 
 end arrow
 
