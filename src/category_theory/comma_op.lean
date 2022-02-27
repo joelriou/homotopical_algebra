@@ -43,6 +43,7 @@ def functor_comma_unop (L : A ⥤ T) (R : B ⥤ T) :
     right := f.unop.left.unop,
     w' := congr_arg (λ (φ : _ ⟶ _), φ.unop) f.unop.w'.symm, }, }
 
+@[simps]
 def equivalence_comma_op (L : A ⥤ T) (R : B ⥤ T) :
   comma L R ≌ (comma R.op L.op)ᵒᵖ :=
 { functor := functor_comma_op L R,
@@ -65,6 +66,7 @@ def equivalence_comma_op (L : A ⥤ T) (R : B ⥤ T) :
   end }
 
 variable (T)
+@[simps]
 def equivalence_arrow_op :
   arrow T ≌ (arrow Tᵒᵖ)ᵒᵖ := equivalence_comma_op (𝟭 T) (𝟭 T)
 
@@ -72,7 +74,12 @@ variable {T}
 
 namespace arrow
 
+lemma mk_eq (f : arrow T) : arrow.mk f.hom = f :=
+by { cases f, dsimp [arrow.mk], refl, }
+
+@[simp]
 def op (f : arrow T) : arrow Tᵒᵖ := ((equivalence_arrow_op T).functor.obj f).unop
+@[simp]
 def unop (f : arrow Tᵒᵖ) : arrow T := (equivalence_arrow_op T).inverse.obj (opposite.op f)
 
 lemma unop_op (f : arrow T) : f.op.unop = f := by { cases f, refl, }

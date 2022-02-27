@@ -24,9 +24,6 @@ variable (W : arrow_class C)
 
 namespace localization
 
-lemma arrow_mk (f : arrow C) : arrow.mk f.hom = f :=
-by { cases f, dsimp [arrow.mk], refl, }
-
 include W
 
 structure preloc := (as : C)
@@ -46,9 +43,9 @@ def F := Σ (D : paths (preloc W) × paths (preloc W)), (D.1 ⟶ D.2) × (D.1 �
 
 def φ (X : C) : paths (preloc W) := paths.of.obj { as := X }
 def ψ₁ (f : arrow C) : φ W f.left ⟶ φ W f.right := paths.of.map (sum.inl f.hom)
-def ψ₂' (g : arrow C) (hg : g ∈ W) : φ W g.right ⟶ φ W g.left := paths.of.map (sum.inr ⟨g.hom, (by { convert hg, rw arrow_mk, })⟩)
+def ψ₂' (g : arrow C) (hg : g ∈ W) : φ W g.right ⟶ φ W g.left := paths.of.map (sum.inr ⟨g.hom, (by { convert hg, rw arrow.mk_eq, })⟩)
 def ψ₂ (w : W) : φ W w.1.right ⟶ φ W w.1.left :=
-paths.of.map (sum.inr ⟨w.1.hom, (by { convert w.2, rw arrow_mk, })⟩)
+paths.of.map (sum.inr ⟨w.1.hom, (by { convert w.2, rw arrow.mk_eq, })⟩)
 
 def relations₀ : C → F W := by { intro X, exact ⟨⟨⟨X⟩, ⟨X⟩⟩, ⟨ψ₁ W (arrow.mk (𝟙 _)), 𝟙 _⟩⟩, }
 def relations₁ : R₁ → F W :=
@@ -95,7 +92,7 @@ variable {W}
 def Wiso (w : W) : iso ((Q W).obj w.1.left) ((Q W).obj w.1.right) :=
 { hom := (Q W).map w.1.hom,
   inv := (quotient.functor (relations W)).map (paths.of.map
-    (sum.inr ⟨w.1.hom, (by { convert w.2, rw arrow_mk, })⟩)),
+    (sum.inr ⟨w.1.hom, (by { convert w.2, rw arrow.mk_eq, })⟩)),
   hom_inv_id' := begin
     erw ← (quotient.functor (relations W)).map_comp (ψ₁ W w.1) (ψ₂ W w),
     apply quotient.sound (relations W),
@@ -238,9 +235,7 @@ begin
       convert eq, }, },
 end
 
-
 instance (w : W) : is_iso ((Q W).map w.1.hom) := is_iso.of_iso (Wiso w)
-
 
 end localization
 

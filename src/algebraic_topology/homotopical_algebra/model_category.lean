@@ -12,6 +12,9 @@ open category_theory.category
 open category_theory.limits
 open opposite
 
+
+universes v u
+
 namespace algebraic_topology
 
 variables (D : Type*) [category D]
@@ -149,8 +152,9 @@ by { rw [CM5_iff_op data'.unop, data'.op_unop], }
 
 end category_with_fib_cof_we
 
+@[nolint check_univs]
 structure model_category :=
-(C : Type*) [hC : category C]
+(C : Type u) [hC : category.{v} C]
 (fib_cof_we : category_with_fib_cof_we C)
 (CM1 : has_finite_limits C ∧ has_finite_colimits C)
 (CM2 : fib_cof_we.CM2)
@@ -196,6 +200,9 @@ def op : model_category :=
   CM3 := by simpa only [← M.fib_cof_we.CM3_iff_op] using M.CM3,
   CM4 := by simpa only [← M.fib_cof_we.CM4_iff_op] using M.CM4,
   CM5 := by simpa only [← M.fib_cof_we.CM5_iff_op] using M.CM5, }
+
+instance : has_finite_limits M.Cᵒᵖ := (op M).CM1.1
+instance : has_finite_colimits M.Cᵒᵖ := (op M).CM1.2
 
 @[simp]
 def op_obj (X : M.C) : M.op.C := opposite.op X
