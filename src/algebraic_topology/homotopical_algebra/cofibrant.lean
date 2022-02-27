@@ -14,6 +14,8 @@ variables {M : model_category}
 
 namespace algebraic_topology
 
+namespace model_category
+
 @[simp]
 def cofibrant (A : M.C) : Prop := arrow.mk (initial.to A) ∈ M.cofibrations
 
@@ -49,7 +51,7 @@ begin
   sorry
 end
 
-lemma arrow.unop_mk {T : Type*} [category T] {X Y : T} (f : opposite.op X ⟶ opposite.op Y) :
+lemma arrow.unop_mk {T : Type*} [category T] {X Y : Tᵒᵖ} (f : X ⟶ Y) :
   (arrow.mk f).unop = arrow.mk f.unop :=
 begin
   sorry
@@ -59,24 +61,19 @@ lemma cofibrant_iff_op (A : M.C) : cofibrant A ↔ fibrant (M.op_obj A) :=
 begin
   split,
   { intro hA,
-    dsimp only [model_category.op_obj, fibrant],
-    erw arrow_class.mem_op_iff M.cofibrations,
-    dsimp ,
-    dsimp only [cofibrant] at hA,
---    dsimp only [model_category.op_obj],
-    rw ← arrow.unop_op (arrow.mk _) at hA,
-    rw ← arrow_class.mem_op_iff at hA,
-    rw arrow.mk_op at hA,
---    apply fibrant_of_fibration_to_terminal _ hA,
-    have pif := fibrant_of_fibration_to_terminal,
-    dsimp,
---    have paf := fibrant_of_fibration_to_terminal _ _,
-  --  dsimp only [fibrant, model_category.op_obj],
-    --dsimp,
-    --dsimp at hA,
-   -- sorry,
-   sorry,
-     },
+    dsimp only [fibrant],
+    erw [arrow_class.mem_op_iff M.cofibrations, arrow.unop_mk],
+    convert M.cof_comp_stable _ _ _ (terminal.from (opposite.op (⊥_ M.C))).unop (initial.to A) _ hA, swap,
+    { apply M.cof_contains_iso,
+      rw [← arrow.unop_mk, ← arrow_class.mem_op_iff,
+        arrow_class.op_isomorphisms_eq, arrow_class.mem_isomorphisms_iff],
+      let e : (opposite.op (⊥_ M.C)) ≅ ⊤_ _ := is_terminal.unique_up_to_iso
+        (terminal_op_of_initial initial_is_initial) terminal_is_terminal,
+      convert is_iso.of_iso e, },
+    apply quiver.hom.op_inj,
+    simp only [quiver.hom.op_unop, op_comp],
+    apply is_terminal.hom_ext,
+    exact terminal_is_terminal, },
   { intro hA,
     apply cofibrant_of_cofibration_from_initial _ hA,
     dsimp,
@@ -84,6 +81,7 @@ begin
     exact terminal_is_terminal, },
 end
 
+lemma fibrant_iff_op (A : M.C) : fibrant A ↔ cofibrant (M.op_obj A) := sorry
 
 end model_category
 
