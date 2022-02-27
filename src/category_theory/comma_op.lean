@@ -13,9 +13,10 @@ open opposite
 
 namespace category_theory
 
-variables {A : Type*} [category A]
-variables {B : Type*} [category B]
-variables {T : Type*} [category T]
+universes v₁ v₂ v₃ u₁ u₂ u₃
+variables {A : Type u₁} [category.{v₁} A]
+variables {B : Type u₂} [category.{v₂} B]
+variables {T : Type u₃} [category.{v₃} T]
 
 @[simps]
 def functor_comma_op (L : A ⥤ T) (R : B ⥤ T) :
@@ -62,7 +63,20 @@ def equivalence_comma_op (L : A ⥤ T) (R : B ⥤ T) :
     simpa only [eq_to_iso.hom, eq_to_hom_app, eq_to_hom_map, eq_to_hom_trans],
   end }
 
-def equivalence_arrow_op (C : Type*) [category C] :
-  arrow C ≌ (arrow Cᵒᵖ)ᵒᵖ := equivalence_comma_op (𝟭 C) (𝟭 C)
+variable (T)
+def equivalence_arrow_op :
+  arrow T ≌ (arrow Tᵒᵖ)ᵒᵖ := equivalence_comma_op (𝟭 T) (𝟭 T)
+
+variable {T}
+
+namespace arrow
+
+def op (f : arrow T) : arrow Tᵒᵖ := ((equivalence_arrow_op T).functor.obj f).unop
+def unop (f : arrow Tᵒᵖ) : arrow T := (equivalence_arrow_op T).inverse.obj (opposite.op f)
+
+lemma unop_op (f : arrow T) : f.op.unop = f := by { cases f, refl, }
+lemma op_unop (f : arrow Tᵒᵖ) : f.unop.op = f := by { cases f, refl, }
+
+end arrow
 
 end category_theory

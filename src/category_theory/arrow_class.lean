@@ -8,7 +8,7 @@ import category_theory.isomorphism
 import category_theory.limits.opposites
 import category_theory.limits.shapes.finite_limits
 import category_theory.limits.shapes.pullbacks
-import category_theory.arrow
+import category_theory.comma_op
 
 open category_theory
 open category_theory.limits
@@ -28,63 +28,70 @@ variables (F : arrow_class C) (F' : arrow_class Cᵒᵖ)
 
 def isomorphisms : arrow_class C := λ f, is_iso f.hom
 
-#exit
-def arrow_eq_op : arrow C ≌ (arrow Cᵒᵖ)ᵒᵖ :=
-{ functor :=
-  { obj := λ f, opposite.op (arrow.mk f.hom.op),
-    map := λ f g φ, begin
-      apply λ (ψ : _ ⟶ _), ψ.op,
-      apply arrow.hom_mk',
-      symmetry,
-      convert congr_arg (λ (ψ : _ ⟶ _), ψ.op) φ.w',
-      sorry,
-    end,
-  },
-  inverse := sorry,
-  unit_iso := sorry,
-  counit_iso := sorry }
+def mem_isomorphisms_iff {X Y : C} (f : X ⟶ Y) : arrow.mk f ∈ (isomorphisms : arrow_class C) ↔ is_iso f :=
+by refl
 
-#exit
-@[simp] def unop : arrow_class C := λ f, begin
-  have foo := equivalence.op
-  sorry
-end
+def op : arrow_class Cᵒᵖ := λ f, f.unop ∈ F
+def unop : arrow_class C := λ f, f.op ∈ F'
 
---@[simp] def op : hom_class Cᵒᵖ := λ f, F f.unop
-#exit
-lemma unop_op : F.op.unop = F := by refl
-lemma op_unop : F'.unop.op = F' := by refl
+lemma unop_op : F.op.unop = F :=
+by { ext f, conv_rhs { rw ← arrow.unop_op f, }, refl, }
+lemma op_unop : F'.unop.op = F' :=
+by { ext f, conv_rhs { rw ← arrow.op_unop f, }, refl, }
 
-def contains_isomorphisms := ∀ (X Y : C) (f : X ⟶ Y), is_iso f → F.contains f
+@[simp]
+lemma mem_op_iff (f : arrow Cᵒᵖ) : f ∈ F.op ↔ f.unop ∈ F := by refl
 
-lemma contains_isomorphismsm_iff_op : F.contains_isomorphisms ↔ F.op.contains_isomorphisms :=
+@[simp]
+lemma unop_mem_iff (f : arrow C) : f ∈ F'.unop ↔ f.op ∈ F' := by refl
+
+lemma subset_iff_op (G : arrow_class C) : F ⊆ G ↔ F.op ⊆ G.op :=
 begin
   split,
-  { intros hF X Y f,
-    introI,
-    apply hF,
-    apply_instance, },
-  { intros hF X Y f,
-    introI,
-    apply hF _ _ f.op,
-    apply_instance, }
+  { intros h f hf,
+    exact h hf, },
+  { intros h f hf,
+    rw ← f.unop_op at hf ⊢,
+    exact h hf, }
 end
 
-def is_stable_by_composition :=
-  ∀ (X Y Z : C) (f : X ⟶ Y) (g : Y ⟶ Z),
-    F.contains f → F.contains g → F.contains (f ≫ g)
+lemma op_isomorphisms_eq : (isomorphisms : arrow_class C).op = isomorphisms :=
+by { ext f, exact is_iso_unop_iff f.hom, }
 
-lemma stability_by_composition [hF : F.is_stable_by_composition] {X Y Z : C} (f : X ⟶ Y) (g : Y ⟶ Z) :
-  F.contains f → F.contains g → F.contains (f ≫ g) := hF _ _ _ _ _
+lemma isomorphisms_subset_iff_op : isomorphisms ⊆ F ↔ isomorphisms ⊆ F.op :=
+begin
+  rw subset_iff_op isomorphisms F,
+  convert iff.rfl,
+  rw op_isomorphisms_eq,
+end
+
+def is_stable_by_composition : Prop :=
+  ∀ (X Y Z : C) (f : X ⟶ Y) (g : Y ⟶ Z),
+    arrow.mk f ∈ F → arrow.mk g ∈ F → arrow.mk (f ≫ g) ∈ F
 
 lemma is_stable_by_composition_iff_op : F.is_stable_by_composition ↔ F.op.is_stable_by_composition :=
 begin
   split,
   { intros hF X Y Z f g hf hg,
+    rw mem_op_iff at hf hg ⊢,
     exact hF _ _ _ g.unop f.unop hg hf, },
   { intros hF X Y Z f g hf hg,
-    exact hF _ _ _ g.op f.op hg hf, }
+    rw ← (arrow.mk _).unop_op at ⊢ hf hg,
+    rw ← mem_op_iff at hf hg ⊢,
+    exact hF _ _ _  g.op f.op hg hf, }
 end
+
+lemma iso_comp_stable: (isomorphisms : arrow_class C).is_stable_by_composition :=
+begin
+  intros X Y Z f g hf hg,
+  rw mem_isomorphisms_iff at hf hg ⊢,
+  haveI := hf,
+  haveI := hg,
+  apply_instance,
+end
+
+#exit
+
 
 def three_of_two1 :=
   ∀ (X Y Z : C) (f : X ⟶ Y) (g : Y ⟶ Z),
