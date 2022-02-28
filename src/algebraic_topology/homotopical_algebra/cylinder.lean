@@ -22,7 +22,7 @@ namespace model_category
 structure precylinder (A : M.C) :=
 (I : M.C) (d₀ d₁: A ⟶ I) (σ : I ⟶ A)
 (σd₀ : d₀ ≫ σ = 𝟙 A) (σd₁ : d₁ ≫ σ = 𝟙 A)
-(Wσ : arrow.mk σ ∈ M.weak_equivalences)
+(Wσ : arrow.mk σ ∈ M.W)
 
 structure cylinder (A : M.C) extends precylinder A :=
 (cof : arrow.mk (coprod.desc d₀ d₁) ∈ M.cofibrations)

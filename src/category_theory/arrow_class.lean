@@ -45,6 +45,11 @@ begin
   exact eq₁.trans eq₂.symm,    
 end
 
+lemma op_mk {T : Type*} [category T] {X Y : T} (f : X ⟶ Y) : (arrow.mk f).op = arrow.mk f.op := by refl
+
+lemma unop_mk {T : Type*} [category T] {X Y : Tᵒᵖ} (f : X ⟶ Y) :
+  (arrow.mk f).unop = arrow.mk f.unop := by refl
+
 end arrow
 
 namespace arrow_class
@@ -63,6 +68,12 @@ lemma unop_op : F.op.unop = F :=
 by { ext f, conv_rhs { rw ← arrow.unop_op f, }, refl, }
 lemma op_unop : F'.unop.op = F' :=
 by { ext f, conv_rhs { rw ← arrow.op_unop f, }, refl, }
+
+lemma op_inj {f g : arrow_class C} (h : f.op = g.op) : f = g :=
+by rw [← unop_op f, ← unop_op g, h]
+
+lemma unop_inj {f g : arrow_class Cᵒᵖ} (h : f.unop = g.unop) : f = g :=
+by rw [← op_unop f, ← op_unop g, h]
 
 @[simp]
 lemma mem_op_iff (f : arrow Cᵒᵖ) : f ∈ F.op ↔ f.unop ∈ F := by refl
@@ -135,6 +146,23 @@ begin
     exact hff', }
 end
 
+namespace is_stable_by_retract
+
+def op {F : arrow_class C} := (is_stable_by_retract_iff_op F).mp
+def unop {F : arrow_class C} := (is_stable_by_retract_iff_op F).mpr
+
+def of_intersection (F G : arrow_class C)
+  (hF : F.is_stable_by_retract) (hG : G.is_stable_by_retract) :
+  (F ∩ G).is_stable_by_retract :=
+begin
+  rintros f f' ⟨h₁, h₂⟩ hff',
+  split,
+  { exact hF f f' h₁ hff', },
+  { exact hG f f' h₂ hff', },
+end
+
+end is_stable_by_retract
+
 def three_of_two_of_comp_left (F : arrow_class C) : Prop :=
 ∀ {X Y Z : C} (f : X ⟶ Y) (g : Y ⟶ Z),
     arrow.mk f ∈ F → arrow.mk (f ≫ g) ∈ F → arrow.mk g ∈ F
@@ -181,7 +209,6 @@ begin
       of_comp_right := λ _ _ _ , h₃, } }
 end
 
-
 lemma three_of_two_iff_op : F.three_of_two ↔ F.op.three_of_two :=
 begin
   simp only [three_of_two_iff],
@@ -199,11 +226,6 @@ def is_stable_by_cobase_change :=
 def factorisation_axiom (F G : arrow_class C) :=
 ∀ (f : arrow C), ∃ (Z : C) (i : f.left ⟶ Z) (p : Z ⟶ f.right) (fac : f = arrow.mk (i ≫ p)),
 arrow.mk i ∈ F ∧ arrow.mk p ∈ G
-
-lemma arrow.op_mk {T : Type*} [category T] {X Y : T} (f : X ⟶ Y) : (arrow.mk f).op = arrow.mk f.op := by refl
-
-lemma arrow.unop_mk {T : Type*} [category T] {X Y : Tᵒᵖ} (f : X ⟶ Y) :
-  (arrow.mk f).unop = arrow.mk f.unop := by refl
 
 lemma factorisation_axiom_iff_op (F G : arrow_class C) :
   factorisation_axiom F G ↔ factorisation_axiom G.op F.op :=
@@ -226,6 +248,13 @@ begin
     { simp only [mem_op_iff, arrow.unop_mk] at r₁ r₂,
       exact ⟨r₂, r₁⟩, }, },
 end
+
+namespace factorisation_axiom
+
+def op {F G : arrow_class C} := (factorisation_axiom_iff_op F G).mp
+def unop {F G : arrow_class C} := (factorisation_axiom_iff_op F G).mpr
+
+end factorisation_axiom
 
 end arrow_class
 

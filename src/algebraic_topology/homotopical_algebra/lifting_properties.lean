@@ -90,6 +90,7 @@ end arrow
 
 namespace arrow_class
 
+@[protected]
 def has_lifting_property (F G : arrow_class C) := ∀ (i p : arrow C),
   i ∈ F → p ∈ G → has_lifting_property i p
 
@@ -106,6 +107,150 @@ begin
       (by { rw [mem_op_iff, i.unop_op], exact hi, }),
     simpa only [i.has_lifting_property_iff_op] using h',
     }
+end
+
+namespace has_lifting_property
+
+def op {F G : arrow_class C} := (has_lifting_property_iff_op F G).mp
+def unop {F G : arrow_class C} := (has_lifting_property_iff_op F G).mpr
+
+end has_lifting_property
+
+@[simp]
+def left_lifting_property_with (G : arrow_class C) : arrow_class C :=
+λ f, ∀ (g : arrow C), g ∈ G → has_lifting_property f g
+
+@[simp]
+def right_lifting_property_with (F : arrow_class C) : arrow_class C :=
+λ g, ∀ (f : arrow C), f ∈ F → has_lifting_property f g
+
+def left_lifting_property_with_op (F : arrow_class C) :
+  F.op.left_lifting_property_with = F.right_lifting_property_with.op :=
+begin
+  ext g,
+  split,
+  { intro h,
+    rw mem_op_iff,
+    intros f hf,
+    rw [arrow.has_lifting_property_iff_op, g.op_unop],
+    exact h f.op (by { rw [mem_op_iff, f.unop_op], exact hf }), },
+  { intro h,
+    intros f hf,
+    rw mem_op_iff at h hf,
+    have h' := h f.unop hf,
+    rw [arrow.has_lifting_property_iff_op] at h',
+    simpa only [arrow.op_unop] using h', }
+end
+
+def right_lifting_property_with_op (F : arrow_class C) :
+  F.op.right_lifting_property_with = F.left_lifting_property_with.op :=
+begin
+  ext f,
+  split,
+  { intro h,
+    rw mem_op_iff,
+    intros g hg,
+    rw [arrow.has_lifting_property_iff_op, f.op_unop],
+    exact h g.op (by { rw [mem_op_iff, g.unop_op], exact hg }), },
+  { intro h,
+    intros g hg,
+    rw mem_op_iff at h hg,
+    have h' := h g.unop hg,
+    rw [arrow.has_lifting_property_iff_op] at h',
+    simpa only [arrow.op_unop] using h', }
+end
+
+lemma is_stable_by_retract_of_llp_with (G : arrow_class C) :
+  G.left_lifting_property_with.is_stable_by_retract :=
+begin
+  intros f f' hf' hff' g hg,
+  exact f.has_left_lifting_property_of_retract f' g hff' (hf' g hg),
+end
+
+lemma is_stable_by_retract_of_rlp_with (F : arrow_class C) :
+  F.right_lifting_property_with.is_stable_by_retract :=
+begin
+  intros g g' hg' hgg' f hf,
+  exact g.has_right_lifting_property_of_retract f g' hgg' (hg' f hf),
+end
+
+lemma is_stable_by_composition_of_llp_with (G : arrow_class C) :
+  G.left_lifting_property_with.is_stable_by_composition := sorry
+
+lemma is_stable_by_composition_of_rlp_with (F : arrow_class C) :
+  F.right_lifting_property_with.is_stable_by_composition := sorry
+
+lemma contains_isomorphisms_of_llp_with (G : arrow_class C) :
+  isomorphisms ⊆ G.left_lifting_property_with := sorry
+
+lemma contains_isomorphisms_of_rlp_with (F : arrow_class C) :
+  isomorphisms ⊆ F.right_lifting_property_with := sorry
+
+
+end arrow_class
+
+namespace arrow
+
+lemma is_retract_of_factorisation_and_left_lifting_property
+  (i : arrow C) {Z : C} (j : i.left ⟶ Z) (p : Z ⟶ i.right) (fac : i.hom = j ≫ p)
+  (hip : has_lifting_property i (arrow.mk p)) :
+is_retract i (mk j) :=
+begin
+  let sq : i ⟶ mk p :=
+  { left := j,
+    right := 𝟙 i.right,
+    w' := by { erw [fac, comp_id], refl, }, },
+  have hip' := hip.sq_has_lift,
+  let l := (hip' sq).exists_lift.some,
+  let s : i ⟶ mk j :=
+  { left := 𝟙 i.left,
+    right := l.lift,
+    w' := by simpa only [functor.map_id, id_comp] using l.fac_left.symm, },
+  let r : mk j ⟶ i :=
+  { left := 𝟙 i.left,
+    right := p,
+    w' := by { erw [id_comp, fac], refl, }, },
+  use [s, r],
+  ext,
+  { dsimp,
+    erw id_comp, },
+  { exact l.fac_right, }
+end
+
+lemma congr_hom {f g : arrow C} (h : f = g) :
+  f.hom = eq_to_hom (by rw h) ≫ g.hom ≫ eq_to_hom (by rw h) :=
+by { subst f, erw [id_comp, comp_id], }
+
+end arrow
+
+namespace arrow_class
+
+
+lemma eq_left_lifting_property_with (F G : arrow_class C)
+  (h₁ : arrow_class.factorisation_axiom F G) (h₂ : F.has_lifting_property G)
+  (h₃ : F.is_stable_by_retract) :
+  F = G.left_lifting_property_with :=
+begin
+  ext f,
+  split,
+  { intros hf g hg,
+    exact h₂ f g hf hg, },
+  { intro hf,
+    rcases h₁ f with ⟨Z, j, p, fac, ⟨hj, hp⟩⟩,
+    have fac' := arrow.congr_hom fac,
+    erw [id_comp, comp_id] at fac',
+    have hf' := f.is_retract_of_factorisation_and_left_lifting_property j p fac' (hf (arrow.mk p) hp),
+    exact h₃ f _ hj hf', }
+end
+
+lemma eq_right_lifting_property_with (F G : arrow_class C)
+  (h₁ : arrow_class.factorisation_axiom F G) (h₂ : F.has_lifting_property G)
+  (h₃ : G.is_stable_by_retract) :
+  G = F.right_lifting_property_with :=
+begin
+  have h := G.op.eq_left_lifting_property_with F.op h₁.op h₂.op h₃.op,
+  rw left_lifting_property_with_op at h,
+  rw [← G.unop_op, h, arrow_class.unop_op],
 end
 
 end arrow_class
