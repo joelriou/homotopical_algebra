@@ -46,17 +46,6 @@ begin
     exact is_iso.of_iso (is_terminal.unique_up_to_iso hp₂ terminal_is_terminal), }
 end
 
-lemma arrow.op_mk {T : Type*} [category T] {X Y : T} (f : X ⟶ Y) : (arrow.mk f).op = arrow.mk f.op :=
-begin
-  sorry
-end
-
-lemma arrow.unop_mk {T : Type*} [category T] {X Y : Tᵒᵖ} (f : X ⟶ Y) :
-  (arrow.mk f).unop = arrow.mk f.unop :=
-begin
-  sorry
-end
-
 lemma cofibrant_iff_op (A : M.C) : cofibrant A ↔ fibrant (M.op_obj A) :=
 begin
   split,

@@ -14,19 +14,19 @@ variables {C : Type*} [category C]
 
 namespace category_theory
 
-def is_retract (X Y : C) : Prop := ∃ (s : X ⟶ Y) (p : Y ⟶ X), s ≫ p = 𝟙 X
+def is_retract (X Y : C) : Prop := ∃ (s : X ⟶ Y) (r : Y ⟶ X), s ≫ r = 𝟙 X
 
 def is_retract_iff_op (X Y : C) : is_retract X Y ↔ is_retract (opposite.op X) (opposite.op Y) :=
 begin
   split,
   { intro h,
-    rcases h with ⟨s, p, r⟩,
-    use [p.op, s.op],
-    exact congr_arg (λ (φ : _ ⟶ _), φ.op) r, },
+    rcases h with ⟨s, r, fac⟩,
+    use [r.op, s.op],
+    exact congr_arg (λ (φ : _ ⟶ _), φ.op) fac, },
   { intro h,
-    rcases h with ⟨s, p, r⟩,
-    use [p.unop, s.unop],
-    exact congr_arg (λ (φ : _ ⟶ _), φ.unop) r, },
+    rcases h with ⟨s, r, fac⟩,
+    use [r.unop, s.unop],
+    exact congr_arg (λ (φ : _ ⟶ _), φ.unop) fac, },
 end
 
 def is_retract_imp_of_isos {X Y X' Y' : C} (e₁ : X ≅ X') (e₂ : Y ≅ Y')

@@ -196,6 +196,37 @@ def is_stable_by_base_change :=
 def is_stable_by_cobase_change :=
   ∀ {f f' : arrow C} (sq : f ⟶ f') (hsq : is_cocartesian sq), f ∈ F → f' ∈ F
 
+def factorisation_axiom (F G : arrow_class C) :=
+∀ (f : arrow C), ∃ (Z : C) (i : f.left ⟶ Z) (p : Z ⟶ f.right) (fac : f = arrow.mk (i ≫ p)),
+arrow.mk i ∈ F ∧ arrow.mk p ∈ G
+
+lemma arrow.op_mk {T : Type*} [category T] {X Y : T} (f : X ⟶ Y) : (arrow.mk f).op = arrow.mk f.op := by refl
+
+lemma arrow.unop_mk {T : Type*} [category T] {X Y : Tᵒᵖ} (f : X ⟶ Y) :
+  (arrow.mk f).unop = arrow.mk f.unop := by refl
+
+lemma factorisation_axiom_iff_op (F G : arrow_class C) :
+  factorisation_axiom F G ↔ factorisation_axiom G.op F.op :=
+begin
+  split,
+  { intros h f,
+    rcases h f.unop with ⟨Z, i, p, fac, ⟨r₁, r₂⟩⟩,
+    use [opposite.op Z, p.op, i.op],
+    split,
+    { convert congr_arg arrow.op fac,
+      rw f.op_unop, },
+    { simp only [mem_op_iff, arrow.unop_mk],
+      exact ⟨r₂, r₁⟩, }, },
+  { intros h f,
+    rcases h f.op with ⟨Z, i, p, fac, ⟨r₁, r₂⟩⟩,
+    use [opposite.unop Z, p.unop, i.unop],
+    split,
+    { convert congr_arg arrow.unop fac,
+      rw f.unop_op, },
+    { simp only [mem_op_iff, arrow.unop_mk] at r₁ r₂,
+      exact ⟨r₂, r₁⟩, }, },
+end
+
 end arrow_class
 
 end category_theory

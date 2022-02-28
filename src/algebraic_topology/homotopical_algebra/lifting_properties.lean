@@ -6,7 +6,7 @@ Authors: Joël Riou
 
 import category_theory.arrow_class
 import category_theory.lifting_properties
---import algebraic_topology.homotopical_algebra.retracts
+import category_theory.retracts
 
 open category_theory
 open category_theory.category
@@ -51,17 +51,40 @@ begin
     apply h.1, }
 end
 
-
-/-
-lemma has_right_lifting_property_of_retract {A B X Y X' Y' : C} (p : X ⟶ Y) (i : A ⟶ B) (p' : X' ⟶ Y')
-  (hpp' : p.is_retract p') (hp' : i.left_lifting_property p') : i.left_lifting_property p :=
+lemma has_left_lifting_property_of_retract (i j p : arrow C) (hij : is_retract i j)
+  (hjp : has_lifting_property j p) : has_lifting_property i p :=
 begin
-  rw left_lifting_property_iff_op,
-  rw is_retract_iff_op at hpp',
-  apply has_left_lifting_property_of_retract p.op i.op p'.op hpp',
-  rw ← left_lifting_property_iff_op,
-  exact hp',
-end-/
+  refine ⟨_⟩,
+  intro sq,
+  rcases hij with ⟨s, r, fac⟩,
+  have hjp' := hjp.sq_has_lift,
+  let l := (hjp' (r ≫ sq)).exists_lift.some,
+  exact ⟨nonempty.intro 
+  { lift := s.right ≫ l.lift,
+    fac_left' := begin
+      have fac₁ := congr_arg (λ (φ : i ⟶ i), (φ.left : i.left ⟶ i.left)) fac,
+      have hl₁ := l.fac_left,
+      dsimp at fac₁ hl₁,
+      rw [← id_comp sq.left, ← fac₁, assoc, ← hl₁, ← assoc, ← assoc],
+      congr' 1,
+      exact s.w.symm,
+    end,
+    fac_right' := begin
+      have fac₂ := congr_arg (λ (φ : i ⟶ i), (φ.right : i.right ⟶ i.right)) fac,
+      have hl₂ := l.fac_right,
+      dsimp at fac₂ hl₂,
+      rw [← id_comp sq.right, ← fac₂, assoc, assoc],
+      congr',
+    end} ⟩
+end
+
+lemma has_right_lifting_property_of_retract (q i p : arrow C) (hqp : is_retract q p)
+  (hip : has_lifting_property i p) : has_lifting_property i q :=
+begin
+  rw has_lifting_property_iff_op at ⊢ hip,
+  rw is_retract_iff_op at hqp,
+  exact has_left_lifting_property_of_retract q.op p.op i.op hqp hip,
+end
 
 end arrow
 

@@ -126,23 +126,13 @@ by { dsimp only [CM4], rw [data.CM4a_iff_op, data.CM4b_iff_op], finish, }
 lemma CM4_iff_unop : data'.CM4 ↔ data'.unop.CM4 :=
 by { rw [CM4_iff_op data'.unop, data'.op_unop], }
 
-def CM5a := ∀ (f : arrow D), ∃ (Z : D) (i : f.left ⟶ Z) (p : Z ⟶ f.right) (fac : f =  i ≫ p),
-  arrow.mk i ∈ data.trivial_cofibrations ∧ arrow.mk p ∈ data.fibrations
-
-def CM5b := ∀ (f : arrow D), ∃ (Z : D) (i : f.left ⟶ Z) (p : Z ⟶ f.right) (fac : f =  i ≫ p),
-  arrow.mk i ∈ data.cofibrations ∧ arrow.mk p ∈ data.trivial_fibrations
+def CM5a := arrow_class.factorisation_axiom data.trivial_cofibrations data.fibrations
+def CM5b := arrow_class.factorisation_axiom data.cofibrations data.trivial_fibrations
 
 def CM5 := data.CM5a ∧ data.CM5b
 
-lemma CM5a_iff_op : data.CM5a ↔ data.op.CM5b :=
-begin
-  sorry
-end
-
-lemma CM5b_iff_op : data.CM5b ↔ data.op.CM5a :=
-begin
-  sorry
-end
+lemma CM5a_iff_op : data.CM5a ↔ data.op.CM5b := arrow_class.factorisation_axiom_iff_op _ _
+lemma CM5b_iff_op : data.CM5b ↔ data.op.CM5a := arrow_class.factorisation_axiom_iff_op _ _
 
 lemma CM5_iff_op : data.CM5 ↔ data.op.CM5 :=
 by { dsimp only [CM5], rw [data.CM5a_iff_op, data.CM5b_iff_op], finish, }
