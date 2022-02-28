@@ -23,6 +23,9 @@ variables (C : Type*) [category C]
 
 abbreviation arrow_class := set (arrow C)
 
+instance : has_coe_to_fun (arrow_class C) (λ F, (Π ⦃X Y : C⦄, (X ⟶ Y) → Prop)) :=
+⟨λ F X Y f, (arrow.mk f) ∈ F⟩
+
 variables {C}
 
 namespace arrow
