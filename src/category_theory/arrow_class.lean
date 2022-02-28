@@ -223,8 +223,23 @@ def is_stable_by_base_change :=
 def is_stable_by_cobase_change :=
   ∀ {f f' : arrow C} (sq : f ⟶ f') (hsq : is_cocartesian sq), f ∈ F → f' ∈ F
 
+namespace is_stable_by_cobase_change
+
+lemma for_pushout_inl (hF : F.is_stable_by_cobase_change)
+  {A₀ A₁ A₂ : C} (f₁ : A₀ ⟶ A₁) (f₂ : A₀ ⟶ A₂) (hf₂ : arrow.mk f₂ ∈ F) [has_pushout f₁ f₂] :
+  arrow.mk (pushout.inl : A₁ ⟶ pushout f₁ f₂) ∈ F :=
+hF _ (pushout_square_is_cocartesian f₁ f₂) hf₂
+
+lemma for_pushout_inr (hF : F.is_stable_by_cobase_change)
+  {A₀ A₁ A₂ : C} (f₁ : A₀ ⟶ A₁) (hf₁ : arrow.mk f₁ ∈ F) (f₂ : A₀ ⟶ A₂) [has_pushout f₁ f₂] :
+  arrow.mk (pushout.inr : A₂ ⟶ pushout f₁ f₂) ∈ F :=
+hF _ (pushout_square'_is_cocartesian f₁ f₂) hf₁
+
+end is_stable_by_cobase_change
+
+
 def factorisation_axiom (F G : arrow_class C) :=
-∀ (f : arrow C), ∃ (Z : C) (i : f.left ⟶ Z) (p : Z ⟶ f.right) (fac : f = arrow.mk (i ≫ p)),
+∀ (f : arrow C), ∃ (Z : C) (i : f.left ⟶ Z) (p : Z ⟶ f.right) (fac : f.hom = i ≫ p),
 arrow.mk i ∈ F ∧ arrow.mk p ∈ G
 
 lemma factorisation_axiom_iff_op (F G : arrow_class C) :
@@ -235,16 +250,14 @@ begin
     rcases h f.unop with ⟨Z, i, p, fac, ⟨r₁, r₂⟩⟩,
     use [opposite.op Z, p.op, i.op],
     split,
-    { convert congr_arg arrow.op fac,
-      rw f.op_unop, },
+    { exact quiver.hom.unop_inj fac, },
     { simp only [mem_op_iff, arrow.unop_mk],
       exact ⟨r₂, r₁⟩, }, },
   { intros h f,
     rcases h f.op with ⟨Z, i, p, fac, ⟨r₁, r₂⟩⟩,
     use [opposite.unop Z, p.unop, i.unop],
     split,
-    { convert congr_arg arrow.unop fac,
-      rw f.unop_op, },
+    { exact quiver.hom.op_inj fac, },
     { simp only [mem_op_iff, arrow.unop_mk] at r₁ r₂,
       exact ⟨r₂, r₁⟩, }, },
 end

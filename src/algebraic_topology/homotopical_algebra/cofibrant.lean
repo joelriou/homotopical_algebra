@@ -17,13 +17,13 @@ namespace algebraic_topology
 namespace model_category
 
 @[simp]
-def cofibrant (A : M.C) : Prop := arrow.mk (initial.to A) ∈ M.cofibrations
+def cofibrant (A : M.C) : Prop := arrow.mk (initial.to A) ∈ M.cof
 
 @[simp]
-def fibrant (A : M.C) : Prop := arrow.mk (terminal.from A) ∈ M.fibrations
+def fibrant (A : M.C) : Prop := arrow.mk (terminal.from A) ∈ M.fib
 
-lemma cofibrant_of_cofibration_from_initial (i : arrow M.C)
-  (hi₁ : i ∈ M.cofibrations) (hi₂ : is_initial i.left) : cofibrant i.right :=
+lemma cofibrant_of_cof_from_initial (i : arrow M.C)
+  (hi₁ : i ∈ M.cof) (hi₂ : is_initial i.left) : cofibrant i.right :=
 begin
   have h : initial.to i.right = initial.to i.left ≫ i.hom := subsingleton.elim _ _,
   dsimp only [cofibrant],
@@ -34,8 +34,8 @@ begin
   { rw arrow.mk_eq, exact hi₁, },
 end
 
-lemma fibrant_of_fibration_to_terminal (p : arrow M.C)
-  (hp₁ : p ∈ M.fibrations) (hp₂ : is_terminal p.right) : fibrant p.left :=
+lemma fibrant_of_fib_to_terminal (p : arrow M.C)
+  (hp₁ : p ∈ M.fib) (hp₂ : is_terminal p.right) : fibrant p.left :=
 begin
   have h : terminal.from p.left = p.hom ≫ terminal.from p.right := subsingleton.elim _ _,
   dsimp only [fibrant],
@@ -51,7 +51,7 @@ begin
   split,
   { intro hA,
     dsimp only [fibrant],
-    erw [arrow_class.mem_op_iff M.cofibrations, arrow.unop_mk],
+    erw [arrow_class.mem_op_iff M.cof, arrow.unop_mk],
     convert M.cof_comp_stable _ _ _ (terminal.from (opposite.op (⊥_ M.C))).unop (initial.to A) _ hA, swap,
     { apply M.cof_contains_iso,
       rw [← arrow.unop_mk, ← arrow_class.mem_op_iff,
@@ -64,7 +64,7 @@ begin
     apply is_terminal.hom_ext,
     exact terminal_is_terminal, },
   { intro hA,
-    apply cofibrant_of_cofibration_from_initial _ hA,
+    apply cofibrant_of_cof_from_initial _ hA,
     dsimp,
     apply initial_unop_of_terminal,
     exact terminal_is_terminal, },

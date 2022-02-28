@@ -186,6 +186,11 @@ lemma contains_isomorphisms_of_llp_with (G : arrow_class C) :
 lemma contains_isomorphisms_of_rlp_with (F : arrow_class C) :
   isomorphisms ⊆ F.right_lifting_property_with := sorry
 
+lemma is_stable_by_cobase_change_of_llp_with (G : arrow_class C) :
+  G.left_lifting_property_with.is_stable_by_cobase_change := sorry
+
+lemma is_stable_by_base_change_of_rlp_with (F : arrow_class C) :
+  F.right_lifting_property_with.is_stable_by_base_change := sorry
 
 end arrow_class
 
@@ -237,9 +242,7 @@ begin
     exact h₂ f g hf hg, },
   { intro hf,
     rcases h₁ f with ⟨Z, j, p, fac, ⟨hj, hp⟩⟩,
-    have fac' := arrow.congr_hom fac,
-    erw [id_comp, comp_id] at fac',
-    have hf' := f.is_retract_of_factorisation_and_left_lifting_property j p fac' (hf (arrow.mk p) hp),
+    have hf' := f.is_retract_of_factorisation_and_left_lifting_property j p fac (hf (arrow.mk p) hp),
     exact h₃ f _ hj hf', }
 end
 
