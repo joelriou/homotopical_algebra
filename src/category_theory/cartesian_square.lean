@@ -142,7 +142,7 @@ begin
     erw comp_id, },
 end
 
-lemma pushout_square_is_cocartesian {A₀ A₁ A₂ : C} (f₁ : A₀ ⟶ A₁) (f₂ : A₀ ⟶ A₂) [has_pushout f₁ f₂] :
+def pushout_square_is_cocartesian {A₀ A₁ A₂ : C} (f₁ : A₀ ⟶ A₁) (f₂ : A₀ ⟶ A₂) [has_pushout f₁ f₂] :
   (pushout_square f₁ f₂).is_cocartesian :=
 begin
   dsimp [square.is_cocartesian],
@@ -171,7 +171,7 @@ end is_cocartesian
 end square
 
 
-lemma pushout_square'_is_cocartesian {A₀ A₁ A₂ : C} (f₁ : A₀ ⟶ A₁) (f₂ : A₀ ⟶ A₂) [has_pushout f₁ f₂] :
+def pushout_square'_is_cocartesian {A₀ A₁ A₂ : C} (f₁ : A₀ ⟶ A₁) (f₂ : A₀ ⟶ A₂) [has_pushout f₁ f₂] :
   (pushout_square' f₁ f₂).is_cocartesian :=
 begin
   rw flip_pushout_square,
@@ -179,7 +179,7 @@ begin
   apply pushout_square_is_cocartesian,
 end
 
-lemma horizontal_comp_is_cocartesian (i₁ i₂ i₃ : arrow C) (sq₁₂ : i₁ ⟶ i₂) (sq₂₃ : i₂ ⟶ i₃)
+def horizontal_comp_is_cocartesian (i₁ i₂ i₃ : arrow C) (sq₁₂ : i₁ ⟶ i₂) (sq₂₃ : i₂ ⟶ i₃)
   (h₁₂ : (square.mk sq₁₂).is_cocartesian) (h₂₃ : (square.mk sq₂₃).is_cocartesian) :
   (square.mk (sq₁₂ ≫ sq₂₃)).is_cocartesian :=
 begin
@@ -195,7 +195,7 @@ end
 
 namespace square
 
-lemma is_cocartesian_of_horizontal_is_iso (Sq : square C) (hSq : is_iso Sq.hom) : Sq.is_cocartesian :=
+def is_cocartesian_of_horizontal_is_iso (Sq : square C) (hSq : is_iso Sq.hom) : Sq.is_cocartesian :=
 begin
   letI := hSq,
   let e := as_iso Sq.hom,
@@ -221,21 +221,19 @@ begin
     simp only [arrow.inv_right, is_iso.inv_hom_id_assoc], },
 end
 
-lemma is_cocartesian_of_vertical_is_iso (Sq : square C) (h : is_iso Sq.flip.hom) : Sq.is_cocartesian :=
+def is_cocartesian_of_vertical_is_iso (Sq : square C) (h : is_iso Sq.flip.hom) : Sq.is_cocartesian :=
 (is_cocartesian_of_horizontal_is_iso Sq.flip h).unflip
 
 def is_cocartesian_of_horizontal_comp (Sq₁ Sq₂ : square C) (e : Sq₁.right ≅ Sq₂.left)
   (h₁ : Sq₁.is_cocartesian) (h₂ : Sq₂.is_cocartesian) : 
   (Sq₁.horizontal_comp Sq₂ e).is_cocartesian :=
 begin
-  rcases Sq₁ with ⟨f₁, f₂, sq₁₂⟩,
-  rcases Sq₂ with ⟨f₃, f₄, sq₃₄⟩,
-  have he := is_cocartesian_of_horizontal_is_iso (square.mk e.hom) (is_iso.of_iso e),
-  have h₂₄ := horizontal_comp_is_cocartesian _ _ _ e.hom sq₃₄ he h₂,
-  exact horizontal_comp_is_cocartesian _ _ _ sq₁₂ _ h₁ h₂₄,
+  apply horizontal_comp_is_cocartesian _ _ _ Sq₁.hom _ h₁,
+  refine horizontal_comp_is_cocartesian _ _ _ e.hom Sq₂.hom _ h₂,
+  exact is_cocartesian_of_horizontal_is_iso _ (is_iso.of_iso e),
 end
 
-lemma is_cocartesian_of_vertical_comp (Sq₁ Sq₂ : square C) (e : Sq₁.bottom ≅ Sq₂.top)
+def is_cocartesian_of_vertical_comp (Sq₁ Sq₂ : square C) (e : Sq₁.bottom ≅ Sq₂.top)
   (h₁ : Sq₁.is_cocartesian) (h₂ : Sq₂.is_cocartesian) : 
   (Sq₁.vertical_comp Sq₂ e).is_cocartesian :=
 begin
@@ -244,7 +242,7 @@ begin
   exact is_cocartesian_of_horizontal_comp Sq₁.flip Sq₂.flip e h₁.flip h₂.flip,
 end
 
-lemma is_cocartesian_of_iso (Sq₁ Sq₂ : square C) (e : Sq₁ ≅ Sq₂) (h : Sq₁.is_cocartesian) :
+def is_cocartesian_of_iso (Sq₁ Sq₂ : square C) (e : Sq₁ ≅ Sq₂) (h : Sq₁.is_cocartesian) :
   Sq₂.is_cocartesian :=
 begin
   let e₁ := (comma.fst _ _).map_iso e.symm,
@@ -264,3 +262,4 @@ end
 end square
 
 end category_theory
+
