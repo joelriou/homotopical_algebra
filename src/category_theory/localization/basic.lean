@@ -36,7 +36,7 @@ lemma functor.assoc {C D E F : Type*} [category C] [category D]
   [category E] [category F] (φ : C ⥤ D)
   (φ' : D ⥤ E) (φ'' : E ⥤ F) : (φ ⋙ φ') ⋙ φ'' = φ ⋙ (φ' ⋙ φ'') :=
 by refl
-
+/-
 structure is_localization_same_univ (F : C ⥤ D) (W : arrow_class C) :=
   (inverts_W : W.is_inverted_by F)
   (lift : Π {E : Type u₂} [category.{v₂} E] (G : C ⥤ E) (hG : W.is_inverted_by G), D ⥤ E)
@@ -74,7 +74,7 @@ def localization_is_ess_unique {W : arrow_class C} (F₁ : C ⥤ D) (F₂ : C �
   functor_unit_iso_comp' := begin
     intro X,
     simpa only [eq_to_iso.hom, eq_to_hom_app, eq_to_hom_map, eq_to_hom_trans, eq_to_hom_refl],
-  end }
+  end }-/
 
 
 
