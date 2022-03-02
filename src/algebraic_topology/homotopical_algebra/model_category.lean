@@ -178,8 +178,8 @@ def op : model_category :=
   CM4 := by simpa only [← M.fib_cof_we.CM4_iff_op] using M.CM4,
   CM5 := by simpa only [← M.fib_cof_we.CM5_iff_op] using M.CM5, }
 
-instance : has_finite_limits M.Cᵒᵖ := (op M).CM1.1
-instance : has_finite_colimits M.Cᵒᵖ := (op M).CM1.2
+instance : has_finite_limits M.Cᵒᵖ := M.op.CM1.1
+instance : has_finite_colimits M.Cᵒᵖ := M.op.CM1.2
 
 def cof_retract_stable : M.cof.is_stable_by_retract := M.CM3.cof
 def fib_retract_stable : M.fib.is_stable_by_retract := M.CM3.fib
@@ -241,13 +241,12 @@ by { rw triv_fib_equals_rlp_cof, apply arrow_class.is_stable_by_base_change_of_r
 @[simp]
 def op_obj (X : M.C) : M.op.C := opposite.op X
 
-def Ho := localization M.W
-
-instance : category (Ho M) := (infer_instance : category (localization M.W))
+@[derive category]
+def Ho := M.W.localization
 
 variable {M}
 
-def Q : M.C ⥤ Ho M := category_theory.localization.Q _
+def Q : M.C ⥤ Ho M := arrow_class.localization.Q M.W
 
 end model_category
 

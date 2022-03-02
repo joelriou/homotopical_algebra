@@ -110,9 +110,14 @@ end localization
 @[derive category]
 def localization := category_theory.quotient (localization.relations W)
 
+open localization
+
+
 namespace localization
 
-def Q : C ⥤ localization W :=
+variable (W)
+
+def Q : C ⥤ W.localization :=
 { obj := λ X, (quotient.functor (relations W)).obj (W.ι_loc_quiver X),
   map := λ X Y f, (quotient.functor (relations W)).map (ψ₁ W f),
   map_id' := λ X, begin
@@ -209,37 +214,27 @@ begin
   apply quotient.lift (relations W) (lift_to_path_category G hG),
   { rintro ⟨X⟩ ⟨Y⟩ f₁ f₂ r,
     rcases r with (_|_|_|_),
-    { rcases r with ⟨X', r⟩,
-      have eqX := relation.congr_X_obj r.symm,
+    work_on_goal 0 { rcases r with ⟨X', r⟩, },
+    work_on_goal 1 { rcases r with ⟨⟨⟨⟨X',Z,f⟩,⟨Z',Y',g⟩⟩, h⟩, r⟩, },
+    work_on_goal 2 { rcases r with ⟨w, r⟩, },
+    work_on_goal 3 { rcases r with ⟨w, r⟩, },
+    all_goals {
+      have eqX := relation.congr_X_obj r,
       have eqY := relation.congr_Y_obj r,
-      dsimp [relations₀, arrow.mk] at eqX eqY r,
-      substs eqX eqY,
-      have eqf₁ := relation.congr_f₁ r,
-      have eqf₂ := relation.congr_f₂ r,
-      substs eqf₁ eqf₂,
-      erw [lift_ψ₁_eq, functor.map_id, functor.map_id],
-      refl, },
-    { rcases r with ⟨⟨⟨⟨X',Z,f⟩,⟨Z',Y',g⟩⟩, h⟩, r⟩,
-      have eqX := relation.congr_X_obj r.symm,
-      have eqY := relation.congr_Y_obj r.symm,
-      dsimp at h eqX eqY,
-      substs eqX eqY h,
-      have eqf₁ := relation.congr_f₁ r,
-      have eqf₂ := relation.congr_f₂ r,
-      substs eqf₁ eqf₂, clear r,
-      dsimp only [arrow.mk],
-      simp only [functor.map_comp, lift_ψ₁_eq,
-        eq_to_hom_refl, functor.map_id, id_comp], },
-    all_goals
-    { rcases r with ⟨w, r⟩,
-      have eqX := relation.congr_X_obj r.symm,
-      have eqY := relation.congr_Y_obj r.symm,
       dsimp at eqX eqY,
       substs eqX eqY,
       have eqf₁ := relation.congr_f₁ r,
       have eqf₂ := relation.congr_f₂ r,
-      substs eqf₁ eqf₂, clear r,
-      erw [functor.map_comp, functor.map_id, lift_ψ₁_eq, lift_ψ₂_eq], },
+      substs eqf₁ eqf₂, clear r, },
+    { erw [lift_ψ₁_eq, functor.map_id, functor.map_id],
+      refl, },
+    { dsimp at h,
+      substs h,
+      dsimp only [arrow.mk],
+      simp only [functor.map_comp, lift_ψ₁_eq,
+        eq_to_hom_refl, functor.map_id, id_comp], },
+    all_goals
+    { erw [functor.map_comp, functor.map_id, lift_ψ₁_eq, lift_ψ₂_eq], },
     { apply is_iso.hom_inv_id, },
     { apply is_iso.inv_hom_id, }, },
 end
