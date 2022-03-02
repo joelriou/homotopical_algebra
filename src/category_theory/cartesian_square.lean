@@ -93,18 +93,18 @@ lemma vertical_comp_eq (Sq₁ Sq₂ : square C) (e : Sq₁.bottom ≅ Sq₂.top)
 vertical_comp Sq₁ Sq₂ e = (horizontal_comp Sq₁.flip Sq₂.flip e).flip := by refl
 
 @[simps]
-def cone_of_square (Sq : square C) : pullback_cone Sq.right.hom Sq.bottom.hom :=
+def cone (Sq : square C) : pullback_cone Sq.right.hom Sq.bottom.hom :=
 pullback_cone.mk Sq.top.hom Sq.left.hom Sq.hom.w'
 
 @[simps]
-def cocone_of_square (Sq : square C) : pushout_cocone Sq.top.hom Sq.left.hom :=
+def cocone (Sq : square C) : pushout_cocone Sq.top.hom Sq.left.hom :=
 pushout_cocone.mk Sq.right.hom Sq.bottom.hom Sq.hom.w'
 
 @[simp]
-def is_cartesian (Sq : square C) := is_limit (cone_of_square Sq)
+def is_cartesian (Sq : square C) := is_limit (Sq.cone)
 
 @[simp]
-def is_cocartesian (Sq : square C) := is_colimit (cocone_of_square Sq)
+def is_cocartesian (Sq : square C) := is_colimit (Sq.cocone)
 
 def is_cocartesian_of_eq (Sq₁ Sq₂ : square C) (h₀ : Sq₁ = Sq₂) (h₁ : Sq₁.is_cocartesian) :
   Sq₂.is_cocartesian :=
@@ -166,10 +166,23 @@ def unflip {Sq : square C} (hSq : Sq.flip.is_cocartesian) : Sq.is_cocartesian :=
 by { rw ← Sq.flip_flip,
 exact is_cocartesian.flip hSq, }
 
+def has_pushout {Sq : square C} (hSq : Sq.is_cocartesian) : has_pushout Sq.top.hom Sq.left.hom :=
+⟨nonempty.intro
+  { cocone := Sq.cocone,
+  is_colimit := hSq, }⟩
+
 end is_cocartesian
 
-end square
+namespace is_cartesian
 
+def has_pullback {Sq : square C} (hSq : Sq.is_cartesian) : has_pullback Sq.right.hom Sq.bottom.hom :=
+⟨nonempty.intro
+  { cone := Sq.cone,
+    is_limit := hSq, }⟩
+
+end is_cartesian
+
+end square
 
 def pushout_square'_is_cocartesian {A₀ A₁ A₂ : C} (f₁ : A₀ ⟶ A₁) (f₂ : A₀ ⟶ A₂) [has_pushout f₁ f₂] :
   (pushout_square' f₁ f₂).is_cocartesian :=
@@ -204,7 +217,7 @@ begin
   dsimp at *,
   refine pushout_cocone.is_colimit_aux _ (λ s, e₂.inv ≫ s.ι.app walking_span.right) _ _ _,
   { intro s,
-    dsimp [cocone_of_square],
+    dsimp [cocone],
     have h₁ := s.ι.naturality walking_span.hom.fst,
     have h₂ := s.ι.naturality walking_span.hom.snd,
     erw comp_id at h₁ h₂,
@@ -213,11 +226,11 @@ begin
     erw [← assoc, ← he, assoc, h₂, ← h₁],
     simp only [arrow.inv_left, is_iso.inv_hom_id_assoc], },
   { intro s,
-    dsimp [cocone_of_square],
+    dsimp [cocone],
     simp only [arrow.inv_right, is_iso.hom_inv_id_assoc], },
   { intros s m hm,
     rw ← hm walking_span.right,
-    dsimp [cocone_of_square],
+    dsimp [cocone],
     simp only [arrow.inv_right, is_iso.inv_hom_id_assoc], },
 end
 

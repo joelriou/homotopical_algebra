@@ -4,7 +4,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Joël Riou
 -/
 
-import category_theory.localization.basic
 import category_theory.arrow_class
 import category_theory.quotient
 import category_theory.path_category
@@ -19,19 +18,32 @@ namespace category_theory
 universes v v' u u'
 
 variables {C : Type u} [category.{v} C]
+variables {D : Type u'} [category.{v'} D]
 variable (W : arrow_class C)
 
+namespace arrow
+
+def is_inverted_by (f : arrow C) (F : C ⥤ D) : Prop := is_iso (F.map f.hom)
+
+end arrow
+
+namespace arrow_class
+
+def is_inverted_by (W : arrow_class C) (F : C ⥤ D) : Prop :=
+∀ (f : W), f.1.is_inverted_by F
+
+end arrow_class
 
 namespace localization
 
 include W
 
-structure preloc := (as : C)
-
-instance : quiver (preloc W) :=
-{ hom := λ A B,  (A.as ⟶ B.as) ⊕ { f : B.as ⟶ A.as // arrow.mk f ∈ W} }
+structure loc_quiver := (obj : C)
 
 omit W
+
+instance : quiver (loc_quiver W) :=
+{ hom := λ A B, (A.obj ⟶ B.obj) ⊕ { f : B.obj ⟶ A.obj // arrow.mk f ∈ W} }
 
 def R₁ := Σ (T : C × C × C), (T.1 ⟶ T.2.1) × (T.2.1 ⟶ T.2.2)
 def R₂ := Σ (T : C × C), { f : T.1 ⟶ T.2 // arrow.mk f ∈ W }
@@ -39,9 +51,9 @@ def R₃ := R₂ W
 
 def ρ₁ {X Y Z : C} (f : X ⟶ Y) (g : Y ⟶ Z) : R₁ := ⟨⟨X, ⟨Y, Z⟩⟩, ⟨f, g⟩⟩
 
-def F := Σ (D : paths (preloc W) × paths (preloc W)), (D.1 ⟶ D.2) × (D.1 ⟶ D.2)
+def F := Σ (D : paths (loc_quiver W) × paths (loc_quiver W)), (D.1 ⟶ D.2) × (D.1 ⟶ D.2)
 
-def φ (X : C) : paths (preloc W) := paths.of.obj { as := X }
+def φ (X : C) : paths (loc_quiver W) := paths.of.obj { obj := X }
 def ψ₁ (f : arrow C) : φ W f.left ⟶ φ W f.right := paths.of.map (sum.inl f.hom)
 def ψ₂' (g : arrow C) (hg : g ∈ W) : φ W g.right ⟶ φ W g.left := paths.of.map (sum.inr ⟨g.hom, (by { convert hg, rw arrow.mk_eq, })⟩)
 def ψ₂ (w : W) : φ W w.1.right ⟶ φ W w.1.left :=
@@ -56,11 +68,11 @@ def relations₃ (w : W) : F W :=
 by { refine ⟨⟨⟨w.1.right⟩, ⟨w.1.right⟩⟩ , ψ₂ W w ≫ ψ₁ W w.1, 𝟙 _⟩, }
 
 variable {W}
-def belongs_to {A B : paths (preloc W)} (f g : A ⟶ B) {D : Type*} (relations : D → F W) : Prop :=
+def belongs_to {A B : paths (loc_quiver W)} (f g : A ⟶ B) {D : Type*} (relations : D → F W) : Prop :=
 ∃ (r : D), relations r = ⟨⟨A, B⟩, ⟨f, g⟩⟩
 
 variable (W)
-def relations : hom_rel (paths (preloc W)) :=
+def relations : hom_rel (paths (loc_quiver W)) :=
 λ X Y f g, belongs_to f g (relations₀ W) ∨ belongs_to f g (relations₁ W) ∨
   belongs_to f g (relations₂ W) ∨ belongs_to f g (relations₃ W)
 
@@ -68,10 +80,8 @@ end localization
 
 variable (W)
 
-def localization : Type u := category_theory.quotient (localization.relations W)
-
-instance : category (localization W) :=
-(infer_instance : category (category_theory.quotient (localization.relations W)))
+@[derive category]
+def localization := category_theory.quotient (localization.relations W)
 
 namespace localization
 
@@ -124,7 +134,7 @@ lemma congr_map {D D' : Type*} [category D] [category D'] (F : D ⥤ D')
 by { subst h, }
 
 noncomputable def lift_quiver {D : Type*} [category D] (G : C ⥤ D) (hG : W.is_inverted_by G) :
-  prefunctor (preloc W) D :=
+  prefunctor (loc_quiver W) D :=
 { obj := by { rintro ⟨X⟩, exact G.obj X, },
   map := begin
     rintros ⟨X⟩ ⟨Y⟩ (f|⟨g, hg⟩),
@@ -135,7 +145,7 @@ noncomputable def lift_quiver {D : Type*} [category D] (G : C ⥤ D) (hG : W.is_
 
 /-- Fix category_theory.theory.Quiv.lean-/
 noncomputable def functor_quiver {D : Type u'} [category.{v'} D] (G : C ⥤ D) (hG : W.is_inverted_by G) :
-  paths (preloc W) ⥤ D :=
+  paths (loc_quiver W) ⥤ D :=
 { obj := λ X, (lift_quiver G hG).obj X,
   map := λ X Y f, compose_path ((lift_quiver G hG).map_path f), }
 
@@ -160,8 +170,8 @@ begin
     rcases r with (_|_|_|_),
     { rcases r with ⟨X', r⟩,
       have eq₁ := congr_arg sigma.fst r,
-      have eqX : X = X' := congr_arg preloc.as (prod.mk.inj eq₁).1.symm,
-      have eqY : X' = Y := congr_arg preloc.as (prod.mk.inj eq₁).2,
+      have eqX : X = X' := congr_arg loc_quiver.obj (prod.mk.inj eq₁).1.symm,
+      have eqY : X' = Y := congr_arg loc_quiver.obj (prod.mk.inj eq₁).2,
       substs eqX eqY,
       have eq₂ := eq_of_heq (sigma.mk.inj r).2,
       rw [← (prod.mk.inj eq₂).1, ← (prod.mk.inj eq₂).2],
@@ -169,16 +179,16 @@ begin
       exact G.map_id X, },
     { rcases r with ⟨⟨⟨X', ⟨Z, Y'⟩⟩, ⟨g, g'⟩⟩, r⟩,
       have eq₁ := congr_arg sigma.fst r,
-      have eqX : X = X' := congr_arg preloc.as (prod.mk.inj eq₁).1.symm,
-      have eqY : Y = Y' := congr_arg preloc.as (prod.mk.inj eq₁).2.symm,
+      have eqX : X = X' := congr_arg loc_quiver.obj (prod.mk.inj eq₁).1.symm,
+      have eqY : Y = Y' := congr_arg loc_quiver.obj (prod.mk.inj eq₁).2.symm,
       substs eqX eqY,
       have eq₂ := eq_of_heq (sigma.mk.inj r).2,
       rw [← (prod.mk.inj eq₂).1, ← (prod.mk.inj eq₂).2, functor.map_comp],
       simpa only [lift_quiver_map_ψ₁, ← G.map_comp], },
     { rcases r with ⟨w, r⟩,
       have eq₁ := congr_arg sigma.fst r,
-      have eqX : w.1.left = X := congr_arg preloc.as (prod.mk.inj eq₁).1,
-      have eqY : w.1.left = Y := congr_arg preloc.as (prod.mk.inj eq₁).2,
+      have eqX : w.1.left = X := congr_arg loc_quiver.obj (prod.mk.inj eq₁).1,
+      have eqY : w.1.left = Y := congr_arg loc_quiver.obj (prod.mk.inj eq₁).2,
       substs eqX eqY,
       have eq₂ := eq_of_heq (sigma.mk.inj r).2,
       rw [← (prod.mk.inj eq₂).1, ← (prod.mk.inj eq₂).2],
@@ -186,8 +196,8 @@ begin
         is_iso.hom_inv_id], },
     { rcases r with ⟨⟨g, hg⟩, r⟩,
       have eq₁ := congr_arg sigma.fst r,
-      have eqX : g.right = X := congr_arg preloc.as (prod.mk.inj eq₁).1,
-      have eqY : g.right = Y := congr_arg preloc.as (prod.mk.inj eq₁).2,
+      have eqX : g.right = X := congr_arg loc_quiver.obj (prod.mk.inj eq₁).1,
+      have eqY : g.right = Y := congr_arg loc_quiver.obj (prod.mk.inj eq₁).2,
       substs eqX eqY,
       have eq₂ := eq_of_heq (sigma.mk.inj r).2,
       rw [← (prod.mk.inj eq₂).1, ← (prod.mk.inj eq₂).2],
@@ -239,10 +249,9 @@ instance (w : W) : is_iso ((Q W).map w.1.hom) := is_iso.of_iso (Wiso w)
 
 end localization
 
-variables {D : Type v'} [category.{u'} D]
 variable (L : C ⥤ D)
 
-structure is_localization (L : C ⥤ D) (W : arrow_class C):=
+structure is_localization (L : C ⥤ D) (W : arrow_class C) :=
 (inverts_W : W.is_inverted_by L)
 (is_equivalence : is_equivalence (localization.lift L inverts_W))
 
