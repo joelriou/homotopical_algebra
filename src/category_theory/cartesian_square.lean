@@ -5,6 +5,7 @@ Authors: Joël Riou
 -/
 
 import category_theory.limits.shapes.pullbacks
+import category_theory.limits.shapes.finite_products
 import category_theory.comma_op
 
 noncomputable theory
@@ -129,6 +130,13 @@ square.mk' (arrow.mk f₁) (arrow.mk (pushout.inr : A₂ ⟶ pushout f₁ f₂))
 lemma flip_pushout_square {A₀ A₁ A₂ : C} (f₁ : A₀ ⟶ A₁) (f₂ : A₀ ⟶ A₂) [has_pushout f₁ f₂] :
   pushout_square' f₁ f₂ = (pushout_square f₁ f₂).flip := by refl
 
+@[simps]
+def coprod_square (A₁ A₂ : C) [has_initial C] [has_binary_coproduct A₁ A₂] : square C :=
+square.mk' (arrow.mk (initial.to A₂)) (arrow.mk (coprod.inl : A₁ ⟶ coprod A₁ A₂ ))
+{ left := initial.to A₁,
+  right := coprod.inr,
+  w' := by { dsimp, apply subsingleton.elim, }, }
+
 @[ext]
 lemma cocone.ext {J C : Type*} [category J] [category C] {F : J ⥤ C} (c₁ c₂ : cocone F)
   (hX : c₁.X = c₂.X) (hι : c₁.ι = c₂.ι ≫ eq_to_hom (by rw hX)) : c₁ = c₂ :=
@@ -154,7 +162,24 @@ begin
     { cases x; { erw comp_id, refl, }, }, },
   { refl, }
 end
+
+def coprod_square_is_cocartesian (A₁ A₂ : C) [has_initial C] [has_binary_coproduct A₁ A₂] :
+  (coprod_square A₁ A₂).is_cocartesian :=
+begin
+  dsimp [square.is_cocartesian],
+  refine pushout_cocone.is_colimit_aux _
+    (λ s, coprod.desc (s.ι.app walking_span.left) (s.ι.app walking_span.right)) _ _ _,
+  { intro s, erw [coprod.inl_desc], },
+  { intro s, erw [coprod.inr_desc], },
+  { intros s m hm,
+    dsimp [square.cocone],
+    ext,
+    { erw [coprod.inl_desc, ← hm, square.cocone_ι_app, coprod_square_right_hom], },
+    { erw [coprod.inr_desc, ← hm, square.cocone_ι_app, coprod_square_hom_right], }, },
+end
+
 namespace square
+
 namespace is_cocartesian
 
 @[protected]
