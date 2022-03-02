@@ -41,20 +41,10 @@ def unop : category_with_fib_cof_W D :=
   W := data'.W.unop }
 
 lemma unop_op : data.op.unop = data :=
-begin
-  ext1,
-  { exact arrow_class.unop_op data.fib, },
-  { exact arrow_class.unop_op data.cof, },
-  { exact arrow_class.unop_op data.W, },
-end
+by ext1; apply arrow_class.unop_op
 
 lemma op_unop : data'.unop.op = data' :=
-begin
-  ext1,
-  { exact arrow_class.op_unop data'.fib, },
-  { exact arrow_class.op_unop data'.cof, },
-  { exact arrow_class.op_unop data'.W, },
-end
+by ext1; apply arrow_class.op_unop
 
 def triv_fib := data.fib ∩ data.W
 def triv_cof := data.cof ∩ data.W
