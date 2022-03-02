@@ -17,16 +17,16 @@ namespace algebraic_topology
 namespace model_category
 
 @[simp]
-def cofibrant (A : M.C) : Prop := arrow.mk (initial.to A) ∈ M.cof
+def is_cofibrant (A : M.C) : Prop := arrow.mk (initial.to A) ∈ M.cof
 
 @[simp]
-def fibrant (A : M.C) : Prop := arrow.mk (terminal.from A) ∈ M.fib
+def is_fibrant (A : M.C) : Prop := arrow.mk (terminal.from A) ∈ M.fib
 
-lemma cofibrant_of_cof_from_initial (i : arrow M.C)
-  (hi₁ : i ∈ M.cof) (hi₂ : is_initial i.left) : cofibrant i.right :=
+lemma is_cofibrant_of_cof_from_initial (i : arrow M.C)
+  (hi₁ : i ∈ M.cof) (hi₂ : is_initial i.left) : is_cofibrant i.right :=
 begin
   have h : initial.to i.right = initial.to i.left ≫ i.hom := subsingleton.elim _ _,
-  dsimp only [cofibrant],
+  dsimp only [is_cofibrant],
   rw h,
   apply M.cof_comp_stable,
   { apply M.cof_contains_iso,
@@ -34,11 +34,11 @@ begin
   { rw arrow.mk_eq, exact hi₁, },
 end
 
-lemma fibrant_of_fib_to_terminal (p : arrow M.C)
-  (hp₁ : p ∈ M.fib) (hp₂ : is_terminal p.right) : fibrant p.left :=
+lemma is_fibrant_of_fib_to_terminal (p : arrow M.C)
+  (hp₁ : p ∈ M.fib) (hp₂ : is_terminal p.right) : is_fibrant p.left :=
 begin
   have h : terminal.from p.left = p.hom ≫ terminal.from p.right := subsingleton.elim _ _,
-  dsimp only [fibrant],
+  dsimp only [is_fibrant],
   rw h,
   apply M.fib_comp_stable,
   { rw arrow.mk_eq, exact hp₁, },
@@ -46,11 +46,11 @@ begin
     exact is_iso.of_iso (is_terminal.unique_up_to_iso hp₂ terminal_is_terminal), }
 end
 
-lemma cofibrant_iff_op (A : M.C) : cofibrant A ↔ fibrant (M.op_obj A) :=
+lemma is_cofibrant_iff_op (A : M.C) : is_cofibrant A ↔ is_fibrant (M.op_obj A) :=
 begin
   split,
   { intro hA,
-    dsimp only [fibrant],
+    dsimp only [is_fibrant],
     erw [arrow_class.mem_op_iff M.cof, arrow.unop_mk],
     convert M.cof_comp_stable _ _ _ (terminal.from (opposite.op (⊥_ M.C))).unop (initial.to A) _ hA, swap,
     { apply M.cof_contains_iso,
@@ -64,13 +64,14 @@ begin
     apply is_terminal.hom_ext,
     exact terminal_is_terminal, },
   { intro hA,
-    apply cofibrant_of_cof_from_initial _ hA,
+    apply is_cofibrant_of_cof_from_initial _ hA,
     dsimp,
     apply initial_unop_of_terminal,
     exact terminal_is_terminal, },
 end
 
-lemma fibrant_iff_op (A : M.C) : fibrant A ↔ cofibrant (M.op_obj A) := sorry
+
+lemma fibrant_iff_op (A : M.C) : is_fibrant A ↔ is_cofibrant (M.op_obj A) := sorry
 
 end model_category
 

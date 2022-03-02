@@ -153,6 +153,9 @@ def W := M.fib_cof_we.W
 def triv_fib := M.fib_cof_we.triv_fib
 def triv_cof := M.fib_cof_we.triv_cof
 
+lemma triv_cof_contains_W : M.triv_cof ⊆ M.W := λ f hf, hf.2
+lemma triv_fib_contains_W : M.triv_fib ⊆ M.W := λ f hf, hf.2
+
 def CM4a := M.CM4.1
 def CM4b := M.CM4.2
 def CM5a := M.CM5.1
@@ -219,22 +222,30 @@ by { rw fib_equals_rlp_triv_cof, apply arrow_class.contains_isomorphisms_of_rlp_
 lemma triv_fib_contains_iso : arrow_class.isomorphisms ⊆ M.triv_fib :=
 by { rw triv_fib_equals_rlp_cof, apply arrow_class.contains_isomorphisms_of_rlp_with, }
 
-lemma cof_cobase_change_stable : M.cof.is_stable_by_cobase_change :=
+lemma W_contains_iso : arrow_class.isomorphisms ⊆ M.W :=
+begin
+  intros f hf,
+  suffices : f ∈ M.triv_cof,
+  { exact this.2, },
+  rw triv_cof_equals_llp_fib,
+  exact M.fib.contains_isomorphisms_of_llp_with hf,
+end 
+
+lemma cof_co_bc_stable : M.cof.is_stable_by_cobase_change :=
 by { rw cof_equals_llp_triv_fib, apply arrow_class.is_stable_by_cobase_change_of_llp_with, }
-lemma triv_cof_cobase_change_stable : M.triv_cof.is_stable_by_cobase_change :=
+lemma triv_cof_co_bc_stable : M.triv_cof.is_stable_by_cobase_change :=
 by { rw triv_cof_equals_llp_fib, apply arrow_class.is_stable_by_cobase_change_of_llp_with, }
-lemma fib_base_change_stable : M.fib.is_stable_by_base_change :=
+/-lemma fib_base_change_stable : M.fib.is_stable_by_base_change :=
 by { rw fib_equals_rlp_triv_cof, apply arrow_class.is_stable_by_base_change_of_rlp_with, }
 lemma triv_fib_base_change_stable : M.triv_fib.is_stable_by_base_change :=
 by { rw triv_fib_equals_rlp_cof, apply arrow_class.is_stable_by_base_change_of_rlp_with, }
+-/
 
 @[simp]
 def op_obj (X : M.C) : M.op.C := opposite.op X
 
 @[derive category]
 def Ho := M.W.localization
-
-variable {M}
 
 def Q : M.C ⥤ Ho M := arrow_class.localization.Q M.W
 

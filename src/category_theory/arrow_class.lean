@@ -220,13 +220,19 @@ begin
   finish,
 end
 
-def is_stable_by_base_change :=
-  ∀ {f' f : arrow C} (sq : f' ⟶ f) (hsq : is_cartesian sq), f ∈ F → f' ∈ F
+--def is_stable_by_base_change :=
+--  ∀ {f' f : arrow C} (sq : f' ⟶ f) (hsq : is_cartesian sq), f ∈ F → f' ∈ F
 
 def is_stable_by_cobase_change :=
-  ∀ {f f' : arrow C} (sq : f ⟶ f') (hsq : is_cocartesian sq), f ∈ F → f' ∈ F
+  ∀ (Sq : square C) (hSq : Sq.is_cocartesian),
+  Sq.left ∈ F → Sq.right ∈ F
 
 namespace is_stable_by_cobase_change
+
+variable {F}
+def down (hF : F.is_stable_by_cobase_change)
+  (Sq : square C) (hSq : Sq.is_cocartesian) :
+  Sq.top ∈ F → Sq.bottom ∈ F := hF _ hSq.flip
 
 lemma for_pushout_inl (hF : F.is_stable_by_cobase_change)
   {A₀ A₁ A₂ : C} (f₁ : A₀ ⟶ A₁) (f₂ : A₀ ⟶ A₂) (hf₂ : arrow.mk f₂ ∈ F) [has_pushout f₁ f₂] :
@@ -236,10 +242,22 @@ hF _ (pushout_square_is_cocartesian f₁ f₂) hf₂
 lemma for_pushout_inr (hF : F.is_stable_by_cobase_change)
   {A₀ A₁ A₂ : C} (f₁ : A₀ ⟶ A₁) (hf₁ : arrow.mk f₁ ∈ F) (f₂ : A₀ ⟶ A₂) [has_pushout f₁ f₂] :
   arrow.mk (pushout.inr : A₂ ⟶ pushout f₁ f₂) ∈ F :=
-hF _ (pushout_square'_is_cocartesian f₁ f₂) hf₁
+hF.down _ (pushout_square_is_cocartesian f₁ f₂) hf₁
+
+lemma for_coprod_inl (hF : F.is_stable_by_cobase_change) [has_initial C]
+  (A₁ A₂ : C) [has_binary_coproduct A₁ A₂]
+  (hA₂ : arrow.mk (initial.to A₂) ∈ F) :
+  (arrow.mk (coprod.inl : A₁ ⟶ coprod A₁ A₂)) ∈ F :=
+hF _ (coprod_square_is_cocartesian _ _) hA₂
+
+lemma for_coprod_inr (hF : F.is_stable_by_cobase_change) [has_initial C]
+  (A₁ A₂ : C) [has_binary_coproduct A₁ A₂]
+  (hA₁ : arrow.mk (initial.to A₁) ∈ F) :
+  (arrow.mk (coprod.inr : A₂ ⟶ coprod A₁ A₂)) ∈ F :=
+hF.down _ (coprod_square_is_cocartesian _ _) hA₁
+
 
 end is_stable_by_cobase_change
-
 
 def factorisation_axiom (F G : arrow_class C) :=
 ∀ (f : arrow C), ∃ (Z : C) (i : f.left ⟶ Z) (p : Z ⟶ f.right) (fac : f.hom = i ≫ p),

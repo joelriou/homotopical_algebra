@@ -66,6 +66,22 @@ variable {M}
 
 namespace precylinder
 
+def Wd₀ {A : M.C} (P : precylinder A) : arrow.mk P.d₀ ∈ M.W :=
+begin
+  apply M.CM2.of_comp_right P.d₀ P.σ P.Wσ,
+  rw P.σd₀,
+  apply M.W_contains_iso,
+  exact is_iso.of_iso (iso.refl A),
+end
+
+def Wd₁ {A : M.C} (P : precylinder A) : arrow.mk P.d₁ ∈ M.W :=
+begin
+  apply M.CM2.of_comp_right P.d₁ P.σ P.Wσ,
+  rw P.σd₁,
+  apply M.W_contains_iso,
+  exact is_iso.of_iso (iso.refl A),
+end
+
 structure left_homotopic {A B : M.C} (P : precylinder A) (f g : A ⟶ B) :=
 (h : P.I ⟶ B) (h₀ : P.d₀ ≫ h = f) (h₁ : P.d₁ ≫ h = g)
 
@@ -82,7 +98,23 @@ end precylinder
 
 namespace cylinder
 
-def trans {A : M.C} (C : cylinder A) (C' : cylinder A) (hA : cofibrant A) : cylinder A :=
+def cof_d₀ {A : M.C} (C : cylinder A) (hA : is_cofibrant A) :
+  arrow.mk C.d₀ ∈ M.cof :=
+begin
+  have h := M.cof_co_bc_stable.for_coprod_inl A A hA,
+  convert M.cof_comp_stable _ _ _ _ _ h C.cof,
+  simp only [coprod.inl_desc],
+end
+
+def cof_d₁ {A : M.C} (C : cylinder A) (hA : is_cofibrant A) :
+  arrow.mk C.d₁ ∈ M.cof :=
+begin
+  have h := M.cof_co_bc_stable.for_coprod_inr A A hA,
+  convert M.cof_comp_stable _ _ _ _ _ h C.cof,
+  erw coprod.inr_desc,
+end
+
+def trans {A : M.C} (C : cylinder A) (C' : cylinder A) (hA : is_cofibrant A) : cylinder A :=
 { I := pushout C.d₁ C'.d₀,
   d₀ := C.d₀ ≫ pushout.inl,
   d₁ := C'.d₁ ≫ pushout.inr,
@@ -94,7 +126,15 @@ def trans {A : M.C} (C : cylinder A) (C' : cylinder A) (hA : cofibrant A) : cyli
     sorry,
   end,
   Wσ := begin
-    sorry,
+    apply M.CM2.of_comp_left (C.d₀ ≫ pushout.inl ),
+    { apply M.triv_cof_contains_W,
+      apply M.triv_cof_comp_stable,
+      { exact ⟨C.cof_d₀ hA, C.to_precylinder.Wd₀⟩, },
+      { apply M.triv_cof_co_bc_stable.for_pushout_inl,
+        exact ⟨C'.cof_d₀ hA, C'.to_precylinder.Wd₀⟩, } },
+    { rw [assoc, pushout.inl_desc, C.σd₀],
+      apply W_contains_iso,
+      exact is_iso.of_iso (iso.refl A), },
   end, }
 
 end cylinder
@@ -112,7 +152,7 @@ def symm {A B : M.C} (P : precylinder A) {f g : A ⟶ B} (H : P.left_homotopic f
   h₀ := H.h₁,
   h₁ := H.h₀ }
 
-def trans {A B : M.C} (P P' : cylinder A) (hA : cofibrant A) {f₁ f₂ f₃ : A ⟶ B}
+def trans {A B : M.C} (P P' : cylinder A) (hA : is_cofibrant A) {f₁ f₂ f₃ : A ⟶ B}
   (H₁ : P.to_precylinder.left_homotopic f₁ f₂) (H₂ : P'.to_precylinder.left_homotopic f₂ f₃) :
     (P.trans P' hA).to_precylinder.left_homotopic f₁ f₃ :=
 { h := pushout.desc H₁.h H₂.h (by rw [H₁.h₁, H₂.h₀]),
