@@ -36,6 +36,32 @@ begin
   erw [comp_id, id_comp],
 end
 
+@[simps]
+def coproduct_cofan {J : Type*} (f : J → arrow C) [has_coproduct (λ j, (f j).left)]
+  [has_coproduct (λ j, (f j).right)] : cofan f :=
+{ X :=
+  { left := ∐ (λ j, (f j).left),
+    right := ∐ (λ j, (f j).right),
+    hom := limits.sigma.map (λ j, (f j).hom) },
+  ι :=
+  { app := λ j,
+    { left := limits.sigma.ι ((λ j, (f j).left)) j,
+      right := limits.sigma.ι ((λ j, (f j).right)) j, } } }
+
+@[simps]
+def binary_coproduct_cofan (f₁ f₂ : arrow C) [has_binary_coproduct f₁.left f₂.left]
+  [has_binary_coproduct f₁.right f₂.right] : binary_cofan f₁ f₂ :=
+{ X :=
+  { left := coprod f₁.left f₂.left,
+    right := coprod f₁.right f₂.right,
+    hom := coprod.map f₁.hom f₂.hom },
+  ι :=
+  { app := λ j, begin
+    cases j,
+    { exact { left := coprod.inl, right := coprod.inl, }, },
+    { exact { left := coprod.inr, right := coprod.inr, }, },
+  end, } }
+
 end arrow
 
 namespace square
@@ -59,7 +85,7 @@ def mk {f g : arrow C} (sq : f ⟶ g) : square C := arrow.mk sq
 def mk' (f g : arrow C) (sq : f ⟶ g) : square C := square.mk sq
 
 @[simps]
-def mk'' {X₁ X₂ Y₁ Y₂ : C} (l : X₁ ⟶ Y₁) (b : Y₁ ⟶ Y₂) (t : X₁ ⟶ X₂) (r : X₂ ⟶ Y₂)
+def mk'' {X₁ X₂ Y₁ Y₂ : C} (l : X₁ ⟶ Y₁) (r : X₂ ⟶ Y₂) (t : X₁ ⟶ X₂) (b : Y₁ ⟶ Y₂)
   (fac : t ≫ r = l ≫ b) : square C := mk' (arrow.mk l) (arrow.mk r) (arrow.hom_mk fac)
 
 @[simps]
@@ -176,6 +202,13 @@ begin
     ext,
     { erw [coprod.inl_desc, ← hm, square.cocone_ι_app, coprod_square_right_hom], },
     { erw [coprod.inr_desc, ← hm, square.cocone_ι_app, coprod_square_hom_right], }, },
+end
+
+def coprod_inl_with_identity_is_cocartesian (f : arrow C) (A : C) [hl : has_binary_coproduct f.left A]
+  [hr : has_binary_coproduct f.right A] :
+  (square.mk (@arrow.binary_coproduct_cofan _ _ f (arrow.mk (𝟙 A)) hl hr).inl).is_cocartesian :=
+begin
+  sorry,
 end
 
 namespace square
@@ -296,6 +329,10 @@ begin
     dsimp [horizontal_comp] at h₁ h₂ ⊢,
     erw [id_comp, id_comp, assoc, comp_id, id_comp, ← h₁, ← assoc, h₂, id_comp], },
 end
+
+def is_cocartesian_of_top_comp (Sq₂ Sq₁ : square C) (e : Sq₁.bottom ≅ Sq₂.top)
+  (h₁ : Sq₁.is_cocartesian) (h₁₂ : (Sq₁.vertical_comp Sq₂ e).is_cocartesian) :
+  Sq₂.is_cocartesian := sorry
 
 end square
 

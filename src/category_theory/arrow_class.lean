@@ -13,6 +13,8 @@ import category_theory.epi_mono
 import category_theory.retracts
 import category_theory.cartesian_square
 
+noncomputable theory
+
 open category_theory
 open category_theory.limits
 open opposite
@@ -165,6 +167,17 @@ begin
 end
 
 end is_stable_by_retract
+
+/- better this definition... -/
+def is_stable_by_coproduct (F : arrow_class C) : Prop :=
+∀ (J : Type*) (f : J → arrow C) (hl : has_coproduct (λ j, (f j).left))
+  (hr : has_coproduct (λ j, (f j).right)),
+  (∀ (j : J), f j ∈ F) → (@arrow.coproduct_cofan _ _ _ f hl hr).X ∈ F
+
+def is_stable_by_binary_coproduct (F : arrow_class C) : Prop :=
+∀ (f₁ f₂ : arrow C) [hl : has_binary_coproduct f₁.left f₂.left]
+[hr : has_binary_coproduct f₁.right f₂.right],
+  f₁ ∈ F → f₂ ∈ F → (@arrow.binary_coproduct_cofan _ _ f₁ f₂ hl hr).X ∈ F
 
 def three_of_two_of_comp_left (F : arrow_class C) : Prop :=
 ∀ {X Y Z : C} (f : X ⟶ Y) (g : Y ⟶ Z),

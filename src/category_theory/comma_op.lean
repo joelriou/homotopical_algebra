@@ -7,9 +7,11 @@ Authors: Joël Riou
 import category_theory.comma
 import category_theory.arrow
 import category_theory.opposites
+import category_theory.limits.shapes.binary_products
 
 open category_theory
 open category_theory.category
+open category_theory.limits
 open opposite
 
 namespace category_theory

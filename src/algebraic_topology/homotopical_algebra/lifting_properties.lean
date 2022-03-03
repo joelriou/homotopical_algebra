@@ -7,9 +7,11 @@ Authors: Joël Riou
 import category_theory.arrow_class
 import category_theory.lifting_properties
 import category_theory.retracts
+import category_theory.limits.shapes.products
 
 open category_theory
 open category_theory.category
+open category_theory.limits
 open opposite
 
 variables {C : Type*} [category C]
@@ -77,6 +79,39 @@ begin
       congr',
     end} ⟩
 end
+
+lemma has_left_lifting_property_of_coproduct {J : Type*} (i : J → arrow C)
+[has_coproduct (λ j, (i j).left)] [has_coproduct (λ j, (i j).right)] (p : arrow C)
+  (hip : ∀ (j : J), has_lifting_property (i j) p) : has_lifting_property (coproduct_cofan i).X p :=
+begin
+  refine ⟨_⟩,
+  intro sq,
+  refine ⟨nonempty.intro
+  { lift := sigma.desc (λ j, begin
+      let φ := (hip j).sq_has_lift,
+      exact (φ ((coproduct_cofan i).ι.app j ≫ sq)).exists_lift.some.lift,
+    end), }⟩,
+end
+
+lemma has_left_lifting_property_of_binary_coproduct (i₁ i₂ : arrow C)
+  [hl : has_binary_coproduct i₁.left i₂.left] [hr : has_binary_coproduct i₁.right i₂.right]
+  (p : arrow C) (hip₁ : has_lifting_property i₁ p) (hip₂ : has_lifting_property i₂ p) :
+  has_lifting_property (binary_coproduct_cofan i₁ i₂).X p :=
+begin
+  refine ⟨_⟩,
+  intro sq,
+  refine ⟨nonempty.intro
+  { lift := coprod.desc
+    begin
+      let φ := hip₁.sq_has_lift,
+      exact (φ ((binary_coproduct_cofan i₁ i₂).inl ≫ sq)).exists_lift.some.lift,
+    end
+    begin
+      let φ := hip₂.sq_has_lift,
+      exact (φ ((binary_coproduct_cofan i₁ i₂).inr ≫ sq)).exists_lift.some.lift,
+    end }⟩,
+end
+
 
 lemma has_right_lifting_property_of_retract (q i p : arrow C) (hqp : is_retract q p)
   (hip : has_lifting_property i p) : has_lifting_property i q :=
@@ -174,6 +209,26 @@ begin
   exact g.has_right_lifting_property_of_retract f g' hgg' (hg' f hf),
 end
 
+lemma is_stable_by_coproduct_of_llp_with (G : arrow_class C) :
+  G.left_lifting_property_with.is_stable_by_coproduct :=
+begin
+  intros J f,
+  introI,
+  introI,
+  intros hf g hg,
+  exact arrow.has_left_lifting_property_of_coproduct f g (λ j, hf j g hg),
+end
+
+lemma is_stable_by_binary_coproduct_of_llp_with (G : arrow_class C) :
+  G.left_lifting_property_with.is_stable_by_binary_coproduct :=
+begin
+  intros f₁ f₂,
+  introI,
+  introI,
+  intros hf₁ hf₂ g hg,
+  exact arrow.has_left_lifting_property_of_binary_coproduct f₁ f₂ g (hf₁ g hg) (hf₂ g hg),
+end
+
 lemma is_stable_by_composition_of_llp_with (G : arrow_class C) :
   G.left_lifting_property_with.is_stable_by_composition := sorry
 
@@ -189,8 +244,8 @@ lemma contains_isomorphisms_of_rlp_with (F : arrow_class C) :
 lemma is_stable_by_cobase_change_of_llp_with (G : arrow_class C) :
   G.left_lifting_property_with.is_stable_by_cobase_change := sorry
 
-lemma is_stable_by_base_change_of_rlp_with (F : arrow_class C) :
-  F.right_lifting_property_with.is_stable_by_base_change := sorry
+--lemma is_stable_by_base_change_of_rlp_with (F : arrow_class C) :
+--  F.right_lifting_property_with.is_stable_by_base_change := sorry
 
 end arrow_class
 

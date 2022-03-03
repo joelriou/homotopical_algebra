@@ -24,8 +24,15 @@ structure precylinder (A : M.C) :=
 (σd₀ : d₀ ≫ σ = 𝟙 A) (σd₁ : d₁ ≫ σ = 𝟙 A)
 (Wσ : arrow.mk σ ∈ M.W)
 
+namespace precylinder
+
+@[simp]
+def ι {A : M.C} (P : precylinder A) := coprod.desc P.d₀ P.d₁
+
+end precylinder
+
 structure cylinder (A : M.C) extends precylinder A :=
-(cof : arrow.mk (coprod.desc d₀ d₁) ∈ M.cof)
+(cof : arrow.mk to_precylinder.ι ∈ M.cof)
 
 lemma cylinder_exists (A : M.C) : ∃ (C : cylinder A), arrow.mk C.σ ∈ M.fib :=
 begin
@@ -41,8 +48,8 @@ begin
     cof := begin
       convert hi,
       ext,
-      { simp only [coprod.inl_desc], },
-      { simp only [coprod.inr_desc], },
+      { simp only [precylinder.ι, coprod.inl_desc], },
+      { simp only [precylinder.ι, coprod.inr_desc], },
      end },
   use [C, hp.1],
 end
@@ -103,7 +110,7 @@ def cof_d₀ {A : M.C} (C : cylinder A) (hA : is_cofibrant A) :
 begin
   have h := M.cof_co_bc_stable.for_coprod_inl A A hA,
   convert M.cof_comp_stable _ _ _ _ _ h C.cof,
-  simp only [coprod.inl_desc],
+  simp only [precylinder.ι, coprod.inl_desc],
 end
 
 def cof_d₁ {A : M.C} (C : cylinder A) (hA : is_cofibrant A) :
@@ -122,8 +129,27 @@ def trans {A : M.C} (C : cylinder A) (C' : cylinder A) (hA : is_cofibrant A) : c
   σd₀ := by { rw [category.assoc, pushout.inl_desc], exact C.σd₀, },
   σd₁ := by { rw [category.assoc, pushout.inr_desc], exact C'.σd₁, },
   cof := begin
-    dsimp,
-    sorry,
+    convert M.cof_comp_stable _ _ _ (coprod.map C.d₀ (𝟙 A)) (coprod.desc pushout.inl (C'.d₁ ≫ pushout.inr)) _ _,
+    { simp only [precylinder.ι, coprod.map_desc, id_comp], },
+    { rw cof_equals_llp_triv_fib,
+      apply M.triv_fib.is_stable_by_binary_coproduct_of_llp_with (arrow.mk _) (arrow.mk _),
+      { rw ← cof_equals_llp_triv_fib,
+        exact C.cof_d₀ hA, },
+      { apply arrow_class.contains_isomorphisms_of_llp_with,
+        exact is_iso.of_iso (iso.refl A), }, },
+    { let φ : _ ⟶ pushout C.d₁ C'.d₀ :=
+        coprod.desc pushout.inl (C'.d₁ ≫ pushout.inr),
+      let Sq₂ := square.mk'' C'.to_precylinder.ι φ (coprod.map C.d₁ (𝟙 A)) pushout.inr begin
+        ext,
+        { simp only [precylinder.ι, coprod.map_desc, coprod.inl_desc, coprod.desc_comp, pushout.condition], },
+        { simp only [precylinder.ι, coprod.map_desc, id_comp, coprod.inr_desc, coprod.desc_comp], },
+      end,
+      refine M.cof_co_bc_stable Sq₂ _ C'.cof,
+      let hSq₁ := (coprod_inl_with_identity_is_cocartesian (arrow.mk C.d₁) A).flip,
+      apply Sq₂.is_cocartesian_of_top_comp _ (eq_to_iso (by tidy))  hSq₁,
+      { convert pushout_square_is_cocartesian C.to_precylinder.d₁ C'.to_precylinder.d₀,
+        dsimp [φ, arrow.binary_coproduct_cofan],
+        tidy, }, }
   end,
   Wσ := begin
     apply M.CM2.of_comp_left (C.d₀ ≫ pushout.inl ),
