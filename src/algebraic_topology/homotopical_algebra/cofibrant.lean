@@ -70,8 +70,7 @@ begin
     exact terminal_is_terminal, },
 end
 
-
-lemma fibrant_iff_op (A : M.C) : is_fibrant A ↔ is_cofibrant (M.op_obj A) := sorry
+--lemma fibrant_iff_op (A : M.C) : is_fibrant A ↔ is_cofibrant (M.op_obj A) := sorry
 
 end model_category
 

@@ -145,22 +145,68 @@ begin
     end }⟩,
 end
 
-lemma has_right_lifting_property_imp_of_cocartesian_square (p : arrow C) (Sq : square C) (hSq : Sq.is_cocartesian)
-  (hl : has_lifting_property Sq.left p) : has_lifting_property Sq.right p :=
+lemma has_lifting_property_imp_of_isos {i₁ i₂ p₁ p₂ : arrow C} (ei : i₁ ≅ i₂) (ep : p₁ ≅ p₂)
+  (h : has_lifting_property i₁ p₁) : has_lifting_property i₂ p₂ :=
 begin
   refine ⟨_⟩,
   intro sq,
-  /- TODO : first reduce to pushout square -/
-  have h := hl.sq_has_lift,
-  let l := (h (Sq.hom ≫ sq)).exists_lift.some,
-  refine ⟨nonempty.intro
-  { lift := sorry,
-    fac_left' := sorry,
-    fac_right' := sorry, }, ⟩,
+  let sq' := ei.hom ≫ sq ≫ ep.inv,
+  let h' := h.sq_has_lift,
+  let l := (h' sq').exists_lift.some,
+  exact ⟨nonempty.intro
+  { lift := ei.inv.right ≫ l.lift ≫ ep.hom.left,
+    fac_left' := begin
+      have hl := l.fac_left,
+      have h₁ := arrow.hom.congr_left ei.inv_hom_id,
+      have h₂ := arrow.hom.congr_left ep.inv_hom_id,
+      dsimp at hl h₁ h₂,
+      erw [← assoc, ← ei.inv.w],
+      slice_lhs 2 3 { erw hl, },
+      slice_lhs 1 2 { erw h₁, },
+      erw [id_comp, assoc, h₂, comp_id],
+    end,
+    fac_right' := begin
+      have hl := l.fac_right,
+      have h₁ := arrow.hom.congr_right ei.inv_hom_id,
+      have h₂ := arrow.hom.congr_right ep.inv_hom_id,
+      dsimp at hl h₁ h₂,
+      have blah := ep.hom.w,
+      slice_lhs 3 4 { erw ep.hom.w, },
+      slice_lhs 2 3 { erw hl, },
+      slice_lhs 1 2 { erw h₁, },
+      erw [id_comp, assoc, h₂, comp_id],
+    end, }⟩,
+end
+
+lemma has_right_lifting_property_imp_of_cocartesian_square (p : arrow C) (Sq : square C) (hSq : Sq.is_cocartesian)
+  (hl : has_lifting_property Sq.left p) : has_lifting_property Sq.right p :=
+begin
+  haveI := hSq.has_pushout,
+  let Sq' := pushout_square Sq.top.hom Sq.left.hom,
+  let e : Sq ≅ Sq' := hSq.iso_pushout_square,
+  let e₁ := (comma.fst _ _).map_iso e,
+  let e₂ := (comma.snd _ _).map_iso e,
+  dsimp at e₁ e₂,
+  apply has_lifting_property_imp_of_isos e₂.symm (iso.refl p),
+  have hl' := (has_lifting_property_imp_of_isos e₁ (iso.refl p)) hl,
+  /- Now, it suffices to prove the result for the square Sq' -/
+  refine ⟨_⟩,
+  intro sq,
+  let sq' := Sq'.hom ≫ sq,
+  dsimp at sq',
+  have φ := hl'.sq_has_lift,
+  have l := (φ sq').exists_lift.some,
+  exact ⟨nonempty.intro
+  { lift := pushout.desc sq.left l.lift (by { erw l.fac_left, refl, }),
+    fac_left' := by erw  [pushout.inl_desc],
+    fac_right' := begin
+      ext,
+      { erw [pushout.inl_desc_assoc, sq.w], refl, },
+      { erw [pushout.inr_desc_assoc, l.fac_right], refl, },
+    end }⟩,
 end
 
 end arrow
-
 
 namespace arrow_class
 
@@ -367,4 +413,3 @@ end
 end arrow_class
 
 end category_theory
-
