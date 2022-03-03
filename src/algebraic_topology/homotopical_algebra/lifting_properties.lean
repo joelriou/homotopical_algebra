@@ -80,6 +80,39 @@ begin
     end} ⟩
 end
 
+lemma has_right_lifting_property_of_retract (q i p : arrow C) (hqp : is_retract q p)
+  (hip : has_lifting_property i p) : has_lifting_property i q :=
+begin
+  rw has_lifting_property_iff_op at ⊢ hip,
+  rw is_retract_iff_op at hqp,
+  exact has_left_lifting_property_of_retract q.op p.op i.op hqp hip,
+end
+
+lemma iso_has_left_lifting_property {X Y : C} (i : X ≅ Y) (p : arrow C) :
+  has_lifting_property (arrow.mk i.hom) p :=
+begin
+  rw arrow.has_lifting_property_iff_op,
+  exact iso_has_right_lifting_property p.op i.op,
+end
+
+lemma has_left_lifting_property_of_is_iso (i p : arrow C) (hi : is_iso i.hom) :
+  has_lifting_property i p :=
+begin
+  letI := hi,
+  let e := as_iso i.hom,
+  convert iso_has_left_lifting_property e p,
+  exact (arrow.mk_eq i).symm,
+end
+
+lemma has_right_lifting_property_of_is_iso (i p : arrow C) (hp : is_iso p.hom) :
+  has_lifting_property i p :=
+begin
+  letI := hp,
+  let e := as_iso p.hom,
+  convert iso_has_right_lifting_property i e,
+  exact (arrow.mk_eq p).symm,
+end
+
 lemma has_left_lifting_property_of_coproduct {J : Type*} (i : J → arrow C)
 [has_coproduct (λ j, (i j).left)] [has_coproduct (λ j, (i j).right)] (p : arrow C)
   (hip : ∀ (j : J), has_lifting_property (i j) p) : has_lifting_property (coproduct_cofan i).X p :=
@@ -112,16 +145,22 @@ begin
     end }⟩,
 end
 
-
-lemma has_right_lifting_property_of_retract (q i p : arrow C) (hqp : is_retract q p)
-  (hip : has_lifting_property i p) : has_lifting_property i q :=
+lemma has_right_lifting_property_imp_of_cocartesian_square (p : arrow C) (Sq : square C) (hSq : Sq.is_cocartesian)
+  (hl : has_lifting_property Sq.left p) : has_lifting_property Sq.right p :=
 begin
-  rw has_lifting_property_iff_op at ⊢ hip,
-  rw is_retract_iff_op at hqp,
-  exact has_left_lifting_property_of_retract q.op p.op i.op hqp hip,
+  refine ⟨_⟩,
+  intro sq,
+  /- TODO : first reduce to pushout square -/
+  have h := hl.sq_has_lift,
+  let l := (h (Sq.hom ≫ sq)).exists_lift.some,
+  refine ⟨nonempty.intro
+  { lift := sorry,
+    fac_left' := sorry,
+    fac_right' := sorry, }, ⟩,
 end
 
 end arrow
+
 
 namespace arrow_class
 
@@ -148,6 +187,14 @@ namespace has_lifting_property
 
 def op {F G : arrow_class C} := (has_lifting_property_iff_op F G).mp
 def unop {F G : arrow_class C} := (has_lifting_property_iff_op F G).mpr
+
+lemma has_left_lifting_property_comp {X Y Z : C} {f : X ⟶ Y} {g : Y ⟶ Z} {p : arrow C}
+  (hf : has_lifting_property (arrow.mk f) p) (hg : has_lifting_property (arrow.mk g) p) :
+  has_lifting_property (arrow.mk (f ≫ g)) p :=
+begin
+  rw arrow.has_lifting_property_iff_op at hf hg ⊢,
+  exact has_right_lifting_property_comp hg hf,
+end
 
 end has_lifting_property
 
@@ -229,23 +276,34 @@ begin
   exact arrow.has_left_lifting_property_of_binary_coproduct f₁ f₂ g (hf₁ g hg) (hf₂ g hg),
 end
 
-lemma is_stable_by_composition_of_llp_with (G : arrow_class C) :
-  G.left_lifting_property_with.is_stable_by_composition := sorry
-
 lemma is_stable_by_composition_of_rlp_with (F : arrow_class C) :
-  F.right_lifting_property_with.is_stable_by_composition := sorry
+  F.right_lifting_property_with.is_stable_by_composition :=
+λ X Y Z f g hf hg i hi, has_right_lifting_property_comp (hf i hi) (hg i hi)
+
+lemma is_stable_by_composition_of_llp_with (G : arrow_class C) :
+  G.left_lifting_property_with.is_stable_by_composition :=
+begin
+  rw [is_stable_by_composition_iff_op, ← right_lifting_property_with_op],
+  apply is_stable_by_composition_of_rlp_with,
+end
 
 lemma contains_isomorphisms_of_llp_with (G : arrow_class C) :
-  isomorphisms ⊆ G.left_lifting_property_with := sorry
+  isomorphisms ⊆ G.left_lifting_property_with :=
+λ i hi p hp, arrow.has_left_lifting_property_of_is_iso i p hi
 
 lemma contains_isomorphisms_of_rlp_with (F : arrow_class C) :
-  isomorphisms ⊆ F.right_lifting_property_with := sorry
+  isomorphisms ⊆ F.right_lifting_property_with :=
+begin
+  intros i hi p hp,
+  rw arrow.has_lifting_property_iff_op p i,
+  apply arrow.has_left_lifting_property_of_is_iso,
+  rw ← is_iso_unop_iff,
+  exact hi,
+end
 
 lemma is_stable_by_cobase_change_of_llp_with (G : arrow_class C) :
-  G.left_lifting_property_with.is_stable_by_cobase_change := sorry
-
---lemma is_stable_by_base_change_of_rlp_with (F : arrow_class C) :
---  F.right_lifting_property_with.is_stable_by_base_change := sorry
+  G.left_lifting_property_with.is_stable_by_cobase_change :=
+λ Sq h₁ h₂ p hp, p.has_right_lifting_property_imp_of_cocartesian_square Sq h₁ (h₂ p hp)
 
 end arrow_class
 
@@ -284,7 +342,6 @@ by { subst f, erw [id_comp, comp_id], }
 end arrow
 
 namespace arrow_class
-
 
 lemma eq_left_lifting_property_with (F G : arrow_class C)
   (h₁ : arrow_class.factorisation_axiom F G) (h₂ : F.has_lifting_property G)

@@ -233,9 +233,6 @@ begin
   finish,
 end
 
---def is_stable_by_base_change :=
---  ∀ {f' f : arrow C} (sq : f' ⟶ f) (hsq : is_cartesian sq), f ∈ F → f' ∈ F
-
 def is_stable_by_cobase_change :=
   ∀ (Sq : square C) (hSq : Sq.is_cocartesian),
   Sq.left ∈ F → Sq.right ∈ F

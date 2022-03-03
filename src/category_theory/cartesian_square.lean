@@ -36,6 +36,13 @@ begin
   erw [comp_id, id_comp],
 end
 
+lemma congr_hom {f₁ f₂ : arrow C} (h : f₁ = f₂) :
+  f₁.hom = eq_to_hom (by rw h) ≫ f₂.hom ≫ eq_to_hom (by rw h) :=
+by { subst h, erw [id_comp, comp_id], }
+
+lemma congr_left {f₁ f₂ : arrow C} (h : f₁ = f₂) : f₁.left = f₂.left := by rw h
+lemma congr_right {f₁ f₂ : arrow C} (h : f₁ = f₂) : f₁.right = f₂.right := by rw h
+
 @[simps]
 def coproduct_cofan {J : Type*} (f : J → arrow C) [has_coproduct (λ j, (f j).left)]
   [has_coproduct (λ j, (f j).right)] : cofan f :=
@@ -80,6 +87,9 @@ end
 
 @[simps]
 def mk {f g : arrow C} (sq : f ⟶ g) : square C := arrow.mk sq
+
+lemma mk_eq (Sq : square C) : square.mk Sq.hom = Sq :=
+by { cases Sq, dsimp [arrow.mk], refl, }
 
 @[simps]
 def mk' (f g : arrow C) (sq : f ⟶ g) : square C := square.mk sq
@@ -208,7 +218,24 @@ def coprod_inl_with_identity_is_cocartesian (f : arrow C) (A : C) [hl : has_bina
   [hr : has_binary_coproduct f.right A] :
   (square.mk (@arrow.binary_coproduct_cofan _ _ f (arrow.mk (𝟙 A)) hl hr).inl).is_cocartesian :=
 begin
-  sorry,
+  dsimp [square.is_cocartesian],
+  refine limits.pushout_cocone.is_colimit_aux _
+    (λ s, coprod.desc (s.ι.app walking_span.right) (coprod.inr ≫ s.ι.app walking_span.left)) _ _ _,
+  { intro s,
+    dsimp [square.mk, square.cocone],
+    ext,
+    { simp only [coprod.map_desc, coprod.inl_desc],
+      erw [s.ι.naturality walking_span.hom.snd],
+      erw ← s.ι.naturality walking_span.hom.fst,
+      refl, },
+    { simp only [coprod.map_desc, id_comp, coprod.inr_desc], }, },
+  { intro s,
+    dsimp [square.mk, square.cocone, arrow.binary_coproduct_cofan],
+    simp, },
+  { intros s m hm,
+    ext,
+    { simpa only [← hm walking_span.right, coprod.inl_desc], },
+    { erw [coprod.inr_desc, ← hm walking_span.left, coprod.inr_map_assoc, id_comp], }, },
 end
 
 namespace square
@@ -224,10 +251,70 @@ def unflip {Sq : square C} (hSq : Sq.flip.is_cocartesian) : Sq.is_cocartesian :=
 by { rw ← Sq.flip_flip,
 exact is_cocartesian.flip hSq, }
 
+@[protected]
 def has_pushout {Sq : square C} (hSq : Sq.is_cocartesian) : has_pushout Sq.top.hom Sq.left.hom :=
 ⟨nonempty.intro
   { cocone := Sq.cocone,
   is_colimit := hSq, }⟩
+
+@[simps]
+def couniversal_lift {Sq : square C} (hSq : Sq.is_cocartesian) (Sq' : square C)
+  (h₁ : Sq.top = Sq'.top) (h₂ : Sq.left = Sq'.left) : Sq ⟶ Sq' :=
+begin
+  let φ₁ : Sq.left ⟶ Sq'.left :=
+  { left := eq_to_hom (arrow.congr_left h₂),
+    right := eq_to_hom (arrow.congr_right h₂),
+    w' := sorry, },
+  have eq : Sq.top.hom ≫ eq_to_hom (by exact arrow.congr_right h₁) ≫ Sq'.right.hom =
+    Sq.left.hom ≫ eq_to_hom (by exact arrow.congr_right h₂) ≫ Sq'.bottom.hom := sorry,
+  let φ₂ : Sq.right ⟶ Sq'.right :=
+  { left := eq_to_hom (arrow.congr_right h₁),
+    right := hSq.desc (pushout_cocone.mk _ _ eq),
+    w' := sorry, },
+  exact {
+    left := φ₁,
+    right := φ₂,
+    w' := sorry, },
+end
+
+lemma couniversal_uniq {Sq : square C} (hSq : Sq.is_cocartesian) (Sq' : square C)
+  (h₁ : Sq.top = Sq'.top) (h₂ : Sq.left = Sq'.left) (φ : Sq ⟶ Sq')
+  (h₃ : φ.left.left = eq_to_hom (arrow.congr_left h₂))
+  (h₄ : φ.left.right = eq_to_hom (arrow.congr_right h₂))
+  (h₅ : φ.right.left = eq_to_hom (arrow.congr_right h₁)) :
+  φ = hSq.couniversal_lift Sq' h₁ h₂ :=
+begin
+  sorry
+end
+
+lemma endo_is_id {Sq : square C} (hSq : Sq.is_cocartesian) (φ : Sq ⟶ Sq)
+  (h₁ : φ.left.left = 𝟙 _)
+  (h₄ : φ.left.right = 𝟙 _)
+  (h₅ : φ.right.left = 𝟙 _) :
+  φ = 𝟙 _ :=
+begin
+  rw [hSq.couniversal_uniq Sq rfl rfl φ, hSq.couniversal_uniq Sq rfl rfl (𝟙 _)],
+  all_goals { rw eq_to_hom_refl, try { refl, }, try { assumption }, },
+end
+
+def iso_pushout_square {Sq : square C} (hSq : Sq.is_cocartesian) :
+  Sq ≅ @pushout_square _ _ _ _ _ Sq.top.hom Sq.left.hom (hSq.has_pushout) :=
+begin
+  haveI := hSq.has_pushout,
+  let Sq' := pushout_square Sq.top.hom Sq.left.hom,
+  let hSq' : Sq'.is_cocartesian := pushout_square_is_cocartesian _ _,
+  exact
+  { hom := hSq.couniversal_lift Sq' (by tidy) (by tidy),
+    inv := hSq'.couniversal_lift Sq (by tidy) (by tidy),
+    hom_inv_id' := begin
+      apply hSq.endo_is_id,
+      all_goals { dsimp, simpa only [comp_id], },
+    end,
+    inv_hom_id' := begin
+      apply hSq'.endo_is_id,
+      all_goals { dsimp, simp only [comp_id], },
+    end, }
+end
 
 end is_cocartesian
 
@@ -259,9 +346,8 @@ begin
   rcases i₃ with ⟨X₃, Y₃, i₃⟩,
   rcases sq₁₂ with ⟨f₁, g₁, w₁₂⟩,
   rcases sq₂₃ with ⟨f₂, g₂, w₂₃⟩,
-  have h := big_square_is_pushout f₁ f₂ g₁ g₂ i₁ i₂ i₃ w₁₂.symm w₂₃.symm h₂₃.flip h₁₂.flip,
   apply square.is_cocartesian.unflip,
-  exact h,
+  exact big_square_is_pushout f₁ f₂ g₁ g₂ i₁ i₂ i₃ w₁₂.symm w₂₃.symm h₂₃.flip h₁₂.flip,
 end
 
 namespace square
@@ -330,9 +416,38 @@ begin
     erw [id_comp, id_comp, assoc, comp_id, id_comp, ← h₁, ← assoc, h₂, id_comp], },
 end
 
+def right_square_is_cocartesian' (i₁ i₂ i₃ : arrow C) (sq₁₂ : i₁ ⟶ i₂) (sq₂₃ : i₂ ⟶ i₃)
+  (h₁₂ : (square.mk sq₁₂).is_cocartesian) (h₁₃ : (square.mk (sq₁₂ ≫ sq₂₃)).is_cocartesian) :
+  (square.mk sq₂₃).is_cocartesian :=
+begin
+  rcases i₁ with ⟨X₁, Y₁, i₁⟩,
+  rcases i₂ with ⟨X₂, Y₂, i₂⟩,
+  rcases i₃ with ⟨X₃, Y₃, i₃⟩,
+  rcases sq₁₂ with ⟨f₁, g₁, w₁₂⟩,
+  rcases sq₂₃ with ⟨f₂, g₂, w₂₃⟩,
+  apply square.is_cocartesian.unflip,
+  exact right_square_is_pushout f₁ f₂ g₁ g₂ i₁ i₂ i₃ w₁₂.symm w₂₃.symm h₁₂.flip h₁₃.flip,
+end
+
+def right_square_is_cocartesian (Sq₂ Sq₁ : square C) (e : Sq₁.right ≅ Sq₂.left)
+  (h₁ : Sq₁.is_cocartesian) (h₁₂ : (Sq₁.horizontal_comp Sq₂ e).is_cocartesian) :
+  Sq₂.is_cocartesian :=
+begin
+  convert right_square_is_cocartesian' _ _ _ (Sq₁.hom ≫ e.hom) Sq₂.hom _ _,
+  { rw Sq₂.mk_eq, },
+  { refine horizontal_comp_is_cocartesian _ _ _ Sq₁.hom e.hom _ _,
+    { rw Sq₁.mk_eq,
+      exact h₁, },
+    { apply is_cocartesian_of_horizontal_is_iso,
+      exact is_iso.of_iso e, }, },
+  { have eq : mk ((Sq₁.hom ≫ e.hom) ≫ Sq₂.hom) = Sq₁.horizontal_comp Sq₂ e := by tidy,
+    convert h₁₂, },
+end
+
 def is_cocartesian_of_top_comp (Sq₂ Sq₁ : square C) (e : Sq₁.bottom ≅ Sq₂.top)
   (h₁ : Sq₁.is_cocartesian) (h₁₂ : (Sq₁.vertical_comp Sq₂ e).is_cocartesian) :
-  Sq₂.is_cocartesian := sorry
+  Sq₂.is_cocartesian :=
+(right_square_is_cocartesian Sq₂.flip Sq₁.flip e h₁.flip h₁₂.flip).unflip
 
 end square
 
