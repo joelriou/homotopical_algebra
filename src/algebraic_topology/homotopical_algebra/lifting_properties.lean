@@ -335,10 +335,6 @@ begin
   { exact l.fac_right, }
 end
 
-lemma congr_hom {f g : arrow C} (h : f = g) :
-  f.hom = eq_to_hom (by rw h) ≫ g.hom ≫ eq_to_hom (by rw h) :=
-by { subst f, erw [id_comp, comp_id], }
-
 end arrow
 
 namespace arrow_class

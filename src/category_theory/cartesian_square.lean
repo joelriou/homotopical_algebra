@@ -43,6 +43,13 @@ by { subst h, erw [id_comp, comp_id], }
 lemma congr_left {f₁ f₂ : arrow C} (h : f₁ = f₂) : f₁.left = f₂.left := by rw h
 lemma congr_right {f₁ f₂ : arrow C} (h : f₁ = f₂) : f₁.right = f₂.right := by rw h
 
+namespace hom
+
+lemma congr_left {f₁ f₂ : arrow C} {φ₁ φ₂ : f₁ ⟶ f₂} (h : φ₁ = φ₂) : φ₁.left = φ₂.left := by rw h
+lemma congr_right {f₁ f₂ : arrow C} {φ₁ φ₂ : f₁ ⟶ f₂} (h : φ₁ = φ₂) : φ₁.right = φ₂.right := by rw h
+
+end hom
+
 @[simps]
 def coproduct_cofan {J : Type*} (f : J → arrow C) [has_coproduct (λ j, (f j).left)]
   [has_coproduct (λ j, (f j).right)] : cofan f :=
@@ -264,17 +271,27 @@ begin
   let φ₁ : Sq.left ⟶ Sq'.left :=
   { left := eq_to_hom (arrow.congr_left h₂),
     right := eq_to_hom (arrow.congr_right h₂),
-    w' := sorry, },
+    w' := by simp only [arrow.congr_hom h₂, eq_to_hom_map, assoc,
+      eq_to_hom_trans, eq_to_hom_refl, comp_id], },
   have eq : Sq.top.hom ≫ eq_to_hom (by exact arrow.congr_right h₁) ≫ Sq'.right.hom =
-    Sq.left.hom ≫ eq_to_hom (by exact arrow.congr_right h₂) ≫ Sq'.bottom.hom := sorry,
+    Sq.left.hom ≫ eq_to_hom (by exact arrow.congr_right h₂) ≫ Sq'.bottom.hom,
+  { erw [arrow.congr_hom h₁, arrow.congr_hom h₂],
+    simpa only [top_hom, assoc, eq_to_hom_trans_assoc, eq_to_hom_refl,
+      id_comp, arrow.w, bottom_hom], },
   let φ₂ : Sq.right ⟶ Sq'.right :=
   { left := eq_to_hom (arrow.congr_right h₁),
     right := hSq.desc (pushout_cocone.mk _ _ eq),
-    w' := sorry, },
-  exact {
-    left := φ₁,
+    w' := (hSq.fac (pushout_cocone.mk _ _ eq) (walking_span.left)).symm, },
+  exact
+  { left := φ₁,
     right := φ₂,
-    w' := sorry, },
+    w' := begin
+      ext,
+      { have h := arrow.congr_hom h₁,
+        dsimp at ⊢ h,
+        simp only [h, assoc, eq_to_hom_trans, eq_to_hom_refl, comp_id], },
+      { exact (hSq.fac (pushout_cocone.mk _ _ eq) (walking_span.right)).symm, },
+    end },
 end
 
 lemma couniversal_uniq {Sq : square C} (hSq : Sq.is_cocartesian) (Sq' : square C)
@@ -284,7 +301,28 @@ lemma couniversal_uniq {Sq : square C} (hSq : Sq.is_cocartesian) (Sq' : square C
   (h₅ : φ.right.left = eq_to_hom (arrow.congr_right h₁)) :
   φ = hSq.couniversal_lift Sq' h₁ h₂ :=
 begin
-  sorry
+  ext,
+  { simp only [h₃, couniversal_lift_left_left], },
+  { simp only [h₄, couniversal_lift_left_right], },
+  { simp only [h₅, couniversal_lift_right_left], },
+  { apply hSq.uniq (pushout_cocone.mk _ _ _) φ.right.right,
+    rintro (_|_|_),
+    { simp only [cocone_ι_app, assoc, pushout_cocone.mk_ι_app_zero, top_hom],
+      have h := arrow.hom.congr_right φ.w,
+      dsimp at h,
+      erw [← h, h₄],
+      have h' := arrow.congr_hom h₁,
+      have h'' := arrow.congr_hom h₂,
+      dsimp at h' h'',
+      simp only [h', h'', assoc, eq_to_hom_trans_assoc, eq_to_hom_refl, id_comp, arrow.w], },
+    { simp only [cocone_ι_app, pushout_cocone.mk_ι_app_left],
+      erw [← φ.right.w, h₅],
+      refl, },
+    { simp only [cocone_ι_app, pushout_cocone.mk_ι_app_right, bottom_hom],
+      have h := arrow.hom.congr_right φ.w,
+      dsimp at h,
+      erw [← h, h₄],
+      refl, } },
 end
 
 lemma endo_is_id {Sq : square C} (hSq : Sq.is_cocartesian) (φ : Sq ⟶ Sq)
