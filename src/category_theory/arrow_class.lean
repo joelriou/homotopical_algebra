@@ -16,6 +16,7 @@ import category_theory.cartesian_square
 noncomputable theory
 
 open category_theory
+open category_theory.category
 open category_theory.limits
 open opposite
 
@@ -130,6 +131,39 @@ begin
   haveI := hg,
   apply_instance,
 end
+
+lemma imp_of_arrow_iso (F : arrow_class C) (h₁ : F.is_stable_by_composition) (h₂ : isomorphisms ⊆ F)
+  {f₁ f₂ : arrow C} (e : f₁ ≅ f₂) (h₃ : f₁ ∈ F) : f₂ ∈ F :=
+begin
+  let e₁ := (comma.fst _ _).map_iso e,
+  let e₂ := (comma.snd _ _).map_iso e,
+  have h₄ := h₁ _ _ _ f₁.hom e₂.hom _ (h₂ _), rotate,
+  { convert h₃, rw arrow.mk_eq, },
+  { exact (is_iso.of_iso e₂), },
+  convert h₁ _ _ _ e₁.inv _ (h₂ _) h₄, swap,
+  { exact (is_iso.of_iso e₁.symm), },
+  { simp only [← arrow.mk_eq f₂],
+    congr,
+    have h₅ := e.hom.w',
+    dsimp at h₅,
+    erw [← h₅, ← assoc, e₁.inv_hom_id, id_comp], },
+end
+
+def iff_of_arrow_iso (F : arrow_class C) := ∀ (f₁ f₂ : arrow C) (e : f₁ ≅ f₂), f₁ ∈ F ↔ f₂ ∈ F
+
+namespace iff_of_arrow_iso
+
+def of_comp_stable_and_contains_iso (F : arrow_class C)
+  (h₁ : F.is_stable_by_composition) (h₂ : isomorphisms ⊆ F) :
+  F.iff_of_arrow_iso :=
+begin
+  intros f₁ f₂ e,
+  split,
+  { exact F.imp_of_arrow_iso h₁ h₂ e, },
+  { exact F.imp_of_arrow_iso h₁ h₂ e.symm, },
+end
+
+end iff_of_arrow_iso
 
 def is_stable_by_retract (F : arrow_class C) : Prop := ∀ (f f' : arrow C),
   f' ∈ F → is_retract f f' → f ∈ F

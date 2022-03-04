@@ -43,6 +43,32 @@ by { subst h, erw [id_comp, comp_id], }
 lemma congr_left {f₁ f₂ : arrow C} (h : f₁ = f₂) : f₁.left = f₂.left := by rw h
 lemma congr_right {f₁ f₂ : arrow C} (h : f₁ = f₂) : f₁.right = f₂.right := by rw h
 
+def mk_iso {f g : arrow C} (e₁ : f.left ≅ g.left) (e₂ : f.right ≅ g.right)
+  (fac : e₁.hom ≫ g.hom = f.hom ≫ e₂.hom) :
+  f ≅ g :=
+{ hom :=
+  { left := e₁.hom,
+    right := e₂.hom,
+    w' := fac, },
+  inv :=
+  { left := e₁.inv,
+    right := e₂.inv,
+    w' := begin
+      dsimp,
+      erw [← comp_id f.hom, ← e₂.hom_inv_id],
+      slice_lhs 2 3 { rw ← fac, },
+      slice_lhs 1 2 { rw e₁.inv_hom_id, },
+      rw id_comp,
+    end, },
+  hom_inv_id' := begin
+    ext,
+    exacts [e₁.hom_inv_id, e₂.hom_inv_id],
+  end,
+  inv_hom_id' := begin
+    ext,
+    exacts [e₁.inv_hom_id, e₂.inv_hom_id],
+  end, }
+
 namespace hom
 
 lemma congr_left {f₁ f₂ : arrow C} {φ₁ φ₂ : f₁ ⟶ f₂} (h : φ₁ = φ₂) : φ₁.left = φ₂.left := by rw h

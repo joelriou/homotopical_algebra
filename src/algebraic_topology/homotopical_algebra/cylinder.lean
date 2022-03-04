@@ -117,23 +117,23 @@ end precylinder
 
 namespace cylinder
 
-def cof_d₀ {A : M.C} (C : cylinder A) (hA : is_cofibrant A) :
+def cof_d₀ {A : M.C} [hA : is_cofibrant A] (C : cylinder A) :
   arrow.mk C.d₀ ∈ M.cof :=
 begin
-  have h := M.cof_co_bc_stable.for_coprod_inl A A hA,
+  have h := M.cof_co_bc_stable.for_coprod_inl A A hA.cof,
   convert M.cof_comp_stable _ _ _ _ _ h C.cof_ι,
   simp only [precylinder.ι, coprod.inl_desc],
 end
 
-def cof_d₁ {A : M.C} (C : cylinder A) (hA : is_cofibrant A) :
+def cof_d₁ {A : M.C} [hA : is_cofibrant A] (C : cylinder A) :
   arrow.mk C.d₁ ∈ M.cof :=
 begin
-  have h := M.cof_co_bc_stable.for_coprod_inr A A hA,
+  have h := M.cof_co_bc_stable.for_coprod_inr A A hA.cof,
   convert M.cof_comp_stable _ _ _ _ _ h C.cof_ι,
   erw coprod.inr_desc,
 end
 
-def trans {A : M.C} (C : cylinder A) (C' : cylinder A) (hA : is_cofibrant A) : cylinder A :=
+def trans {A : M.C} [is_cofibrant A] (C : cylinder A) (C' : cylinder A) : cylinder A :=
 { I := pushout C.d₁ C'.d₀,
   d₀ := C.d₀ ≫ pushout.inl,
   d₁ := C'.d₁ ≫ pushout.inr,
@@ -147,7 +147,7 @@ def trans {A : M.C} (C : cylinder A) (C' : cylinder A) (hA : is_cofibrant A) : c
     { rw cof_equals_llp_triv_fib,
       apply M.triv_fib.is_stable_by_binary_coproduct_of_llp_with (arrow.mk _) (arrow.mk _),
       { rw ← cof_equals_llp_triv_fib,
-        exact C.cof_d₀ hA, },
+        exact C.cof_d₀, },
       { apply arrow_class.contains_isomorphisms_of_llp_with,
         exact is_iso.of_iso (iso.refl A), }, },
     { let φ : _ ⟶ pushout C.d₁ C'.d₀ :=
@@ -168,9 +168,9 @@ def trans {A : M.C} (C : cylinder A) (C' : cylinder A) (hA : is_cofibrant A) : c
     apply M.CM2.of_comp_left (C.d₀ ≫ pushout.inl ),
     { apply M.triv_cof_contains_W,
       apply M.triv_cof_comp_stable,
-      { exact ⟨C.cof_d₀ hA, C.to_precylinder.Wd₀⟩, },
+      { exact ⟨C.cof_d₀, C.to_precylinder.Wd₀⟩, },
       { apply M.triv_cof_co_bc_stable.for_pushout_inl,
-        exact ⟨C'.cof_d₀ hA, C'.to_precylinder.Wd₀⟩, } },
+        exact ⟨C'.cof_d₀, C'.to_precylinder.Wd₀⟩, } },
     { rw [assoc, pushout.inl_desc, C.σd₀],
       apply W_contains_iso,
       exact is_iso.of_iso (iso.refl A), },
@@ -191,9 +191,9 @@ def symm {A B : M.C} (P : precylinder A) {f g : A ⟶ B} (H : P.left_homotopy f 
   h₀ := H.h₁,
   h₁ := H.h₀ }
 
-def trans {A B : M.C} (P P' : cylinder A) (hA : is_cofibrant A) {f₁ f₂ f₃ : A ⟶ B}
+def trans {A B : M.C} [is_cofibrant A] (P P' : cylinder A) {f₁ f₂ f₃ : A ⟶ B}
   (H₁ : P.to_precylinder.left_homotopy f₁ f₂) (H₂ : P'.to_precylinder.left_homotopy f₂ f₃) :
-    (P.trans P' hA).to_precylinder.left_homotopy f₁ f₃ :=
+    (P.trans P').to_precylinder.left_homotopy f₁ f₃ :=
 { h := pushout.desc H₁.h H₂.h (by rw [H₁.h₁, H₂.h₀]),
   h₀ := by erw [category.assoc, pushout.inl_desc, H₁.h₀],
   h₁ := by erw [category.assoc, pushout.inr_desc, H₂.h₁], }
@@ -217,7 +217,7 @@ def op {B : M.C} (P : path_object B) : cylinder _ := P
 def fib_π {B : M.C} (P : path_object B) : arrow.mk P.pre.π ∈ M.fib :=
 P.pre.fib_π_iff_cof_ι_op.mpr P.cof_ι
 
-def right_homotopy_of_left_homotopy {A B : M.C} (P : path_object B) (C : cylinder A) (hA : is_cofibrant A)
+def right_homotopy_of_left_homotopy {A B : M.C} [is_cofibrant A] (P : path_object B) (C : cylinder A)
   (f₀ f₁ : A ⟶ B) (Hl : C.to_precylinder.left_homotopy f₀ f₁) : P.pre.right_homotopy f₀ f₁ :=
 begin
   have foo := Hl.h,
@@ -231,7 +231,7 @@ begin
           prod.lift_fst, ← assoc, C.σd₀, id_comp], },
       { simp only [assoc, prod.lift_snd, P.pre.σd₁', comp_id, Hl.h₀], },
     end },
-  have h := (M.CM4b _ _ ⟨C.cof_d₀ hA, C.to_precylinder.Wd₀⟩ P.fib_π).sq_has_lift,
+  have h := (M.CM4b _ _ ⟨C.cof_d₀, C.to_precylinder.Wd₀⟩ P.fib_π).sq_has_lift,
   let l := (h sq).exists_lift.some,
   have hr₀ := congr_arg (λ (f : _ ⟶ limits.prod _ _), f ≫ limits.prod.fst) l.fac_right,
   have hr₁ := congr_arg (λ (f : _ ⟶ limits.prod _ _), f ≫ limits.prod.snd) l.fac_right,
@@ -266,8 +266,8 @@ def op {A : M.C} (C : cylinder A) : @path_object M.op (opposite.op A) :=
 { to_precylinder := C.to_precylinder.op,
   cof_ι := sorry, }
 
-def left_homotopy_of_right_homotopy {A B : M.C} (C : cylinder A) (P : path_object B)
-  (hB : is_fibrant B) (f₀ f₁ : A ⟶ B) (Hr : P.pre.right_homotopy f₀ f₁) :
+def left_homotopy_of_right_homotopy {A B : M.C} [hB : is_fibrant B] (C : cylinder A) (P : path_object B)
+  (f₀ f₁ : A ⟶ B) (Hr : P.pre.right_homotopy f₀ f₁) :
   C.to_precylinder.left_homotopy f₀ f₁ :=
 begin
   let C' := P.op,
@@ -276,9 +276,8 @@ begin
   { h := Hr.h.op,
     h₀ := quiver.hom.unop_inj Hr.h₀,
     h₁ := quiver.hom.unop_inj Hr.h₁, },
-  let Hr' := P'.right_homotopy_of_left_homotopy C' _ f₀.op f₁.op Hl', swap,
-  { erw ← fibrant_iff_op,
-    exact hB, },
+  haveI : @is_cofibrant M.op (opposite.op B) := sorry,
+  let Hr' := P'.right_homotopy_of_left_homotopy C' f₀.op f₁.op Hl',
   exact
   { h := Hr'.h.unop,
     h₀ := quiver.hom.op_inj Hr'.h₀,

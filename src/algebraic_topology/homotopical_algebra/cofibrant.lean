@@ -6,6 +6,8 @@ Authors: Joël Riou
 
 import algebraic_topology.homotopical_algebra.model_category
 
+noncomputable theory
+
 open category_theory
 open category_theory.limits
 open algebraic_topology
@@ -16,61 +18,71 @@ namespace algebraic_topology
 
 namespace model_category
 
-@[simp]
-def is_cofibrant (A : M.C) : Prop := arrow.mk (initial.to A) ∈ M.cof
+class is_cofibrant (A : M.C) := (cof : arrow.mk (initial.to A) ∈ M.cof)
 
-@[simp]
-def is_fibrant (A : M.C) : Prop := arrow.mk (terminal.from A) ∈ M.fib
+class is_fibrant (A : M.C) := (fib : arrow.mk (terminal.from A) ∈ M.fib)
 
-lemma is_cofibrant_of_cof_from_initial (i : arrow M.C)
-  (hi₁ : i ∈ M.cof) (hi₂ : is_initial i.left) : is_cofibrant i.right :=
+lemma arrow_iso_of_map_from_initial {I A : M.C} (hI : is_initial I) (f : I ⟶ A) :
+  arrow.mk (initial.to A) ≅ arrow.mk f :=
 begin
-  have h : initial.to i.right = initial.to i.left ≫ i.hom := subsingleton.elim _ _,
-  dsimp only [is_cofibrant],
-  rw h,
-  apply M.cof_comp_stable,
-  { apply M.cof_contains_iso,
-    exact is_iso.of_iso (is_initial.unique_up_to_iso initial_is_initial hi₂), },
-  { rw arrow.mk_eq, exact hi₁, },
+  refine arrow.mk_iso _ (iso.refl _) _,
+  { exact is_initial.unique_up_to_iso initial_is_initial hI, },
+  { dsimp, apply subsingleton.elim, },
 end
 
-lemma is_fibrant_of_fib_to_terminal (p : arrow M.C)
-  (hp₁ : p ∈ M.fib) (hp₂ : is_terminal p.right) : is_fibrant p.left :=
+lemma arrow_iso_of_map_to_terminal {T A : M.C} (hT : is_terminal T) (f : A ⟶ T) :
+  arrow.mk f ≅ arrow.mk (terminal.from A) :=
 begin
-  have h : terminal.from p.left = p.hom ≫ terminal.from p.right := subsingleton.elim _ _,
-  dsimp only [is_fibrant],
-  rw h,
-  apply M.fib_comp_stable,
-  { rw arrow.mk_eq, exact hp₁, },
-  { apply M.fib_contains_iso,
-    exact is_iso.of_iso (is_terminal.unique_up_to_iso hp₂ terminal_is_terminal), }
+  refine arrow.mk_iso (iso.refl _) _ _,
+  { exact is_terminal.unique_up_to_iso hT terminal_is_terminal, },
+  { dsimp, apply subsingleton.elim, },
 end
 
-lemma is_cofibrant_iff_op (A : M.C) : is_cofibrant A ↔ is_fibrant (M.op_obj A) :=
-begin /- to be redone using that if two maps are isomorphic, one is cof iff the other, same fib -/
-  split,
-  { intro hA,
-    dsimp only [is_fibrant],
-    erw [arrow_class.mem_op_iff M.cof, arrow.unop_mk],
-    convert M.cof_comp_stable _ _ _ (terminal.from (opposite.op (⊥_ M.C))).unop (initial.to A) _ hA, swap,
-    { apply M.cof_contains_iso,
-      rw [← arrow.unop_mk, ← arrow_class.mem_op_iff,
-        arrow_class.op_isomorphisms_eq, arrow_class.mem_isomorphisms_iff],
-      let e : (opposite.op (⊥_ M.C)) ≅ ⊤_ _ := is_terminal.unique_up_to_iso
-        (terminal_op_of_initial initial_is_initial) terminal_is_terminal,
-      convert is_iso.of_iso e, },
-    apply quiver.hom.op_inj,
-    simp only [quiver.hom.op_unop, op_comp],
-    apply is_terminal.hom_ext,
-    exact terminal_is_terminal, },
-  { intro hA,
-    apply is_cofibrant_of_cof_from_initial _ hA,
-    dsimp,
-    apply initial_unop_of_terminal,
-    exact terminal_is_terminal, },
+lemma is_cofibrant_equiv_of_map_from_initial {I A : M.C} (hI : is_initial I) (f : I ⟶ A) :
+  is_cofibrant A ≃ (arrow.mk f ∈ M.cof) :=
+{ to_fun := λ h, begin
+    rw ← M.cof_iff_of_arrow_iso _ _ (arrow_iso_of_map_from_initial hI f),
+    exact h.cof,
+  end,
+  inv_fun := λ h, begin
+    rw ← M.cof_iff_of_arrow_iso _ _ (arrow_iso_of_map_from_initial hI f) at h,
+    exact ⟨h⟩,
+  end,
+  left_inv := λ h, by { rcases h with ⟨w⟩, refl, },
+  right_inv := λ h, rfl }
+
+lemma is_fibrant_equiv_of_map_to_terminal {T A : M.C} (hT : is_terminal T) (f : A ⟶ T) :
+  is_fibrant A ≃ (arrow.mk f ∈ M.fib) :=
+{ to_fun := λ h, begin
+    rw M.fib_iff_of_arrow_iso _ _ (arrow_iso_of_map_to_terminal hT f),
+    exact h.fib,
+  end,
+  inv_fun := λ h, begin
+    rw M.fib_iff_of_arrow_iso _ _ (arrow_iso_of_map_to_terminal hT f) at h,
+    exact ⟨h⟩,
+  end,
+  left_inv := λ h, by { rcases h with ⟨w⟩, refl, },
+  right_inv := λ h, rfl }
+
+lemma is_cofibrant_equiv_op (A : M.C) : is_cofibrant A ≃ is_fibrant (M.op_obj A) :=
+begin
+  let ι := initial.to A,
+  calc is_cofibrant A ≃ arrow.mk ι ∈ M.cof :
+            is_cofibrant_equiv_of_map_from_initial initial_is_initial ι
+  ... ≃ arrow.mk ι.op ∈ M.op.fib : by refl
+  ... ≃ is_fibrant (M.op_obj A) : (is_fibrant_equiv_of_map_to_terminal _ _).symm,
+  { refine terminal_op_of_initial initial_is_initial, },
 end
 
-lemma fibrant_iff_op (A : M.C) : is_fibrant A ↔ is_cofibrant (M.op_obj A) := sorry
+lemma is_fibrant_equiv_op (A : M.C) : is_fibrant A ≃ is_cofibrant (M.op_obj A) :=
+begin
+  let π := terminal.from A,
+  calc is_fibrant A ≃ arrow.mk π ∈ M.fib :
+            is_fibrant_equiv_of_map_to_terminal terminal_is_terminal π
+  ... ≃ arrow.mk π.op ∈ M.op.cof : by refl
+  ... ≃ is_cofibrant (M.op_obj A) : (is_cofibrant_equiv_of_map_from_initial _ _).symm,
+  { refine initial_op_of_terminal terminal_is_terminal, },
+end
 
 end model_category
 

@@ -231,6 +231,22 @@ begin
   exact M.fib.contains_isomorphisms_of_llp_with hf,
 end 
 
+lemma cof_iff_of_arrow_iso : M.cof.iff_of_arrow_iso :=
+arrow_class.iff_of_arrow_iso.of_comp_stable_and_contains_iso _
+  M.cof_comp_stable M.cof_contains_iso
+lemma triv_cof_iff_of_arrow_iso : M.triv_cof.iff_of_arrow_iso :=
+arrow_class.iff_of_arrow_iso.of_comp_stable_and_contains_iso _
+  M.triv_cof_comp_stable M.triv_cof_contains_iso
+lemma fib_iff_of_arrow_iso : M.fib.iff_of_arrow_iso :=
+arrow_class.iff_of_arrow_iso.of_comp_stable_and_contains_iso _
+  M.fib_comp_stable M.fib_contains_iso
+lemma triv_fib_iff_of_arrow_iso : M.triv_fib.iff_of_arrow_iso :=
+arrow_class.iff_of_arrow_iso.of_comp_stable_and_contains_iso _
+  M.triv_fib_comp_stable M.triv_fib_contains_iso
+lemma W_iff_of_arrow_iso : M.W.iff_of_arrow_iso :=
+arrow_class.iff_of_arrow_iso.of_comp_stable_and_contains_iso _
+  M.CM2.of_comp M.W_contains_iso
+
 lemma cof_co_bc_stable : M.cof.is_stable_by_cobase_change :=
 by { rw cof_equals_llp_triv_fib, apply arrow_class.is_stable_by_cobase_change_of_llp_with, }
 lemma triv_cof_co_bc_stable : M.triv_cof.is_stable_by_cobase_change :=
