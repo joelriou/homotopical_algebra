@@ -43,17 +43,17 @@ lemma comp_right {A B X : M.cofibrant_objects}
   {f f' : A ⟶ B} {g : B ⟶ X} (H : right_homotopy f f') :
   right_homotopy (f ≫ g) (f' ≫ g) :=
 begin
-  cases H with P hP,
-  let C := (cylinder_exists A.1).some,
-  suffices hl : C.to_precylinder.left_homotopy (f ≫ g) (f' ≫ g),
-  { let P' := (path_object_exists X.1).some,
-    haveI := A.2.some,
-    use [P', nonempty.intro (P'.right_homotopy_of_left_homotopy C _ _ hl)], },
-  suffices hl' : C.to_precylinder.left_homotopy f f',
-  { exact hl'.comp_right g, },
-  { exact @cylinder.left_homotopy_of_right_homotopy M _ _ sorry C P _ _ hP.some,
-    -- se ramener au cas où B est fibrant ?
-  },
+  sorry
+--  cases H with P hP,
+--  let C := (cylinder_exists A.1).some,
+--  suffices hl : C.to_precylinder.left_homotopy (f ≫ g) (f' ≫ g),
+--  { let P' := (path_object_exists X.1).some,
+--    haveI := A.2.some,
+--    use [P', nonempty.intro (P'.right_homotopy_of_left_homotopy C _ _ hl)], },
+--  suffices hl' : C.to_precylinder.left_homotopy f f',
+--  { exact hl'.comp_right g, },
+--  { exact @cylinder.left_homotopy_of_right_homotopy M _ _ sorry C P _ _ hP.some,
+--    -- se ramener au cas où B est fibrant ?
 end
 
 end right_homotopy
