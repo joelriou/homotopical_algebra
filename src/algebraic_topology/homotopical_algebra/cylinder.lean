@@ -5,6 +5,7 @@ Authors: Joël Riou
 -/
 
 import algebraic_topology.homotopical_algebra.cofibrant
+import tactic.equiv_rw
 
 noncomputable theory
 
@@ -276,7 +277,9 @@ begin
   { h := Hr.h.op,
     h₀ := quiver.hom.unop_inj Hr.h₀,
     h₁ := quiver.hom.unop_inj Hr.h₁, },
-  haveI : @is_cofibrant M.op (opposite.op B) := sorry,
+  haveI : @is_cofibrant M.op (opposite.op B),
+  { equiv_rw (is_fibrant_equiv_op B).symm,
+    exact hB, },
   let Hr' := P'.right_homotopy_of_left_homotopy C' f₀.op f₁.op Hl',
   exact
   { h := Hr'.h.unop,
