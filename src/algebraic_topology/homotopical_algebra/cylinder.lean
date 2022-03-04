@@ -118,6 +118,10 @@ end precylinder
 
 namespace cylinder
 
+def symm {A : M.C} (C : cylinder A) : cylinder A :=
+{ to_precylinder := C.to_precylinder.symm,
+  cof_ι := sorry }
+
 def cof_d₀ {A : M.C} [hA : is_cofibrant A] (C : cylinder A) :
   arrow.mk C.d₀ ∈ M.cof :=
 begin
@@ -179,6 +183,8 @@ def trans {A : M.C} [is_cofibrant A] (C : cylinder A) (C' : cylinder A) : cylind
 
 end cylinder
 
+namespace precylinder
+
 namespace left_homotopy
 
 def refl {A B : M.C} {P : precylinder A} (f : A ⟶ B) : P.left_homotopy f f :=
@@ -199,18 +205,58 @@ def trans {A B : M.C} [is_cofibrant A] (P P' : cylinder A) {f₁ f₂ f₃ : A �
   h₀ := by erw [category.assoc, pushout.inl_desc, H₁.h₀],
   h₁ := by erw [category.assoc, pushout.inr_desc, H₂.h₁], }
 
+def comp_right {A B C : M.C} {P : precylinder A} {f f' : A ⟶ B}
+  (H : P.left_homotopy f f') (g : B ⟶ C) : P.left_homotopy (f ≫ g) (f' ≫ g) :=
+{ h := H.h ≫ g,
+  h₀ := by rw [← assoc, H.h₀],
+  h₁ := by rw [← assoc, H.h₁], }
+
 end left_homotopy
+
+end precylinder
 
 namespace pre_path_object
 
 structure right_homotopy {A B : M.C} (P : pre_path_object B) (f₀ f₁ : A ⟶ B) :=
 (h : A ⟶ P.I') (h₀ : h ≫ P.d₀' = f₀) (h₁ : h ≫ P.d₁' = f₁)
 
+def symm {B : M.C} (P : pre_path_object B) : pre_path_object B := P.symm
+
+namespace right_homotopy
+
+def refl {A B : M.C} {P : pre_path_object B} (f : A ⟶ B) : P.right_homotopy f f :=
+{ h := f ≫ P.σ',
+  h₀ := by { rw [assoc, P.σd₀', comp_id], },
+  h₁ := by { rw [assoc, P.σd₁', comp_id], }, }
+
+def symm {A B : M.C} {P : pre_path_object B} {f g : A ⟶ B} (H : P.right_homotopy f g) :
+  P.symm.right_homotopy g f :=
+{ h := H.h,
+  h₀ := H.h₁,
+  h₁ := H.h₀ }
+
+def comp_left {A B C : M.C} {P : pre_path_object C} {g g' : B ⟶ C}
+  (H : P.right_homotopy g g') (f : A ⟶ B) : P.right_homotopy (f ≫ g) (f ≫ g') :=
+{ h := f ≫ H.h,
+  h₀ := by rw [assoc, H.h₀],
+  h₁ := by rw [assoc, H.h₁], }
+
+end right_homotopy
+
 end pre_path_object
 
 namespace path_object
 
 abbreviation pre {B : M.C} (P : path_object B) : pre_path_object B := P.to_precylinder
+
+end path_object
+
+lemma path_object_exists (B : M.C) : ∃ (P : path_object B), arrow.mk P.pre.σ' ∈ M.cof :=
+by { cases cylinder_exists (M.op_obj B) with C hC, use [C, hC], }
+
+namespace path_object
+
+def symm {B : M.C} (P : path_object B) : path_object B := P.symm
 
 @[protected]
 def op {B : M.C} (P : path_object B) : cylinder _ := P
