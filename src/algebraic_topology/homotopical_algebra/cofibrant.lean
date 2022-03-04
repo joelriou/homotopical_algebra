@@ -47,7 +47,7 @@ begin
 end
 
 lemma is_cofibrant_iff_op (A : M.C) : is_cofibrant A ↔ is_fibrant (M.op_obj A) :=
-begin
+begin /- to be redone using that if two maps are isomorphic, one is cof iff the other, same fib -/
   split,
   { intro hA,
     dsimp only [is_fibrant],
@@ -70,7 +70,7 @@ begin
     exact terminal_is_terminal, },
 end
 
---lemma fibrant_iff_op (A : M.C) : is_fibrant A ↔ is_cofibrant (M.op_obj A) := sorry
+lemma fibrant_iff_op (A : M.C) : is_fibrant A ↔ is_cofibrant (M.op_obj A) := sorry
 
 end model_category
 

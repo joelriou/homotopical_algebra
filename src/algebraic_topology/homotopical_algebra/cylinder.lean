@@ -76,7 +76,8 @@ def π := prod.lift P.d₀' P.d₁'
 
 def fib_π := arrow.mk P.π ∈ M.fib
 
-lemma fib_iff_cof_op : P.fib_π ↔ P.cof_ι := sorry
+lemma fib_π_iff_cof_ι_op {B : M.C} (P : pre_path_object B) :
+  P.fib_π ↔ P.cof_ι := sorry
 
 end pre_path_object
 
@@ -210,8 +211,11 @@ namespace path_object
 
 abbreviation pre {B : M.C} (P : path_object B) : pre_path_object B := P.to_precylinder
 
+@[protected]
+def op {B : M.C} (P : path_object B) : cylinder _ := P
+
 def fib_π {B : M.C} (P : path_object B) : arrow.mk P.pre.π ∈ M.fib :=
-P.pre.fib_iff_cof_op.mpr P.cof_ι
+P.pre.fib_π_iff_cof_ι_op.mpr P.cof_ι
 
 def right_homotopy_of_left_homotopy {A B : M.C} (P : path_object B) (C : cylinder A) (hA : is_cofibrant A)
   (f₀ f₁ : A ⟶ B) (Hl : C.to_precylinder.left_homotopy f₀ f₁) : P.pre.right_homotopy f₀ f₁ :=
@@ -240,6 +244,48 @@ begin
 end
 
 end path_object
+
+namespace precylinder
+
+@[protected]
+def op {A : M.C} (C : precylinder A) : @pre_path_object M.op (opposite.op A) :=
+{ I := opposite.op (opposite.op C.I),
+  d₀ := C.d₀.op.op,
+  d₁ := C.d₁.op.op,
+  σ := C.σ.op.op,
+  σd₀ := by simpa only [← op_comp, C.σd₀],
+  σd₁ := by simpa only [← op_comp, C.σd₁],
+  Wσ := C.Wσ, }
+
+end precylinder
+
+namespace cylinder
+
+@[protected]
+def op {A : M.C} (C : cylinder A) : @path_object M.op (opposite.op A) :=
+{ to_precylinder := C.to_precylinder.op,
+  cof_ι := sorry, }
+
+def left_homotopy_of_right_homotopy {A B : M.C} (C : cylinder A) (P : path_object B)
+  (hB : is_fibrant B) (f₀ f₁ : A ⟶ B) (Hr : P.pre.right_homotopy f₀ f₁) :
+  C.to_precylinder.left_homotopy f₀ f₁ :=
+begin
+  let C' := P.op,
+  let P' := C.op,
+  let Hl' : C'.to_precylinder.left_homotopy f₀.op f₁.op :=
+  { h := Hr.h.op,
+    h₀ := quiver.hom.unop_inj Hr.h₀,
+    h₁ := quiver.hom.unop_inj Hr.h₁, },
+  let Hr' := P'.right_homotopy_of_left_homotopy C' _ f₀.op f₁.op Hl', swap,
+  { erw ← fibrant_iff_op,
+    exact hB, },
+  exact
+  { h := Hr'.h.unop,
+    h₀ := quiver.hom.op_inj Hr'.h₀,
+    h₁ := quiver.hom.op_inj Hr'.h₁, },
+end
+
+end cylinder
 
 end model_category
 
