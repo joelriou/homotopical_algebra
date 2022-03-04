@@ -12,6 +12,23 @@ open category_theory
 open category_theory.limits
 open algebraic_topology
 
+/- for category_theory/quotient.lean -/
+namespace category_theory
+
+namespace quotient
+
+lemma functor_map_surj {C : Type*} [category C] (r : hom_rel C) (s t : C) :
+  function.surjective (λ (f : s ⟶ t), (functor r).map f) :=
+begin
+  intro f,
+  cases surjective_quot_mk _ f with g hg,
+  use [g, hg],
+end
+
+end quotient
+
+end category_theory
+
 namespace algebraic_topology
 
 namespace model_category
@@ -110,16 +127,61 @@ def congruence : congruence (right_ho_trans_closure_hom_rel M) :=
 @[derive category]
 def Ho := quotient (right_ho_trans_closure_hom_rel M)
 
+@[simps]
 def L : M.cofibrant_objects ⥤ cofibrant_objects.Ho M :=
 quotient.functor (right_ho_trans_closure_hom_rel M)
 
 end cofibrant_objects
 
 @[derive category]
-def fibrant_objects := { X : M.C // nonempty (is_fibrant X) }
+def fibrant_and_cofibrant_objects := { X : M.cofibrant_objects // nonempty (is_fibrant X.1) }
 
-def fibrant_and_cofibrant_objects := { X : M.C // nonempty (is_fibrant X) ∧ nonempty (is_cofibrant X) }
+namespace fibrant_and_cofibrant_objects
+
+def mk_obj (X : M.C) [h₁ : is_cofibrant X] [h₂ : is_fibrant X] : M.fibrant_and_cofibrant_objects :=
+⟨⟨X, nonempty.intro h₁⟩, nonempty.intro h₂⟩
+
+@[derive category]
+def Ho := { X : cofibrant_objects.Ho M // nonempty (is_fibrant X.1.1) }
+
+variable {M}
+
+@[simps]
+def L : M.fibrant_and_cofibrant_objects ⥤ fibrant_and_cofibrant_objects.Ho M :=
+begin
+  let F : M.fibrant_and_cofibrant_objects ⥤ cofibrant_objects.Ho M :=
+    induced_functor _ ⋙ cofibrant_objects.L M,
+  exact
+  { obj := λ X, ⟨F.obj X, X.2⟩,
+    map := λ X Y f, F.map f,
+    map_id' := λ X, F.map_id X,
+    map_comp' := λ X Y Z f g, F.map_comp f g, }
+end
+
+def L_map_surjective (X Y : M.fibrant_and_cofibrant_objects) :
+  function.surjective (λ (f : X ⟶ Y), L.map f) :=
+begin
+  intro f,
+  cases category_theory.quotient.functor_map_surj _ _ _ f with g hg,dsimp at g,
+  use [g, hg],
+end
+
+def L_map_eq_iff {X Y : M.fibrant_and_cofibrant_objects} (C : cylinder X.1.1) (f₀ f₁ : X ⟶ Y) :
+  L.map f₀ = L.map f₁ ↔ nonempty (C.to_precylinder.left_homotopy f₀ f₁) :=
+begin
+  split,
+  { sorry, },
+  { intro h,
+    apply category_theory.quotient.sound,
+    haveI : is_cofibrant X.1.1 := X.1.2.some,
+    let P := (path_object_exists Y.1.1).some,
+    have H := P.right_homotopy_of_left_homotopy C f₀ f₁ h.some,
+    exact cofibrant_objects.right_ho_trans_closure.right_homotopy ⟨P, nonempty.intro H⟩, }
+end
+
+end fibrant_and_cofibrant_objects
 
 end model_category
 
 end algebraic_topology
+-- cf category_theory.full_subcategory
