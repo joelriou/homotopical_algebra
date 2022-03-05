@@ -114,13 +114,22 @@ def symm {A : M.C} (P : precylinder A) : precylinder A :=
   σd₁ := P.σd₀,
   Wσ := P.Wσ, }
 
+def arrow_iso_ι_symm {A : M.C} (P : precylinder A) :
+  arrow.mk P.ι ≅ arrow.mk P.symm.ι :=
+begin
+  refine arrow.mk_iso (coprod.braiding _ _) (by refl) _,
+  dsimp,
+  simpa only [coprod.desc_comp, coprod.inr_desc, coprod.inl_desc, comp_id],
+end
+
+
 end precylinder
 
 namespace cylinder
 
 def symm {A : M.C} (C : cylinder A) : cylinder A :=
 { to_precylinder := C.to_precylinder.symm,
-  cof_ι := sorry }
+  cof_ι := (M.cof_iff_of_arrow_iso _ _ C.to_precylinder.arrow_iso_ι_symm).mp C.cof_ι, }
 
 def cof_d₀ {A : M.C} [hA : is_cofibrant A] (C : cylinder A) :
   arrow.mk C.d₀ ∈ M.cof :=
@@ -198,7 +207,7 @@ def symm {A B : M.C} (P : precylinder A) {f g : A ⟶ B} (H : P.left_homotopy f 
   h₀ := H.h₁,
   h₁ := H.h₀ }
 
-def trans {A B : M.C} [is_cofibrant A] (P P' : cylinder A) {f₁ f₂ f₃ : A ⟶ B}
+def trans {A B : M.C} [is_cofibrant A] {P P' : cylinder A} {f₁ f₂ f₃ : A ⟶ B}
   (H₁ : P.to_precylinder.left_homotopy f₁ f₂) (H₂ : P'.to_precylinder.left_homotopy f₂ f₃) :
     (P.trans P').to_precylinder.left_homotopy f₁ f₃ :=
 { h := pushout.desc H₁.h H₂.h (by rw [H₁.h₁, H₂.h₀]),
@@ -265,7 +274,7 @@ def fib_π {B : M.C} (P : path_object B) : arrow.mk P.pre.π ∈ M.fib :=
 P.pre.fib_π_iff_cof_ι_op.mpr P.cof_ι
 
 def right_homotopy_of_left_homotopy {A B : M.C} [is_cofibrant A] (P : path_object B) (C : cylinder A)
-  (f₀ f₁ : A ⟶ B) (Hl : C.to_precylinder.left_homotopy f₀ f₁) : P.pre.right_homotopy f₀ f₁ :=
+  {f₀ f₁ : A ⟶ B} (Hl : C.to_precylinder.left_homotopy f₀ f₁) : P.pre.right_homotopy f₀ f₁ :=
 begin
   have foo := Hl.h,
   let sq : arrow.mk C.d₀ ⟶ arrow.mk P.pre.π :=
@@ -314,7 +323,7 @@ def op {A : M.C} (C : cylinder A) : @path_object M.op (opposite.op A) :=
   cof_ι := sorry, }
 
 def left_homotopy_of_right_homotopy {A B : M.C} [hB : is_fibrant B] (C : cylinder A) (P : path_object B)
-  (f₀ f₁ : A ⟶ B) (Hr : P.pre.right_homotopy f₀ f₁) :
+  {f₀ f₁ : A ⟶ B} (Hr : P.pre.right_homotopy f₀ f₁) :
   C.to_precylinder.left_homotopy f₀ f₁ :=
 begin
   let C' := P.op,
@@ -326,11 +335,19 @@ begin
   haveI : @is_cofibrant M.op (opposite.op B),
   { equiv_rw (is_fibrant_equiv_op B).symm,
     exact hB, },
-  let Hr' := P'.right_homotopy_of_left_homotopy C' f₀.op f₁.op Hl',
+  let Hr' := P'.right_homotopy_of_left_homotopy C' Hl',
   exact
   { h := Hr'.h.unop,
     h₀ := quiver.hom.op_inj Hr'.h₀,
     h₁ := quiver.hom.op_inj Hr'.h₁, },
+end
+
+def left_homotopy_from_other_cylinder {A B : M.C} [hA : is_cofibrant A] [hB : is_fibrant B]
+  (C C' : cylinder A) (f₀ f₁ : A ⟶ B) (H' : C'.to_precylinder.left_homotopy f₀ f₁) :
+  C.to_precylinder.left_homotopy f₀ f₁ :=
+begin
+  apply C.left_homotopy_of_right_homotopy (path_object_exists B).some,
+  apply path_object.right_homotopy_of_left_homotopy _ _ H',
 end
 
 end cylinder

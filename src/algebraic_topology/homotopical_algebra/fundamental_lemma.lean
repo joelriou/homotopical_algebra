@@ -113,23 +113,26 @@ begin
   { exact trans H₁₂' H₂₃', },
 end
 
-end right_ho_trans_closure
-
 variable (M)
 
-def right_ho_trans_closure_hom_rel : hom_rel M.cofibrant_objects := λ X Y, cofibrant_objects.right_ho_trans_closure
+@[simp]
+def hom_rel : hom_rel M.cofibrant_objects := λ X Y, cofibrant_objects.right_ho_trans_closure
 
-def congruence : congruence (right_ho_trans_closure_hom_rel M) :=
+instance : congruence (hom_rel M) :=
 { is_equiv := right_ho_trans_closure.is_equiv,
   comp_left := right_ho_trans_closure.comp_left,
   comp_right := right_ho_trans_closure.comp_right }
 
+end right_ho_trans_closure
+
+variable (M)
+
 @[derive category]
-def Ho := quotient (right_ho_trans_closure_hom_rel M)
+def Ho := quotient (right_ho_trans_closure.hom_rel M)
 
 @[simps]
 def L : M.cofibrant_objects ⥤ cofibrant_objects.Ho M :=
-quotient.functor (right_ho_trans_closure_hom_rel M)
+quotient.functor (right_ho_trans_closure.hom_rel M)
 
 end cofibrant_objects
 
@@ -166,16 +169,26 @@ begin
   use [g, hg],
 end
 
-def L_map_eq_iff {X Y : M.fibrant_and_cofibrant_objects} (C : cylinder X.1.1) (f₀ f₁ : X ⟶ Y) :
-  L.map f₀ = L.map f₁ ↔ nonempty (C.to_precylinder.left_homotopy f₀ f₁) :=
+def L_map_eq_iff {X Y : M.fibrant_and_cofibrant_objects} (C : cylinder X.1.1) (f g : X ⟶ Y) :
+  L.map f = L.map g ↔ nonempty (C.to_precylinder.left_homotopy f g) :=
 begin
+  haveI := X.1.2.some,
+  haveI := Y.2.some,
   split,
-  { sorry, },
+  { intro h,
+    dsimp only [L, functor.comp_map, cofibrant_objects.L] at h,
+    erw quotient.functor_map_eq_iff at h,
+    dsimp at h,
+    induction h with f₀ f₁ Hr f₁ f₂ f₃ H₁₂ H₂₃ H H',
+    { cases Hr with P hP,
+      apply nonempty.intro,
+      exact @cylinder.left_homotopy_of_right_homotopy M X.1.1 Y.1.1 infer_instance C P _ _ hP.some, },
+    { apply nonempty.intro,
+      exact C.left_homotopy_from_other_cylinder _ _ _ (H.some.trans H'.some), }, },
   { intro h,
     apply category_theory.quotient.sound,
-    haveI : is_cofibrant X.1.1 := X.1.2.some,
     let P := (path_object_exists Y.1.1).some,
-    have H := P.right_homotopy_of_left_homotopy C f₀ f₁ h.some,
+    have H := P.right_homotopy_of_left_homotopy C h.some,
     exact cofibrant_objects.right_ho_trans_closure.right_homotopy ⟨P, nonempty.intro H⟩, }
 end
 
