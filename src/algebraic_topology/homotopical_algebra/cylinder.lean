@@ -344,8 +344,6 @@ begin
   { simpa only [pre_path_object.π, prod.comp_lift], },
 end
 
-#exit
-
 end path_object
 
 namespace precylinder

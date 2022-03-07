@@ -92,13 +92,17 @@ begin
       erw [Q.pre.σd₁', ← assoc, P'.pre.σd₁', id_comp, comp_id], }, },
   let hSq₂ := (M.CM4b Sq₂.left Sq₂.right ⟨hi, P'.pre.Wσ'⟩ Q.fib_π).sq_has_lift,
   let l₂ := (hSq₂ Sq₂.hom).exists_lift.some,
+  have eq₀ := congr_arg ((λ (f : _ ⟶ prod X.1 X.1), f ≫ limits.prod.fst)) l₂.fac_right,
+  have eq₁ := congr_arg ((λ (f : _ ⟶ prod X.1 X.1), f ≫ limits.prod.snd)) l₂.fac_right,
+  simp only [pre_path_object.π, prod.lift_fst, prod.lift_snd, prod.lift_map,
+    square.mk''_right_hom, prod.comp_lift, square.mk''_hom_right] at eq₀ eq₁,
   let H'' : Q.pre.right_homotopy (f ≫ g) (f' ≫ g) := 
-  { h := l.lift ≫ l₂.lift,
-    h₀ := sorry,
-    h₁ := sorry, },
-  sorry,
+  { h := H'.h ≫ l₂.lift,
+    h₀ := by rw [assoc, eq₀, ← assoc, H'.h₀],
+    h₁ := by rw [assoc, eq₁, ← assoc, H'.h₁], },
+  use [Q, nonempty.intro H''],
 end
-#exit
+
 end right_homotopy
 
 inductive right_ho_trans_closure {A X : M.cofibrant_objects} : (A ⟶ X) → (A ⟶ X) → Prop
