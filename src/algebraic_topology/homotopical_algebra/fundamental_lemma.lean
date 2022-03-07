@@ -191,6 +191,8 @@ begin
     map_comp' := λ X Y Z f g, F.map_comp f g, }
 end
 
+def forget : M.fibrant_and_cofibrant_objects ⥤ M.C := induced_functor _
+
 def L_map_surjective (X Y : M.fibrant_and_cofibrant_objects) :
   function.surjective (λ (f : X ⟶ Y), L.map f) :=
 begin
@@ -221,6 +223,16 @@ begin
     have H := P.right_homotopy_of_left_homotopy C h.some,
     exact cofibrant_objects.right_ho_trans_closure.right_homotopy ⟨P, nonempty.intro H⟩, }
 end
+
+def W : arrow_class (M.fibrant_and_cofibrant_objects) :=
+λ f, arrow.mk (forget.map f.hom) ∈ M.W
+
+namespace universal
+
+/- Universal property of the localization for
+the homotopy category of cof and fib objects -/
+
+end universal
 
 end fibrant_and_cofibrant_objects
 

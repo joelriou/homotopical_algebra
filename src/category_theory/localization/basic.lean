@@ -36,19 +36,16 @@ lemma functor.assoc {C D E F : Type*} [category C] [category D]
   [category E] [category F] (φ : C ⥤ D)
   (φ' : D ⥤ E) (φ'' : E ⥤ F) : (φ ⋙ φ') ⋙ φ'' = φ ⋙ (φ' ⋙ φ'') :=
 by refl
-/-
-structure is_localization_same_univ (F : C ⥤ D) (W : arrow_class C) :=
-  (inverts_W : W.is_inverted_by F)
-  (lift : Π {E : Type u₂} [category.{v₂} E] (G : C ⥤ E) (hG : W.is_inverted_by G), D ⥤ E)
-  (fac : ∀ {E : Type u₂} [category.{v₂} E] (G : C ⥤ E) (hG : W.is_inverted_by G), G = F ⋙ lift G hG)
-  (uniq : ∀ {E : Type u₂} [category.{v₂} E] (G₁ G₂ : D ⥤ E), F ⋙ G₁ = F ⋙ G₂ → G₁ = G₂)
 
-
-structure is_localization_fixed_target (E : Type u₃) [category.{v₃} E] (F : C ⥤ D) (W : arrow_class C) :=  
+structure is_localization_fixed_target (W : arrow_class C) (F : C ⥤ D)  (E : Type u₃) [category.{v₃} E] :=
   (inverts_W : W.is_inverted_by F)
   (lift : Π (G : C ⥤ E) (hG : W.is_inverted_by G), D ⥤ E)
   (fac : ∀ (G : C ⥤ E) (hG : W.is_inverted_by G), G = F ⋙ lift G hG)
   (uniq : ∀ (G₁ G₂ : D ⥤ E), F ⋙ G₁ = F ⋙ G₂ → G₁ = G₂)
+
+
+/-
+
 
 
 def localization_wrt_isomorphisms (E : Type u₃) [category.{v₃} E] :

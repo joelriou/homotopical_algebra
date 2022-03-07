@@ -286,11 +286,11 @@ end localization
 
 variable (L : C ⥤ D)
 
-structure is_localization (L : C ⥤ D) (W : arrow_class C) :=
+structure is_localization (W : arrow_class C) (L : C ⥤ D) :=
 (inverts_W : W.is_inverted_by L)
 (is_equivalence : is_equivalence (localization.lift L inverts_W))
 
-structure is_strict_localization (L : C ⥤ D) (W : arrow_class C) extends is_localization L W :=
+structure is_strict_localization (W : arrow_class C) (L : C ⥤ D) extends is_localization W L :=
 (is_isomorphism : (localization.lift L inverts_W ⋙ is_equivalence.inverse).obj = id
   ∧ (is_equivalence.inverse ⋙ localization.lift L inverts_W).obj = id)
 
