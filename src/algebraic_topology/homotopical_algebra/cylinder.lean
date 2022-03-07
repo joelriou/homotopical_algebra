@@ -34,6 +34,21 @@ def ι {A : M.C} (P : precylinder A) := coprod.desc P.d₀ P.d₁
 @[simp]
 def cof_ι {A : M.C} (P : precylinder A) := arrow.mk P.ι ∈ M.cof
 
+def change_I {A : M.C} (P : precylinder A) {Z : M.C}
+  {f : P.I ⟶ Z} {g : Z ⟶ A} (fac : P.σ = f ≫ g)
+  (hf : arrow.mk f ∈ M.W) : precylinder A :=
+{ I := Z,
+  d₀ := P.d₀ ≫ f,
+  d₁ := P.d₁ ≫ f,
+  σ := g,
+  σd₀ := by rw [assoc, ← fac, P.σd₀],
+  σd₁ := by rw [assoc, ← fac, P.σd₁],
+  Wσ := begin
+    apply M.CM2.of_comp_left f g hf,
+    convert P.Wσ,
+    exact fac.symm,
+  end }
+
 end precylinder
 
 structure cylinder (A : M.C) extends precylinder A :=
@@ -81,6 +96,15 @@ def fib_π := arrow.mk P.π ∈ M.fib
 lemma fib_π_iff_cof_ι_op {B : M.C} (P : pre_path_object B) :
   P.fib_π ↔ P.cof_ι :=
 M.op.cof_iff_of_arrow_iso _ _ (arrow.iso_op_prod_lift P.d₀' P.d₁')
+
+def change_I' {B : M.C} (P : pre_path_object B) {Z : M.C}
+  {f : B ⟶ Z} {g : Z ⟶ P.I'} (fac : P.σ' = f ≫ g)
+  (hg : arrow.mk g ∈ M.W) : pre_path_object B :=
+begin
+  have h : P.σ = g.op ≫ f.op := by simpa only [← op_comp, ← fac],
+  apply P.change_I h,
+  exact (arrow_class.mem_op_iff M.W (arrow.mk g.op)).mp hg,
+end
 
 end pre_path_object
 
