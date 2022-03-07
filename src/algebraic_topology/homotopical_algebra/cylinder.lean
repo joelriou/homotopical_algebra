@@ -13,6 +13,7 @@ open category_theory
 open category_theory.category
 open category_theory.limits
 open algebraic_topology
+open opposite
 
 variables {M : model_category}
 
@@ -78,7 +79,8 @@ def π := prod.lift P.d₀' P.d₁'
 def fib_π := arrow.mk P.π ∈ M.fib
 
 lemma fib_π_iff_cof_ι_op {B : M.C} (P : pre_path_object B) :
-  P.fib_π ↔ P.cof_ι := sorry
+  P.fib_π ↔ P.cof_ι :=
+M.op.cof_iff_of_arrow_iso _ _ (arrow.iso_op_prod_lift P.d₀' P.d₁')
 
 end pre_path_object
 
@@ -320,7 +322,11 @@ namespace cylinder
 @[protected]
 def op {A : M.C} (C : cylinder A) : @path_object M.op (opposite.op A) :=
 { to_precylinder := C.to_precylinder.op,
-  cof_ι := sorry, }
+  cof_ι := begin
+    rw ← C.to_precylinder.op.fib_π_iff_cof_ι_op,
+    apply (M.op.fib_iff_of_arrow_iso _ _ (arrow.iso_prod_lift_op C.to_precylinder.d₀ C.to_precylinder.d₁)).mpr,
+    exact C.cof_ι,
+  end, }
 
 def left_homotopy_of_right_homotopy {A B : M.C} [hB : is_fibrant B] (C : cylinder A) (P : path_object B)
   {f₀ f₁ : A ⟶ B} (Hr : P.pre.right_homotopy f₀ f₁) :

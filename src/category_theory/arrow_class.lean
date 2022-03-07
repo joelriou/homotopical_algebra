@@ -56,6 +56,97 @@ lemma op_mk {T : Type*} [category T] {X Y : T} (f : X ⟶ Y) : (arrow.mk f).op =
 lemma unop_mk {T : Type*} [category T] {X Y : Tᵒᵖ} (f : X ⟶ Y) :
   (arrow.mk f).unop = arrow.mk f.unop := by refl
 
+@[simps]
+def op_prod {C : Type*} [category C] {X Y : C} [has_binary_product X Y] 
+  [has_binary_coproduct (op X) (op Y)] :
+  op (X ⨯ Y) ≅ op X ⨿ op Y :=
+begin
+  let cofan : binary_cofan (op X) (op Y) :=
+    binary_cofan.mk (limits.prod.fst : X ⨯ Y ⟶ X).op ((limits.prod.snd : X ⨯ Y ⟶ Y).op),
+  refine (is_colimit.cocone_point_unique_up_to_iso (coprod_is_coprod (op X) (op Y)) (_ : is_colimit cofan)).symm,
+  exact
+  { desc := λ s, begin
+      let φ : _ ⟶ X ⨯ Y := limits.prod.lift (s.ι.app walking_pair.left).unop (s.ι.app walking_pair.right).unop,
+      exact φ.op,
+    end,
+    fac' := λ s j, begin
+      cases j; dsimp [cofan],
+      { rw [← op_comp, prod.lift_fst, quiver.hom.op_unop], },
+      { rw [← op_comp, prod.lift_snd, quiver.hom.op_unop], },
+    end,
+    uniq' := λ s j hs, begin
+      dsimp,
+      apply quiver.hom.unop_inj,
+      rw quiver.hom.unop_op,
+      ext,
+      { simp only [prod.lift_fst],
+        exact congr_arg (quiver.hom.unop) (hs walking_pair.left), },
+      { simp only [prod.lift_snd],
+        exact congr_arg (quiver.hom.unop) (hs walking_pair.right), },
+    end, },
+end
+
+@[simps]
+def unop_prod_op {C : Type*} [category C] {X Y : C} [has_binary_coproduct X Y] [has_binary_product (op X) (op Y)] :
+  unop ((op X) ⨯ (op Y)) ≅ X ⨿ Y :=
+begin
+  let cofan : binary_cofan X Y :=
+    binary_cofan.mk (limits.prod.fst : (op X) ⨯ (op Y) ⟶ op X).unop ((limits.prod.snd : (op X) ⨯ (op Y) ⟶ op Y)).unop,
+  refine (is_colimit.cocone_point_unique_up_to_iso (coprod_is_coprod X Y) (_ : is_colimit cofan)).symm,
+  exact
+  { desc := λ s, begin
+      let φ : op (s.X) ⟶ (op X) ⨯ (op Y) := limits.prod.lift (s.ι.app walking_pair.left).op (s.ι.app walking_pair.right).op,
+      exact φ.unop,
+    end,
+    fac' := λ s j, begin
+      cases j; dsimp [cofan],
+      { rw [← unop_comp, prod.lift_fst, quiver.hom.unop_op], },
+      { rw [← unop_comp, prod.lift_snd, quiver.hom.unop_op], },
+    end,
+    uniq' := λ s j hs, begin
+      dsimp,
+      apply quiver.hom.op_inj,
+      rw quiver.hom.op_unop,
+      ext,
+      { simp only [prod.lift_fst],
+        exact congr_arg (quiver.hom.op) (hs walking_pair.left), },
+      { simp only [prod.lift_snd],
+        exact congr_arg (quiver.hom.op) (hs walking_pair.right), },
+    end,
+    },
+end
+
+def iso_op_prod_lift {C : Type*} [category C] {A X Y : C} [has_binary_product X Y] 
+  [has_binary_coproduct (op X) (op Y)] (f : A ⟶ X) (g : A ⟶ Y) :
+  arrow.mk (prod.lift f g).op ≅ arrow.mk (coprod.desc f.op g.op) :=
+begin
+  symmetry,
+  refine mk_iso op_prod.symm (by refl) _,
+  dsimp,
+  erw [comp_id],
+  ext,
+  { dsimp [limits.is_colimit.cocone_point_unique_up_to_iso, coprod_is_coprod],
+    simp only [coprod.inl_desc, id_comp, comp_id, coprod.desc_comp, ← op_comp, prod.lift_fst], },
+  { dsimp [limits.is_colimit.cocone_point_unique_up_to_iso, coprod_is_coprod],
+    simp only [coprod.inr_desc, id_comp, comp_id, coprod.desc_comp, ← op_comp, prod.lift_snd], },
+end
+
+
+def iso_prod_lift_op {C : Type*} [category C] {A B X : C} [has_binary_coproduct A B]
+  [has_binary_product (op A) (op B)] (f : A ⟶ X) (g : B ⟶ X) :
+  arrow.mk (prod.lift f.op g.op) ≅ (arrow.mk (coprod.desc f g)).op :=
+begin
+  refine mk_iso (by refl) unop_prod_op.op.symm _,
+  apply quiver.hom.unop_inj,
+  dsimp,
+  erw comp_id,
+  ext,
+  { dsimp [limits.is_colimit.cocone_point_unique_up_to_iso, coprod_is_coprod],
+    simpa only [coprod.inl_desc, id_comp, comp_id, coprod.desc_comp, ← unop_comp, prod.lift_fst], },
+  { dsimp [limits.is_colimit.cocone_point_unique_up_to_iso, coprod_is_coprod],
+    simpa only [coprod.inr_desc, id_comp, comp_id, coprod.desc_comp, ← unop_comp, prod.lift_snd], },
+end
+
 end arrow
 
 namespace arrow_class

@@ -214,10 +214,10 @@ begin
   apply quotient.lift (relations W) (lift_to_path_category G hG),
   { rintro ⟨X⟩ ⟨Y⟩ f₁ f₂ r,
     rcases r with (_|_|_|_),
-    work_on_goal 0 { rcases r with ⟨X', r⟩, },
-    work_on_goal 1 { rcases r with ⟨⟨⟨⟨X',Z,f⟩,⟨Z',Y',g⟩⟩, h⟩, r⟩, },
-    work_on_goal 2 { rcases r with ⟨w, r⟩, },
+    work_on_goal 1 { rcases r with ⟨X', r⟩, },
+    work_on_goal 2 { rcases r with ⟨⟨⟨⟨X',Z,f⟩,⟨Z',Y',g⟩⟩, h⟩, r⟩, },
     work_on_goal 3 { rcases r with ⟨w, r⟩, },
+    work_on_goal 4 { rcases r with ⟨w, r⟩, },
     all_goals {
       have eqX := relation.congr_X_obj r,
       have eqY := relation.congr_Y_obj r,

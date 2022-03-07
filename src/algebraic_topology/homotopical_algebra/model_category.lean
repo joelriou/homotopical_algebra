@@ -161,7 +161,7 @@ def CM4b := M.CM4.2
 def CM5a := M.CM5.1
 def CM5b := M.CM5.2
 
-@[simps]
+@[simps, protected]
 def op : model_category :=
 { C := M.Cᵒᵖ,
   fib_cof_we := M.fib_cof_we.op,
