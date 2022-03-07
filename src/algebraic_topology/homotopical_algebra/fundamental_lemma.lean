@@ -10,6 +10,7 @@ noncomputable theory
 
 open category_theory
 open category_theory.limits
+open category_theory.category
 open algebraic_topology
 
 /- for category_theory/quotient.lean -/
@@ -60,19 +61,44 @@ lemma comp_right {A B X : M.cofibrant_objects}
   {f f' : A ⟶ B} {g : B ⟶ X} (H : right_homotopy f f') :
   right_homotopy (f ≫ g) (f' ≫ g) :=
 begin
-  sorry
---  cases H with P hP,
---  let C := (cylinder_exists A.1).some,
---  suffices hl : C.to_precylinder.left_homotopy (f ≫ g) (f' ≫ g),
---  { let P' := (path_object_exists X.1).some,
---    haveI := A.2.some,
---    use [P', nonempty.intro (P'.right_homotopy_of_left_homotopy C _ _ hl)], },
---  suffices hl' : C.to_precylinder.left_homotopy f f',
---  { exact hl'.comp_right g, },
---  { exact @cylinder.left_homotopy_of_right_homotopy M _ _ sorry C P _ _ hP.some,
---    -- se ramener au cas où B est fibrant ?
+  cases H with P hP,
+  rcases M.CM5b (arrow.mk P.pre.σ') with ⟨Z, i, p, fac, ⟨hi, hp⟩⟩,
+  let P' := P.change_I' fac hp,
+  let H := hP.some,
+  let Sq := square.mk'' (initial.to _) p (initial.to _) H.h
+    (by { dsimp, apply subsingleton.elim, }),
+  have hSq := (M.CM4a Sq.left Sq.right A.2.some.1 hp).sq_has_lift,
+  let l := (hSq Sq.hom).exists_lift.some,
+  have hk : l.lift ≫ p = H.h := l.fac_right,
+  let H' : P'.pre.right_homotopy f f' :=
+  { h := l.lift,
+    h₀ := begin
+      dsimp [P', pre_path_object.d₀'],
+      erw [← assoc, hk, H.h₀],
+    end,
+    h₁ := begin
+      dsimp [P', pre_path_object.d₁'],
+      erw [← assoc, hk, H.h₁],
+    end, },
+  cases path_object_exists X.1 with Q hQ,
+  let Sq₂ := square.mk'' P'.pre.σ' Q.pre.π
+    (g ≫  Q.pre.σ') (P'.pre.π ≫ (limits.prod.map g g)) _, rotate,
+  { ext,
+    { dsimp,
+      simp only [assoc, prod.lift_fst, prod.lift_map],
+      erw [Q.pre.σd₀', ← assoc, P'.pre.σd₀', id_comp, comp_id], },
+    { dsimp,
+      simp only [assoc, prod.lift_snd, prod.lift_map],
+      erw [Q.pre.σd₁', ← assoc, P'.pre.σd₁', id_comp, comp_id], }, },
+  let hSq₂ := (M.CM4b Sq₂.left Sq₂.right ⟨hi, P'.pre.Wσ'⟩ Q.fib_π).sq_has_lift,
+  let l₂ := (hSq₂ Sq₂.hom).exists_lift.some,
+  let H'' : Q.pre.right_homotopy (f ≫ g) (f' ≫ g) := 
+  { h := l.lift ≫ l₂.lift,
+    h₀ := sorry,
+    h₁ := sorry, },
+  sorry,
 end
-
+#exit
 end right_homotopy
 
 inductive right_ho_trans_closure {A X : M.cofibrant_objects} : (A ⟶ X) → (A ⟶ X) → Prop

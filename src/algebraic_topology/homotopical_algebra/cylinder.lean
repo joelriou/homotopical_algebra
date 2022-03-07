@@ -34,6 +34,7 @@ def ι {A : M.C} (P : precylinder A) := coprod.desc P.d₀ P.d₁
 @[simp]
 def cof_ι {A : M.C} (P : precylinder A) := arrow.mk P.ι ∈ M.cof
 
+@[simps]
 def change_I {A : M.C} (P : precylinder A) {Z : M.C}
   {f : P.I ⟶ Z} {g : Z ⟶ A} (fac : P.σ = f ≫ g)
   (hf : arrow.mk f ∈ M.W) : precylinder A :=
@@ -284,6 +285,11 @@ namespace path_object
 
 abbreviation pre {B : M.C} (P : path_object B) : pre_path_object B := P.to_precylinder
 
+def mk {B : M.C} (P : pre_path_object B) (hP : arrow.mk P.π ∈ M.fib) :
+  path_object B :=
+{ to_precylinder := P,
+  cof_ι := P.fib_π_iff_cof_ι_op.mp hP, }
+
 end path_object
 
 lemma path_object_exists (B : M.C) : ∃ (P : path_object B), arrow.mk P.pre.σ' ∈ M.cof :=
@@ -324,6 +330,21 @@ begin
     h₀ := by erw [assoc, hr₀, ← assoc, C.σd₁, id_comp],
     h₁ := by { erw [assoc, hr₁, Hl.h₁], }, },
 end
+
+@[simps]
+def change_I' {B : M.C} (P : path_object B) {Z : M.C}
+  {f : B ⟶ Z} {g : Z ⟶ P.pre.I'} (fac : P.pre.σ' = f ≫ g)
+  (hg : arrow.mk g ∈ M.triv_fib) : path_object B :=
+begin
+  let Q := P.pre.change_I' fac hg.2,
+  refine path_object.mk Q _,
+  dsimp [pre_path_object.change_I', precylinder.change_I],
+  convert M.fib_comp_stable _ _ _ g P.pre.π hg.1 P.fib_π,
+  ext;
+  { simpa only [pre_path_object.π, prod.comp_lift], },
+end
+
+#exit
 
 end path_object
 
