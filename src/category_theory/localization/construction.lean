@@ -317,6 +317,16 @@ lemma functor.assoc {C D E F : Type*} [category C] [category D]
   (φ' : D ⥤ E) (φ'' : E ⥤ F) : (φ ⋙ φ') ⋙ φ'' = φ ⋙ (φ' ⋙ φ'') :=
 by refl
 
+lemma strict_localization_is_ess_unique_on_obj {W : arrow_class C} {D' : Type*} [category D']
+  (F₁ : C ⥤ D) (F₂ : C ⥤ D')
+  (L₁ : W.is_strict_localization_fixed_target F₁ D') (L₂ : W.is_strict_localization_fixed_target F₂ D)
+  (L₁' : W.is_strict_localization_fixed_target F₁ D) (L₂' : W.is_strict_localization_fixed_target F₂ D') :
+  L₁.lift F₂ L₂.inverts_W ⋙ L₂.lift F₁ L₁.inverts_W = 𝟭 _ :=
+begin
+  apply L₁'.uniq,
+  rw [← functor.assoc, L₁.fac F₂ L₂.inverts_W, L₂.fac F₁ L₁.inverts_W, functor.comp_id],
+end
+
 @[simps]
 def strict_localization_is_ess_unique {W : arrow_class C} {D' : Type*} [category D']
   (F₁ : C ⥤ D) (F₂ : C ⥤ D')
@@ -324,14 +334,10 @@ def strict_localization_is_ess_unique {W : arrow_class C} {D' : Type*} [category
   (L₁' : W.is_strict_localization_fixed_target F₁ D) (L₂' : W.is_strict_localization_fixed_target F₂ D') : D ≌ D' :=
 { functor := L₁.lift F₂ L₂.inverts_W,
   inverse := L₂.lift F₁ L₁.inverts_W,
-  unit_iso := eq_to_iso begin
-    apply L₁'.uniq,
-    rw [← functor.assoc, L₁.fac F₂ L₂.inverts_W, L₂.fac F₁ L₁.inverts_W, functor.comp_id],
-  end,
-  counit_iso := eq_to_iso begin
-    apply L₂'.uniq,
-    rw [← functor.assoc, L₂.fac F₁ L₁.inverts_W, L₁.fac F₂ L₂.inverts_W, functor.comp_id],
-  end,
+  unit_iso := eq_to_iso 
+    (strict_localization_is_ess_unique_on_obj F₁ F₂ L₁ L₂ L₁' L₂').symm,
+  counit_iso := eq_to_iso 
+    (strict_localization_is_ess_unique_on_obj F₂ F₁ L₂ L₁ L₂' L₁'),
   functor_unit_iso_comp' := begin
     intro X,
     simpa only [eq_to_iso.hom, eq_to_hom_app, eq_to_hom_map, eq_to_hom_trans, eq_to_hom_refl],
@@ -343,12 +349,24 @@ def mk' (W : arrow_class C) (L : C ⥤ D)
   (h₁ : W.is_strict_localization_fixed_target L W.localization)
   (h₂ : W.is_strict_localization_fixed_target L D) :
   is_strict_localization W L :=
-{ inverts_W := h₁.inverts_W,
-  is_equivalence := is_equivalence.of_equivalence
-      (strict_localization_is_ess_unique (localization.Q W) L
+begin
+  let e := (strict_localization_is_ess_unique (localization.Q W) L
       (localization.universal_property W) h₁ (localization.universal_property W) h₂),
-  is_isomorphism := sorry }
-
+  have eq₁ := strict_localization_is_ess_unique_on_obj (localization.Q W) L
+      (localization.universal_property W) h₁ (localization.universal_property W) h₂,
+  have eq₂ := strict_localization_is_ess_unique_on_obj L (localization.Q W)
+      h₁ (localization.universal_property W) h₂ (localization.universal_property W),
+  exact 
+  { inverts_W := h₁.inverts_W,
+  is_equivalence := is_equivalence.of_equivalence e,
+  is_isomorphism := begin
+    split,
+    { ext1 X,
+      exact functor.congr_obj eq₁ X, },
+    { ext X,
+      exact functor.congr_obj eq₂ X, },
+  end, }
+end
 
 end is_strict_localization
 
