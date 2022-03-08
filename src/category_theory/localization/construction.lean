@@ -17,6 +17,29 @@ open category_theory.category
 
 namespace category_theory
 
+namespace functor
+
+--lemma congr_obj {D₁ D₂ : Type*} [category D₁] [category D₂] {F G : D₁ ⥤ D₂}
+--(h : F = G) : ∀ X : D₁, F.obj X = G.obj X :=
+--by { intro X, rw h, }
+
+lemma congr_map_conjugate {D₁ D₂ : Type*} [category D₁] [category D₂] {F G : D₁ ⥤ D₂}
+(h : F = G) {X Y : D₁} (f : X ⟶ Y) : F.map f =
+eq_to_hom (by rw h) ≫ G.map f ≫ eq_to_hom (by rw h) :=
+by { subst h, erw [id_comp, comp_id], }
+
+lemma conjugate_inv_of_congr_map_conjugate {D₁ D₂ : Type*} [category D₁] [category D₂] (F G : D₁ ⥤ D₂)
+  {X Y : D₁} (e : X ≅ Y) (hX : F.obj X = G.obj X) (hY : F.obj Y = G.obj Y)
+  (h₂ : F.map e.hom = eq_to_hom (by rw hX) ≫ G.map e.hom ≫ eq_to_hom (by rw hY)) :
+F.map e.inv = eq_to_hom (by rw hY) ≫ G.map e.inv ≫ eq_to_hom (by rw hX) :=
+by simp only [← is_iso.iso.inv_hom e, functor.map_inv, h₂, is_iso.inv_comp, inv_eq_to_hom, assoc]
+
+lemma congr_map {D D' : Type*} [category D] [category D'] (F : D ⥤ D')
+{X Y : D} {f g : X ⟶ Y} (h : f = g) : F.map f = F.map g :=
+by { subst h, }
+
+end functor
+
 universes v v' v₃ u u' u₃
 
 variables {C : Type u} [category.{v} C]
@@ -149,28 +172,6 @@ def Wiso (w : W) : iso ((Q W).obj w.1.left) ((Q W).obj w.1.right) :=
     exact or.inr (or.inr (or.inr ⟨w, rfl⟩)),
   end }
 
-/-- to be moved somewhere else -/
-lemma congr_obj {D₁ D₂ : Type*} [category D₁] [category D₂] {F G : D₁ ⥤ D₂}
-(h : F = G) : ∀ X : D₁, F.obj X = G.obj X :=
-by { intro X, rw h, }
-
-lemma congr_map_conjugate {D₁ D₂ : Type*} [category D₁] [category D₂] {F G : D₁ ⥤ D₂}
-(h : F = G) {X Y : D₁} (f : X ⟶ Y) : F.map f =
-eq_to_hom (by rw h) ≫ G.map f ≫ eq_to_hom (by rw h) :=
-by { subst h, erw [id_comp, comp_id], }
-
-lemma conjugate_inv_of_congr_map_conjugate {D₁ D₂ : Type*} [category D₁] [category D₂] (F G : D₁ ⥤ D₂)
-  {X Y : D₁} (e : X ≅ Y) (hX : F.obj X = G.obj X) (hY : F.obj Y = G.obj Y)
-  (h₂ : F.map e.hom = eq_to_hom (by rw hX) ≫ G.map e.hom ≫ eq_to_hom (by rw hY)) :
-F.map e.inv = eq_to_hom (by rw hY) ≫ G.map e.inv ≫ eq_to_hom (by rw hX) :=
-by simp only [← is_iso.iso.inv_hom e, functor.map_inv, h₂, is_iso.inv_comp, inv_eq_to_hom, assoc]
-
-lemma congr_map {D D' : Type*} [category D] [category D'] (F : D ⥤ D')
-{X Y : D} {f g : X ⟶ Y} (h : f = g) : F.map f = F.map g :=
-by { subst h, }
-
-/- end of block -/
-
 @[simps]
 def lift_to_loc_quiver {D : Type*} [category D] (G : C ⥤ D) (hG : W.is_inverted_by G) :
   prefunctor (loc_quiver W) D :=
@@ -258,24 +259,24 @@ begin
   suffices h' : (quotient.functor (relations W)) ⋙ G₁ = (quotient.functor (relations W)) ⋙ G₂,
   { apply functor.ext,
     { rintros ⟨⟨X⟩⟩ ⟨⟨Y⟩⟩ ⟨f⟩,
-      convert congr_map_conjugate h' f, },
+      convert functor.congr_map_conjugate h' f, },
     { rintro ⟨⟨X⟩⟩,
-      convert congr_obj h X, }, },
+      convert functor.congr_obj h X, }, },
   { apply paths.ext_functor,
     { rintro ⟨X⟩ ⟨Y⟩ f,
       cases f,
-      { convert congr_map_conjugate h f, },
+      { convert functor.congr_map_conjugate h f, },
       { rcases f with ⟨g, hg⟩,
         dsimp at g hg,
         have hα : (Wiso ⟨arrow.mk g, hg⟩).hom = (Q W).map g := rfl,
-        have h' := congr_map_conjugate h g,
+        have h' := functor.congr_map_conjugate h g,
         simp only [functor.comp_map, ← hα] at h',
-        refine conjugate_inv_of_congr_map_conjugate G₁ G₂ _ _ _ h',
-        { convert congr_obj h Y, },
-        { convert congr_obj h X, }, }, },
+        refine functor.conjugate_inv_of_congr_map_conjugate G₁ G₂ _ _ _ h',
+        { convert functor.congr_obj h Y, },
+        { convert functor.congr_obj h X, }, }, },
     { ext X,
       cases X,
-      have eq := congr_obj h X,
+      have eq := functor.congr_obj h X,
       dsimp at ⊢ eq,
       convert eq, }, },
 end

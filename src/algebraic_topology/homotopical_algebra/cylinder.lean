@@ -149,7 +149,6 @@ begin
   simpa only [coprod.desc_comp, coprod.inr_desc, coprod.inl_desc, comp_id],
 end
 
-
 end precylinder
 
 namespace cylinder

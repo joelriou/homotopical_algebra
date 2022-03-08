@@ -158,10 +158,10 @@ end right_ho_trans_closure
 variable (M)
 
 @[derive category]
-def Ho := quotient (right_ho_trans_closure.hom_rel M)
+def π := quotient (right_ho_trans_closure.hom_rel M)
 
 @[simps]
-def L : M.cofibrant_objects ⥤ cofibrant_objects.Ho M :=
+def L : M.cofibrant_objects ⥤ cofibrant_objects.π M :=
 quotient.functor (right_ho_trans_closure.hom_rel M)
 
 end cofibrant_objects
@@ -175,14 +175,14 @@ def mk_obj (X : M.C) [h₁ : is_cofibrant X] [h₂ : is_fibrant X] : M.fibrant_a
 ⟨⟨X, nonempty.intro h₁⟩, nonempty.intro h₂⟩
 
 @[derive category]
-def Ho := { X : cofibrant_objects.Ho M // nonempty (is_fibrant X.1.1) }
+def Ho := { X : cofibrant_objects.π M // nonempty (is_fibrant X.1.1) }
 
 variable {M}
 
 @[simps]
 def L : M.fibrant_and_cofibrant_objects ⥤ fibrant_and_cofibrant_objects.Ho M :=
 begin
-  let F : M.fibrant_and_cofibrant_objects ⥤ cofibrant_objects.Ho M :=
+  let F : M.fibrant_and_cofibrant_objects ⥤ cofibrant_objects.π M :=
     induced_functor _ ⋙ cofibrant_objects.L M,
   exact
   { obj := λ X, ⟨F.obj X, X.2⟩,
@@ -197,7 +197,8 @@ def L_map_surjective (X Y : M.fibrant_and_cofibrant_objects) :
   function.surjective (λ (f : X ⟶ Y), L.map f) :=
 begin
   intro f,
-  cases category_theory.quotient.functor_map_surj _ _ _ f with g hg,dsimp at g,
+  cases category_theory.quotient.functor_map_surj _ _ _ f with g hg,
+  dsimp at g,
   use [g, hg],
 end
 
@@ -224,15 +225,118 @@ begin
     exact cofibrant_objects.right_ho_trans_closure.right_homotopy ⟨P, nonempty.intro H⟩, }
 end
 
+variable (M)
+
 def W : arrow_class (M.fibrant_and_cofibrant_objects) :=
 λ f, arrow.mk (forget.map f.hom) ∈ M.W
 
-namespace universal
+variable {M}
 
-/- Universal property of the localization for
-the homotopy category of cof and fib objects -/
+namespace universal_property
 
-end universal
+@[simps]
+def lift {D : Type*} [category D]
+  (G : M.fibrant_and_cofibrant_objects ⥤ D)
+  (hG : (W M).is_inverted_by G) :
+  fibrant_and_cofibrant_objects.Ho M ⥤ D :=
+{ obj := λ X, G.obj ⟨X.1.1, X.2⟩,
+  map := λ X Y, begin
+    apply quot.lift, rotate,
+    { exact λ f, G.map f, },
+    { intros f g h,
+      let X' : M.fibrant_and_cofibrant_objects := ⟨X.val.as, X.2⟩,
+      haveI : is_cofibrant X'.1.1 := X'.1.2.some,
+      let Y' : M.fibrant_and_cofibrant_objects := ⟨Y.val.as, Y.2⟩,
+      let f' : X' ⟶ Y' := f,
+      let g' : X' ⟶ Y' := g,
+      have h' : L.map f' = L.map g' := quot.sound h,
+      cases cylinder_exists X'.1.1 with C hC,
+      rw L_map_eq_iff C at h',
+      let Z' : M.fibrant_and_cofibrant_objects := ⟨⟨C.I, _⟩, _⟩, rotate,
+      { refine nonempty.intro { cof := _ },
+        convert M.cof_comp_stable _ _ _ (initial.to X.1.1.1) C.d₀
+          X.1.1.2.some.cof C.cof_d₀, },
+      { refine nonempty.intro { fib := _ },
+        convert M.fib_comp_stable _ _ _ C.σ (terminal.from _)
+          hC X'.2.some.fib, },
+      let H := h'.some,
+      let φ : Z' ⟶ Y' := H.h,
+      let δ₀ : X' ⟶ Z' := C.to_precylinder.d₀,
+      let δ₁ : X' ⟶ Z' := C.to_precylinder.d₁,
+      let σ : Z' ⟶ X' := C.to_precylinder.σ,
+      have h₀ : δ₀ ≫ φ = f := H.h₀,
+      have h₁ : δ₁ ≫ φ = g := H.h₁,
+      simp only [← h₀, ← h₁, G.map_comp],
+      congr' 1,
+      haveI : is_iso (G.map σ) := hG ⟨arrow.mk σ, C.Wσ⟩,
+      simp only [← cancel_mono (G.map σ), ← G.map_comp],
+      erw [C.σd₀, C.σd₁], },
+  end,
+  map_id' := λ X, G.map_id _,
+  map_comp' := begin
+    rintros X Y Z ⟨f⟩ ⟨g⟩,
+    dsimp,
+    let X' : M.fibrant_and_cofibrant_objects := ⟨X.val.as, X.2⟩,
+    let Y' : M.fibrant_and_cofibrant_objects := ⟨Y.val.as, Y.2⟩,
+    let Z' : M.fibrant_and_cofibrant_objects := ⟨Z.val.as, Z.2⟩,
+    let f' : X' ⟶ Y' := f,
+    let g' : Y' ⟶ Z' := g,
+    exact G.map_comp f' g',
+  end, }
+
+lemma fac {D : Type*} [category D]
+  (G : M.fibrant_and_cofibrant_objects ⥤ D)
+  (hG : (W M).is_inverted_by G) : L ⋙ lift G hG = G :=
+begin
+  apply category_theory.functor.ext,
+  { rintros ⟨⟨X, h₀⟩, h₁⟩ ⟨⟨Y, h₂⟩, h₃⟩ f,
+    simp only [functor.comp_map, L_map, induced_functor_map,
+      cofibrant_objects.L_map, lift_map],
+    erw [id_comp, comp_id], },
+  { intro X,
+    simp only [functor.comp_obj, lift_obj, subtype.val_eq_coe,
+      L_obj_coe, induced_functor_obj, cofibrant_objects.L_obj_as,
+      subtype.coe_eta], }
+end
+
+lemma uniq {E : Type*} [category E] 
+  (G₁ G₂ : fibrant_and_cofibrant_objects.Ho M ⥤ E)
+  (h₁₂ : L ⋙ G₁ = L ⋙ G₂) : G₁ = G₂ :=
+begin
+  apply category_theory.functor.ext,
+  { rintros ⟨⟨X, h₀⟩, h₁⟩ ⟨⟨Y, h₂⟩, h₃⟩ f,
+    let X' : M.fibrant_and_cofibrant_objects := ⟨⟨X, h₀⟩, h₁⟩,
+    let Y' : M.fibrant_and_cofibrant_objects := ⟨⟨Y, h₂⟩, h₃⟩,
+    cases category_theory.quotient.functor_map_surj _ _ _ f with f' hf',
+    let f'' : X' ⟶ Y' := f',
+    have eq : f = L.map f'' := hf'.symm,
+    convert functor.congr_map_conjugate h₁₂ f'', },
+  { intro X,
+    convert functor.congr_obj h₁₂ ⟨X.val.as, X.2⟩,
+    all_goals { ext, refl, }, }
+end
+
+lemma inverts_triv_cof {X Y : M.fibrant_and_cofibrant_objects} (f : X ⟶ Y)
+  (hf : (arrow.mk f : arrow M.C) ∈ M.triv_cof) :
+  (arrow.mk f).is_inverted_by L :=
+begin
+  sorry
+end
+
+def fixed_target {E : Type*} [category E] :
+  arrow_class.is_strict_localization_fixed_target (W M) L E :=
+{ inverts_W := begin
+    sorry,
+  end,
+  lift := lift,
+  fac := fac,
+  uniq := uniq }
+
+end universal_property
+
+def is_strict_localization : arrow_class.is_strict_localization (W M) L :=
+arrow_class.is_strict_localization.mk' _ _
+  universal_property.fixed_target universal_property.fixed_target
 
 end fibrant_and_cofibrant_objects
 
