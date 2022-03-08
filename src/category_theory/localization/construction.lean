@@ -17,7 +17,7 @@ open category_theory.category
 
 namespace category_theory
 
-universes v v' u u'
+universes v v' v₃ u u' u₃
 
 variables {C : Type u} [category.{v} C]
 variables {D : Type u'} [category.{v'} D]
@@ -293,6 +293,64 @@ structure is_localization (W : arrow_class C) (L : C ⥤ D) :=
 structure is_strict_localization (W : arrow_class C) (L : C ⥤ D) extends is_localization W L :=
 (is_isomorphism : (localization.lift L inverts_W ⋙ is_equivalence.inverse).obj = id
   ∧ (is_equivalence.inverse ⋙ localization.lift L inverts_W).obj = id)
+
+structure is_strict_localization_fixed_target
+(W : arrow_class C) (F : C ⥤ D)  (E : Type u₃) [category.{v₃} E] :=
+  (inverts_W : W.is_inverted_by F)
+  (lift : Π (G : C ⥤ E) (hG : W.is_inverted_by G), D ⥤ E)
+  (fac : ∀ (G : C ⥤ E) (hG : W.is_inverted_by G), F ⋙ lift G hG = G)
+  (uniq : ∀ (G₁ G₂ : D ⥤ E), F ⋙ G₁ = F ⋙ G₂ → G₁ = G₂)
+
+namespace localization
+
+def universal_property {E : Type u₃} [category.{v₃} E] :
+  W.is_strict_localization_fixed_target (localization.Q W) E :=
+{ inverts_W := W_is_inverted_by_Q,
+  lift := lift,
+  fac := fac,
+  uniq := uniq }
+
+end localization
+
+lemma functor.assoc {C D E F : Type*} [category C] [category D]
+  [category E] [category F] (φ : C ⥤ D)
+  (φ' : D ⥤ E) (φ'' : E ⥤ F) : (φ ⋙ φ') ⋙ φ'' = φ ⋙ (φ' ⋙ φ'') :=
+by refl
+
+@[simps]
+def strict_localization_is_ess_unique {W : arrow_class C} {D' : Type*} [category D']
+  (F₁ : C ⥤ D) (F₂ : C ⥤ D')
+  (L₁ : W.is_strict_localization_fixed_target F₁ D') (L₂ : W.is_strict_localization_fixed_target F₂ D)
+  (L₁' : W.is_strict_localization_fixed_target F₁ D) (L₂' : W.is_strict_localization_fixed_target F₂ D') : D ≌ D' :=
+{ functor := L₁.lift F₂ L₂.inverts_W,
+  inverse := L₂.lift F₁ L₁.inverts_W,
+  unit_iso := eq_to_iso begin
+    apply L₁'.uniq,
+    rw [← functor.assoc, L₁.fac F₂ L₂.inverts_W, L₂.fac F₁ L₁.inverts_W, functor.comp_id],
+  end,
+  counit_iso := eq_to_iso begin
+    apply L₂'.uniq,
+    rw [← functor.assoc, L₂.fac F₁ L₁.inverts_W, L₁.fac F₂ L₂.inverts_W, functor.comp_id],
+  end,
+  functor_unit_iso_comp' := begin
+    intro X,
+    simpa only [eq_to_iso.hom, eq_to_hom_app, eq_to_hom_map, eq_to_hom_trans, eq_to_hom_refl],
+  end }
+
+namespace is_strict_localization
+
+def mk' (W : arrow_class C) (L : C ⥤ D)
+  (h₁ : W.is_strict_localization_fixed_target L W.localization)
+  (h₂ : W.is_strict_localization_fixed_target L D) :
+  is_strict_localization W L :=
+{ inverts_W := h₁.inverts_W,
+  is_equivalence := is_equivalence.of_equivalence
+      (strict_localization_is_ess_unique (localization.Q W) L
+      (localization.universal_property W) h₁ (localization.universal_property W) h₂),
+  is_isomorphism := sorry }
+
+
+end is_strict_localization
 
 end arrow_class
 
