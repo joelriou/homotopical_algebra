@@ -225,6 +225,16 @@ begin
     exact cofibrant_objects.right_ho_trans_closure.right_homotopy ⟨P, nonempty.intro H⟩, }
 end
 
+def L_map_eq_iff' {X Y : M.fibrant_and_cofibrant_objects} (P : path_object Y.1.1) (f g : X ⟶ Y) :
+  L.map f = L.map g ↔ nonempty (P.pre.right_homotopy f g) :=
+begin
+  haveI := X.1.2.some,
+  haveI := Y.2.some,
+  let C := (cylinder_exists X.1.1).some,
+  calc L.map f = L.map g ↔ nonempty (C.to_precylinder.left_homotopy f g) : L_map_eq_iff C f g
+  ... ↔ nonempty (P.pre.right_homotopy f g) : left_homotopy_iff_right_homotopy C P f g,
+end
+
 variable (M)
 
 def W : arrow_class (M.fibrant_and_cofibrant_objects) :=
@@ -320,7 +330,32 @@ lemma inverts_triv_cof {X Y : M.fibrant_and_cofibrant_objects} (f : X ⟶ Y)
   (hf : (arrow.mk f : arrow M.C) ∈ M.triv_cof) :
   (arrow.mk f).is_inverted_by L :=
 begin
-  sorry
+  let f' : X.1.1 ⟶ Y.1.1 := f,
+  let Sq := square.mk'' f' (terminal.from _) (𝟙 _) (terminal.from _) (subsingleton.elim _ _),
+  let hSq := (M.CM4b Sq.left Sq.right hf X.2.some.fib).sq_has_lift,
+  let l := (hSq Sq.hom).exists_lift.some,
+  apply is_iso.mk,
+  use L.map l.lift,
+  split,
+  { erw [← L.map_comp, arrow.mk_hom, l.fac_left, L.map_id], },
+  { cases path_object_exists Y.1.1 with P hP,
+    symmetry,
+    rw [← L.map_comp, ← L.map_id, L_map_eq_iff' P],
+    let Sq' := square.mk'' f' P.pre.π (f' ≫ P.pre.σ') (prod.lift (𝟙 _) (l.lift ≫ f')) _, swap,
+    { ext,
+      { simp only [pre_path_object.π, assoc, prod.lift_fst, comp_id, P.pre.σd₀'], },
+      { simp only [pre_path_object.π, assoc, prod.lift_snd, comp_id, P.pre.σd₁'],
+        erw [← assoc, l.fac_left, id_comp], }, },
+    let hSq' := (M.CM4b Sq'.left Sq'.right hf P.fib_π).sq_has_lift,
+    let l' := (hSq' Sq'.hom).exists_lift.some,
+    have eq₀ := congr_arg ((λ (f : _ ⟶ limits.prod _ _), f ≫ limits.prod.fst)) l'.fac_right,
+    have eq₁ := congr_arg ((λ (f : _ ⟶ limits.prod _ _), f ≫ limits.prod.snd)) l'.fac_right,
+    simp only [pre_path_object.π, prod.lift_fst, square.mk''_right_hom, prod.comp_lift, square.mk''_hom_right] at eq₀,
+    simp at eq₁,
+    exact nonempty.intro
+    { h := l'.lift,
+      h₀ := eq₀,
+      h₁ := eq₁, } },
 end
 
 def fixed_target {E : Type*} [category E] :

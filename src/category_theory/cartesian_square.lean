@@ -130,7 +130,7 @@ def mk' (f g : arrow C) (sq : f ⟶ g) : square C := square.mk sq
 @[simps]
 def mk'' {X₁ X₂ Y₁ Y₂ : C} (l : X₁ ⟶ Y₁) (r : X₂ ⟶ Y₂) (t : X₁ ⟶ X₂) (b : Y₁ ⟶ Y₂)
   (fac : t ≫ r = l ≫ b) : square C := mk' (arrow.mk l) (arrow.mk r) (arrow.hom_mk fac)
-
+  
 @[simps]
 def top (Sq : square C) : arrow C := arrow.mk Sq.hom.left
 

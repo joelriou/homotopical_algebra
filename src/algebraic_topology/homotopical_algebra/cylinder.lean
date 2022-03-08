@@ -400,6 +400,17 @@ end
 
 end cylinder
 
+def left_homotopy_iff_right_homotopy {A B : M.C} [hA : is_cofibrant A] [hB : is_fibrant B] (C : cylinder A) (P : path_object B)
+  (f₀ f₁ : A ⟶ B) : nonempty (C.to_precylinder.left_homotopy f₀ f₁) ↔
+    nonempty (P.pre.right_homotopy f₀ f₁) :=
+begin
+  split,
+  { intro h,
+    exact nonempty.intro (P.right_homotopy_of_left_homotopy C h.some), },
+  { intro h,
+    exact nonempty.intro (C.left_homotopy_of_right_homotopy P h.some), },
+end
+
 end model_category
 
 end algebraic_topology
