@@ -5,6 +5,7 @@ Authors: Joël Riou
 -/
 
 import algebraic_topology.homotopical_algebra.cylinder
+import algebraic_topology.homotopical_algebra.ks_brown_lemma
 
 noncomputable theory
 
@@ -358,11 +359,35 @@ begin
       h₁ := eq₁, } },
 end
 
+lemma inverts_W : (W M).is_inverted_by L :=
+begin
+  rintro ⟨⟨X, Y, w⟩, hw⟩,
+  haveI := X.1.2.some,
+  haveI := Y.1.2.some,
+  let w' : X.1.1 ⟶ Y.1.1 := w,
+  have brown_fac := (exists_brown_factorisation_W_between_cofibrant_objects w' hw).some,
+  let Z : M.fibrant_and_cofibrant_objects := ⟨⟨brown_fac.Z, _⟩, _⟩, rotate,
+  { refine nonempty.intro ⟨_⟩,
+    convert M.cof_comp_stable _ _ _ (initial.to X.1.1) brown_fac.i X.1.2.some.cof brown_fac.triv_cof_i.1, },
+  { refine nonempty.intro ⟨_⟩,
+    convert M.fib_comp_stable _ _ _ brown_fac.p (terminal.from Y.1.1) brown_fac.triv_fib_p.1 Y.2.some.fib, },
+  let i' : X ⟶ Z := brown_fac.i,
+  let p' : Z ⟶ Y := brown_fac.p,
+  let s' : Y ⟶ Z := brown_fac.s,
+  suffices : is_iso (L.map i' ≫ L.map p'),
+  { simpa only [← L.map_comp, show i' ≫ p' = w, by exact brown_fac.fac₁.symm] using this, },
+  haveI : is_iso (L.map i') := inverts_triv_cof i' brown_fac.triv_cof_i,
+  haveI : is_iso (L.map s') := inverts_triv_cof s' brown_fac.triv_cof_s,
+  have eq : L.map p' = inv (L.map s'),
+  { apply is_iso.eq_inv_of_hom_inv_id,
+    erw [← L.map_comp, brown_fac.fac₂, L.map_id], },
+  haveI : is_iso (L.map p') := by { rw eq, apply_instance, },
+  apply_instance,
+end
+
 def fixed_target {E : Type*} [category E] :
   arrow_class.is_strict_localization_fixed_target (W M) L E :=
-{ inverts_W := begin
-    sorry,
-  end,
+{ inverts_W := inverts_W,
   lift := lift,
   fac := fac,
   uniq := uniq }
