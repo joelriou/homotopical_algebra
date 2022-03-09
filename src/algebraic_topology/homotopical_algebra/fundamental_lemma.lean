@@ -464,20 +464,53 @@ def map_Ho {X Y : M.cofibrant_objects} (f : X ⟶ Y) :
   obj_Ho X ⟶ obj_Ho Y := (L M).map (map.Sq_lift f)
 
 def map_Ho_eq {X Y : M.cofibrant_objects} (f : X ⟶ Y)
-  (f' : obj X ⟶ obj Y) : map_Ho f = (L M).map f' :=
-sorry
+  (f' : obj X ⟶ obj Y) (comm : ι X ≫ f' = f ≫ ι Y) : map_Ho f = (L M).map f' :=
+begin
+  let P := (path_object_exists (obj Y).1.1).some,
+  apply (fibrant_and_cofibrant_objects.L_map_eq_iff' P _ _).mpr,
+  let Sq := square.mk'' (ι X) P.pre.π (f ≫ ι Y ≫ P.pre.σ') (prod.lift (map.Sq_lift f) f') _, swap,
+  { ext,
+    { simp only [pre_path_object.π, assoc, prod.lift_fst, P.pre.σd₀', comp_id, map.Sq_lift_comm], },
+    { simp only [pre_path_object.π, assoc, prod.lift_snd, P.pre.σd₁', comp_id, comm], }, },
+  let hSq := (M.CM4b (Sq.left) (Sq.right) (triv_cof_ι X) P.fib_π).sq_has_lift,
+  let l := (hSq Sq.hom).exists_lift.some,
+  have eq₀ := congr_arg ((λ (f : _ ⟶ limits.prod _ _), f ≫ limits.prod.fst)) l.fac_right,
+  have eq₁ := congr_arg ((λ (f : _ ⟶ limits.prod _ _), f ≫ limits.prod.snd)) l.fac_right,
+  simp only [pre_path_object.π, prod.lift_fst, prod.lift_snd,
+    square.mk''_right_hom, prod.comp_lift, square.mk''_hom_right] at eq₀ eq₁,
+  exact nonempty.intro
+  { h := l.lift,
+    h₀ := eq₀,
+    h₁ := eq₁, },
+end
+
+variable (M)
+
+@[derive category]
+def localization := induced_category (fibrant_and_cofibrant_objects.Ho M) fibrant_replacement.obj_Ho
+
+variable {M}
+
+def L : M.cofibrant_objects ⥤ localization M :=
+{ obj := id,
+  map := λ X Y f, fibrant_replacement.map_Ho f,
+  map_id' := λ X, begin
+    erw [map_Ho_eq (𝟙 X) (𝟙 _) (by erw [id_comp, comp_id]), (L M).map_id],
+    refl,
+  end,
+  map_comp' := λ X Y Z f g, begin
+    erw map_Ho_eq (f ≫ g) (map.Sq_lift f ≫ map.Sq_lift g), swap,
+    { erw [← assoc, map.Sq_lift_comm f, assoc, map.Sq_lift_comm g, assoc], },
+    erw functor.map_comp,
+    refl,
+  end }
+
+/- universal property of L... -/
 
 end fibrant_replacement
-
-def R : M.cofibrant_objects ⥤ fibrant_and_cofibrant_objects.Ho M :=
-{ obj := fibrant_replacement.obj_Ho,
-  map := λ X Y f, fibrant_replacement.map_Ho f,
-  map_id' := sorry,
-  map_comp' := sorry, }
 
 end cofibrant_objects
 
 end model_category
 
 end algebraic_topology
--- cf category_theory.full_subcategory
