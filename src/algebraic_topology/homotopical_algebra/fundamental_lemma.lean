@@ -400,6 +400,83 @@ arrow_class.is_strict_localization.mk' _ _
 
 end fibrant_and_cofibrant_objects
 
+variable {M}
+
+structure fibrant_replacement (X : M.C) :=
+(Y : M.C) (hY : is_fibrant Y) (f : X ⟶ Y) (hf : arrow.mk f ∈ M.triv_cof)
+
+namespace cofibrant_objects
+
+namespace fibrant_replacement
+
+def some_replacement (X : M.cofibrant_objects) :
+  fibrant_replacement X.1 :=
+begin
+  suffices : nonempty (fibrant_replacement X.1),
+  { exact this.some, },
+  rcases M.CM5a (arrow.mk (terminal.from X.1)) with ⟨Y, i, p, fac, hi, hp⟩,
+  refine nonempty.intro
+  { Y := Y,
+    hY := ⟨by convert hp⟩,
+    f := i,
+    hf := hi, },
+end
+
+def obj (X : M.cofibrant_objects) : M.fibrant_and_cofibrant_objects :=
+begin
+  refine ⟨⟨(some_replacement X).Y, nonempty.intro ⟨_⟩⟩, nonempty.intro (some_replacement X).hY⟩,
+  convert M.cof_comp_stable _ _ _ (initial.to X.1)
+    (some_replacement X).f X.2.some.cof (some_replacement X).hf.1,
+end
+
+def ι (X : M.cofibrant_objects) : X.1 ⟶ (obj X).1.1 :=
+(some_replacement X).f
+
+def triv_cof_ι (X : M.cofibrant_objects) : arrow.mk (ι X) ∈ M.triv_cof :=
+(some_replacement X).hf
+
+def obj_Ho (X : M.cofibrant_objects) : fibrant_and_cofibrant_objects.Ho M :=
+fibrant_and_cofibrant_objects.L.obj (fibrant_replacement.obj X)
+
+namespace map
+
+variables {X Y : M.cofibrant_objects} (f : X ⟶ Y)
+
+def Sq : square M.C :=
+square.mk'' (ι X) (terminal.from (obj Y).1.1)
+    (f ≫ ι Y) (terminal.from _) (subsingleton.elim _ _)
+
+def Sq_lift_struct : arrow.lift_struct (Sq f).hom :=
+begin
+  let hSq := (M.CM4b (Sq f).left (Sq f).right (triv_cof_ι X)
+    (obj Y).2.some.fib).sq_has_lift,
+  exact (hSq (Sq f).hom).exists_lift.some,
+end
+
+def Sq_lift : obj X ⟶ obj Y := (Sq_lift_struct f).lift
+
+def Sq_lift_comm : ι X ≫ Sq_lift f = f ≫ ι Y :=
+(Sq_lift_struct f).fac_left
+
+end map
+
+def map_Ho {X Y : M.cofibrant_objects} (f : X ⟶ Y) :
+  obj_Ho X ⟶ obj_Ho Y := (L M).map (map.Sq_lift f)
+
+def map_Ho_eq {X Y : M.cofibrant_objects} (f : X ⟶ Y)
+  (f' : obj X ⟶ obj Y) : map_Ho f = (L M).map f' :=
+sorry
+
+end fibrant_replacement
+
+def R : M.cofibrant_objects ⥤ fibrant_and_cofibrant_objects.Ho M :=
+{ obj := fibrant_replacement.obj_Ho,
+  map := λ X Y f, fibrant_replacement.map_Ho f,
+  map_id' := sorry,
+  map_comp' := sorry, }
+
+end cofibrant_objects
+
 end model_category
 
 end algebraic_topology
