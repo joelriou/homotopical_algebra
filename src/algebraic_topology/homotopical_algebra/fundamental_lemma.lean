@@ -165,6 +165,16 @@ def π := quotient (right_ho_trans_closure.hom_rel M)
 def L : M.cofibrant_objects ⥤ cofibrant_objects.π M :=
 quotient.functor (right_ho_trans_closure.hom_rel M)
 
+
+variable {M}
+
+def forget : M.cofibrant_objects ⥤ M.C := induced_functor _
+
+variable (M)
+
+def W : arrow_class (M.cofibrant_objects) :=
+λ f, arrow.mk (forget.map f.hom) ∈ M.W
+
 end cofibrant_objects
 
 @[derive category]
@@ -505,7 +515,16 @@ def L : M.cofibrant_objects ⥤ localization M :=
     refl,
   end }
 
-/- universal property of L... -/
+namespace universal_property
+
+lemma inverts_W {X Y : M.cofibrant_objects} (f : X ⟶ Y)
+  (hf : (arrow.mk f : arrow M.C) ∈ M.W) :
+  (arrow.mk f).is_inverted_by L :=
+begin
+  sorry
+end
+
+end universal_property
 
 end fibrant_replacement
 
