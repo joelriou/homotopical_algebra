@@ -515,14 +515,85 @@ def L : M.cofibrant_objects ⥤ localization M :=
     refl,
   end }
 
+@[derive full, derive faithful]
+def R : localization M ⥤ fibrant_and_cofibrant_objects.Ho M := induced_functor _
+
 namespace universal_property
 
 lemma inverts_W {X Y : M.cofibrant_objects} (f : X ⟶ Y)
   (hf : (arrow.mk f : arrow M.C) ∈ M.W) :
   (arrow.mk f).is_inverted_by L :=
 begin
+  suffices : is_iso (fibrant_replacement.map_Ho f),
+  { haveI : is_iso (R.map (L.map f)) := this,
+    convert is_iso_of_reflects_iso (L.map f) R, },
+  suffices : arrow.mk (map.Sq_lift f) ∈ fibrant_and_cofibrant_objects.W M,
+  { exact fibrant_and_cofibrant_objects.universal_property.inverts_W ⟨_, this⟩, },
+  apply M.CM2.of_comp_left (ι X) (map.Sq_lift f) (triv_cof_ι X).2,
+  rw map.Sq_lift_comm,
+  apply M.CM2.of_comp,
+  { exact hf, },
+  { exact (triv_cof_ι Y).2, },
+end
+
+
+/- TODO: This strategy for lift is not good,
+we should first define a functor from the homotopy
+category of cof/fib objects, and "conjugate" -/
+def lift_map_choose {D : Type*} [category D]
+  (G : M.cofibrant_objects ⥤ D)
+  (hG : (W M).is_inverted_by G)
+  {X Y : localization M} (f : X ⟶ Y) :
+  G.obj X ⟶ G.obj Y :=
+begin
+  haveI : Π (X : localization M), is_iso (G.map (ι X)) :=
+    λ X, hG ⟨arrow.mk (ι X), (triv_cof_ι X).2⟩,
+  refine G.map (ι X) ≫ G.map _ ≫ inv (G.map (ι Y)),
+  exact (fibrant_and_cofibrant_objects.L_map_surjective _ _ f).some,
+end
+
+lemma lift_map_choose_compatibility {D : Type*} [category D]
+  (G : M.cofibrant_objects ⥤ D)
+  (hG : (W M).is_inverted_by G)
+  {X Y : localization M} (f : obj X ⟶ obj Y) :
+  lift_map_choose G hG (fibrant_and_cofibrant_objects.L.map f) ≫ G.map (ι Y) =
+  G.map (ι X) ≫ G.map f :=
+begin
   sorry
 end
+
+--@[simps]
+def lift {D : Type*} [category D]
+  (G : M.cofibrant_objects ⥤ D)
+  (hG : (W M).is_inverted_by G) :
+  localization M ⥤ D :=
+begin
+  haveI : Π (X : localization M), is_iso (G.map (ι X)) :=
+    λ X, hG ⟨arrow.mk (ι X), (triv_cof_ι X).2⟩,
+  exact
+  { obj := G.obj,
+    map := λ X Y, lift_map_choose G hG,
+    map_id' := λ X, begin
+      rw ← cancel_mono (G.map (ι X)),
+      erw [id_comp],
+      have h := lift_map_choose_compatibility G hG (𝟙 (obj X)),
+      erw [G.map_id, comp_id] at h,
+      exact h,
+    end,
+    map_comp' := λ X Y Z f g, begin
+      let f' := (fibrant_and_cofibrant_objects.L_map_surjective _ _ f).some,
+      have hf' : fibrant_and_cofibrant_objects.L.map f' = f :=
+        (fibrant_and_cofibrant_objects.L_map_surjective _ _ f).some_spec,
+      let g' := (fibrant_and_cofibrant_objects.L_map_surjective _ _ g).some,
+      have hg' : fibrant_and_cofibrant_objects.L.map g' = g :=
+        (fibrant_and_cofibrant_objects.L_map_surjective _ _ g).some_spec,
+      rw [← hf', ← hg', ← cancel_mono (G.map (ι Z)), assoc],
+      erw ← fibrant_and_cofibrant_objects.L.map_comp,
+      simp only [lift_map_choose_compatibility, ← assoc],
+      erw [G.map_comp, assoc],
+    end },
+end
+
 
 end universal_property
 
