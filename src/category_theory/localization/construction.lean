@@ -44,10 +44,17 @@ universes v v' v₃ u u' u₃
 
 variables {C : Type u} [category.{v} C]
 variables {D : Type u'} [category.{v'} D]
+variables {E : Type u₃} [category.{v₃} E]
 
 namespace arrow
 
 def is_inverted_by (f : arrow C) (F : C ⥤ D) : Prop := is_iso (F.map f.hom)
+
+def is_inverted_by_of_comp (f : arrow C) (F : C ⥤ D) (G : D ⥤ E) (hf : f.is_inverted_by F) : f.is_inverted_by (F ⋙ G) :=
+begin
+  haveI : is_iso (F.map f.hom) := hf,
+  exact (infer_instance : is_iso (G.map (F.map f.hom))),
+end
 
 end arrow
 
@@ -55,6 +62,10 @@ namespace arrow_class
 
 def is_inverted_by (W : arrow_class C) (F : C ⥤ D) : Prop :=
 ∀ (f : W), f.1.is_inverted_by F
+
+def is_inverted_by_of_comp (W : arrow_class C) (F : C ⥤ D) (G : D ⥤ E) (hW : W.is_inverted_by F) : W.is_inverted_by (F ⋙ G) :=
+by { intro w, exact w.1.is_inverted_by_of_comp F G (hW w), }
+
 
 structure loc_quiver (W : arrow_class C) := (obj : C)
 
@@ -368,6 +379,31 @@ begin
       exact functor.congr_obj eq₂ X, },
   end, }
 end
+
+/-
+variables {W L}
+
+def lift (l : is_strict_localization W L) {E : Type*} [category E]
+  (G : C ⥤ E) (hG : W.is_inverted_by G) : D ⥤ E := sorry
+
+lemma fac (l : is_strict_localization W L) {E : Type*} [category E]
+  (G : C ⥤ E) (hG : W.is_inverted_by G) :
+  L ⋙ l.lift G hG = G :=
+begin
+  sorry
+end
+
+lemma uniq {E : Type*} [category E] (l : is_strict_localization W L)
+  (G₁ G₂ : D ⥤ E) (h : L ⋙ G₁ = L ⋙ G₂) : G₁ = G₂ :=
+begin
+  sorry
+end
+
+lemma uniq' {E : Type*} [category E] (l : is_strict_localization W L)
+  (G : D ⥤ E) :
+  G = l.lift (L ⋙ G) (W.is_inverted_by_of_comp L G l.inverts_W) :=
+by { apply l.uniq, rw l.fac, }
+-/
 
 end is_strict_localization
 
