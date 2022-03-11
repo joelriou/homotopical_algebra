@@ -631,13 +631,25 @@ begin
   { cases h with P hP,
     haveI : is_cofibrant X.1 := X.2.some,
     rcases P.right_homotopy_with_triv_cof_σ'_of_right_homotopy hP.some with ⟨P', H', hP'⟩,
-    sorry, },
+    simp only [functor.comp_map],
+    congr' 1,
+    let Z : M.cofibrant_objects := ⟨P'.pre.I', nonempty.intro { cof := _ }⟩, swap,
+    { convert M.cof_comp_stable _ _ _ (initial.to _) P'.pre.σ' Y.2.some.cof hP'.1, },
+    let h'' : X ⟶ Z := H'.h,
+    let d₀' : Z ⟶ Y := P'.pre.d₀',
+    let d₁' : Z ⟶ Y := P'.pre.d₁',
+    let h₀'' : f₀ = h'' ≫ d₀' := H'.h₀.symm,
+    let h₁'' : f₁ = h'' ≫ d₁' := H'.h₁.symm,
+    simp only [h₀'', h₁'', L.map_comp],
+    congr' 1,
+    let s : Y ⟶ Z := P'.pre.σ',
+    haveI : is_iso (L.map s) := universal_property.inverts_W ⟨arrow.mk s, hP'.2⟩,
+    rw ← cancel_epi (L.map s),
+    simp only [← L.map_comp],
+    erw [P'.pre.σd₀', P'.pre.σd₁'], },
   { rw [H₁₂, H₁₃], },
-
 end
 
-/- Better strategy : construct a functor cofibrant_objects.Ho ⥤ cof_fib.Ho, and check 
-it is bijective on maps first if both objects are also fibrant, and then relax the assumption on X --/
 /-def L_map_surjective (X Y : M.cofibrant_objects) [hY : is_fibrant Y.1] :
   function.surjective (λ (f : X ⟶ Y), L.map f) :=
 begin
