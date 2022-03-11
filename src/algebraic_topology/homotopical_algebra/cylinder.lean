@@ -343,6 +343,29 @@ begin
   { simpa only [pre_path_object.π, prod.comp_lift], },
 end
 
+lemma right_homotopy_with_triv_cof_σ'_of_right_homotopy {A B : M.C} [hA : is_cofibrant A] {f f' : A ⟶ B} (P : path_object B)
+  (H : P.pre.right_homotopy f f') : ∃ (P' : path_object B) (H' : P'.pre.right_homotopy f f'), arrow.mk P'.pre.σ' ∈ M.triv_cof :=
+begin
+  rcases M.CM5b (arrow.mk P.pre.σ') with ⟨Z, i, p, fac, ⟨hi, hp⟩⟩,
+  let P' := P.change_I' fac hp,
+  let Sq := square.mk'' (initial.to _) p (initial.to _) H.h
+    (by { dsimp, apply subsingleton.elim, }),
+  have hSq := (M.CM4a Sq.left Sq.right hA.1 hp).sq_has_lift,
+  let l := (hSq Sq.hom).exists_lift.some,
+  have hk : l.lift ≫ p = H.h := l.fac_right,
+  let H' : P'.pre.right_homotopy f f' :=
+  { h := l.lift,
+    h₀ := begin
+      dsimp [P', pre_path_object.d₀'],
+      erw [← assoc, hk, H.h₀],
+    end,
+    h₁ := begin
+      dsimp [P', pre_path_object.d₁'],
+      erw [← assoc, hk, H.h₁],
+    end, },
+  use [P', H', ⟨hi, P'.pre.Wσ'⟩],  
+end
+
 end path_object
 
 namespace precylinder

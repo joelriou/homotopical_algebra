@@ -63,26 +63,10 @@ lemma comp_right {A B X : M.cofibrant_objects}
   right_homotopy (f ≫ g) (f' ≫ g) :=
 begin
   cases H with P hP,
-  rcases M.CM5b (arrow.mk P.pre.σ') with ⟨Z, i, p, fac, ⟨hi, hp⟩⟩,
-  let P' := P.change_I' fac hp,
-  let H := hP.some,
-  let Sq := square.mk'' (initial.to _) p (initial.to _) H.h
-    (by { dsimp, apply subsingleton.elim, }),
-  have hSq := (M.CM4a Sq.left Sq.right A.2.some.1 hp).sq_has_lift,
-  let l := (hSq Sq.hom).exists_lift.some,
-  have hk : l.lift ≫ p = H.h := l.fac_right,
-  let H' : P'.pre.right_homotopy f f' :=
-  { h := l.lift,
-    h₀ := begin
-      dsimp [P', pre_path_object.d₀'],
-      erw [← assoc, hk, H.h₀],
-    end,
-    h₁ := begin
-      dsimp [P', pre_path_object.d₁'],
-      erw [← assoc, hk, H.h₁],
-    end, },
+  haveI : is_cofibrant A.1 := A.2.some,
+  rcases P.right_homotopy_with_triv_cof_σ'_of_right_homotopy hP.some with ⟨P', H', hP'⟩,
   cases path_object_exists X.1 with Q hQ,
-  let Sq₂ := square.mk'' P'.pre.σ' Q.pre.π
+  let Sq := square.mk'' P'.pre.σ' Q.pre.π
     (g ≫  Q.pre.σ') (P'.pre.π ≫ (limits.prod.map g g)) _, rotate,
   { ext,
     { dsimp,
@@ -91,14 +75,14 @@ begin
     { dsimp,
       simp only [assoc, prod.lift_snd, prod.lift_map],
       erw [Q.pre.σd₁', ← assoc, P'.pre.σd₁', id_comp, comp_id], }, },
-  let hSq₂ := (M.CM4b Sq₂.left Sq₂.right ⟨hi, P'.pre.Wσ'⟩ Q.fib_π).sq_has_lift,
-  let l₂ := (hSq₂ Sq₂.hom).exists_lift.some,
-  have eq₀ := congr_arg ((λ (f : _ ⟶ prod X.1 X.1), f ≫ limits.prod.fst)) l₂.fac_right,
-  have eq₁ := congr_arg ((λ (f : _ ⟶ prod X.1 X.1), f ≫ limits.prod.snd)) l₂.fac_right,
+  let hSq := (M.CM4b Sq.left Sq.right hP' Q.fib_π).sq_has_lift,
+  let l := (hSq Sq.hom).exists_lift.some,
+  have eq₀ := congr_arg ((λ (f : _ ⟶ prod X.1 X.1), f ≫ limits.prod.fst)) l.fac_right,
+  have eq₁ := congr_arg ((λ (f : _ ⟶ prod X.1 X.1), f ≫ limits.prod.snd)) l.fac_right,
   simp only [pre_path_object.π, prod.lift_fst, prod.lift_snd, prod.lift_map,
     square.mk''_right_hom, prod.comp_lift, square.mk''_hom_right] at eq₀ eq₁,
   let H'' : Q.pre.right_homotopy (f ≫ g) (f' ≫ g) := 
-  { h := H'.h ≫ l₂.lift,
+  { h := H'.h ≫ l.lift,
     h₀ := by rw [assoc, eq₀, ← assoc, H'.h₀],
     h₁ := by rw [assoc, eq₁, ← assoc, H'.h₁], },
   use [Q, nonempty.intro H''],
@@ -165,7 +149,6 @@ def π := quotient (right_ho_trans_closure.hom_rel M)
 def L : M.cofibrant_objects ⥤ cofibrant_objects.π M :=
 quotient.functor (right_ho_trans_closure.hom_rel M)
 
-
 variable {M}
 
 def forget : M.cofibrant_objects ⥤ M.C := induced_functor _
@@ -186,7 +169,7 @@ def mk_obj (X : M.C) [h₁ : is_cofibrant X] [h₂ : is_fibrant X] : M.fibrant_a
 ⟨⟨X, nonempty.intro h₁⟩, nonempty.intro h₂⟩
 
 @[derive category]
-def Ho := { X : cofibrant_objects.π M // nonempty (is_fibrant X.1.1) }
+def π := { X : cofibrant_objects.π M // nonempty (is_fibrant X.1.1) }
 
 variable {M}
 
@@ -194,7 +177,7 @@ variable {M}
 def inclusion : M.fibrant_and_cofibrant_objects ⥤ M.cofibrant_objects := induced_functor _
 
 @[simps]
-def L : M.fibrant_and_cofibrant_objects ⥤ fibrant_and_cofibrant_objects.Ho M :=
+def L : M.fibrant_and_cofibrant_objects ⥤ fibrant_and_cofibrant_objects.π M :=
 begin
   let F : M.fibrant_and_cofibrant_objects ⥤ cofibrant_objects.π M :=
     inclusion ⋙ cofibrant_objects.L M,
@@ -262,7 +245,7 @@ namespace universal_property
 def lift {D : Type*} [category D]
   (G : M.fibrant_and_cofibrant_objects ⥤ D)
   (hG : (W M).is_inverted_by G) :
-  fibrant_and_cofibrant_objects.Ho M ⥤ D :=
+  fibrant_and_cofibrant_objects.π M ⥤ D :=
 { obj := λ X, G.obj ⟨X.1.1, X.2⟩,
   map := λ X Y, begin
     apply quot.lift, rotate,
@@ -324,7 +307,7 @@ begin
 end
 
 lemma uniq {E : Type*} [category E] 
-  (G₁ G₂ : fibrant_and_cofibrant_objects.Ho M ⥤ E)
+  (G₁ G₂ : fibrant_and_cofibrant_objects.π M ⥤ E)
   (h₁₂ : L ⋙ G₁ = L ⋙ G₂) : G₁ = G₂ :=
 begin
   apply category_theory.functor.ext,
@@ -448,7 +431,7 @@ def ι (X : M.cofibrant_objects) : X.1 ⟶ (obj X).1.1 :=
 def triv_cof_ι (X : M.cofibrant_objects) : arrow.mk (ι X) ∈ M.triv_cof :=
 (some_replacement X).hf
 
-def obj_Ho (X : M.cofibrant_objects) : fibrant_and_cofibrant_objects.Ho M :=
+def obj_π (X : M.cofibrant_objects) : fibrant_and_cofibrant_objects.π M :=
 fibrant_and_cofibrant_objects.L.obj (fibrant_replacement.obj X)
 
 namespace map
@@ -473,11 +456,11 @@ def Sq_lift_comm : ι X ≫ Sq_lift f = f ≫ ι Y :=
 
 end map
 
-def map_Ho {X Y : M.cofibrant_objects} (f : X ⟶ Y) :
-  obj_Ho X ⟶ obj_Ho Y := (L M).map (map.Sq_lift f)
+def map_π {X Y : M.cofibrant_objects} (f : X ⟶ Y) :
+  obj_π X ⟶ obj_π Y := (L M).map (map.Sq_lift f)
 
-def map_Ho_eq {X Y : M.cofibrant_objects} (f : X ⟶ Y)
-  (f' : obj X ⟶ obj Y) (comm : ι X ≫ f' = f ≫ ι Y) : map_Ho f = (L M).map f' :=
+def map_π_eq {X Y : M.cofibrant_objects} (f : X ⟶ Y)
+  (f' : obj X ⟶ obj Y) (comm : ι X ≫ f' = f ≫ ι Y) : map_π f = (L M).map f' :=
 begin
   let P := (path_object_exists (obj Y).1.1).some,
   apply (fibrant_and_cofibrant_objects.L_map_eq_iff' P _ _).mpr,
@@ -500,32 +483,32 @@ end
 variable (M)
 
 @[derive category]
-def localization := induced_category (fibrant_and_cofibrant_objects.Ho M) fibrant_replacement.obj_Ho
+def localization := induced_category (fibrant_and_cofibrant_objects.π M) fibrant_replacement.obj_π
 
 variable {M}
 
 def L : M.cofibrant_objects ⥤ localization M :=
 { obj := id,
-  map := λ X Y f, fibrant_replacement.map_Ho f,
+  map := λ X Y f, fibrant_replacement.map_π f,
   map_id' := λ X, begin
-    erw [map_Ho_eq (𝟙 X) (𝟙 _) (by erw [id_comp, comp_id]), (L M).map_id],
+    erw [map_π_eq (𝟙 X) (𝟙 _) (by erw [id_comp, comp_id]), (L M).map_id],
     refl,
   end,
   map_comp' := λ X Y Z f g, begin
-    erw map_Ho_eq (f ≫ g) (map.Sq_lift f ≫ map.Sq_lift g), swap,
+    erw map_π_eq (f ≫ g) (map.Sq_lift f ≫ map.Sq_lift g), swap,
     { erw [← assoc, map.Sq_lift_comm f, assoc, map.Sq_lift_comm g, assoc], },
     erw functor.map_comp,
     refl,
   end }
 
 @[derive full, derive faithful]
-def R : localization M ⥤ fibrant_and_cofibrant_objects.Ho M := induced_functor _
+def R : localization M ⥤ fibrant_and_cofibrant_objects.π M := induced_functor _
 
 lemma compatibility_ι_L {X Y : M.cofibrant_objects} (f : obj X ⟶ obj Y) :
   L.map (ι X) ≫ L.map f = fibrant_and_cofibrant_objects.L.map f ≫ L.map (ι Y) :=
 begin
   have compat : Π (Z : M.cofibrant_objects), fibrant_and_cofibrant_objects.L.map (ι (obj Z).val) = L.map (ι Z) :=
-    λ Z, (map_Ho_eq (ι Z) (ι (obj Z).1) rfl).symm,
+    λ Z, (map_π_eq (ι Z) (ι (obj Z).1) rfl).symm,
   have h := functor.congr_map fibrant_and_cofibrant_objects.L (map.Sq_lift_comm f),
   repeat { erw [functor.map_comp] at h, },
   simpa only [← compat] using h,
@@ -535,7 +518,7 @@ namespace universal_property
 
 lemma inverts_W : (W M).is_inverted_by L := begin
   intro w,
-  suffices : is_iso (fibrant_replacement.map_Ho w.1.hom),
+  suffices : is_iso (fibrant_replacement.map_π w.1.hom),
   { haveI : is_iso (R.map (L.map w.1.hom)) := this,
     convert is_iso_of_reflects_iso (L.map w.1.hom) R, },
   suffices : arrow.mk (map.Sq_lift w.1.hom) ∈ fibrant_and_cofibrant_objects.W M,
@@ -566,7 +549,7 @@ end
 def G₂ {D : Type*} [category D]
   (G : M.cofibrant_objects ⥤ D)
   (hG : (W M).is_inverted_by G) :
-  fibrant_and_cofibrant_objects.Ho M ⥤ D :=
+  fibrant_and_cofibrant_objects.π M ⥤ D :=
 fibrant_and_cofibrant_objects.universal_property.lift (G₁ G hG) (G₁_inverts_W G hG)
 
 @[simps]
@@ -639,6 +622,19 @@ end universal_property
 def is_strict_localization : arrow_class.is_strict_localization (W M) L :=
 arrow_class.is_strict_localization.mk' _ _
   universal_property.fixed_target universal_property.fixed_target
+
+def L_π : cofibrant_objects.π M ⥤ fibrant_and_cofibrant_objects.π M :=
+category_theory.quotient.lift _ (L ⋙ R)
+begin
+  intros X Y f g h,
+  induction h with f₀ f₁ h f₁ f₂ f₃ h₁₂ h₁₃ H₁₂ H₁₃,
+  { cases h with P hP,
+    haveI : is_cofibrant X.1 := X.2.some,
+    rcases P.right_homotopy_with_triv_cof_σ'_of_right_homotopy hP.some with ⟨P', H', hP'⟩,
+    sorry, },
+  { rw [H₁₂, H₁₃], },
+
+end
 
 /- Better strategy : construct a functor cofibrant_objects.Ho ⥤ cof_fib.Ho, and check 
 it is bijective on maps first if both objects are also fibrant, and then relax the assumption on X --/
