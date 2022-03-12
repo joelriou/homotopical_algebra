@@ -650,30 +650,54 @@ begin
   { rw [H₁₂, H₁₃], },
 end
 
-/-def L_map_surjective (X Y : M.cofibrant_objects) [hY : is_fibrant Y.1] :
-  function.surjective (λ (f : X ⟶ Y), L.map f) :=
+def ι_fib_object (X : M.cofibrant_objects) [hX : is_fibrant X.1] :
+  (⟨X, nonempty.intro hX⟩ : M.fibrant_and_cofibrant_objects) ⟶ obj X := ι X
+
+def πι_fib_object (X : M.cofibrant_objects) [hX : is_fibrant X.1] :=
+  fibrant_and_cofibrant_objects.L.map (ι_fib_object X)
+
+instance is_iso_πι_fib_object (X : M.cofibrant_objects) [hX : is_fibrant X.1] :
+  is_iso (πι_fib_object X) :=
+fibrant_and_cofibrant_objects.universal_property.inverts_W ⟨arrow.mk (ι_fib_object X), (triv_cof_ι X).2⟩
+
+lemma compatibility_ι_L_π {X Y : M.cofibrant_objects} [hX : is_fibrant X.1] [hY : is_fibrant Y.1] (f : X ⟶ Y) :
+  L_π.map ((cofibrant_objects.L M).map f) = 
+  inv (@πι_fib_object _ X hX) ≫ (fibrant_and_cofibrant_objects.L.map (by exact f)) ≫ @πι_fib_object _ Y hY :=
 begin
-  intro f,
-  let f' : obj X ⟶ obj Y := (fibrant_and_cofibrant_objects.L_map_surjective _ _ f).some,
-  have hf' : fibrant_and_cofibrant_objects.L.map f' = f := (fibrant_and_cofibrant_objects.L_map_surjective _ _ f).some_spec,
-  let g : X ⟶ (obj Y).1 := ι X ≫ f',
-  let Y' : M.fibrant_and_cofibrant_objects := ⟨Y, nonempty.intro hY⟩,
-  let i : Y' ⟶ obj Y := ι Y,
-  let i' := fibrant_and_cofibrant_objects.L.map i,
-  haveI : is_iso i' := fibrant_and_cofibrant_objects.universal_property.inverts_W ⟨arrow.mk i, (triv_cof_ι Y).2⟩,
-  let s := (fibrant_and_cofibrant_objects.L_map_surjective _ _ (inv i')).some,
-  let hs : fibrant_and_cofibrant_objects.L.map s = inv i' := (fibrant_and_cofibrant_objects.L_map_surjective _ _ (inv i')).some_spec,
-  use ι X ≫ f' ≫ s,
-  simp only [L.map_comp, ← assoc, compatibility_ι_L f', hf'],
-  haveI : is_iso (L.map (ι Y)) := universal_property.inverts_W ⟨arrow.mk (ι Y), (triv_cof_ι Y).2⟩,
-  rw ← cancel_mono (L.map (ι Y)),
-  slice_lhs 3 4 { rw ← L.map_comp, },
-  rw compatibility_ι_L,
-  conv_rhs { erw ← id_comp (L.map _), },
-  congr' 2,
-  erw category_theory.functor.map_comp,
-  convert is_iso.inv_hom_id i',
-end-/
+  rw [← cancel_epi (πι_fib_object X), ← assoc, ← assoc, is_iso.hom_inv_id, id_comp],
+  repeat { erw ← fibrant_and_cofibrant_objects.L.map_comp, },
+  congr' 1,
+  exact map.Sq_lift_comm f,
+end
+
+lemma L_π_map_bijective_if_both_fibrant (X Y : cofibrant_objects.π M) [hX : is_fibrant X.1.1] [hY : is_fibrant Y.1.1] :
+  function.bijective (λ (f : X ⟶ Y), L_π .map f) :=
+begin
+  split,
+  { intros f₀ f₁ h₀₁,
+    cases category_theory.quotient.functor_map_surj _ _ _ f₀ with g₀ hg₀,
+    cases category_theory.quotient.functor_map_surj _ _ _ f₁ with g₁ hg₁,
+    simp only at h₀₁ hg₀ hg₁,
+    rw [(show f₀ = (cofibrant_objects.L M).map g₀, by exact hg₀.symm)] at h₀₁ ⊢,
+    rw [(show f₁ = (cofibrant_objects.L M).map g₁, by exact hg₁.symm)] at h₀₁ ⊢,
+    erw [compatibility_ι_L_π g₀, compatibility_ι_L_π g₁,
+      cancel_epi (inv (πι_fib_object X.as)), cancel_mono (πι_fib_object Y.as)] at h₀₁,
+    let Y' : M.fibrant_and_cofibrant_objects := ⟨Y.1, nonempty.intro hY⟩,
+    cases path_object_exists Y'.1.1 with P hP,
+    rw fibrant_and_cofibrant_objects.L_map_eq_iff' P at h₀₁,
+    cases h₀₁ with H,
+    apply category_theory.quotient.sound,
+    exact right_ho_trans_closure.right_homotopy ⟨P, nonempty.intro H⟩, },
+  { intro g,
+    let f := πι_fib_object X.as ≫ (by exact g) ≫ (inv (πι_fib_object Y.as)),
+    let f' := (fibrant_and_cofibrant_objects.L_map_surjective _ _ f).some,
+    have hf' : fibrant_and_cofibrant_objects.L.map f' = f := (fibrant_and_cofibrant_objects.L_map_surjective _ _ f).some_spec,
+    use (cofibrant_objects.L M).map f',
+    simp only,
+    erw [compatibility_ι_L_π f', hf'],
+    dsimp only [f],
+    simp only [assoc, is_iso.inv_hom_id, comp_id, is_iso.inv_hom_id_assoc], },
+end
 
 end fibrant_replacement
 
