@@ -650,6 +650,14 @@ begin
   { rw [H₁₂, H₁₃], },
 end
 
+def L_π_inverts_W {X Y : M.cofibrant_objects} (f : X ⟶ Y) (hf : arrow.mk f ∈ W M) :
+  is_iso (L_π.map ((cofibrant_objects.L M).map f)) :=
+begin
+  haveI : is_iso (L.map f) := universal_property.inverts_W ⟨arrow.mk f, hf⟩,
+  dsimp [L_π],
+  apply_instance,
+end
+
 def ι_fib_object (X : M.cofibrant_objects) [hX : is_fibrant X.1] :
   (⟨X, nonempty.intro hX⟩ : M.fibrant_and_cofibrant_objects) ⟶ obj X := ι X
 
@@ -670,8 +678,8 @@ begin
   exact map.Sq_lift_comm f,
 end
 
-lemma L_π_map_bijective_if_both_fibrant (X Y : cofibrant_objects.π M) [hX : is_fibrant X.1.1] [hY : is_fibrant Y.1.1] :
-  function.bijective (λ (f : X ⟶ Y), L_π .map f) :=
+lemma L_π_map_bijective_when_both_fibrant (X Y : cofibrant_objects.π M) [hX : is_fibrant X.1.1] [hY : is_fibrant Y.1.1] :
+  function.bijective (λ (f : X ⟶ Y), L_π.map f) :=
 begin
   split,
   { intros f₀ f₁ h₀₁,
@@ -697,6 +705,22 @@ begin
     erw [compatibility_ι_L_π f', hf'],
     dsimp only [f],
     simp only [assoc, is_iso.inv_hom_id, comp_id, is_iso.inv_hom_id_assoc], },
+end
+
+lemma L_π_map_bijective_when_target_is_fibrant (X Y : cofibrant_objects.π M) [hY : is_fibrant Y.1.1] :
+  function.bijective (λ (f : X ⟶ Y), L_π.map f) :=
+begin
+  split,
+  { sorry, },
+  { intro g,
+    haveI : is_fibrant ((cofibrant_objects.L M).obj (obj X.as).val).as.val := (obj X.1).2.some,
+    haveI : is_iso (L_π.map ((cofibrant_objects.L M).map (ι X.as))) := L_π_inverts_W _ (triv_cof_ι X.as).2,
+    let g' := inv (L_π.map ((cofibrant_objects.L M).map (ι X.as))) ≫ g,
+    cases (L_π_map_bijective_when_both_fibrant ((cofibrant_objects.L M).obj (obj X.1).1) Y).2
+      (inv (L_π.map ((cofibrant_objects.L M).map (ι X.as))) ≫ g) with f hf,
+    use (cofibrant_objects.L M).map (ι X.as) ≫ f,
+    simp only [category_theory.functor.map_comp] at hf ⊢,
+    erw [hf, ← assoc, is_iso.hom_inv_id, id_comp], },
 end
 
 end fibrant_replacement
