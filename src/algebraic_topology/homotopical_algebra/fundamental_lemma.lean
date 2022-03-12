@@ -838,8 +838,15 @@ end
 def functor_π : M.C ⥤ cofibrant_objects.π M :=
 { obj := obj_π,
   map := λ X Y f, map_π f,
-  map_id' := sorry,
-  map_comp' := sorry, }
+  map_id' := λ X, by simpa only [map_π_eq (𝟙 X) (𝟙 _) (by erw [id_comp, comp_id])],
+  map_comp' :=  λ X Y Z f g, begin
+    erw map_π_eq (f ≫ g) (map.Sq_lift f ≫ map.Sq_lift g), swap,
+    { have foo := map.Sq_lift_comm g,
+      erw [← assoc, ← map.Sq_lift_comm f, assoc, assoc, ← map.Sq_lift_comm g],
+      refl, },
+    erw functor.map_comp,
+    refl,
+  end }
 
 end cofibrant_replacement
 
