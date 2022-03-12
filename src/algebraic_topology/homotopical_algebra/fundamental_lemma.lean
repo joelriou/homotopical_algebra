@@ -49,7 +49,7 @@ def right_homotopy : hom_rel M.cofibrant_objects := λ A X f₁ f₂,
 
 namespace right_homotopy
 
-def symm {A X : M.cofibrant_objects } {f₁ f₂ : A ⟶ X} (H : right_homotopy f₁ f₂) :
+def symm {A X : M.cofibrant_objects} {f₁ f₂ : A ⟶ X} (H : right_homotopy f₁ f₂) :
   right_homotopy f₂ f₁ := 
 by { cases H with P hP, use P.symm, exact nonempty.intro hP.some.symm, }
 
@@ -753,6 +753,95 @@ end
 end fibrant_replacement
 
 end cofibrant_objects
+
+structure cofibrant_replacement (X : M.C) :=
+(Y : M.C) (hY : is_cofibrant Y) (f : Y ⟶ X) (hf : arrow.mk f ∈ M.triv_fib)
+
+namespace cofibrant_replacement
+
+def some_replacement (X : M.C) :
+  cofibrant_replacement X :=
+begin
+  suffices : nonempty (cofibrant_replacement X),
+  { exact this.some, },
+  rcases M.CM5b (arrow.mk (initial.to X)) with ⟨Y, i, p, fac, hi, hp⟩,
+  refine nonempty.intro
+  { Y := Y,
+    hY := ⟨by convert hi⟩,
+    f := p,
+    hf := hp, },
+end
+
+def obj (X : M.C) : M.cofibrant_objects :=
+⟨(some_replacement X).Y, nonempty.intro (some_replacement X).hY⟩
+
+def p (X : M.C) : (obj X).1 ⟶ X :=
+(some_replacement X).f
+
+def triv_fib_p (X : M.C) : arrow.mk (p X) ∈ M.triv_fib :=
+(some_replacement X).hf
+
+def obj_π (X : M.C) : cofibrant_objects.π M :=
+(cofibrant_objects.L M).obj (cofibrant_replacement.obj X)
+
+namespace map
+
+variables {X Y : M.C} (f : X ⟶ Y)
+
+def Sq : square M.C :=
+square.mk'' (initial.to (obj X).1) (p Y) (initial.to _) (p X ≫ f)
+    (subsingleton.elim _ _)
+
+def Sq_lift_struct : arrow.lift_struct (Sq f).hom :=
+begin
+  let hSq := (M.CM4a (Sq f).left (Sq f).right (obj X).2.some.cof (triv_fib_p Y)).sq_has_lift,
+  exact (hSq (Sq f).hom).exists_lift.some,
+end
+
+def Sq_lift : obj X ⟶ obj Y := (Sq_lift_struct f).lift
+
+def Sq_lift_comm : cofibrant_objects.forget.map (Sq_lift f) ≫ p Y = p X ≫ f :=
+(Sq_lift_struct f).fac_right
+
+end map
+
+def map_π {X Y : M.C} (f : X ⟶ Y) :
+  obj_π X ⟶ obj_π Y := (cofibrant_objects.L M).map (map.Sq_lift f)
+
+def map_π_eq {X Y : M.C} (f : X ⟶ Y) (f' : obj X ⟶ obj Y)
+  (comm : cofibrant_objects.forget.map f' ≫ p Y = p X ≫ f) :
+  map_π f = (cofibrant_objects.L M).map f' :=
+begin
+  haveI : is_cofibrant (obj X).1 := (obj X).2.some,
+  let P := (path_object_exists (obj Y).1).some,
+  let C := (cylinder_exists (obj X).1).some,
+  apply category_theory.quotient.sound,
+  refine cofibrant_objects.right_ho_trans_closure.right_homotopy ⟨P, nonempty.intro _⟩,
+  apply P.right_homotopy_of_left_homotopy C,
+  let Sq := square.mk'' (C.to_precylinder.ι) (p Y) (coprod.desc (map.Sq_lift f) f') (C.σ ≫ (p X) ≫ f) _, swap,
+  { ext,
+    { simpa only [precylinder.ι, coprod.desc_comp, coprod.inl_desc, ← assoc, C.σd₀, id_comp]
+        using map.Sq_lift_comm f, },
+    { simpa only [precylinder.ι, coprod.desc_comp, coprod.inr_desc, ← assoc, C.σd₁, id_comp]
+        using comm, }, },
+  let hSq := (M.CM4a (Sq.left) (Sq.right) C.cof_ι (triv_fib_p Y)).sq_has_lift,
+  let l := (hSq Sq.hom).exists_lift.some,
+  have eq₀ := congr_arg ((λ (f : limits.coprod _ _ ⟶ _), limits.coprod.inl ≫ f)) l.fac_left,
+  have eq₁ := congr_arg ((λ (f : limits.coprod _ _ ⟶ _), limits.coprod.inr ≫ f)) l.fac_left,
+  simp only [precylinder.ι, coprod.desc_comp, coprod.inl_desc, coprod.inr_desc, square.mk''_left_hom, square.mk''_hom_left] at eq₀ eq₁,
+  exact
+  { h := l.lift,
+    h₀ := eq₀,
+    h₁ := eq₁, },
+end
+
+def functor_π : M.C ⥤ cofibrant_objects.π M :=
+{ obj := obj_π,
+  map := λ X Y f, map_π f,
+  map_id' := sorry,
+  map_comp' := sorry, }
+
+end cofibrant_replacement
 
 end model_category
 
