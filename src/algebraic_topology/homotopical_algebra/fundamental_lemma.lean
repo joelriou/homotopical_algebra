@@ -623,16 +623,14 @@ def is_strict_localization : arrow_class.is_strict_localization (W M) L :=
 arrow_class.is_strict_localization.mk' _ _
   universal_property.fixed_target universal_property.fixed_target
 
-def L_π : cofibrant_objects.π M ⥤ fibrant_and_cofibrant_objects.π M :=
-category_theory.quotient.lift _ (L ⋙ R)
+def L_π : cofibrant_objects.π M ⥤ localization M :=
+category_theory.quotient.lift _ L
 begin
   intros X Y f g h,
   induction h with f₀ f₁ h f₁ f₂ f₃ h₁₂ h₁₃ H₁₂ H₁₃,
   { cases h with P hP,
     haveI : is_cofibrant X.1 := X.2.some,
     rcases P.right_homotopy_with_triv_cof_σ'_of_right_homotopy hP.some with ⟨P', H', hP'⟩,
-    simp only [functor.comp_map],
-    congr' 1,
     let Z : M.cofibrant_objects := ⟨P'.pre.I', nonempty.intro { cof := _ }⟩, swap,
     { convert M.cof_comp_stable _ _ _ (initial.to _) P'.pre.σ' Y.2.some.cof hP'.1, },
     let h'' : X ⟶ Z := H'.h,
@@ -669,7 +667,7 @@ instance is_iso_πι_fib_object (X : M.cofibrant_objects) [hX : is_fibrant X.1] 
 fibrant_and_cofibrant_objects.universal_property.inverts_W ⟨arrow.mk (ι_fib_object X), (triv_cof_ι X).2⟩
 
 lemma compatibility_ι_L_π {X Y : M.cofibrant_objects} [hX : is_fibrant X.1] [hY : is_fibrant Y.1] (f : X ⟶ Y) :
-  L_π.map (cofibrant_objects.L.map f) = 
+  R.map (L_π.map (cofibrant_objects.L.map f)) = 
   inv (@πι_fib_object _ X hX) ≫ (fibrant_and_cofibrant_objects.L.map (by exact f)) ≫ @πι_fib_object _ Y hY :=
 begin
   rw [← cancel_epi (πι_fib_object X), ← assoc, ← assoc, is_iso.hom_inv_id, id_comp],
@@ -847,6 +845,30 @@ def functor_π : M.C ⥤ cofibrant_objects.π M :=
     erw functor.map_comp,
     refl,
   end }
+
+variable (M)
+
+@[derive category]
+def localization := induced_category (cofibrant_objects.fibrant_replacement.localization M) obj
+
+variable {M}
+
+def L : M.C ⥤ localization M :=
+{ obj := id,
+  map := λ X Y f, (cofibrant_objects.fibrant_replacement.L_π).map (functor_π.map f),
+  map_id' := λ X, by simpa only [category_theory.functor.map_id],
+  map_comp' := λ X Y Z f g, by simpa only [category_theory.functor.map_comp], }
+
+def L' : M.C ⥤ cofibrant_objects.fibrant_replacement.localization M := L ⋙ induced_functor _ 
+
+lemma L'_eq : (L' : M.C ⥤ _) = functor_π ⋙ cofibrant_objects.fibrant_replacement.L_π :=
+begin
+  apply category_theory.functor.ext,
+  { intros X Y f,
+    simpa only [eq_to_hom_refl, comp_id, id_comp], },
+  { intro X,
+    refl, },
+end
 
 end cofibrant_replacement
 
