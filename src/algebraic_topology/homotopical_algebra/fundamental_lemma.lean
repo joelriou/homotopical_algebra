@@ -783,7 +783,7 @@ def triv_fib_p (X : M.C) : arrow.mk (p X) ∈ M.triv_fib :=
 (some_replacement X).hf
 
 def obj_π (X : M.C) : cofibrant_objects.π M :=
-cofibrant_objects.L.obj (cofibrant_replacement.obj X)
+cofibrant_objects.L.obj (obj X)
 
 namespace map
 
@@ -893,13 +893,21 @@ lemma inverts_W : (W M).is_inverted_by L := begin
       exact arrow.mk_eq w, }, },
 end
 
-def L_cof : cofibrant_objects.fibrant_replacement.localization M ⥤ localization M :=
-cofibrant_objects.fibrant_replacement.universal_property.lift (cofibrant_objects.inclusion ⋙ L)
+lemma inclusion_comp_L_inverts_W : (cofibrant_objects.W M).is_inverted_by (cofibrant_objects.inclusion ⋙ L) :=
 begin
   rintro ⟨w, hw⟩,
   dsimp [arrow.is_inverted_by],
   convert inverts_W ⟨arrow.mk w.hom, hw⟩,
 end
+
+def L_cof : cofibrant_objects.fibrant_replacement.localization M ⥤ localization M :=
+cofibrant_objects.fibrant_replacement.universal_property.lift (cofibrant_objects.inclusion ⋙ L)
+inclusion_comp_L_inverts_W
+
+def L_cof_fac : cofibrant_objects.fibrant_replacement.L ⋙ (L_cof : _ ⥤ localization M) =
+  cofibrant_objects.inclusion ⋙ L :=
+cofibrant_objects.fibrant_replacement.universal_property.fac (cofibrant_objects.inclusion ⋙ L)
+    inclusion_comp_L_inverts_W
 
 def G₁ {D : Type*} [category D]
   (G : M.C ⥤ D)
@@ -958,9 +966,51 @@ begin
     refl, },
 end
 
-lemma compatibility_p_L {X Y : localization M} (f : X ⟶ Y) :
-  L.map (p X) ≫ f = L_cof.map (R.map f) ≫ L.map (p Y) := sorry
-#exit
+lemma compatibility_p_L {X Y : M.C} (f : obj X ⟶ obj Y) :
+L.map (p X) ≫ cofibrant_objects.fibrant_replacement.L.map f  =
+  L.map f ≫ L.map (p Y) :=
+begin
+  have compat : Π (Z : M.C), cofibrant_objects.fibrant_replacement.L.map (p (obj Z).1) = L.map (p Z) := λ Z, begin
+    dsimp only [L, functor_π],
+    erw (map_π_eq (p Z) (p (obj Z).1) rfl),
+    refl,
+  end,
+  have h := functor.congr_map (cofibrant_objects.fibrant_replacement.L) (map.Sq_lift_comm f),
+  repeat { erw [functor.map_comp] at h, },
+  simpa only [← compat] using h.symm,
+end
+
+lemma compatibility_p_L' {X Y : localization M} (f : X ⟶ Y) :
+  L.map (p X) ≫ f = L_cof.map (R.map f) ≫ L.map (p Y) :=
+begin
+  rcases M.CM5a (arrow.mk (terminal.from Y)) with ⟨Z', i', q, fac, hi, hq⟩,
+  let Z : localization M := Z',
+  let j : Y ⟶ Z := L.map i',
+  haveI : is_iso j := inverts_W ⟨arrow.mk i', hi.2⟩,
+  simp only [← cancel_mono j, assoc],
+  haveI : is_fibrant (obj_π Z).as.1 := ⟨_⟩, swap,
+  { convert M.fib_comp_stable _ _ _ (p Z) (terminal.from _) (triv_fib_p Z).1 (by convert hq), },
+  cases (cofibrant_objects.fibrant_replacement.L_π_map_bijective_when_target_is_fibrant (obj_π X) (obj_π Z)).2 (f ≫ j)
+    with ψ hψ,
+  cases category_theory.quotient.functor_map_surj _ _ _ ψ with φ hφ',
+  have hφ : cofibrant_objects.fibrant_replacement.L.map φ = f ≫ j,
+  { simp only at hφ' hψ,
+    rw [← hψ, ← hφ'],
+    refl, },
+  erw [← hφ, compatibility_p_L φ],
+  rw [show j = L.map i', by refl],
+  conv_rhs { erw [← L.map_comp, ← map.Sq_lift_comm, L.map_comp], },
+  rw ← assoc,
+  congr' 1,
+  have eqφ := functor.congr_map_conjugate L_cof_fac φ,
+  have eqj := functor.congr_map_conjugate L_cof_fac (map.Sq_lift i'),
+  dsimp at eqφ eqj,
+  erw [hφ, id_comp, comp_id] at eqφ,
+  erw [id_comp, comp_id] at eqj,
+  erw [← eqφ, L_cof.map_comp, ← eqj],
+  congr' 1,
+end
+
 lemma uniq' {E : Type*} [category E] 
   (G : localization M ⥤ E) :
   G = lift (L ⋙ G) (M.W.is_inverted_by_of_comp L G inverts_W) :=
@@ -985,7 +1035,7 @@ begin
     dsimp,
     simp only [← G.map_comp],
     congr' 1,
-    apply compatibility_p_L, },
+    apply compatibility_p_L', },
   { intro X,
     refl, },
 end
@@ -995,7 +1045,18 @@ lemma uniq {E : Type*} [category E]
   (h₁₂ : L ⋙ G₁ = L ⋙ G₂) : G₁ = G₂ :=
 by { rw [uniq' G₁, uniq' G₂], congr', }
 
+def fixed_target {E : Type*} [category E] :
+  arrow_class.is_strict_localization_fixed_target (W M) L E :=
+{ inverts_W := inverts_W,
+  lift := lift,
+  fac := fac,
+  uniq := uniq }
+
 end universal_property
+
+def is_strict_localization : arrow_class.is_strict_localization (W M) L :=
+arrow_class.is_strict_localization.mk' _ _
+  universal_property.fixed_target universal_property.fixed_target
 
 end cofibrant_replacement
 
