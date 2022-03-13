@@ -1058,6 +1058,13 @@ def is_strict_localization : arrow_class.is_strict_localization (W M) L :=
 arrow_class.is_strict_localization.mk' _ _
   universal_property.fixed_target universal_property.fixed_target
 
+/- TODO :
+1) L_cof is fully faithful,
+2) variant of lemma L_π_map_bijective_when_target_is_fibrant (X Y : cofibrant_objects.π M) [hY : is_fibrant Y.1.1] :
+  function.bijective (λ (f : X ⟶ Y), L_π.map f) :=
+3) remove assumption that Y is cofibrant
+-/
+
 end cofibrant_replacement
 
 end model_category
