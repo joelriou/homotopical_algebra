@@ -38,6 +38,11 @@ lemma congr_map {D D' : Type*} [category D] [category D'] (F : D ⥤ D')
 {X Y : D} {f g : X ⟶ Y} (h : f = g) : F.map f = F.map g :=
 by { subst h, }
 
+lemma assoc {C D E F : Type*} [category C] [category D]
+  [category E] [category F] (φ : C ⥤ D)
+  (φ' : D ⥤ E) (φ'' : E ⥤ F) : (φ ⋙ φ') ⋙ φ'' = φ ⋙ (φ' ⋙ φ'') :=
+by refl
+
 end functor
 
 universes v v' v₃ u u' u₃
@@ -323,11 +328,6 @@ def universal_property {E : Type u₃} [category.{v₃} E] :
   uniq := uniq }
 
 end localization
-
-lemma functor.assoc {C D E F : Type*} [category C] [category D]
-  [category E] [category F] (φ : C ⥤ D)
-  (φ' : D ⥤ E) (φ'' : E ⥤ F) : (φ ⋙ φ') ⋙ φ'' = φ ⋙ (φ' ⋙ φ'') :=
-by refl
 
 lemma strict_localization_is_ess_unique_on_obj {W : arrow_class C} {D' : Type*} [category D']
   (F₁ : C ⥤ D) (F₂ : C ⥤ D')

@@ -44,6 +44,9 @@ namespace cofibrant_objects
 
 variable {M}
 
+@[simps]
+def inclusion : M.cofibrant_objects ⥤ M.C := induced_functor _
+
 def right_homotopy : hom_rel M.cofibrant_objects := λ A X f₁ f₂,
 ∃ (P : path_object X.1), nonempty (P.pre.right_homotopy f₁ f₂)
 
@@ -541,9 +544,9 @@ def G₁_inverts_W {D : Type*} [category D]
   (hG : (W M).is_inverted_by G) :
   (fibrant_and_cofibrant_objects.W M).is_inverted_by (G₁ G hG) :=
 begin
-  rintro ⟨f, hf⟩,
-  let f' : f.left.1 ⟶ f.right.1 := f.hom,
-  exact hG ⟨f', hf⟩,
+  rintro ⟨w, hw⟩,
+  let w' : w.left.1 ⟶ w.right.1 := w.hom,
+  exact hG ⟨w', hw⟩,
 end
 
 def G₂ {D : Type*} [category D]
@@ -853,13 +856,16 @@ def localization := induced_category (cofibrant_objects.fibrant_replacement.loca
 
 variable {M}
 
+@[derive full, derive faithful]
+def R : localization M ⥤ cofibrant_objects.fibrant_replacement.localization M := induced_functor _
+
 def L : M.C ⥤ localization M :=
 { obj := id,
   map := λ X Y f, (cofibrant_objects.fibrant_replacement.L_π).map (functor_π.map f),
   map_id' := λ X, by simpa only [category_theory.functor.map_id],
   map_comp' := λ X Y Z f g, by simpa only [category_theory.functor.map_comp], }
 
-def L' : M.C ⥤ cofibrant_objects.fibrant_replacement.localization M := L ⋙ induced_functor _ 
+def L' : M.C ⥤ cofibrant_objects.fibrant_replacement.localization M := L ⋙ R
 
 lemma L'_eq : (L' : M.C ⥤ _) = functor_π ⋙ cofibrant_objects.fibrant_replacement.L_π :=
 begin
@@ -869,6 +875,127 @@ begin
   { intro X,
     refl, },
 end
+
+namespace universal_property
+
+lemma inverts_W : (W M).is_inverted_by L := begin
+  rintro ⟨w, hw⟩,
+  suffices : is_iso (L'.map w.hom),
+  { haveI : is_iso ((induced_functor obj).map (L.map w.hom)) := this,
+    exact is_iso_of_reflects_iso (L.map w.hom) (induced_functor _), },
+  apply cofibrant_objects.fibrant_replacement.L_π_inverts_W,
+  apply M.CM2.of_comp_right _ (p w.right),
+  { exact (triv_fib_p w.right).2, },
+  { erw map.Sq_lift_comm w.hom,
+    apply M.CM2.of_comp,
+    { exact (triv_fib_p w.left).2, },
+    { convert hw,
+      exact arrow.mk_eq w, }, },
+end
+
+def L_cof : cofibrant_objects.fibrant_replacement.localization M ⥤ localization M :=
+cofibrant_objects.fibrant_replacement.universal_property.lift (cofibrant_objects.inclusion ⋙ L)
+begin
+  rintro ⟨w, hw⟩,
+  dsimp [arrow.is_inverted_by],
+  convert inverts_W ⟨arrow.mk w.hom, hw⟩,
+end
+
+def G₁ {D : Type*} [category D]
+  (G : M.C ⥤ D)
+  (hG : M.W.is_inverted_by G) :
+  M.cofibrant_objects ⥤ D :=
+cofibrant_objects.inclusion ⋙ G
+
+def G₁_inverts_W {D : Type*} [category D]
+  (G : M.C ⥤ D)
+  (hG : M.W.is_inverted_by G) :
+  (cofibrant_objects.W M).is_inverted_by (G₁ G hG) :=
+begin
+  rintro ⟨w, hw⟩,
+  let w' : w.left.1 ⟶ w.right.1 := w.hom,
+  exact hG ⟨w', hw⟩,
+end
+
+def G₂ {D : Type*} [category D]
+  (G : M.C ⥤ D)
+  (hG : M.W.is_inverted_by G) :
+  cofibrant_objects.fibrant_replacement.localization M ⥤ D :=
+cofibrant_objects.fibrant_replacement.universal_property.lift (G₁ G hG) (G₁_inverts_W G hG)
+
+@[simps]
+def lift {D : Type*} [category D]
+  (G : M.C ⥤ D)
+  (hG : M.W.is_inverted_by G) :
+  localization M ⥤ D :=
+begin
+  haveI : Π (X : localization M), is_iso (G.map (p X)) :=
+  λ X, hG ⟨arrow.mk (p X), (triv_fib_p X).2⟩,
+  exact
+  { obj := G.obj,
+    map := λ X Y f, inv (G.map (p X)) ≫ (G₂ G hG).map (R.map f) ≫ G.map (p Y),
+    map_id' := λ X, by erw [category_theory.functor.map_id, id_comp, is_iso.inv_hom_id],
+    map_comp' := λ X Y Z f g , begin
+      slice_rhs 3 4 { rw is_iso.hom_inv_id, },
+      slice_rhs 2 4 { simp only [id_comp, ← functor.map_comp], },
+    end }
+end
+
+lemma fac {D : Type*} [category D]
+  (G : M.C ⥤ D)
+  (hG : M.W.is_inverted_by G) : L ⋙ lift G hG = G :=
+begin
+  apply category_theory.functor.ext,
+  { intros X Y f,
+    have G₁_fac := cofibrant_objects.fibrant_replacement.universal_property.fac (G₁ G hG) (G₁_inverts_W G hG),
+    have h := functor.congr_map_conjugate G₁_fac (map.Sq_lift f),
+    simp only [eq_to_hom_refl, id_comp, comp_id] at ⊢ h,
+    simp only [functor.comp_map, lift_map] at ⊢ h,
+    erw h,
+    dsimp [G₁],
+    erw [← G.map_comp, map.Sq_lift_comm f, G.map_comp, ← assoc, is_iso.inv_hom_id, id_comp], },
+  { intro X,
+    refl, },
+end
+
+lemma compatibility_p_L {X Y : localization M} (f : X ⟶ Y) :
+  L.map (p X) ≫ f = L_cof.map (R.map f) ≫ L.map (p Y) := sorry
+#exit
+lemma uniq' {E : Type*} [category E] 
+  (G : localization M ⥤ E) :
+  G = lift (L ⋙ G) (M.W.is_inverted_by_of_comp L G inverts_W) :=
+begin
+  haveI : Π (X : localization M), is_iso (L.map (p X)) :=
+    λ X , inverts_W ⟨arrow.mk (p X), (triv_fib_p X).2⟩,
+  haveI : Π (X : localization M), is_iso ((L ⋙ G).map (p X)) := λ X, by { dsimp, apply_instance, },
+  have h := cofibrant_objects.fibrant_replacement.universal_property.uniq
+    (G₂ (L ⋙ G) (M.W.is_inverted_by_of_comp L G inverts_W)) (L_cof ⋙ G) _, swap,
+  { erw [← functor.assoc],
+    erw cofibrant_objects.fibrant_replacement.universal_property.fac,
+    erw cofibrant_objects.fibrant_replacement.universal_property.fac,
+    dsimp [G₁],
+    erw [functor.assoc], },
+  apply category_theory.functor.ext,
+  { intros X Y f,
+    simp only [eq_to_hom_refl, comp_id, id_comp],
+    dsimp only [lift],
+    rw ← cancel_epi ((L ⋙ G).map (p X)),
+    slice_rhs 1 2 { rw is_iso.hom_inv_id, },
+    erw [functor.congr_map_conjugate h (R.map f), id_comp, id_comp, comp_id],
+    dsimp,
+    simp only [← G.map_comp],
+    congr' 1,
+    apply compatibility_p_L, },
+  { intro X,
+    refl, },
+end
+
+lemma uniq {E : Type*} [category E] 
+  (G₁ G₂ : localization M ⥤ E)
+  (h₁₂ : L ⋙ G₁ = L ⋙ G₂) : G₁ = G₂ :=
+by { rw [uniq' G₁, uniq' G₂], congr', }
+
+end universal_property
 
 end cofibrant_replacement
 
