@@ -1052,6 +1052,34 @@ def fixed_target {E : Type*} [category E] :
   fac := fac,
   uniq := uniq }
 
+lemma L_cof_fully_faithful (X Y : cofibrant_objects.fibrant_replacement.localization M) :
+  function.bijective (λ (f : X ⟶ Y), L_cof.map f) :=
+begin
+  rcases M.CM5a (arrow.mk (terminal.from Y.1)) with ⟨Z', i', q, fac, hi, hq⟩,
+  let Z : cofibrant_objects.fibrant_replacement.localization M := ⟨Z', nonempty.intro { cof := _ }⟩, swap,
+  { convert M.cof_comp_stable _ Y.1 Z' (initial.to _) i' Y.2.some.cof hi.1, },
+  let j : Y ⟶ Z := cofibrant_objects.fibrant_replacement.L.map i',
+  let Y' : M.cofibrant_objects := Y,
+  let Z' : M.cofibrant_objects := Z,
+  let j' : Y' ⟶ Z' := i',
+  haveI : is_iso j := cofibrant_objects.fibrant_replacement.universal_property.inverts_W ⟨arrow.mk j', hi.2⟩,
+  suffices : function.bijective (λ (f : X ⟶ Z), L_cof.map f),
+  { split,
+    { intros f₀ f₁ h,
+      rw ← cancel_mono j,
+      apply this.1,
+      simp only at h,
+      simp only [L_cof.map_comp, h], },
+    { intro f,
+      cases this.2 (f ≫ L_cof.map j) with g hg,
+      use [g ≫ inv j],
+      simp only at ⊢ hg,
+      rw [L_cof.map_comp, hg, assoc, ← L_cof.map_comp, is_iso.hom_inv_id, L_cof.map_id, comp_id], }, },
+  split,
+  { sorry, },
+  { sorry, },
+end
+
 end universal_property
 
 def is_strict_localization : arrow_class.is_strict_localization (W M) L :=
