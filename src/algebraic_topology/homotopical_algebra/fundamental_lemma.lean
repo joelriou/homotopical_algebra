@@ -1052,6 +1052,7 @@ def fixed_target {E : Type*} [category E] :
   fac := fac,
   uniq := uniq }
 
+/-
 lemma L_cof_fully_faithful (X Y : cofibrant_objects.fibrant_replacement.localization M) :
   function.bijective (λ (f : X ⟶ Y), L_cof.map f) :=
 begin
@@ -1075,18 +1076,38 @@ begin
       use [g ≫ inv j],
       simp only at ⊢ hg,
       rw [L_cof.map_comp, hg, assoc, ← L_cof.map_comp, is_iso.hom_inv_id, L_cof.map_id, comp_id], }, },
-  split,
-  { sorry, },
-  { intro f,
-    let g := R.map f,
-    dsimp [R, L_cof] at g,
-    haveI : is_fibrant (cofibrant_objects.L.obj Z).as.1 := { fib := by convert hq, },
-    have foo := (cofibrant_objects.fibrant_replacement.L_π_map_bijective_when_target_is_fibrant (cofibrant_objects.L.obj X) (cofibrant_objects.L.obj Z)).2,
-    let φ : cofibrant_objects.fibrant_replacement.L_π.obj (cofibrant_objects.L.obj X) ⟶ 
-      cofibrant_objects.fibrant_replacement.L_π.obj (cofibrant_objects.L.obj Z) := sorry,
-    dsimp [cofibrant_objects.L, cofibrant_objects.fibrant_replacement.L_π] at φ,
-    have pif := foo φ,
-    sorry, },
+  suffices : function.bijective (λ (f : X ⟶ Z), (L_cof ⋙ R).map f),
+  { split,
+    { intros f₀ f₁ eq,
+      apply this.1,
+      simpa only [functor.comp_map] using eq, },
+    { intro g,
+      have hF : faithful (R : localization M ⥤ _) := infer_instance,
+      cases this.2 (R.map g) with f hf,
+      use f,
+      simp only [functor.comp_map] at hf ⊢,
+      apply hF.map_injective',
+      exact hf, } },
+  sorry,
+
+end-/
+
+lemma L_cof_fully_faithful (X Y : cofibrant_objects.fibrant_replacement.localization M) :
+  function.bijective (λ (f : X ⟶ Y), L_cof.map f) :=
+begin
+  suffices : function.bijective (λ (f : X ⟶ Y), (L_cof ⋙ R).map f),
+  { split,
+    { intros f₀ f₁ eq,
+      apply this.1,
+      simpa only [functor.comp_map] using eq, },
+    { intro g,
+      have hF : faithful (R : localization M ⥤ _) := infer_instance,
+      cases this.2 (R.map g) with f hf,
+      use f,
+      simp only [functor.comp_map] at hf ⊢,
+      apply hF.map_injective',
+      exact hf, } },
+  sorry,
 end
 
 end universal_property
