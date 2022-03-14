@@ -1055,9 +1055,9 @@ def fixed_target {E : Type*} [category E] :
 lemma L_cof_fully_faithful (X Y : cofibrant_objects.fibrant_replacement.localization M) :
   function.bijective (λ (f : X ⟶ Y), L_cof.map f) :=
 begin
-  rcases M.CM5a (arrow.mk (terminal.from Y.1)) with ⟨Z', i', q, fac, hi, hq⟩,
-  let Z : cofibrant_objects.fibrant_replacement.localization M := ⟨Z', nonempty.intro { cof := _ }⟩, swap,
-  { convert M.cof_comp_stable _ Y.1 Z' (initial.to _) i' Y.2.some.cof hi.1, },
+  rcases M.CM5a (arrow.mk (terminal.from Y.1)) with ⟨Z'', i', q, fac, hi, hq⟩,
+  let Z : cofibrant_objects.fibrant_replacement.localization M := ⟨Z'', nonempty.intro { cof := _ }⟩, swap,
+  { convert M.cof_comp_stable _ Y.1 Z'' (initial.to _) i' Y.2.some.cof hi.1, },
   let j : Y ⟶ Z := cofibrant_objects.fibrant_replacement.L.map i',
   let Y' : M.cofibrant_objects := Y,
   let Z' : M.cofibrant_objects := Z,
@@ -1077,23 +1077,97 @@ begin
       rw [L_cof.map_comp, hg, assoc, ← L_cof.map_comp, is_iso.hom_inv_id, L_cof.map_id, comp_id], }, },
   split,
   { sorry, },
-  { sorry, },
+  { intro f,
+    let g := R.map f,
+    dsimp [R, L_cof] at g,
+    haveI : is_fibrant (cofibrant_objects.L.obj Z).as.1 := { fib := by convert hq, },
+    have foo := (cofibrant_objects.fibrant_replacement.L_π_map_bijective_when_target_is_fibrant (cofibrant_objects.L.obj X) (cofibrant_objects.L.obj Z)).2,
+    let φ : cofibrant_objects.fibrant_replacement.L_π.obj (cofibrant_objects.L.obj X) ⟶ 
+      cofibrant_objects.fibrant_replacement.L_π.obj (cofibrant_objects.L.obj Z) := sorry,
+    dsimp [cofibrant_objects.L, cofibrant_objects.fibrant_replacement.L_π] at φ,
+    have pif := foo φ,
+    sorry, },
 end
 
 end universal_property
 
-def is_strict_localization : arrow_class.is_strict_localization (W M) L :=
+def is_strict_localization : arrow_class.is_strict_localization M.W L :=
 arrow_class.is_strict_localization.mk' _ _
   universal_property.fixed_target universal_property.fixed_target
 
-/- TODO :
-1) L_cof is fully faithful,
-2) variant of lemma L_π_map_bijective_when_target_is_fibrant (X Y : cofibrant_objects.π M) [hY : is_fibrant Y.1.1] :
-  function.bijective (λ (f : X ⟶ Y), L_π.map f) :=
-3) remove assumption that Y is cofibrant
--/
+lemma L_map_surjective (X Y : M.C) [hX : is_cofibrant X] [hY : is_fibrant Y] : function.surjective (λ (f : X ⟶ Y), L.map f) :=
+begin
+  intro g,
+  let X' : M.cofibrant_objects := ⟨X, nonempty.intro hX⟩,
+  let Y' := obj Y,
+  haveI : is_iso (L.map (p Y)) := universal_property.inverts_W ⟨arrow.mk (p Y), (triv_fib_p Y).2⟩,
+  haveI : is_fibrant (cofibrant_objects.L.obj Y').as.1 := ⟨by convert M.fib_comp_stable _ _ _ (p Y) (terminal.from _) ((triv_fib_p Y).1) hY.fib⟩,
+  cases (universal_property.L_cof_fully_faithful X' Y').2 (g ≫ inv (L.map (p Y))) with f₀ hf₀,
+  cases (cofibrant_objects.fibrant_replacement.L_π_map_bijective_when_target_is_fibrant (cofibrant_objects.L.obj X') (cofibrant_objects.L.obj Y')).2 f₀
+    with f₁ hf₁,
+  cases category_theory.quotient.functor_map_surj _ _ _ f₁ with f₂ hf₂,
+  use f₂ ≫ p Y,
+  simp only at hf₂ hf₁ hf₀ ⊢,
+  erw [← comp_id g, ← is_iso.inv_hom_id (L.map (p Y)), ← assoc, ← hf₀, ← hf₁, ← hf₂, L.map_comp],
+  congr' 1,
+  convert functor.congr_map_conjugate universal_property.L_cof_fac.symm f₂,
+  erw [id_comp, comp_id],
+  refl,
+end
+
+lemma L_map_eq_iff' {X Y : M.C} [hX : is_cofibrant X] [hY : is_fibrant Y] (P : path_object Y) (f₀ f₁ : X ⟶ Y) :
+  L.map f₀ = L.map f₁ ↔ nonempty (P.pre.right_homotopy f₀ f₁) := sorry
 
 end cofibrant_replacement
+
+namespace fundamental_lemma
+
+lemma surjective (X Y : M.C) [hX : is_cofibrant X] [hY : is_fibrant Y] :
+  function.surjective (λ (f : X ⟶ Y), M.Q.map f) :=
+begin
+  let F : M.W.localization ⥤ _ := arrow_class.localization.lift cofibrant_replacement.L cofibrant_replacement.is_strict_localization.inverts_W,
+  haveI : is_equivalence F := cofibrant_replacement.is_strict_localization.is_equivalence,
+  have hF : faithful F := infer_instance,
+  intro f,
+  cases cofibrant_replacement.L_map_surjective X Y (F.map f) with g hg,
+  use g,
+  simp only at ⊢ hg,
+  apply hF.map_injective',
+  rw ← hg,
+  simpa only [id_comp, comp_id, eq_to_hom_refl] using functor.congr_map_conjugate (arrow_class.localization.fac cofibrant_replacement.L cofibrant_replacement.is_strict_localization.inverts_W) g,
+end
+
+lemma eq_iff' {X Y : M.C} [hX : is_cofibrant X] [hY : is_fibrant Y] (P : path_object Y) (f₀ f₁ : X ⟶ Y) :
+  M.Q.map f₀ = M.Q.map f₁ ↔ nonempty (P.pre.right_homotopy f₀ f₁) :=
+begin
+  let F : M.W.localization ⥤ _ := arrow_class.localization.lift cofibrant_replacement.L cofibrant_replacement.is_strict_localization.inverts_W,
+  haveI : is_equivalence F := cofibrant_replacement.is_strict_localization.is_equivalence,
+  have hF : faithful F := infer_instance,
+  suffices : M.Q.map f₀ = M.Q.map f₁ ↔ cofibrant_replacement.L.map f₀ = cofibrant_replacement.L.map f₁,
+  { calc M.Q.map f₀ = M.Q.map f₁ ↔ cofibrant_replacement.L.map f₀ = cofibrant_replacement.L.map f₁ : this
+    ... ↔ nonempty (P.pre.right_homotopy f₀ f₁) : cofibrant_replacement.L_map_eq_iff' P f₀ f₁, },
+  have eq : M.Q ⋙ F = cofibrant_replacement.L := arrow_class.localization.fac cofibrant_replacement.L cofibrant_replacement.is_strict_localization.inverts_W,
+  have eq₀ := functor.congr_map_conjugate eq f₀,
+  have eq₁ := functor.congr_map_conjugate eq f₁,
+  erw [id_comp, comp_id, functor.comp_map] at eq₀ eq₁,
+  erw [← eq₀, ← eq₁],
+  split,
+  { intro h,
+    rw h, },
+  { intro h,
+    apply hF.map_injective',
+    exact h, },
+end
+
+lemma eq_iff {X Y : M.C} [hX : is_cofibrant X] [hY : is_fibrant Y] (C : cylinder X) (f₀ f₁ : X ⟶ Y) :
+  M.Q.map f₀ = M.Q.map f₁ ↔ nonempty (C.to_precylinder.left_homotopy f₀ f₁) :=
+begin
+  cases path_object_exists Y with P hP,
+  calc M.Q.map f₀ = M.Q.map f₁ ↔ nonempty (P.pre.right_homotopy f₀ f₁) : eq_iff' P f₀ f₁
+  ... ↔ nonempty (C.to_precylinder.left_homotopy f₀ f₁) : (left_homotopy_iff_right_homotopy C P f₀ f₁).symm,
+end
+
+end fundamental_lemma
 
 end model_category
 
