@@ -17,6 +17,18 @@ open category_theory.category
 
 namespace category_theory
 
+namespace quotient
+
+lemma functor_map_surj {C : Type*} [category C] (r : hom_rel C) (s t : C) :
+  function.surjective (λ (f : s ⟶ t), (functor r).map f) :=
+begin
+  intro f,
+  cases surjective_quot_mk _ f with g hg,
+  use [g, hg],
+end
+
+end quotient
+
 namespace functor
 
 --lemma congr_obj {D₁ D₂ : Type*} [category D₁] [category D₂] {F G : D₁ ⥤ D₂}
@@ -150,7 +162,6 @@ end localization
 def localization := category_theory.quotient (localization.relations W)
 
 open localization
-
 
 namespace localization
 
@@ -299,6 +310,16 @@ end
 
 instance (w : W) : is_iso ((Q W).map w.1.hom) := is_iso.of_iso (Wiso w)
 
+variable (W)
+
+def Q_obj_bijection : C ≃ W.localization :=
+{ to_fun := (Q W).obj,
+  inv_fun := λ X, X.as.1,
+  left_inv := λ X, begin refl, end,
+  right_inv := λ X, by { cases X, cases X, refl, }, }
+
+variable {W}
+
 end localization
 
 variable (L : C ⥤ D)
@@ -308,8 +329,8 @@ structure is_localization (W : arrow_class C) (L : C ⥤ D) :=
 (is_equivalence : is_equivalence (localization.lift L inverts_W))
 
 structure is_strict_localization (W : arrow_class C) (L : C ⥤ D) extends is_localization W L :=
-(is_isomorphism : (localization.lift L inverts_W ⋙ is_equivalence.inverse).obj = id
-  ∧ (is_equivalence.inverse ⋙ localization.lift L inverts_W).obj = id)
+(is_isomorphism : (localization.lift L inverts_W ⋙ is_equivalence.inverse) = 𝟭 _
+  ∧ (is_equivalence.inverse ⋙ localization.lift L inverts_W) = 𝟭 _)
 
 structure is_strict_localization_fixed_target
 (W : arrow_class C) (F : C ⥤ D)  (E : Type u₃) [category.{v₃} E] :=
@@ -370,43 +391,69 @@ begin
       h₁ (localization.universal_property W) h₂ (localization.universal_property W),
   exact 
   { inverts_W := h₁.inverts_W,
-  is_equivalence := is_equivalence.of_equivalence e,
-  is_isomorphism := begin
+    is_equivalence := is_equivalence.of_equivalence e,
+    is_isomorphism := ⟨eq₁, eq₂⟩, }
+end
+
+lemma arrow.mk_comp_eq_to_hom {X Y Z : D} (f : X ⟶ Y) (h : Y = Z) : arrow.mk (f ≫ eq_to_hom h) = arrow.mk f :=
+by { subst h, erw comp_id, }
+lemma arrow.mk_eq_to_hom_comp {X Y Z : D} (f : Y ⟶ Z) (h : X = Y) : arrow.mk (eq_to_hom h ≫ f) = arrow.mk f :=
+by { subst h, erw id_comp, }
+
+lemma arrow_class_is_top {W : arrow_class C} {L : C ⥤ D} (hL : is_strict_localization W L)
+  (A : arrow_class D)
+  (hA₁ : ∀ {X Y : C} (f : X ⟶ Y), arrow.mk (L.map f) ∈ A)
+  (hA₂ : ∀ {X Y : D} (e : X ≅ Y), arrow.mk e.hom ∈ A → arrow.mk e.inv ∈ A)
+  (hA₃ : ∀ {X Y Z : D} (f : X ⟶ Y) (g : Y ⟶ Z) (hf : arrow.mk f ∈ A) (hg : arrow.mk g ∈ A),
+  arrow.mk (f ≫ g) ∈ A) : A = ⊤ :=
+begin
+  let F := localization.lift L hL.inverts_W,
+  haveI hF₁: is_equivalence F := hL.is_equivalence,
+  suffices : ∀ {X Y : W.localization} (f : X ⟶ Y), arrow.mk (F.map f) ∈ A,
+  { ext f,
     split,
-    { ext1 X,
-      exact functor.congr_obj eq₁ X, },
-    { ext X,
-      exact functor.congr_obj eq₂ X, },
-  end, }
+    { intro h, simp only [set.top_eq_univ], },
+    { intro hf,
+      have h := this (hL.is_equivalence.inverse.map f.hom),
+      rw [← functor.comp_map, functor.congr_map_conjugate hL.is_isomorphism.2 f.hom] at h,
+      simp at h,
+      convert h,
+      ext,
+      { simp only [arrow.mk_hom, assoc, eq_to_hom_trans, eq_to_hom_refl, comp_id, eq_to_hom_trans_assoc, id_comp], },
+      { simp only [arrow.mk_left, functor.id_obj, ← functor.comp_obj, hL.is_isomorphism.2], },
+      { simp only [arrow.mk_right, functor.id_obj, ← functor.comp_obj, hL.is_isomorphism.2], }, }, },
+  suffices : ∀ {X Y : C} (g : (localization.Q W).obj X ⟶ (localization.Q W).obj Y), arrow.mk (F.map g) ∈ A,
+  { intros X Y g,
+    let X' := (localization.Q_obj_bijection W).inv_fun X,
+    let Y' := (localization.Q_obj_bijection W).inv_fun Y,
+    let g' : (localization.Q W).obj X' ⟶ (localization.Q W).obj Y' := eq_to_hom _ ≫ g ≫ eq_to_hom _, rotate,
+    { exact (localization.Q_obj_bijection W).right_inv X, },
+    { exact ((localization.Q_obj_bijection W).right_inv Y).symm, },
+    simpa only [F.map_comp, eq_to_hom_map, arrow.mk_eq_to_hom_comp, arrow.mk_comp_eq_to_hom] using this g', },
+  suffices : ∀ {X Y : paths W.loc_quiver} (φ : X ⟶ Y), arrow.mk (F.map ((quotient.functor (relations W)).map φ)) ∈ A,
+  { intros X Y g,
+    cases quotient.functor_map_surj _ _ _ g with φ hφ,
+    rw ← hφ,
+    exact this φ, },
+  intros X Y φ,
+  induction φ with Z₁ Z₂ γ f hγ,
+  { simp,
+    cases X,
+    simpa only [L.map_id] using hA₁ (𝟙 X), },
+  { refine hA₃ _ _ hγ _,
+    cases Z₁,
+    cases Z₂,
+    cases f,
+    { exact hA₁ f, },
+    { rcases f with ⟨f, hf⟩,
+      haveI : is_iso (L.map f) := hL.inverts_W ⟨arrow.mk f, hf⟩,
+      apply hA₂ (as_iso (L.map f)),
+      apply hA₁, }, },
 end
-
-/-
-variables {W L}
-
-def lift (l : is_strict_localization W L) {E : Type*} [category E]
-  (G : C ⥤ E) (hG : W.is_inverted_by G) : D ⥤ E := sorry
-
-lemma fac (l : is_strict_localization W L) {E : Type*} [category E]
-  (G : C ⥤ E) (hG : W.is_inverted_by G) :
-  L ⋙ l.lift G hG = G :=
-begin
-  sorry
-end
-
-lemma uniq {E : Type*} [category E] (l : is_strict_localization W L)
-  (G₁ G₂ : D ⥤ E) (h : L ⋙ G₁ = L ⋙ G₂) : G₁ = G₂ :=
-begin
-  sorry
-end
-
-lemma uniq' {E : Type*} [category E] (l : is_strict_localization W L)
-  (G : D ⥤ E) :
-  G = l.lift (L ⋙ G) (W.is_inverted_by_of_comp L G l.inverts_W) :=
-by { apply l.uniq, rw l.fac, }
--/
 
 end is_strict_localization
 
 end arrow_class
 
 end category_theory
+
