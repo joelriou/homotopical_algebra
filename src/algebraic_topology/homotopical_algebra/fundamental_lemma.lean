@@ -14,23 +14,6 @@ open category_theory
 open category_theory.limits
 open category_theory.category
 
-/- for category_theory/quotient.lean -/
-namespace category_theory
-
-namespace quotient
-
-lemma functor_map_surj {C : Type*} [category C] (r : hom_rel C) (s t : C) :
-  function.surjective (λ (f : s ⟶ t), (functor r).map f) :=
-begin
-  intro f,
-  cases surjective_quot_mk _ f with g hg,
-  use [g, hg],
-end
-
-end quotient
-
-end category_theory
-
 namespace algebraic_topology
 
 namespace model_category
@@ -1092,6 +1075,15 @@ begin
 
 end-/
 
+lemma nat_trans_p_cof :
+  L_cof ⋙ R ⟶
+  𝟭 (cofibrant_objects.fibrant_replacement.localization M) :=
+begin
+  sorry
+end
+--  L.map (p X) ≫ f = L_cof.map (R.map f) ≫ L.map (p Y) :=
+
+
 lemma L_cof_fully_faithful (X Y : cofibrant_objects.fibrant_replacement.localization M) :
   function.bijective (λ (f : X ⟶ Y), L_cof.map f) :=
 begin
@@ -1107,9 +1099,17 @@ begin
       simp only [functor.comp_map] at hf ⊢,
       apply hF.map_injective',
       exact hf, } },
-  sorry,
-end
+  haveI : Π (X : localization M), is_iso (L.map (p X)) := sorry,
+    --λ X , inverts_W ⟨arrow.mk (p X), (triv_fib_p X).2⟩,
+  split,
+  { intros f₀ f₁ h,
+    simp only [functor.comp_map] at h,
 
+--    have paf := compatibility_p_L',
+    sorry, },
+  { sorry, },
+end
+#exit
 end universal_property
 
 def is_strict_localization : arrow_class.is_strict_localization M.W L :=

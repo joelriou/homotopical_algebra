@@ -451,6 +451,22 @@ begin
       apply hA₁, }, },
 end
 
+def nat_trans_extension {W : arrow_class C} {L : C ⥤ D} (hL : is_strict_localization W L) (F G : D ⥤ E) (τ : L ⋙ F ⟶ L ⋙ G) :
+  F ⟶ G :=
+begin
+  let lift_L := localization.lift L hL.inverts_W,
+  have eq₁ := functor.congr_obj hL.is_isomorphism.2,
+  have eq₂ := functor.congr_obj (localization.fac L hL.inverts_W),
+  have eq₃ := (localization.Q_obj_bijection W).left_inv,
+  exact
+  { app := λ X, begin
+      refine eq_to_hom _ ≫ τ.app ((localization.Q_obj_bijection W).inv_fun (hL.is_equivalence.inverse.obj X)) ≫ eq_to_hom _,
+      { congr' 1, sorry, },
+      sorry
+    end,
+    naturality' := sorry, },
+end
+
 end is_strict_localization
 
 end arrow_class
