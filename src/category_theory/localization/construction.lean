@@ -557,10 +557,16 @@ namespace arrow_class
 
 namespace is_strict_localization
 
+@[simps]
+def inv {W : arrow_class C} {L : C ⥤ D} (hL : is_strict_localization W L) (w : W) : arrow D :=
+begin
+  haveI : is_iso (L.map (w.1.hom)) := hL.inverts_W w,
+  exact inv (L.map (w.1.hom)),
+end
+
 lemma description_arrows {W : arrow_class C} {L : C ⥤ D} (hL : is_strict_localization W L) (f : arrow D) :
   ∃ (n : ℕ) (F : composable_morphisms n D), F.composition = f ∧
-  ∀ (i : fin (n)), true :=
-  --F.ith_arrow i :=
+  ∀ (i : fin (n)), (∃ g : arrow C, F.ith_arrow i = L.map_arrow.obj g) ∨ (∃ (w : W), F.ith_arrow i = hL.inv w) :=
 begin
   sorry
 end
