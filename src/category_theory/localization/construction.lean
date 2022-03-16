@@ -540,4 +540,33 @@ end is_strict_localization
 
 end arrow_class
 
+def composable_morphisms (n : ℕ) (D : Type*) [category D] := fin (n+1) ⥤ D
+
+namespace composable_morphisms
+
+def composition {n : ℕ} {D : Type*} [category D] (F : composable_morphisms n D) : arrow D :=
+F.map (hom_of_le (fin.last _).zero_le)
+
+def ith_arrow {n : ℕ} {D : Type*} [category D] (F : composable_morphisms n D) (i : fin n) : arrow D :=
+F.map (hom_of_le (show fin.cast_succ i ≤ i.succ,
+by simp only [fin.le_iff_coe_le_coe, fin.coe_cast_succ, fin.coe_succ, le_add_iff_nonneg_right, zero_le_one]))
+
+end composable_morphisms
+
+namespace arrow_class
+
+namespace is_strict_localization
+
+lemma description_arrows {W : arrow_class C} {L : C ⥤ D} (hL : is_strict_localization W L) (f : arrow D) :
+  ∃ (n : ℕ) (F : composable_morphisms n D), F.composition = f ∧
+  ∀ (i : fin (n)), true :=
+  --F.ith_arrow i :=
+begin
+  sorry
+end
+
+end is_strict_localization
+
+end arrow_class
+
 end category_theory
