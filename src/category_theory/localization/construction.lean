@@ -395,6 +395,10 @@ begin
     is_isomorphism := ⟨eq₁, eq₂⟩, }
 end
 
+@[simps]
+def lift_functor {W : arrow_class C} {L : C ⥤ D} (hL : is_strict_localization W L) : W.localization ⥤ D :=
+localization.lift L hL.inverts_W
+
 lemma arrow.mk_comp_eq_to_hom {X Y Z : D} (f : X ⟶ Y) (h : Y = Z) : arrow.mk (f ≫ eq_to_hom h) = arrow.mk f :=
 by { subst h, erw comp_id, }
 lemma arrow.mk_eq_to_hom_comp {X Y Z : D} (f : Y ⟶ Z) (h : X = Y) : arrow.mk (eq_to_hom h ≫ f) = arrow.mk f :=
@@ -405,32 +409,30 @@ lemma arrow_class_is_top {W : arrow_class C} {L : C ⥤ D} (hL : is_strict_local
   (hA₁ : ∀ {X Y : C} (f : X ⟶ Y), arrow.mk (L.map f) ∈ A)
   (hA₂ : ∀ {X Y : D} (e : X ≅ Y), arrow.mk e.hom ∈ A → arrow.mk e.inv ∈ A)
   (hA₃ : ∀ {X Y Z : D} (f : X ⟶ Y) (g : Y ⟶ Z) (hf : arrow.mk f ∈ A) (hg : arrow.mk g ∈ A),
-  arrow.mk (f ≫ g) ∈ A) : A = ⊤ :=
+  arrow.mk (f ≫ g) ∈ A) : A = set.univ :=
 begin
-  let F := localization.lift L hL.inverts_W,
-  haveI hF₁: is_equivalence F := hL.is_equivalence,
-  suffices : ∀ {X Y : W.localization} (f : X ⟶ Y), arrow.mk (F.map f) ∈ A,
+  haveI hF₁: is_equivalence hL.lift_functor := hL.is_equivalence,
+  suffices : ∀ {X Y : W.localization} (f : X ⟶ Y), arrow.mk (hL.lift_functor.map f) ∈ A,
   { ext f,
     split,
-    { intro h, simp only [set.top_eq_univ], },
+    { intro h, apply set.mem_univ, },
     { intro hf,
       have h := this (hL.is_equivalence.inverse.map f.hom),
-      rw [← functor.comp_map, functor.congr_map_conjugate hL.is_isomorphism.2 f.hom] at h,
-      simp at h,
+      erw [← functor.comp_map, functor.congr_map_conjugate hL.is_isomorphism.2 f.hom, functor.id_map] at h,
       convert h,
       ext,
       { simp only [arrow.mk_hom, assoc, eq_to_hom_trans, eq_to_hom_refl, comp_id, eq_to_hom_trans_assoc, id_comp], },
-      { simp only [arrow.mk_left, functor.id_obj, ← functor.comp_obj, hL.is_isomorphism.2], },
-      { simp only [arrow.mk_right, functor.id_obj, ← functor.comp_obj, hL.is_isomorphism.2], }, }, },
-  suffices : ∀ {X Y : C} (g : (localization.Q W).obj X ⟶ (localization.Q W).obj Y), arrow.mk (F.map g) ∈ A,
+      { simpa only [arrow.mk_comp_eq_to_hom, arrow.mk_eq_to_hom_comp], },
+      { simpa only [arrow.mk_comp_eq_to_hom, arrow.mk_eq_to_hom_comp], }, }, },
+  suffices : ∀ {X Y : C} (g : (localization.Q W).obj X ⟶ (localization.Q W).obj Y), arrow.mk (hL.lift_functor.map g) ∈ A,
   { intros X Y g,
     let X' := (localization.Q_obj_bijection W).inv_fun X,
     let Y' := (localization.Q_obj_bijection W).inv_fun Y,
     let g' : (localization.Q W).obj X' ⟶ (localization.Q W).obj Y' := eq_to_hom _ ≫ g ≫ eq_to_hom _, rotate,
     { exact (localization.Q_obj_bijection W).right_inv X, },
     { exact ((localization.Q_obj_bijection W).right_inv Y).symm, },
-    simpa only [F.map_comp, eq_to_hom_map, arrow.mk_eq_to_hom_comp, arrow.mk_comp_eq_to_hom] using this g', },
-  suffices : ∀ {X Y : paths W.loc_quiver} (φ : X ⟶ Y), arrow.mk (F.map ((quotient.functor (relations W)).map φ)) ∈ A,
+    simpa only [functor.map_comp, eq_to_hom_map, arrow.mk_eq_to_hom_comp, arrow.mk_comp_eq_to_hom] using this g', },
+  suffices : ∀ {X Y : paths W.loc_quiver} (φ : X ⟶ Y), arrow.mk (hL.lift_functor.map ((quotient.functor (relations W)).map φ)) ∈ A,
   { intros X Y g,
     cases quotient.functor_map_surj _ _ _ g with φ hφ,
     rw ← hφ,
@@ -451,20 +453,87 @@ begin
       apply hA₁, }, },
 end
 
-def nat_trans_extension {W : arrow_class C} {L : C ⥤ D} (hL : is_strict_localization W L) (F G : D ⥤ E) (τ : L ⋙ F ⟶ L ⋙ G) :
+def obj_bijection_lift {W : arrow_class C} {L : C ⥤ D} (hL : is_strict_localization W L) : W.localization ≃ D :=
+{ to_fun := hL.lift_functor.obj,
+  inv_fun := hL.is_equivalence.inverse.obj,
+  left_inv := functor.congr_obj hL.is_isomorphism.1,
+  right_inv := functor.congr_obj hL.is_isomorphism.2, }
+
+def obj_bijection {W : arrow_class C} {L : C ⥤ D} (hL : is_strict_localization W L) : C ≃ D :=
+begin
+  calc C ≃ W.localization : localization.Q_obj_bijection W
+  ... ≃ D : hL.obj_bijection_lift,
+end
+
+def naturality_condition {F G : C ⥤ D} (app : Π (X : C), F.obj X ⟶ G.obj X) : arrow_class C :=
+λ w, F.map w.hom ≫ app w.right = app w.left ≫ G.map w.hom
+
+def naturality_condition_iff {F G : C ⥤ D} (app : Π (X : C), F.obj X ⟶ G.obj X) {X Y : C} (f : X ⟶ Y) :
+  arrow.mk f ∈ naturality_condition app ↔ (F.map f ≫ app Y = app X ≫ G.map f) := by refl
+
+def naturality_condition_inv {F G : C ⥤ D} (app : Π (X : C), F.obj X ⟶ G.obj X) (X Y : C) (e : X ≅ Y)
+(he : arrow.mk e.hom ∈ naturality_condition app) : arrow.mk e.inv ∈ naturality_condition app :=
+begin
+  rw naturality_condition_iff at ⊢ he,
+  rw [← cancel_mono (G.map e.hom), assoc, ← he, ← assoc, ← F.map_comp, assoc, ← G.map_comp,
+    e.inv_hom_id, F.map_id, G.map_id, id_comp, comp_id],
+end
+
+def naturality_condition_comp {F G : C ⥤ D} (app : Π (X : C), F.obj X ⟶ G.obj X) (X Y Z : C) (f : X ⟶ Y) (g : Y ⟶ Z)
+(hf : arrow.mk f ∈ naturality_condition app) (hg : arrow.mk g ∈ naturality_condition app) :
+  arrow.mk (f ≫ g) ∈ naturality_condition app :=
+begin
+  rw naturality_condition_iff at ⊢ hf hg,
+  rw [F.map_comp, G.map_comp, assoc, hg, ← assoc, hf, assoc],
+end
+
+namespace nat_trans_extension
+
+def app {W : arrow_class C} {L : C ⥤ D} (hL : is_strict_localization W L) {F G : D ⥤ E} (τ : L ⋙ F ⟶ L ⋙ G) (X : D) :
+  F.obj X ⟶ G.obj X :=
+begin
+  have eq := λ X, (hL.obj_bijection.right_inv X).symm,
+  refine eq_to_hom _ ≫ τ.app (hL.obj_bijection.inv_fun X) ≫ eq_to_hom _,
+  { congr, apply eq, },
+  { symmetry, congr, apply eq, },
+end
+
+lemma app_eq {W : arrow_class C} {L : C ⥤ D} (hL : is_strict_localization W L) {F G : D ⥤ E} (τ : L ⋙ F ⟶ L ⋙ G) (X : C) :
+  (app hL τ) (L.obj X) = τ.app X :=
+begin
+  dsimp only [app],
+  have h := τ.naturality (eq_to_hom (hL.obj_bijection.left_inv X)),
+  simp only [eq_to_hom_map] at h,
+  erw ← h,
+  simp only [eq_to_hom_trans_assoc, eq_to_hom_refl, id_comp],
+end
+
+end nat_trans_extension
+
+def nat_trans_extension {W : arrow_class C} {L : C ⥤ D} (hL : is_strict_localization W L) {F G : D ⥤ E} (τ : L ⋙ F ⟶ L ⋙ G) :
   F ⟶ G :=
 begin
-  let lift_L := localization.lift L hL.inverts_W,
-  have eq₁ := functor.congr_obj hL.is_isomorphism.2,
-  have eq₂ := functor.congr_obj (localization.fac L hL.inverts_W),
-  have eq₃ := (localization.Q_obj_bijection W).left_inv,
+  have h := arrow_class_is_top hL (naturality_condition (nat_trans_extension.app hL τ)) _
+    (naturality_condition_inv _) (naturality_condition_comp _), rotate,
+  { intros X Y f,
+    simp only [naturality_condition_iff, nat_trans_extension.app_eq],
+    exact τ.naturality f, },
   exact
-  { app := λ X, begin
-      refine eq_to_hom _ ≫ τ.app ((localization.Q_obj_bijection W).inv_fun (hL.is_equivalence.inverse.obj X)) ≫ eq_to_hom _,
-      { congr' 1, sorry, },
-      sorry
-    end,
-    naturality' := sorry, },
+  { app := nat_trans_extension.app hL τ,
+    naturality' := λ X Y f, begin
+      have hf : arrow.mk f ∈ naturality_condition (nat_trans_extension.app hL τ),
+      { rw h,
+        apply set.mem_univ, },
+      exact hf,
+    end, }
+end
+
+lemma nat_trans_extension_hcomp {W : arrow_class C} {L : C ⥤ D} (hL : is_strict_localization W L) {F G : D ⥤ E} (τ : L ⋙ F ⟶ L ⋙ G) :
+  (𝟙 L) ◫ nat_trans_extension hL τ = τ :=
+begin
+  ext X,
+  simp only [nat_trans.hcomp_app, nat_trans.id_app, functor.map_id, comp_id],
+  apply nat_trans_extension.app_eq,
 end
 
 end is_strict_localization
@@ -472,4 +541,3 @@ end is_strict_localization
 end arrow_class
 
 end category_theory
-
