@@ -137,6 +137,29 @@ variable {M}
 def L : M.cofibrant_objects ⥤ cofibrant_objects.π M :=
 quotient.functor (right_ho_trans_closure.hom_rel M)
 
+def L_map_eq_iff_when_target_is_fibrant {X Y : M.cofibrant_objects} [hY : is_fibrant Y.1] (C : cylinder X.1) (f g : X ⟶ Y) :
+  L.map f = L.map g ↔ nonempty (C.to_precylinder.left_homotopy f g) :=
+begin
+  haveI := X.2.some,
+  haveI := Y.2.some,
+  split,
+  { intro h,
+    dsimp only [L, functor.comp_map, cofibrant_objects.L] at h,
+    erw quotient.functor_map_eq_iff at h,
+    dsimp at h,
+    induction h with f₀ f₁ Hr f₁ f₂ f₃ H₁₂ H₂₃ H H',
+    { cases Hr with P hP,
+      apply nonempty.intro,
+      exact @cylinder.left_homotopy_of_right_homotopy M X.1 Y.1 infer_instance C P _ _ hP.some, },
+    { apply nonempty.intro,
+      exact C.left_homotopy_from_other_cylinder _ _ _ (H.some.trans H'.some), }, },
+  { intro h,
+    apply category_theory.quotient.sound,
+    let P := (path_object_exists Y.1).some,
+    have H := P.right_homotopy_of_left_homotopy C h.some,
+    exact cofibrant_objects.right_ho_trans_closure.right_homotopy ⟨P, nonempty.intro H⟩, },
+end
+
 def forget : M.cofibrant_objects ⥤ M.C := induced_functor _
 
 variable (M)
@@ -188,24 +211,8 @@ end
 def L_map_eq_iff {X Y : M.fibrant_and_cofibrant_objects} (C : cylinder X.1.1) (f g : X ⟶ Y) :
   L.map f = L.map g ↔ nonempty (C.to_precylinder.left_homotopy f g) :=
 begin
-  haveI := X.1.2.some,
-  haveI := Y.2.some,
-  split,
-  { intro h,
-    dsimp only [L, functor.comp_map, cofibrant_objects.L] at h,
-    erw quotient.functor_map_eq_iff at h,
-    dsimp at h,
-    induction h with f₀ f₁ Hr f₁ f₂ f₃ H₁₂ H₂₃ H H',
-    { cases Hr with P hP,
-      apply nonempty.intro,
-      exact @cylinder.left_homotopy_of_right_homotopy M X.1.1 Y.1.1 infer_instance C P _ _ hP.some, },
-    { apply nonempty.intro,
-      exact C.left_homotopy_from_other_cylinder _ _ _ (H.some.trans H'.some), }, },
-  { intro h,
-    apply category_theory.quotient.sound,
-    let P := (path_object_exists Y.1.1).some,
-    have H := P.right_homotopy_of_left_homotopy C h.some,
-    exact cofibrant_objects.right_ho_trans_closure.right_homotopy ⟨P, nonempty.intro H⟩, }
+  haveI : is_fibrant (inclusion.obj Y).1 := Y.2.some,
+  exact cofibrant_objects.L_map_eq_iff_when_target_is_fibrant C f g,
 end
 
 def L_map_eq_iff' {X Y : M.fibrant_and_cofibrant_objects} (P : path_object Y.1.1) (f g : X ⟶ Y) :
@@ -1107,7 +1114,31 @@ begin
 end
 
 lemma L_map_eq_iff' {X Y : M.C} [hX : is_cofibrant X] [hY : is_fibrant Y] (P : path_object Y) (f₀ f₁ : X ⟶ Y) :
-  L.map f₀ = L.map f₁ ↔ nonempty (P.pre.right_homotopy f₀ f₁) := sorry
+  L.map f₀ = L.map f₁ ↔ nonempty (P.pre.right_homotopy f₀ f₁) :=
+begin
+  split,
+  { intro h,
+    dsimp only [L] at h,
+    haveI hY' : is_fibrant (obj Y).1,
+    { refine ⟨_⟩,
+      convert M.fib_comp_stable _ _ _ (p Y) (terminal.from _) (triv_fib_p Y).1 hY.fib, },
+    haveI : is_fibrant (functor_π.obj Y).as.val := hY',
+    have h' := (cofibrant_objects.fibrant_replacement.L_π_map_bijective_when_target_is_fibrant _ _ ).1 h,
+    dsimp [functor_π, map_π] at h',
+    cases cylinder_exists (obj X).1 with C hC,
+    let H := ((cofibrant_objects.L_map_eq_iff_when_target_is_fibrant C (map.Sq_lift f₀) (map.Sq_lift f₁)).mp h').some,
+    let H' := H.comp_right (p Y),
+    repeat { erw map.Sq_lift_comm at H', },
+    haveI hY' : is_cofibrant (obj X).1 := (obj X).2.some,
+    have h'' := nonempty.intro (P.right_homotopy_of_left_homotopy C H'),
+    sorry, },
+  { intro h,
+    simp only [← h.some.h₀, ← h.some.h₁, L.map_comp],
+    congr' 1,
+    haveI : is_iso (L.map P.pre.σ') := universal_property.inverts_W ⟨arrow.mk P.pre.σ', P.pre.Wσ'⟩,
+    rw ← cancel_epi (L.map P.pre.σ'),
+    simp only [← L.map_comp, P.pre.σd₀', P.pre.σd₁'], },
+end
 
 end cofibrant_replacement
 
