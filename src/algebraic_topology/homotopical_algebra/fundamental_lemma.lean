@@ -52,26 +52,15 @@ begin
   haveI : is_cofibrant A.1 := A.2.some,
   rcases P.right_homotopy_with_triv_cof_σ'_of_right_homotopy hP.some with ⟨P', H', hP'⟩,
   cases path_object_exists X.1 with Q hQ,
-  let Sq := square.mk'' P'.pre.σ' Q.pre.π
-    (g ≫  Q.pre.σ') (P'.pre.π ≫ (limits.prod.map g g)) _, rotate,
-  { ext,
-    { dsimp,
-      simp only [assoc, prod.lift_fst, prod.lift_map],
-      erw [Q.pre.σd₀', ← assoc, P'.pre.σd₀', id_comp, comp_id], },
-    { dsimp,
-      simp only [assoc, prod.lift_snd, prod.lift_map],
-      erw [Q.pre.σd₁', ← assoc, P'.pre.σd₁', id_comp, comp_id], }, },
-  let hSq := (M.CM4b Sq.left Sq.right hP' Q.fib_π).sq_has_lift,
-  let l := (hSq Sq.hom).exists_lift.some,
-  have eq₀ := congr_arg ((λ (f : _ ⟶ prod X.1 X.1), f ≫ limits.prod.fst)) l.fac_right,
-  have eq₁ := congr_arg ((λ (f : _ ⟶ prod X.1 X.1), f ≫ limits.prod.snd)) l.fac_right,
-  simp only [pre_path_object.π, prod.lift_fst, prod.lift_snd, prod.lift_map,
-    square.mk''_right_hom, prod.comp_lift, square.mk''_hom_right] at eq₀ eq₁,
-  let H'' : Q.pre.right_homotopy (f ≫ g) (f' ≫ g) := 
-  { h := H'.h ≫ l.lift,
-    h₀ := by rw [assoc, eq₀, ← assoc, H'.h₀],
-    h₁ := by rw [assoc, eq₁, ← assoc, H'.h₁], },
-  use [Q, nonempty.intro H''],
+  suffices H'' : Q.pre.right_homotopy (P'.pre.d₀' ≫ g) (P'.pre.d₁' ≫ g),
+  { use Q,
+    refine nonempty.intro
+    { h := H'.h ≫ H''.h,
+      h₀ := by { rw [assoc, H''.h₀, ← assoc, H'.h₀], refl, },
+      h₁ := by { rw [assoc, H''.h₁, ← assoc, H'.h₁], refl, }, }, },
+  apply Q.homotopy_extension _ _ P'.pre.σ' hP',
+  erw [← assoc, P'.pre.σd₀', ← assoc, P'.pre.σd₁', id_comp],
+  apply pre_path_object.right_homotopy.refl,
 end
 
 end right_homotopy
@@ -331,21 +320,11 @@ begin
   { cases path_object_exists Y.1.1 with P hP,
     symmetry,
     rw [← L.map_comp, ← L.map_id, L_map_eq_iff' P],
-    let Sq' := square.mk'' f' P.pre.π (f' ≫ P.pre.σ') (prod.lift (𝟙 _) (l.lift ≫ f')) _, swap,
-    { ext,
-      { simp only [pre_path_object.π, assoc, prod.lift_fst, comp_id, P.pre.σd₀'], },
-      { simp only [pre_path_object.π, assoc, prod.lift_snd, comp_id, P.pre.σd₁'],
-        erw [← assoc, l.fac_left, id_comp], }, },
-    let hSq' := (M.CM4b Sq'.left Sq'.right hf P.fib_π).sq_has_lift, /- à revoir ? -/
-    let l' := (hSq' Sq'.hom).exists_lift.some,
-    have eq₀ := congr_arg ((λ (f : _ ⟶ limits.prod _ _), f ≫ limits.prod.fst)) l'.fac_right,
-    have eq₁ := congr_arg ((λ (f : _ ⟶ limits.prod _ _), f ≫ limits.prod.snd)) l'.fac_right,
-    simp only [pre_path_object.π, prod.lift_fst, square.mk''_right_hom, prod.comp_lift, square.mk''_hom_right] at eq₀,
-    simp at eq₁,
-    exact nonempty.intro
-    { h := l'.lift,
-      h₀ := eq₀,
-      h₁ := eq₁, } },
+    have eq : f' ≫ P.pre.σ' ≫ P.pre.d₁' = f' ≫ (l.lift ≫ f'),
+    { erw [P.pre.σd₁', comp_id, ← assoc, l.fac_left, id_comp], },
+    let H := P.pre.right_homotopy_of_map_to (f' ≫ P.pre.σ'),
+    erw [assoc, P.pre.σd₀', assoc, eq] at H,
+    exact nonempty.intro (P.homotopy_extension _ _ f' hf H), }
 end
 
 lemma inverts_W : (W M).is_inverted_by L :=
@@ -457,20 +436,9 @@ def map_π_eq {X Y : M.cofibrant_objects} (f : X ⟶ Y)
 begin
   let P := (path_object_exists (obj Y).1.1).some,
   apply (fibrant_and_cofibrant_objects.L_map_eq_iff' P _ _).mpr,
-  let Sq := square.mk'' (ι X) P.pre.π (f ≫ ι Y ≫ P.pre.σ') (prod.lift (map.Sq_lift f) f') _, swap,
-  { ext,
-    { simp only [pre_path_object.π, assoc, prod.lift_fst, P.pre.σd₀', comp_id, map.Sq_lift_comm], },
-    { simp only [pre_path_object.π, assoc, prod.lift_snd, P.pre.σd₁', comp_id, comm], }, },
-  let hSq := (M.CM4b (Sq.left) (Sq.right) (triv_cof_ι X) P.fib_π).sq_has_lift, /- à revoir ? -/
-  let l := (hSq Sq.hom).exists_lift.some,
-  have eq₀ := congr_arg ((λ (f : _ ⟶ limits.prod _ _), f ≫ limits.prod.fst)) l.fac_right,
-  have eq₁ := congr_arg ((λ (f : _ ⟶ limits.prod _ _), f ≫ limits.prod.snd)) l.fac_right,
-  simp only [pre_path_object.π, prod.lift_fst, prod.lift_snd,
-    square.mk''_right_hom, prod.comp_lift, square.mk''_hom_right] at eq₀ eq₁,
-  exact nonempty.intro
-  { h := l.lift,
-    h₀ := eq₀,
-    h₁ := eq₁, },
+  refine nonempty.intro (P.homotopy_extension _ _ (ι X) (triv_cof_ι X) _),
+  erw [map.Sq_lift_comm, comm],
+  apply pre_path_object.right_homotopy.refl,
 end
 
 variable (M)

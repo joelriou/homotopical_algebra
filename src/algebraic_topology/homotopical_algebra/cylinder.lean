@@ -257,6 +257,12 @@ structure right_homotopy {A B : M.C} (P : pre_path_object B) (f₀ f₁ : A ⟶ 
 
 def symm {B : M.C} (P : pre_path_object B) : pre_path_object B := P.symm
 
+def right_homotopy_of_map_to {A B : M.C} (P : pre_path_object B) (f : A ⟶ P.I') :
+  P.right_homotopy (f ≫ P.d₀') (f ≫ P.d₁') :=
+{ h := f,
+  h₀ := rfl,
+  h₁ := rfl, }
+
 namespace right_homotopy
 
 def refl {A B : M.C} {P : pre_path_object B} (f : A ⟶ B) : P.right_homotopy f f :=
@@ -369,7 +375,19 @@ end
 lemma homotopy_extension {X X' Y : M.C} (P : path_object Y) (f₀ f₁ : X' ⟶ Y) (i : X ⟶ X') (hi : arrow.mk i ∈ M.triv_cof)
   (H : P.pre.right_homotopy (i ≫ f₀) (i ≫ f₁)) : P.pre.right_homotopy f₀ f₁ :=
 begin
-  sorry
+  let Sq := square.mk'' i P.pre.π H.h (prod.lift f₀ f₁) _, swap,
+  { ext,
+    { simp only [pre_path_object.π, prod.comp_lift, prod.lift_fst, H.h₀], },
+    { simp only [pre_path_object.π, prod.comp_lift, prod.lift_snd, H.h₁], }, },
+  have hSq := (M.CM4b Sq.left Sq.right hi P.fib_π).sq_has_lift,
+  have l := (hSq Sq.hom).exists_lift.some,
+  have eq₀ := congr_arg ((λ (f : _ ⟶ prod Y Y), f ≫ limits.prod.fst)) l.fac_right,
+  have eq₁ := congr_arg ((λ (f : _ ⟶ prod Y Y), f ≫ limits.prod.snd)) l.fac_right,
+  simp only [assoc, pre_path_object.π, prod.lift_fst, prod.lift_snd, square.mk''_right_hom, square.mk''_hom_right] at eq₀ eq₁,
+  exact
+  { h := l.lift,
+    h₀ := eq₀,
+    h₁ := eq₁, },
 end
 
 end path_object
