@@ -655,8 +655,8 @@ lemma mk_1_composition {D : Type*} [category D] {X₀ X₁ : D} (f : X₀ ⟶ X�
 
 @[simp]
 def ith_arrow {n : ℕ} {D : Type*} [category D] (F : composable_morphisms n D) (i : fin n) : arrow D :=
-F.map (hom_of_le (show fin.cast_succ i ≤ i.succ,
-by simp only [fin.le_iff_coe_le_coe, fin.coe_cast_succ, fin.coe_succ, le_add_iff_nonneg_right, zero_le_one]))
+arrow.mk (F.map (hom_of_le (show fin.cast_succ i ≤ i.succ,
+by simp only [fin.le_iff_coe_le_coe, fin.coe_cast_succ, fin.coe_succ, le_add_iff_nonneg_right, zero_le_one])))
 
 namespace join
 
@@ -796,12 +796,51 @@ begin
   tidy,
 end
 
-lemma find_i₂ {n₁ n₂ : ℕ} (i : fin (n₁+n₂+1)) (hi : ¬(i : ℕ) ≤ n₁) : ∃ (i₂ : fin (n₂+1)), i = ι₂ i₂ :=
+lemma monotone_ι₁ {n₁ n₂ : ℕ} : monotone (ι₁ : fin (n₁+1) → fin (n₁+n₂+1)) := λ x y h, h
+lemma monotone_ι₂ {n₁ n₂ : ℕ} : monotone (ι₂ : fin (n₂+1) → fin (n₁+n₂+1)) := λ x y h,
 begin
-  use ρ₂ i hi,
-  ext,
-  dsimp [ι₂, ρ₂],
-  simp only [add_comm n₁, nat.sub_add_cancel (le_of_not_ge hi)],
+  rw fin.le_iff_coe_le_coe at h ⊢,
+  cases nat.le.dest h with k hk,
+  apply nat.le.intro,
+  swap,
+  { exact k, },
+  { simp only [ι₂, fin.coe_mk, ← hk, add_assoc], },
+end
+
+lemma map₂₂ {n₁ n₂ : ℕ} {D : Type*} [category D] (F₁ : composable_morphisms n₁ D) (F₂ : composable_morphisms n₂ D)
+  (e : F₁.right = F₂.left) (i j : fin (n₂+1)) (hij : i ≤ j) : map F₁ F₂ e (ι₂ i) (ι₂ j) (monotone_ι₂ hij) =
+eq_to_hom (obj₂ F₁ F₂ e i) ≫ F₂.map (hom_of_le hij) ≫ eq_to_hom (obj₂ F₁ F₂ e j).symm :=
+begin
+  have H : ∀ (i : fin (n₂+1)), i ≠ 0 → ¬(((ι₂ i : fin (n₁+n₂+1)) : ℕ) ≤ n₁),
+  { intros i hi,
+    by_contradiction,
+    simp only [ι₂, fin.coe_mk, add_le_iff_nonpos_right, nonpos_iff_eq_zero] at h,
+    apply hi,
+    ext,
+    exact h, },
+  by_cases hi : i ≠ 0,
+  { have hj : j ≠ 0,
+    { by_contradiction,
+      apply hi,
+      rw h at hij,
+      exact le_antisymm hij (fin.zero_le i), },
+    have eqi := ρ₂ι₂ i hi n₁,
+    have eqj := ρ₂ι₂ j hj n₁,
+    convert map₂₂' F₁ F₂ e (ι₂ i) (ι₂ j) (H i hi) (H j hj) (monotone_ι₂ hij), },
+  { by_cases hj : j ≠ 0,
+    { simp only [not_not] at hi,
+      subst hi,
+      erw join.map₁₂' F₁ F₂ e (ι₂ 0) (ι₂ j) rfl.le (H j hj) (monotone_ι₂ hij),
+      erw [F₁.map_id, id_comp],
+      slice_lhs 1 2 { erw [eq_to_hom_trans], },
+      rw assoc,
+      have eqj := (ρ₂ι₂ j hj n₁).symm,
+      congr', },
+    { simp only [not_not] at hi hj,
+      substs hi hj,
+      erw join.map₁₁' F₁ F₂ e (ι₂ 0) (ι₂ 0) rfl.le rfl.le  (monotone_ι₂ hij),
+      erw [F₁.map_id, F₂.map_id],
+      simp only [id_comp, eq_to_hom_trans], }, },
 end
 
 end join
@@ -854,25 +893,92 @@ def join {n₁ n₂ : ℕ} {D : Type*} [category D] (F₁ : composable_morphisms
         erw id_comp,
         slice_rhs 2 3 { rw ← F₂.map_comp, },
         refl, }, },
-
   end }
+
+def left_part {n₁ n₂ : ℕ} {D : Type*} [category D] (F : composable_morphisms (n₁+n₂) D) : composable_morphisms n₁ D :=
+monotone.functor (join.monotone_ι₁) ⋙ F
+
+def right_part {n₁ n₂ : ℕ} {D : Type*} [category D] (F : composable_morphisms (n₁+n₂) D) : composable_morphisms n₂ D :=
+monotone.functor (join.monotone_ι₂) ⋙ F
+
+lemma left_part_of_join {n₁ n₂ : ℕ} {D : Type*} [category D] (F₁ : composable_morphisms n₁ D) (F₂ : composable_morphisms n₂ D)
+  (e : F₁.right = F₂.left) : (join F₁ F₂ e).left_part = F₁ :=
+begin
+  apply functor.ext,
+  { intros i j ij,
+    convert join.map₁₁ F₁ F₂ e i j (le_of_hom ij), },
+end
+
+lemma right_part_of_join {n₁ n₂ : ℕ} {D : Type*} [category D] (F₁ : composable_morphisms n₁ D) (F₂ : composable_morphisms n₂ D)
+  (e : F₁.right = F₂.left) : (join F₁ F₂ e).right_part = F₂ :=
+begin
+  apply functor.ext,
+  { intros i j ij,
+    convert join.map₂₂ F₁ F₂ e i j (le_of_hom ij), },
+end
+
+lemma composition_is_comp_of_left_and_right_parts {n₁ n₂ : ℕ} {D : Type*} [category D] (F : composable_morphisms (n₁+n₂) D) :
+  F.composition = arrow.composition F.left_part.composition F.right_part.composition rfl :=
+begin
+  let a : fin (n₁+n₂+1) := 0,
+  let b : fin (n₁+n₂+1) := ⟨n₁, nat.lt_succ_iff.mpr le_self_add⟩,
+  let c : fin (n₁+n₂+1) := fin.last _,
+  have ab : a ≤ b := nat.zero_le _,
+  have bc : b ≤ c := fin.le_last _,
+  ext,
+  { simp only [eq_to_hom_refl, arrow.composition_hom, id_comp, comp_id],
+    exact F.map_comp (hom_of_le ab) (hom_of_le bc), },
+  { refl, },
+  { refl, },
+end
 
 lemma composition_of_join {n₁ n₂ : ℕ} {D : Type*} [category D] (F₁ : composable_morphisms n₁ D) (F₂ : composable_morphisms n₂ D)
   (e : F₁.right = F₂.left) : (join F₁ F₂ e).composition = arrow.composition F₁.composition F₂.composition e :=
 begin
-  sorry
+  convert composition_is_comp_of_left_and_right_parts _,
+  { symmetry, apply left_part_of_join, },
+  { symmetry, apply right_part_of_join, },
 end
 
-def last_arrow_of_join {n₁ : ℕ} {D : Type*} [category D] (F : composable_morphisms n₁ D) {Y Z : D} (f : Y ⟶ Z) (e : F.right = Y) :
-  (F.join (mk_1 f) e).ith_arrow (fin.last _) = arrow.mk f :=
+lemma i₁th_arrow {n₁ n₂ : ℕ} {D : Type*} [category D] (F : composable_morphisms (n₁+n₂) D) (i : fin n₁):
+  F.ith_arrow (fin.cast_le le_self_add i) = F.left_part.ith_arrow i :=
 begin
-  sorry,
+  dsimp only [left_part, ith_arrow, functor.comp, monotone.functor],
+  simp only [← arrow.map_arrow_of_mk],
+  congr';
+  { ext,
+    simp only [join.ι₁, fin.cast_le_succ], },
 end
 
 lemma i₁th_arrow_of_join {n₁ n₂ : ℕ} {D : Type*} [category D] (F₁ : composable_morphisms n₁ D) (F₂ : composable_morphisms n₂ D)
   (e : F₁.right = F₂.left) (i : fin n₁) : (join F₁ F₂ e).ith_arrow (fin.cast_le le_self_add i) = F₁.ith_arrow i :=
 begin
-  sorry
+  convert i₁th_arrow (join F₁ F₂ e) i,
+  { symmetry, apply left_part_of_join, },
+end
+
+lemma i₂th_arrow {n₁ n₂ : ℕ} {D : Type*} [category D] (F : composable_morphisms (n₁+n₂) D) (i : fin n₂):
+  F.ith_arrow ⟨n₁+(i : ℕ), by { simpa only [add_lt_add_iff_left] using i.is_lt, }⟩ = F.right_part.ith_arrow i :=
+begin
+  dsimp only [right_part, ith_arrow, functor.comp, monotone.functor],
+  simp only [← arrow.map_arrow_of_mk],
+  congr';
+  { ext,
+    simp only [join.ι₂, fin.coe_mk, fin.coe_succ, add_assoc], },
+end
+
+lemma i₂th_arrow_of_join {n₁ n₂ : ℕ} {D : Type*} [category D] (F₁ : composable_morphisms n₁ D) (F₂ : composable_morphisms n₂ D)
+  (e : F₁.right = F₂.left) (i : fin n₂) :
+  (join F₁ F₂ e).ith_arrow ⟨n₁+(i : ℕ), by { simpa only [add_lt_add_iff_left] using i.is_lt, }⟩ = F₂.ith_arrow i :=
+begin
+  convert i₂th_arrow (join F₁ F₂ e) i,
+  { symmetry, apply right_part_of_join, },
+end
+
+def last_arrow_of_join {n₁ : ℕ} {D : Type*} [category D] (F : composable_morphisms n₁ D) {Y Z : D} (f : Y ⟶ Z) (e : F.right = Y) :
+  (F.join (mk_1 f) e).ith_arrow (fin.last _) = arrow.mk f :=
+begin
+  convert i₂th_arrow_of_join F (mk_1 f) e 0,
 end
 
 end composable_morphisms
@@ -892,7 +998,12 @@ end
 def lift_functor_map_Winv {W : arrow_class C} {L : C ⥤ D} (hL : is_strict_localization W L) (w : W) :
   hL.lift_functor.map (localization.Wiso w).inv = hL.inv w :=
 begin
-  sorry
+  dsimp only [inv],
+  have h := functor.map_inv hL.lift_functor ((localization.Wiso w).hom),
+  rw is_iso.iso.inv_hom at h,
+  convert h,
+  erw [functor.congr_map_conjugate hL.lift_functor_fac.symm w.1.hom, comp_id, id_comp],
+  refl,
 end
 
 lemma description_arrows {W : arrow_class C} {L : C ⥤ D} (hL : is_strict_localization W L) (f : arrow D) :

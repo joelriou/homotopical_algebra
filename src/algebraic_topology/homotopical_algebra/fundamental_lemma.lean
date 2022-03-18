@@ -1035,81 +1035,51 @@ def fixed_target {E : Type*} [category E] :
   fac := fac,
   uniq := uniq }
 
-/-
-lemma L_cof_fully_faithful (X Y : cofibrant_objects.fibrant_replacement.localization M) :
-  function.bijective (λ (f : X ⟶ Y), L_cof.map f) :=
-begin
-  rcases M.CM5a (arrow.mk (terminal.from Y.1)) with ⟨Z'', i', q, fac, hi, hq⟩,
-  let Z : cofibrant_objects.fibrant_replacement.localization M := ⟨Z'', nonempty.intro { cof := _ }⟩, swap,
-  { convert M.cof_comp_stable _ Y.1 Z'' (initial.to _) i' Y.2.some.cof hi.1, },
-  let j : Y ⟶ Z := cofibrant_objects.fibrant_replacement.L.map i',
-  let Y' : M.cofibrant_objects := Y,
-  let Z' : M.cofibrant_objects := Z,
-  let j' : Y' ⟶ Z' := i',
-  haveI : is_iso j := cofibrant_objects.fibrant_replacement.universal_property.inverts_W ⟨arrow.mk j', hi.2⟩,
-  suffices : function.bijective (λ (f : X ⟶ Z), L_cof.map f),
-  { split,
-    { intros f₀ f₁ h,
-      rw ← cancel_mono j,
-      apply this.1,
-      simp only at h,
-      simp only [L_cof.map_comp, h], },
-    { intro f,
-      cases this.2 (f ≫ L_cof.map j) with g hg,
-      use [g ≫ inv j],
-      simp only at ⊢ hg,
-      rw [L_cof.map_comp, hg, assoc, ← L_cof.map_comp, is_iso.hom_inv_id, L_cof.map_id, comp_id], }, },
-  suffices : function.bijective (λ (f : X ⟶ Z), (L_cof ⋙ R).map f),
-  { split,
-    { intros f₀ f₁ eq,
-      apply this.1,
-      simpa only [functor.comp_map] using eq, },
-    { intro g,
-      have hF : faithful (R : localization M ⥤ _) := infer_instance,
-      cases this.2 (R.map g) with f hf,
-      use f,
-      simp only [functor.comp_map] at hf ⊢,
-      apply hF.map_injective',
-      exact hf, } },
-  sorry,
-
-end-/
-
-lemma nat_trans_p_cof :
+@[simps]
+def nat_trans_p_cof :
   L_cof ⋙ R ⟶
   𝟭 (cofibrant_objects.fibrant_replacement.localization M) :=
-begin
-  sorry
-end
---  L.map (p X) ≫ f = L_cof.map (R.map f) ≫ L.map (p Y) :=
+cofibrant_objects.fibrant_replacement.is_strict_localization.nat_trans_extension
+{ app := λ X, cofibrant_objects.fibrant_replacement.L.map (p X.1),
+  naturality' := λ X Y f, begin
+    have h := functor.congr_map cofibrant_objects.fibrant_replacement.L (map.Sq_lift_comm f),
+    repeat { erw [cofibrant_objects.fibrant_replacement.L.map_comp] at h, },
+    dsimp only [functor.comp_map, functor.id],
+    erw ← h,
+    congr' 1,
+    conv_lhs { congr, erw [← functor.comp_map], },
+    erw [functor.congr_map_conjugate L_cof_fac, id_comp, comp_id],
+    refl,
+  end }
 
+instance : is_iso (nat_trans_p_cof : L_cof ⋙ R ⟶
+  𝟭 (cofibrant_objects.fibrant_replacement.localization M)) :=
+begin
+  apply nat_iso.is_iso_of_is_iso_app nat_trans_p_cof,
+  intro X,
+  simp only [nat_trans_p_cof_app],
+  erw arrow_class.is_strict_localization.nat_trans_extension.app_eq,
+  exact cofibrant_objects.fibrant_replacement.universal_property.inverts_W ⟨arrow.mk (p X.1), (triv_fib_p X.1).2⟩,
+end
+
+def nat_iso_p_cof : L_cof ⋙ R ≅
+  𝟭 (cofibrant_objects.fibrant_replacement.localization M) := as_iso nat_trans_p_cof
 
 lemma L_cof_fully_faithful (X Y : cofibrant_objects.fibrant_replacement.localization M) :
   function.bijective (λ (f : X ⟶ Y), L_cof.map f) :=
 begin
-  suffices : function.bijective (λ (f : X ⟶ Y), (L_cof ⋙ R).map f),
-  { split,
-    { intros f₀ f₁ eq,
-      apply this.1,
-      simpa only [functor.comp_map] using eq, },
-    { intro g,
-      have hF : faithful (R : localization M ⥤ _) := infer_instance,
-      cases this.2 (R.map g) with f hf,
-      use f,
-      simp only [functor.comp_map] at hf ⊢,
-      apply hF.map_injective',
-      exact hf, } },
-  haveI : Π (X : localization M), is_iso (L.map (p X)) := sorry,
-    --λ X , inverts_W ⟨arrow.mk (p X), (triv_fib_p X).2⟩,
+  haveI : faithful (L_cof ⋙ (R : localization M ⥤ _)) := faithful.of_iso nat_iso_p_cof.symm,
+  haveI : full (L_cof ⋙ (R : localization M ⥤ _)) := full.of_iso nat_iso_p_cof.symm,
   split,
-  { intros f₀ f₁ h,
-    simp only [functor.comp_map] at h,
-
---    have paf := compatibility_p_L',
-    sorry, },
-  { sorry, },
+  { intros f₀ f₁ eq,
+    exact (L_cof ⋙ R).map_injective eq, },
+  { intros g,
+    use (L_cof ⋙ R).preimage (R.map g),
+    simp only [functor.comp_map],
+    refine R.map_injective _,
+    apply (L_cof ⋙ R).image_preimage, },
 end
-#exit
+
 end universal_property
 
 def is_strict_localization : arrow_class.is_strict_localization M.W L :=
