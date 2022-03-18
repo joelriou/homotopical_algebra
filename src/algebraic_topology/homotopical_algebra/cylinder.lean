@@ -366,6 +366,12 @@ begin
   use [P', H', ⟨hi, P'.pre.Wσ'⟩],  
 end
 
+lemma homotopy_extension {X X' Y : M.C} (P : path_object Y) (f₀ f₁ : X' ⟶ Y) (i : X ⟶ X') (hi : arrow.mk i ∈ M.triv_cof)
+  (H : P.pre.right_homotopy (i ≫ f₀) (i ≫ f₁)) : P.pre.right_homotopy f₀ f₁ :=
+begin
+  sorry
+end
+
 end path_object
 
 namespace precylinder

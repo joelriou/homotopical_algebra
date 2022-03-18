@@ -336,7 +336,7 @@ begin
       { simp only [pre_path_object.π, assoc, prod.lift_fst, comp_id, P.pre.σd₀'], },
       { simp only [pre_path_object.π, assoc, prod.lift_snd, comp_id, P.pre.σd₁'],
         erw [← assoc, l.fac_left, id_comp], }, },
-    let hSq' := (M.CM4b Sq'.left Sq'.right hf P.fib_π).sq_has_lift,
+    let hSq' := (M.CM4b Sq'.left Sq'.right hf P.fib_π).sq_has_lift, /- à revoir ? -/
     let l' := (hSq' Sq'.hom).exists_lift.some,
     have eq₀ := congr_arg ((λ (f : _ ⟶ limits.prod _ _), f ≫ limits.prod.fst)) l'.fac_right,
     have eq₁ := congr_arg ((λ (f : _ ⟶ limits.prod _ _), f ≫ limits.prod.snd)) l'.fac_right,
@@ -461,7 +461,7 @@ begin
   { ext,
     { simp only [pre_path_object.π, assoc, prod.lift_fst, P.pre.σd₀', comp_id, map.Sq_lift_comm], },
     { simp only [pre_path_object.π, assoc, prod.lift_snd, P.pre.σd₁', comp_id, comm], }, },
-  let hSq := (M.CM4b (Sq.left) (Sq.right) (triv_cof_ι X) P.fib_π).sq_has_lift,
+  let hSq := (M.CM4b (Sq.left) (Sq.right) (triv_cof_ι X) P.fib_π).sq_has_lift, /- à revoir ? -/
   let l := (hSq Sq.hom).exists_lift.some,
   have eq₀ := congr_arg ((λ (f : _ ⟶ limits.prod _ _), f ≫ limits.prod.fst)) l.fac_right,
   have eq₁ := congr_arg ((λ (f : _ ⟶ limits.prod _ _), f ≫ limits.prod.snd)) l.fac_right,
@@ -1113,11 +1113,43 @@ begin
   refl,
 end
 
+lemma nonempty_right_homotopy_iff_of_comp_left_triv_cof {X X' Y : M.C} [hX : is_cofibrant X]
+  [hX' : is_cofibrant X'] [hY : is_fibrant Y] (P : path_object Y) (g : X ⟶ X') (hg : arrow.mk g ∈ M.triv_cof)
+    (f₀ f₁ : X' ⟶ Y) :
+    nonempty (P.pre.right_homotopy f₀ f₁) ↔ nonempty (P.pre.right_homotopy (g ≫ f₀) (g ≫ f₁)) :=
+begin
+  split,
+  { intro h,
+    exact nonempty.intro (h.some.comp_left g), },
+  { intro h,
+    exact nonempty.intro (P.homotopy_extension f₀ f₁ g hg h.some), },
+end
+
+lemma nonempty_right_homotopy_iff_of_comp_left {X X' Y : M.C} [hX : is_cofibrant X]
+  [hX' : is_cofibrant X'] [hY : is_fibrant Y] (P : path_object Y) (w : X ⟶ X') (hw : arrow.mk w ∈ M.W)
+    (f₀ f₁ : X' ⟶ Y) :
+    nonempty (P.pre.right_homotopy f₀ f₁) ↔ nonempty (P.pre.right_homotopy (w ≫ f₀) (w ≫ f₁)) :=
+begin
+  split,
+  { intro h,
+    exact nonempty.intro (h.some.comp_left w), },
+  { intro h,
+    let brown_fac := (exists_brown_factorisation_W_between_cofibrant_objects w hw).some,
+    haveI : is_cofibrant brown_fac.Z := ⟨by convert M.cof_comp_stable _ _ _ (initial.to _) (brown_fac.i) hX.cof brown_fac.triv_cof_i.1⟩,
+    erw [brown_fac.fac₁, assoc, assoc] at h,
+    rw ← nonempty_right_homotopy_iff_of_comp_left_triv_cof P brown_fac.i brown_fac.triv_cof_i at h,
+    have h' := h.some.comp_left brown_fac.s,
+    erw [← assoc, ← assoc, brown_fac.fac₂, id_comp, id_comp] at h',
+    exact nonempty.intro h', },
+end
+
 lemma L_map_eq_iff' {X Y : M.C} [hX : is_cofibrant X] [hY : is_fibrant Y] (P : path_object Y) (f₀ f₁ : X ⟶ Y) :
   L.map f₀ = L.map f₁ ↔ nonempty (P.pre.right_homotopy f₀ f₁) :=
 begin
   split,
   { intro h,
+    haveI : is_cofibrant (obj X).1 := (obj X).2.some,
+    rw nonempty_right_homotopy_iff_of_comp_left P (p X) (triv_fib_p X).2 f₀ f₁,
     dsimp only [L] at h,
     haveI hY' : is_fibrant (obj Y).1,
     { refine ⟨_⟩,
@@ -1129,9 +1161,7 @@ begin
     let H := ((cofibrant_objects.L_map_eq_iff_when_target_is_fibrant C (map.Sq_lift f₀) (map.Sq_lift f₁)).mp h').some,
     let H' := H.comp_right (p Y),
     repeat { erw map.Sq_lift_comm at H', },
-    haveI hY' : is_cofibrant (obj X).1 := (obj X).2.some,
-    have h'' := nonempty.intro (P.right_homotopy_of_left_homotopy C H'),
-    sorry, },
+    exact nonempty.intro (P.right_homotopy_of_left_homotopy C H'), },
   { intro h,
     simp only [← h.some.h₀, ← h.some.h₁, L.map_comp],
     congr' 1,
