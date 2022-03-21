@@ -57,11 +57,11 @@ by refl
 
 end functor
 
-universes v v' v₃ u u' u₃
+universes v v' v'' u u' u''
 
 variables {C : Type u} [category.{v} C]
 variables {D : Type u'} [category.{v'} D]
-variables {E : Type u₃} [category.{v₃} E]
+variables {E : Type u''} [category.{v''} E]
 
 namespace arrow
 
@@ -337,7 +337,7 @@ structure is_strict_localization (W : arrow_class C) (L : C ⥤ D) extends is_lo
   ∧ (is_equivalence.inverse ⋙ localization.lift L inverts_W) = 𝟭 _)
 
 structure is_strict_localization_fixed_target
-(W : arrow_class C) (F : C ⥤ D)  (E : Type u₃) [category.{v₃} E] :=
+(W : arrow_class C) (F : C ⥤ D)  (E : Type u'') [category.{v''} E] :=
   (inverts_W : W.is_inverted_by F)
   (lift : Π (G : C ⥤ E) (hG : W.is_inverted_by G), D ⥤ E)
   (fac : ∀ (G : C ⥤ E) (hG : W.is_inverted_by G), F ⋙ lift G hG = G)
@@ -345,7 +345,7 @@ structure is_strict_localization_fixed_target
 
 namespace localization
 
-def universal_property {E : Type u₃} [category.{v₃} E] :
+def universal_property {E : Type u''} [category.{v''} E] :
   W.is_strict_localization_fixed_target (localization.Q W) E :=
 { inverts_W := W_is_inverted_by_Q,
   lift := lift,
