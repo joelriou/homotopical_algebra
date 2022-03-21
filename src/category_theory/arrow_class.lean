@@ -33,6 +33,12 @@ variables {C}
 
 namespace arrow
 
+
+lemma mk_comp_eq_to_hom {X Y Z : C} (f : X ⟶ Y) (h : Y = Z) : arrow.mk (f ≫ eq_to_hom h) = arrow.mk f :=
+by { subst h, erw comp_id, }
+lemma mk_eq_to_hom_comp {X Y Z : C} (f : Y ⟶ Z) (h : X = Y) : arrow.mk (eq_to_hom h ≫ f) = arrow.mk f :=
+by { subst h, erw id_comp, }
+
 def is_retract_iff_op (f : arrow C) (f' : arrow C) :
   is_retract f f' ↔ is_retract f.op f'.op :=
 begin

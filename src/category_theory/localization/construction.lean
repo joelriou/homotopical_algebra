@@ -408,11 +408,6 @@ lemma lift_functor_fac {W : arrow_class C} {L : C ⥤ D} (hL : is_strict_localiz
   localization.Q W ⋙ hL.lift_functor = L :=
 localization.fac _ _
 
-lemma arrow.mk_comp_eq_to_hom {X Y Z : D} (f : X ⟶ Y) (h : Y = Z) : arrow.mk (f ≫ eq_to_hom h) = arrow.mk f :=
-by { subst h, erw comp_id, }
-lemma arrow.mk_eq_to_hom_comp {X Y Z : D} (f : Y ⟶ Z) (h : X = Y) : arrow.mk (eq_to_hom h ≫ f) = arrow.mk f :=
-by { subst h, erw id_comp, }
-
 def obj_bijection_lift {W : arrow_class C} {L : C ⥤ D} (hL : is_strict_localization W L) : W.localization ≃ D :=
 { to_fun := hL.lift_functor.obj,
   inv_fun := hL.is_equivalence.inverse.obj,
@@ -475,11 +470,11 @@ begin
 end
 
 lemma description_arrows {W : arrow_class C} {L : C ⥤ D} (hL : is_strict_localization W L) (f : arrow D) :
-  ∃ (n : ℕ) (F : composable_morphisms n D), F.composition = f ∧
+  ∃ (n : ℕ) (F : composable_morphisms n D), F.arrow = f ∧
   ∀ (i : fin (n)), (∃ g : arrow C, F.ith_arrow i = L.map_arrow.obj g) ∨ (∃ (w : W), F.ith_arrow i = arrow.mk (hL.inv w)) :=
 begin
   suffices : ∀ {X Y : paths W.loc_quiver} (φ : X ⟶ Y), 
-    ∃ (n : ℕ) (F : composable_morphisms n D), F.composition = (quotient.functor _ ⋙ hL.lift_functor).map_arrow.obj (arrow.mk φ) ∧
+    ∃ (n : ℕ) (F : composable_morphisms n D), F.arrow = (quotient.functor _ ⋙ hL.lift_functor).map_arrow.obj (arrow.mk φ) ∧
     ∀ (i : fin (n)), (∃ g : arrow C, F.ith_arrow i = L.map_arrow.obj g) ∨ (∃ (w : W), F.ith_arrow i = arrow.mk (hL.inv w)),
   { let f' := hL.is_equivalence.inverse.map f.hom,
     have eq : f = hL.lift_functor.map_arrow.obj (arrow.mk f'),
@@ -532,7 +527,8 @@ begin
           end,
           erw eqF,
           exact h₂ i', }, },
-        work_on_goal 2 { rw hi, erw composable_morphisms.last_arrow_of_join, }, },
+        work_on_goal 2
+        { erw [hi, ← composable_morphisms.last_arrow, composable_morphisms.last_arrow_of_join], }, },
       work_on_goal 2
       { apply or.inl,
         use arrow.mk f,
@@ -545,9 +541,9 @@ begin
         use ⟨_, w.2⟩, },
       all_goals
       { simp only [← show φ' ≫ paths.of.map h = φ.cons h, by refl, arrow.map_arrow_comp,
-          composable_morphisms.composition_of_join, h₁],
+          composable_morphisms.arrow_of_join, h₁],
         congr,
-        simp only [composable_morphisms.mk_1_composition, arrow.map_arrow_of_mk], },
+        simp only [composable_morphisms.mk_1_arrow, arrow.map_arrow_of_mk], },
       { simp only [functor.congr_map_conjugate hL.lift_functor_fac.symm f,
           arrow.mk_eq_to_hom_comp, arrow.mk_comp_eq_to_hom, functor.comp_map, localization.Q_map_eq, localization.ψ₁,
           arrow.mk_hom], },
@@ -572,20 +568,21 @@ begin
   { intro h,
     rcases hL.description_arrows f with ⟨n, F, hF₁, hF₂⟩,
     suffices H : ∀ (k : ℕ) (hk : k < n+1),
-      arrow.mk (F.map (hom_of_le (show (0 : fin (n+1)) ≤ ⟨k, hk⟩, by exact fin.zero_le _))) ∈ A,
+      arrow.mk (F.map_of_le (show (0 : fin (n+1)) ≤ ⟨k, hk⟩, by exact fin.zero_le _)) ∈ A,
     { simpa only [← hF₁] using H n (lt_add_one _), },
     intro k,
     induction k with k hk,
     { intro H,
-      erw [F.map_id, ← hL.obj_bijection.right_inv (F.obj 0)],
+      erw [F.map_of_le_eq_id, ← hL.obj_bijection.right_inv (F.ith_object 0)],
       convert hA₁ (arrow.mk (𝟙 _)),
       erw L.map_id,
       refl, },
     { intro hk',
       let hk'' : k < n+1 := lt_trans (lt_add_one _) hk',
-      have eq : hom_of_le (fin.zero_le ⟨k+1, hk'⟩) = hom_of_le (fin.zero_le ⟨k, hk''⟩) ≫
-        hom_of_le (by simp only [subtype.mk_le_mk, le_add_iff_nonneg_right, zero_le_one]) := rfl,
-      erw [eq, F.map_comp],
+      have ineg₁ := fin.zero_le ⟨k, hk''⟩,
+      have ineg₂ : (⟨k, hk''⟩ : fin(n+1)) ≤ ⟨k+1, hk'⟩ :=
+        by simp only [subtype.mk_le_mk, le_add_iff_nonneg_right, zero_le_one],
+      rw F.map_of_le_trans ineg₁ ineg₂,
       apply hA₃,
       { exact hk hk'', },
       { rcases hF₂ ⟨k, by simpa only [nat.succ_eq_add_one, add_lt_add_iff_right] using hk'⟩
