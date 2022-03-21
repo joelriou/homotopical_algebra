@@ -9,15 +9,16 @@ open_locale simplicial
 
 universes v u
 
-lemma fin.eq_one_of_geq_one {i : fin 2} (hi : 1 ≤ i) : i = 1 := le_antisymm i.is_le hi
+lemma fin.eq_last_of_geq_last {n : ℕ} {i : fin (n+1)} (hi : fin.last _ ≤ i) : i = fin.last _ :=
+le_antisymm (fin.le_last i) hi
 
 lemma fin.eq_one_of_neq_zero {i : fin 2} (hi : i ≠ 0) : i = 1 :=
 begin
-  apply fin.eq_one_of_geq_one,
+  apply fin.eq_last_of_geq_last,
   by_contradiction,
   apply hi,
   ext,
-  simpa only [fin.le_iff_coe_le_coe, fin.coe_one, not_le, nat.lt_one_iff] using h,
+  simpa only [fin.le_iff_coe_le_coe, fin.last, not_le, fin.mk_one, fin.coe_one, nat.lt_one_iff] using h,
 end
 
 namespace category_theory
@@ -184,14 +185,14 @@ def mk_1 {D : Type*} [category D] {X₀ X₁ : D} (f : X₀ ⟶ X₁) : composab
         refl, },
       { have hj' := fin.eq_one_of_neq_zero hj,
         subst hj',
-        have hk' : k = 1 := fin.eq_one_of_geq_one (by convert le_of_hom jk),
+        have hk' : k = 1 := fin.eq_last_of_geq_last (by convert le_of_hom jk),
         subst hk',
         exact (comp_id _).symm, }, },
     { have hi' := fin.eq_one_of_neq_zero hi,
       subst hi',
-      have hj' : j = 1 := fin.eq_one_of_geq_one (by convert le_of_hom ij),
+      have hj' : j = 1 := fin.eq_last_of_geq_last (by convert le_of_hom ij),
       subst hj',
-      have hk' : k = 1 := fin.eq_one_of_geq_one (by convert le_of_hom jk),
+      have hk' : k = 1 := fin.eq_last_of_geq_last (by convert le_of_hom jk),
       subst hk',
       have hij : 𝟙 _ = ij := hom_of_le_le_of_hom _,
       have hjk : 𝟙 _ = jk := hom_of_le_le_of_hom _,
