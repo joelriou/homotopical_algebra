@@ -7,8 +7,6 @@ open category_theory.category
 open opposite
 open_locale simplicial
 
-universes v u
-
 lemma fin.eq_last_of_geq_last {n : ℕ} {i : fin (n+1)} (hi : fin.last _ ≤ i) : i = fin.last _ :=
 le_antisymm (fin.le_last i) hi
 
@@ -26,17 +24,17 @@ namespace category_theory
 namespace arrow
 
 @[simps]
-def composition {D : Type*} [category D] (w₁ w₂ : arrow D) (e : w₁.right = w₂.left) : arrow D :=
+def comp {D : Type*} [category D] (w₁ w₂ : arrow D) (e : w₁.right = w₂.left) : arrow D :=
 { left := w₁.left,
   right := w₂.right,
   hom := w₁.hom ≫ eq_to_hom e ≫ w₂.hom }
 
 @[simp]
 lemma map_arrow_comp {D E : Type*} [category D] [category E] (F : D ⥤ E) {X Y Z : D} (f : X ⟶ Y) (g : Y ⟶ Z) :
-  F.map_arrow.obj (arrow.mk (f ≫ g)) = composition (F.map_arrow.obj (arrow.mk f)) (F.map_arrow.obj (arrow.mk g)) rfl :=
+  F.map_arrow.obj (arrow.mk (f ≫ g)) = comp (F.map_arrow.obj (arrow.mk f)) (F.map_arrow.obj (arrow.mk g)) rfl :=
 begin
   ext,
-  { simp only [functor.map_arrow_obj_hom, arrow.mk_hom, functor.map_comp, eq_to_hom_refl, composition_hom, id_comp, comp_id], },
+  { simp only [functor.map_arrow_obj_hom, arrow.mk_hom, functor.map_comp, eq_to_hom_refl, comp_hom, id_comp, comp_id], },
   { refl, },
   { refl, },
 end
@@ -53,14 +51,14 @@ def NonemptyFinLinOrd_to_Preorder : NonemptyFinLinOrd ⥤ Preorder :=
   map_id' := λ X, rfl,
   map_comp' := λ X Y Z f g, rfl, }
 
-def to_Cat : simplex_category ⥤ Cat := simplex_category.skeletal_functor ⋙ NonemptyFinLinOrd_to_Preorder ⋙ Preorder_to_Cat
+def simplex_category.to_Cat : simplex_category ⥤ Cat := simplex_category.skeletal_functor ⋙ NonemptyFinLinOrd_to_Preorder ⋙ Preorder_to_Cat
 
 @[simps]
-def nerve (C : Type u) [category.{v} C] : sSet := 
-{ obj := λ Δ, (to_Cat.obj Δ.unop) ⥤ C,
-  map := λ Δ₁ Δ₂ f, ((whiskering_left _ _ _).obj (to_Cat.map f.unop)).obj,
+def nerve (C : Type*) [category C] : sSet := 
+{ obj := λ Δ, (simplex_category.to_Cat.obj Δ.unop) ⥤ C,
+  map := λ Δ₁ Δ₂ f, ((whiskering_left _ _ _).obj (simplex_category.to_Cat.map f.unop)).obj,
   map_id' := λ Δ, begin
-    erw to_Cat.map_id,
+    erw functor.map_id,
     ext A,
     apply category_theory.functor.ext,
     { intros X Y f,
@@ -71,7 +69,8 @@ def nerve (C : Type u) [category.{v} C] : sSet :=
   end,
   map_comp' := λ Δ₁ Δ₂ Δ₃ f g, rfl }
 
-instance (C : Type*) [category C] (Δ : simplex_categoryᵒᵖ) : category ((nerve C).obj Δ) := (infer_instance : category ((to_Cat.obj Δ.unop) ⥤ C))
+instance (C : Type*) [category C] (Δ : simplex_categoryᵒᵖ) : category ((nerve C).obj Δ) :=
+(infer_instance : category ((simplex_category.to_Cat.obj Δ.unop) ⥤ C))
   
 namespace nerve
 
@@ -95,11 +94,11 @@ def functor : Cat ⥤ sSet :=
 end nerve
 
 @[derive category]
-def composable_morphisms (n : ℕ) (C : Type u) [category.{v} C] := (nerve C).obj (op [n])
+def composable_morphisms (n : ℕ) (C : Type*) [category C] := (nerve C).obj (op [n])
 
 namespace composable_morphisms
 
-variables {C : Type u} [category.{v} C] {n : ℕ} (M : composable_morphisms n C)
+variables {C : Type*} [category C] {n : ℕ} (M : composable_morphisms n C)
 
 @[simp]
 def ith_object (i : fin (n+1)) : C := M.obj (ulift.up i)
@@ -506,7 +505,7 @@ begin
 end
 
 lemma arrow_is_arrow_comp_of_left_and_right_parts  :
-  M₁₂.arrow = arrow.composition M₁₂.left_part.arrow M₁₂.right_part.arrow rfl :=
+  M₁₂.arrow = arrow.comp M₁₂.left_part.arrow M₁₂.right_part.arrow rfl :=
 begin
   let a : fin (n₁+n₂+1) := 0,
   let b : fin (n₁+n₂+1) := ⟨n₁, nat.lt_succ_iff.mpr le_self_add⟩,
@@ -514,13 +513,13 @@ begin
   have ab : a ≤ b := nat.zero_le _,
   have bc : b ≤ c := fin.le_last _,
   ext,
-  { simp only [eq_to_hom_refl, arrow.composition_hom, id_comp, comp_id],
+  { simp only [eq_to_hom_refl, arrow.comp_hom, id_comp, comp_id],
     exact M₁₂.map_of_le_trans ab bc, },
   { refl, },
   { refl, },
 end
 
-lemma arrow_of_join : (join M₁ M₂ e).arrow = arrow.composition M₁.arrow M₂.arrow e :=
+lemma arrow_of_join : (join M₁ M₂ e).arrow = arrow.comp M₁.arrow M₂.arrow e :=
 begin
   convert arrow_is_arrow_comp_of_left_and_right_parts _,
   { symmetry, apply left_part_of_join, },
