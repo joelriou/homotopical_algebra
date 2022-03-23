@@ -160,8 +160,14 @@ namespace arrow_class
 variables (F : arrow_class C) (F' : arrow_class Cᵒᵖ)
 
 def isomorphisms : arrow_class C := λ f, is_iso f.hom
+def monomorphisms : arrow_class C := λ f, mono f.hom
+def epimorphisms : arrow_class C := λ f, epi f.hom
 
 def mem_isomorphisms_iff {X Y : C} (f : X ⟶ Y) : arrow.mk f ∈ (isomorphisms : arrow_class C) ↔ is_iso f :=
+by refl
+def mem_monomorphisms_iff {X Y : C} (f : X ⟶ Y) : arrow.mk f ∈ (monomorphisms : arrow_class C) ↔ mono f :=
+by refl
+def mem_epimorphisms_iff {X Y : C} (f : X ⟶ Y) : arrow.mk f ∈ (epimorphisms : arrow_class C) ↔ epi f :=
 by refl
 
 def op : arrow_class Cᵒᵖ := λ f, f.unop ∈ F
@@ -196,6 +202,30 @@ end
 
 lemma op_isomorphisms_eq : (isomorphisms : arrow_class C).op = isomorphisms :=
 by { ext f, exact is_iso_unop_iff f.hom, }
+
+lemma op_epimorphisms_eq : (epimorphisms : arrow_class C).op = monomorphisms :=
+begin
+  ext f,
+  split,
+  { intro h,
+    haveI : epi f.unop.hom := h,
+    exact category_theory.op_mono_of_epi f.unop.hom, },
+  { intro h,
+    haveI : mono f.hom := h,
+    exact category_theory.unop_epi_of_mono f.hom, },
+end
+
+lemma op_monomorphisms_eq : (monomorphisms : arrow_class C).op = epimorphisms :=
+begin
+  ext f,
+  split,
+  { intro h,
+    haveI : mono f.unop.hom := h,
+    exact category_theory.op_epi_of_mono f.unop.hom, },
+  { intro h,
+    haveI : epi f.hom := h,
+    exact category_theory.unop_mono_of_epi f.hom, },
+end
 
 lemma isomorphisms_subset_iff_op : isomorphisms ⊆ F ↔ isomorphisms ⊆ F.op :=
 begin
@@ -295,6 +325,44 @@ begin
   split,
   { exact hF f f' h₁ hff', },
   { exact hG f f' h₂ hff', },
+end
+
+lemma for_isomorphisms :
+  is_stable_by_retract (isomorphisms : arrow_class C) := λ f f' hf' hff',
+begin
+  rcases hf'.out with ⟨g, ⟨hg₁, hg₂⟩⟩,
+  rcases hff' with ⟨s, r, hsr⟩,
+  use s.right ≫ g ≫ r.left,
+  split,
+  { slice_lhs 1 2 { erw ← s.w, },
+    slice_lhs 2 3 { rw hg₁, },
+    rw id_comp,
+    exact arrow.hom.congr_left hsr, },
+  { slice_lhs 3 4 { erw r.w, },
+    slice_lhs 2 3 { rw hg₂, },
+    erw id_comp,
+    exact arrow.hom.congr_right hsr, },
+end
+
+lemma for_monomorphisms :
+  is_stable_by_retract (monomorphisms : arrow_class C) := λ f f' hf' hff',
+begin
+  rcases hff' with ⟨s, r, hsr⟩,
+  refine ⟨_⟩,
+  intros Z g₁ g₂ h,
+  have hsr₁ := arrow.hom.congr_left hsr,
+  simp only [comma.comp_right, arrow.id_right, comma.comp_left, arrow.id_left] at hsr₁,
+  erw [← comp_id g₁, ← comp_id g₂, ← hsr₁, ← assoc, ← assoc],
+  congr' 1,
+  apply hf'.1,
+  erw [assoc, assoc, s.w, ← assoc, ← assoc, h],
+end
+
+lemma for_epimorphisms :
+  is_stable_by_retract (epimorphisms : arrow_class C) :=
+begin
+  rw [is_stable_by_retract_iff_op, op_epimorphisms_eq],
+  apply for_monomorphisms,
 end
 
 end is_stable_by_retract
