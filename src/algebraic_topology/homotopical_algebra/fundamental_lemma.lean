@@ -366,6 +366,30 @@ def is_strict_localization : arrow_class.is_strict_localization (W M) L :=
 arrow_class.is_strict_localization.mk' _ _
   universal_property.fixed_target universal_property.fixed_target
 
+
+lemma cofibration_is_inverted_by_L_iff (w : arrow M.fibrant_and_cofibrant_objects)
+  (hf : (arrow.mk w.hom : arrow M.C) ∈ M.cof) :
+  w.is_inverted_by L ↔ w ∈ W M :=
+begin
+  sorry
+end
+
+lemma is_inverted_by_L_iff (w : arrow M.fibrant_and_cofibrant_objects) :
+  w.is_inverted_by L ↔ w ∈ W M :=
+begin
+  split,
+  { intro hw,
+    let w' : arrow M.C := arrow.mk w.hom,
+    rcases M.CM5b w' with ⟨Z, i, p, fac, hi, hp⟩,
+    have hip := M.CM2.of_comp _ _ _ i p _ hp.2,
+    { rw ← fac at hip,
+      exact hip, },
+    { 
+      sorry, }, },
+  { intro hw,
+    exact universal_property.inverts_W ⟨w, hw⟩, },
+end
+
 end fibrant_and_cofibrant_objects
 
 variable {M}
@@ -707,6 +731,22 @@ begin
     use cofibrant_objects.L.map (ι X.as) ≫ f,
     simp only [category_theory.functor.map_comp] at hf ⊢,
     erw [hf, ← assoc, is_iso.hom_inv_id, id_comp], },
+end
+
+lemma is_inverted_by_L_iff (w : arrow M.cofibrant_objects) :
+  w.is_inverted_by L ↔ w ∈ W M :=
+begin
+  split,
+  { intro hw,
+    suffices hw' : arrow.mk (map.Sq_lift w.hom) ∈ fibrant_and_cofibrant_objects.W M,
+    { apply M.CM2.of_comp_right w.hom _ (triv_cof_ι w.right).2,
+      erw ← map.Sq_lift_comm w.hom,
+      exact M.CM2.of_comp _ _ _ _ _ (triv_cof_ι w.left).2 hw', },
+    rw ← fibrant_and_cofibrant_objects.is_inverted_by_L_iff,
+    haveI : is_iso (L.map w.hom) := hw,
+    exact (infer_instance : is_iso (R.map (L.map w.hom))), },
+  { intro hw,
+    exact universal_property.inverts_W ⟨w, hw⟩, },
 end
 
 end fibrant_replacement
@@ -1138,6 +1178,24 @@ begin
     simp only [← L.map_comp, P.pre.σd₀', P.pre.σd₁'], },
 end
 
+lemma is_inverted_by_L_iff (w : arrow M.C) :
+  w.is_inverted_by L ↔ w ∈ M.W :=
+begin
+  split,
+  { intro hw,
+    suffices hw' : arrow.mk (map.Sq_lift w.hom) ∈ cofibrant_objects.W M,
+    { rw ← arrow.mk_eq w,
+      apply M.CM2.of_comp_left _ w.hom (triv_fib_p w.left).2,
+      erw ← map.Sq_lift_comm w.hom,
+      exact M.CM2.of_comp _ _ _ _ _ hw' (triv_fib_p w.right).2, },
+    rw ← cofibrant_objects.fibrant_replacement.is_inverted_by_L_iff,
+    haveI : is_iso (L.map w.hom) := hw,
+    exact (infer_instance : is_iso (R.map (L.map w.hom))), },
+  { intro hw,
+    have h := universal_property.inverts_W ⟨w, hw⟩,
+    exact h, },
+end
+
 end cofibrant_replacement
 
 namespace fundamental_lemma
@@ -1188,6 +1246,25 @@ begin
 end
 
 end fundamental_lemma
+
+lemma is_inverted_by_Q_iff (w : arrow M.C) :
+  w.is_inverted_by M.Q ↔ w ∈ M.W :=
+begin
+  split,
+  { intro hw,
+    apply (cofibrant_replacement.is_inverted_by_L_iff w).mp,
+    haveI : is_iso (M.Q.map w.hom) := hw,
+    have hw' : is_iso (cofibrant_replacement.is_strict_localization.lift_functor.map
+      (M.Q.map w.hom)) := infer_instance,
+    have eq := functor.congr_map_conjugate
+      cofibrant_replacement.is_strict_localization.lift_functor_fac w.hom,
+    erw [id_comp, comp_id] at eq,
+    erw eq at hw',
+    exact hw', },
+  { intro hw,
+    exact is_iso.of_iso (arrow_class.localization.Wiso ⟨w, hw⟩), },
+end
+
 
 end model_category
 
