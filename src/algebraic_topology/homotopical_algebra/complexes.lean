@@ -11,16 +11,40 @@ import algebra.homology.homological_complex
 import algebra.homology.quasi_iso
 import algebraic_topology.homotopical_algebra.misc
 
-open category_theory category_theory.limits
+open category_theory category_theory.limits category_theory.category
 open algebraic_topology
 
 noncomputable theory
 
-variables (C : Type*) [category C] [abelian C] [enough_projectives C]
+variables {C : Type*} [category C]
+
+namespace category_theory
+
+namespace projective
+
+lemma of_retract {P Q : C} (hPQ : is_retract P Q) (hQ : projective Q) : projective P :=
+begin
+  refine ⟨_⟩,
+  intros E X f e,
+  introI,
+  rcases hPQ with ⟨s, r, hsr⟩,
+  have hQ' := hQ.1,
+  cases hQ' (r ≫ f) e with g hg,
+  use s ≫ g,
+  rw [assoc, hg, ← assoc, hsr, id_comp],
+end
+
+end projective
+
+end category_theory
+
+variables [abelian C] [enough_projectives C]
 
 namespace algebra
 
 namespace homology
+
+variable (C)
 
 @[derive category]
 def Cminus := { K : chain_complex C ℤ // ∃ (r : ℤ), ∀ (i : ℤ) (hi : i < r), nonempty (is_initial (K.X i)) }
@@ -40,7 +64,7 @@ variable (C)
 def Cminus_fib_cof_W : category_with_fib_cof_W (Cminus C) :=
 { W := λ w, quasi_iso w.hom,
   fib := λ w, ∀ (i : ℤ), epi (w.hom.f i),
-  cof := λ w, ∀ (i : ℤ), mono (w.hom.f i) ∧ (projective (cokernel (w.hom.f i))) }
+  cof := λ w, ∀ (i : ℤ), mono (w.hom.f i) ∧ (projective (cokernel (w.hom.f i))), }
 
 variable {C}
 
@@ -73,7 +97,8 @@ def CM3 : (Cminus_fib_cof_W C).CM3 :=
     split,
     { exact arrow_class.is_stable_by_retract.for_monomorphisms _ _ (by exact (hf' i).1)
       (is_retract_imp_of_functor (eval i).map_arrow f f' hff'), },
-    { sorry, },
+    { apply category_theory.projective.of_retract _ (hf' i).2,
+      sorry, },
   end,
   fib := λ f f' hf' hff' i, arrow_class.is_stable_by_retract.for_epimorphisms _ _ (by exact hf' i)
       (is_retract_imp_of_functor (eval i).map_arrow f f' hff'), }
