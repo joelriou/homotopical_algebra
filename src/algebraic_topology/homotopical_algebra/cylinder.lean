@@ -252,6 +252,9 @@ end precylinder
 
 namespace pre_path_object
 
+def Wd₀ {B : M.C} (P : pre_path_object B) : arrow.mk P.d₀' ∈ M.W := P.Wd₀
+def Wd₁ {B : M.C} (P : pre_path_object B) : arrow.mk P.d₁' ∈ M.W := P.Wd₁
+
 structure right_homotopy {A B : M.C} (P : pre_path_object B) (f₀ f₁ : A ⟶ B) :=
 (h : A ⟶ P.I') (h₀ : h ≫ P.d₀' = f₀) (h₁ : h ≫ P.d₁' = f₁)
 
@@ -309,6 +312,22 @@ def op {B : M.C} (P : path_object B) : cylinder _ := P
 
 def fib_π {B : M.C} (P : path_object B) : arrow.mk P.pre.π ∈ M.fib :=
 P.pre.fib_π_iff_cof_ι_op.mpr P.cof_ι
+
+def fib_d₀' {B : M.C} [hB : is_fibrant B] (P : path_object B) :
+  arrow.mk P.pre.d₀' ∈ M.fib :=
+begin
+  let B' : M.op.C := op B,
+  haveI : is_cofibrant B' := (is_fibrant_equiv_op B).to_fun hB,
+  exact P.cof_d₀,
+end
+
+def fib_d₁' {B : M.C} [hB : is_fibrant B] (P : path_object B) :
+  arrow.mk P.pre.d₁' ∈ M.fib :=
+begin
+  let B' : M.op.C := op B,
+  haveI : is_cofibrant B' := (is_fibrant_equiv_op B).to_fun hB,
+  exact P.cof_d₁,
+end
 
 def right_homotopy_of_left_homotopy {A B : M.C} [is_cofibrant A] (P : path_object B) (C : cylinder A)
   {f₀ f₁ : A ⟶ B} (Hl : C.to_precylinder.left_homotopy f₀ f₁) : P.pre.right_homotopy f₀ f₁ :=
@@ -372,8 +391,8 @@ begin
   use [P', H', ⟨hi, P'.pre.Wσ'⟩],  
 end
 
-lemma homotopy_extension {X X' Y : M.C} (P : path_object Y) (f₀ f₁ : X' ⟶ Y) (i : X ⟶ X') (hi : arrow.mk i ∈ M.triv_cof)
-  (H : P.pre.right_homotopy (i ≫ f₀) (i ≫ f₁)) : P.pre.right_homotopy f₀ f₁ :=
+lemma homotopy_extension_exists {X X' Y : M.C} (P : path_object Y) (f₀ f₁ : X' ⟶ Y) (i : X ⟶ X') (hi : arrow.mk i ∈ M.triv_cof)
+  (H : P.pre.right_homotopy (i ≫ f₀) (i ≫ f₁)) : ∃ (H' : P.pre.right_homotopy f₀ f₁), i ≫ H'.h = H.h :=
 begin
   let Sq := square.mk'' i P.pre.π H.h (prod.lift f₀ f₁) _, swap,
   { ext,
@@ -384,10 +403,38 @@ begin
   have eq₀ := congr_arg ((λ (f : _ ⟶ prod Y Y), f ≫ limits.prod.fst)) l.fac_right,
   have eq₁ := congr_arg ((λ (f : _ ⟶ prod Y Y), f ≫ limits.prod.snd)) l.fac_right,
   simp only [assoc, pre_path_object.π, prod.lift_fst, prod.lift_snd, square.mk''_right_hom, square.mk''_hom_right] at eq₀ eq₁,
-  exact
+  use
   { h := l.lift,
     h₀ := eq₀,
     h₁ := eq₁, },
+  exact l.fac_left,
+end
+
+def homotopy_extension {X X' Y : M.C} (P : path_object Y) (f₀ f₁ : X' ⟶ Y) (i : X ⟶ X') (hi : arrow.mk i ∈ M.triv_cof)
+  (H : P.pre.right_homotopy (i ≫ f₀) (i ≫ f₁)) : P.pre.right_homotopy f₀ f₁ :=
+(P.homotopy_extension_exists f₀ f₁ i hi H).some
+
+lemma homotopy_extension_compatibility {X X' Y : M.C} (P : path_object Y) (f₀ f₁ : X' ⟶ Y) (i : X ⟶ X') (hi : arrow.mk i ∈ M.triv_cof)
+  (H : P.pre.right_homotopy (i ≫ f₀) (i ≫ f₁)) : i ≫ (P.homotopy_extension f₀ f₁ i hi H).h = H.h :=
+(P.homotopy_extension_exists f₀ f₁ i hi H).some_spec
+
+/-- Hirschhorn 7.3.10 -/
+lemma homotopy_extension_property_of_cofibrations {X Y Z : M.C} {P : path_object Z} [is_fibrant Z]
+  {i : X ⟶ Y} {g₀ : Y ⟶ Z} {f₁ : X ⟶ Z} (H : P.pre.right_homotopy (i ≫ g₀) f₁) (hi : arrow.mk i ∈ M.cof):
+  ∃ (g₁ : Y ⟶ Z) (H' : P.pre.right_homotopy g₀ g₁) (fac : f₁ = i ≫ g₁), H.h = i ≫ H'.h :=
+begin
+  let Sq := square.mk'' i P.pre.d₀' H.h g₀ H.h₀,
+  have hSq := (M.CM4a Sq.left Sq.right hi ⟨P.fib_d₀', P.pre.Wd₀⟩).sq_has_lift,
+  have l := (hSq Sq.hom).exists_lift.some,
+  use l.lift ≫ P.pre.d₁',
+  use
+  { h := l.lift,
+    h₀ := l.fac_right,
+    h₁ := rfl,},
+  split,
+  { erw [← H.h₁, ← assoc, l.fac_left],
+    refl, },
+  { exact l.fac_left.symm, },
 end
 
 end path_object
