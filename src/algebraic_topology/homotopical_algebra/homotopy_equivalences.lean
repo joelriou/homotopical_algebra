@@ -20,6 +20,15 @@ variables {M : model_category}
 
 namespace fibrant_and_cofibrant_objects
 
+/-- Hirschhorn 7.8.2 -/
+lemma cofibration_is_deformation_retract {X Y : M.fibrant_and_cofibrant_objects}
+  (i : X ⟶ Y) (hi₁ : (arrow.mk i : arrow M.C) ∈ M.cof) (hi₂ : (arrow.mk i).is_inverted_by L) (P : path_object Y.1.1) :
+  ∃ (g : Y ⟶ X) (hg₁ : i ≫ g = 𝟙 X) (H : P.pre.right_homotopy (g ≫ i) (𝟙 Y.1.1)),
+    forget.map i ≫ H.h = forget.map i ≫ P.pre.σ' :=
+begin
+  sorry
+end
+
 lemma cofibration_is_inverted_by_L_iff (w : arrow M.fibrant_and_cofibrant_objects)
   (hw : (arrow.mk w.hom : arrow M.C) ∈ M.cof) :
   w.is_inverted_by L ↔ w ∈ W M :=
