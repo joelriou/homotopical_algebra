@@ -20,6 +20,7 @@ namespace category_theory
 
 namespace arrow
 
+noncomputable
 lemma lift_struct_equiv_op {i p : arrow C} (sq : i ⟶ p) : lift_struct sq ≃ lift_struct (op_hom sq) :=
 { to_fun := λ L,
   { lift := L.lift.op,

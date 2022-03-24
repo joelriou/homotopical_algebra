@@ -1,8 +1,8 @@
 [package]
 name = "model-categories"
 version = "0.1"
-lean_version = "leanprover-community/lean:3.40.0"
+lean_version = "leanprover-community/lean:3.42.0"
 path = "src"
 
 [dependencies]
-mathlib = {git = "https://github.com/leanprover-community/mathlib", rev = "669618791f041d61d7d4f6160c99803bb4a6c4b1"}
+mathlib = {git = "https://github.com/leanprover-community/mathlib", rev = "df3481644c2cba7b44a58836a625e80bf6c64163"}

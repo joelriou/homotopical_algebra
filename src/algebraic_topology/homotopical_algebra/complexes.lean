@@ -9,7 +9,7 @@ import category_theory.preadditive.projective
 import algebraic_topology.homotopical_algebra.model_category
 import algebra.homology.homological_complex
 import algebra.homology.quasi_iso
-import algebraic_topology.homotopical_algebra.misc
+--import algebraic_topology.homotopical_algebra.misc
 
 open category_theory category_theory.limits category_theory.category
 open algebraic_topology
