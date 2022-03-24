@@ -22,7 +22,7 @@ open opposite
 
 namespace category_theory
 
-variables (C : Type*) [category C]
+variables (C : Type*) {D : Type*} [category C] [category D]
 
 abbreviation arrow_class := set (arrow C)
 
@@ -32,7 +32,6 @@ instance : has_coe_to_fun (arrow_class C) (λ F, (Π ⦃X Y : C⦄, (X ⟶ Y) �
 variables {C}
 
 namespace arrow
-
 
 lemma mk_comp_eq_to_hom {X Y Z : C} (f : X ⟶ Y) (h : Y = Z) : arrow.mk (f ≫ eq_to_hom h) = arrow.mk f :=
 by { subst h, erw comp_id, }
@@ -157,7 +156,7 @@ end arrow
 
 namespace arrow_class
 
-variables (F : arrow_class C) (F' : arrow_class Cᵒᵖ)
+variables (F : arrow_class C) (F' : arrow_class Cᵒᵖ) {F'' : arrow_class D}
 
 def isomorphisms : arrow_class C := λ f, is_iso f.hom
 def monomorphisms : arrow_class C := λ f, mono f.hom
@@ -234,6 +233,13 @@ begin
   rw op_isomorphisms_eq,
 end
 
+def inverse_image (W : arrow_class D) (F : C ⥤ D) : arrow_class C :=
+λ w, F.map_arrow.obj w ∈ W
+
+lemma mem_inverse_image_iff (W : arrow_class D) (F : C ⥤ D) {X Y : C} (f : X ⟶ Y) :
+  arrow.mk f ∈ W.inverse_image F ↔ arrow.mk (F.map f) ∈ W :=
+by refl
+
 def is_stable_by_composition : Prop :=
   ∀ (X Y Z : C) (f : X ⟶ Y) (g : Y ⟶ Z),
     arrow.mk f ∈ F → arrow.mk g ∈ F → arrow.mk (f ≫ g) ∈ F
@@ -258,6 +264,19 @@ begin
   haveI := hg,
   apply_instance,
 end
+
+namespace is_stable_by_composition
+
+lemma inverse_image (h : F''.is_stable_by_composition) (F : C ⥤ D) :
+  (F''.inverse_image F).is_stable_by_composition :=
+begin
+  intros X Y Z f g hf hg,
+  rw mem_inverse_image_iff at ⊢ hf hg,
+  rw F.map_comp,
+  exact h _ _ _ _ _ hf hg,
+end
+
+end is_stable_by_composition
 
 lemma imp_of_arrow_iso (F : arrow_class C) (h₁ : F.is_stable_by_composition) (h₂ : isomorphisms ⊆ F)
   {f₁ f₂ : arrow C} (e : f₁ ≅ f₂) (h₃ : f₁ ∈ F) : f₂ ∈ F :=
@@ -365,6 +384,14 @@ begin
   apply for_monomorphisms,
 end
 
+lemma inverse_image (h : F''.is_stable_by_retract) (F : C ⥤ D):
+  (F''.inverse_image F).is_stable_by_retract :=
+begin
+  intros f f' hf' hff',
+  apply h _ _ hf',
+  exact is_retract_imp_of_functor F.map_arrow _ _ hff',
+end
+
 end is_stable_by_retract
 
 /- better this definition... -/
@@ -432,6 +459,26 @@ begin
   finish,
 end
 
+namespace three_of_two
+
+lemma inverse_image (h : F''.three_of_two) (F : C ⥤ D) :
+  (F''.inverse_image F).three_of_two :=
+{ of_comp := h.of_comp.inverse_image F,
+  of_comp_left := begin
+    intros X Y Z f g hf hfg,
+    rw mem_inverse_image_iff at ⊢ hfg hf,
+    rw F.map_comp at hfg,
+    exact h.of_comp_left _ _ hf hfg,
+  end,
+  of_comp_right := begin
+    intros X Y Z f g hg hfg,
+    rw mem_inverse_image_iff at ⊢ hfg hg,
+    rw F.map_comp at hfg,
+    exact h.of_comp_right _ _ hg hfg,
+  end, }
+
+end three_of_two
+
 def is_stable_by_cobase_change :=
   ∀ (Sq : square C) (hSq : Sq.is_cocartesian),
   Sq.left ∈ F → Sq.right ∈ F
@@ -496,6 +543,19 @@ namespace factorisation_axiom
 
 def op {F G : arrow_class C} := (factorisation_axiom_iff_op F G).mp
 def unop {F G : arrow_class C} := (factorisation_axiom_iff_op F G).mpr
+
+def under {F G : arrow_class C} (h : factorisation_axiom F G ) (X : C) :
+  factorisation_axiom (F.inverse_image (under.forget X)) (G.inverse_image (under.forget X)) :=
+begin
+  intro f,
+  rcases h ((under.forget X).map_arrow.obj f) with ⟨Z, i, p, fac, hi, hp⟩,
+  let Z' := under.mk (f.left.hom ≫ i),
+  let i' : f.left ⟶ Z' := under.hom_mk i rfl,
+  let p' : Z' ⟶ f.right := under.hom_mk p
+    (by { dsimp, erw [assoc, ← fac, ← f.hom.w, id_comp], refl, }),
+  use [Z', i', p'],
+  exact ⟨by { ext, exact fac, }, hi, hp⟩,
+end
 
 end factorisation_axiom
 

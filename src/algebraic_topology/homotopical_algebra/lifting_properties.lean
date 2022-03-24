@@ -18,6 +18,33 @@ variables {C : Type*} [category C]
 
 namespace category_theory
 
+namespace has_lifting_property
+
+lemma under_imp {X : C} (i p : arrow (under X))
+  (h : has_lifting_property ((under.forget X).map_arrow.obj i)
+  ((under.forget X).map_arrow.obj p)) : has_lifting_property i p :=
+begin
+  refine ⟨_⟩,
+  intro sq,
+  let sq' := (under.forget X).map_arrow.map sq,
+  let h' := h.sq_has_lift,
+  let l := (h' sq').exists_lift.some,
+  exact ⟨nonempty.intro
+  { lift := under.hom_mk l.lift begin
+      have hi := i.hom.w,
+      have htop := sq.left.w,
+      dsimp at hi htop,
+      erw id_comp at hi htop,
+      dsimp,
+      erw [hi, assoc, htop, l.fac_left],
+      refl,
+    end,
+    fac_left' := by { ext, exact l.fac_left, },
+    fac_right' := by { ext, exact l.fac_right, }, }⟩,
+end
+
+end has_lifting_property
+
 namespace arrow
 
 noncomputable
@@ -207,6 +234,14 @@ begin
     end }⟩,
 end
 
+lemma has_left_lifting_property_comp {X Y Z : C} {f : X ⟶ Y} {g : Y ⟶ Z} {p : arrow C}
+  (hf : has_lifting_property (arrow.mk f) p) (hg : has_lifting_property (arrow.mk g) p) :
+  has_lifting_property (arrow.mk (f ≫ g)) p :=
+begin
+  rw arrow.has_lifting_property_iff_op at hf hg ⊢,
+  exact has_right_lifting_property_comp hg hf,
+end
+
 end arrow
 
 namespace arrow_class
@@ -235,12 +270,13 @@ namespace has_lifting_property
 def op {F G : arrow_class C} := (has_lifting_property_iff_op F G).mp
 def unop {F G : arrow_class C} := (has_lifting_property_iff_op F G).mpr
 
-lemma has_left_lifting_property_comp {X Y Z : C} {f : X ⟶ Y} {g : Y ⟶ Z} {p : arrow C}
-  (hf : has_lifting_property (arrow.mk f) p) (hg : has_lifting_property (arrow.mk g) p) :
-  has_lifting_property (arrow.mk (f ≫ g)) p :=
+lemma under {F G : arrow_class C} (h : F.has_lifting_property G) (X : C) :
+  (F.inverse_image (under.forget X)).has_lifting_property
+    (G.inverse_image (under.forget X)) :=
 begin
-  rw arrow.has_lifting_property_iff_op at hf hg ⊢,
-  exact has_right_lifting_property_comp hg hf,
+  intros i p hi hp,
+  apply has_lifting_property.under_imp i p,
+  exact h _ _ hi hp,
 end
 
 end has_lifting_property
