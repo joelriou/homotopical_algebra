@@ -40,18 +40,6 @@ end
 
 variables {C}
 
-namespace square
-
-@[simp, protected]
-def op (f : square C) : square Cᵒᵖ := ((equivalence_square_op C).functor.obj f).unop
-@[simp, protected]
-def unop (f : square Cᵒᵖ) : square C := (equivalence_square_op C).inverse.obj (opposite.op f)
-
-lemma unop_op (f : square C) : f.op.unop = f := by { cases f, cases f_left, cases f_right, cases f_hom, refl, }
-lemma op_unop (f : square Cᵒᵖ) : f.unop.op = f := by { cases f, cases f_left, cases f_right, cases f_hom, refl, }
-
-end square
-
 namespace arrow
 
 @[ext]
@@ -171,6 +159,23 @@ def hom_vert (Sq : square C) : Sq.top ⟶ Sq.bottom :=
 { left := Sq.left.hom,
   right := Sq.right.hom,
   w' := Sq.hom.w'.symm }
+
+@[simp, protected]
+def op (f : square C) : square Cᵒᵖ := ((equivalence_square_op C).functor.obj f).unop
+@[simp, protected]
+def unop (f : square Cᵒᵖ) : square C := (equivalence_square_op C).inverse.obj (opposite.op f)
+
+lemma unop_op (f : square C) : f.op.unop = f := by tidy
+lemma op_unop (f : square Cᵒᵖ) : f.unop.op = f := by tidy
+
+lemma op_left (f : square C) : f.op.left = f.right.op := by tidy
+lemma op_right (f : square C) : f.op.right = f.left.op := by tidy
+lemma op_top (f : square C) : f.op.top = f.bottom.op := by tidy
+lemma op_bottom (f : square C) : f.op.bottom = f.top.op := by tidy
+lemma unop_left (f : square Cᵒᵖ) : f.unop.left = f.right.unop := by tidy
+lemma unop_right (f : square Cᵒᵖ) : f.unop.right = f.left.unop := by tidy
+lemma unop_top (f : square Cᵒᵖ) : f.unop.top = f.bottom.unop := by tidy
+lemma unop_bottom (f : square Cᵒᵖ) : f.unop.bottom = f.top.unop := by tidy
 
 @[simps]
 def flip (Sq : square C) : square C :=
