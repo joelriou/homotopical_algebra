@@ -21,7 +21,36 @@ variables (C : Type*) [category C]
 @[derive category]
 def square := arrow (arrow C)
 
-variable {C}
+@[simps]
+def arrow.map_equivalence {D₁ D₂ : Type*} [category D₁] [category D₂] (e : D₁ ≌ D₂) : arrow D₁ ≌ arrow D₂ :=
+{ functor := e.functor.map_arrow,
+  inverse := e.inverse.map_arrow,
+  unit_iso := sorry,
+  counit_iso := sorry,
+  functor_unit_iso_comp' := sorry, }
+
+@[simps]
+def equivalence_square_op :
+  square C ≌ (square Cᵒᵖ)ᵒᵖ :=
+begin
+  apply (equivalence_arrow_op (arrow C)).trans (equivalence.op _),
+  apply arrow.map_equivalence,
+  apply (equivalence_arrow_op C).op.trans (op_op_equivalence _),
+end
+
+variables {C}
+
+namespace square
+
+@[simp, protected]
+def op (f : square C) : square Cᵒᵖ := ((equivalence_square_op C).functor.obj f).unop
+@[simp, protected]
+def unop (f : square Cᵒᵖ) : square C := (equivalence_square_op C).inverse.obj (opposite.op f)
+
+lemma unop_op (f : square C) : f.op.unop = f := by { cases f, cases f_left, cases f_right, cases f_hom, refl, }
+lemma op_unop (f : square Cᵒᵖ) : f.unop.op = f := by { cases f, cases f_left, cases f_right, cases f_hom, refl, }
+
+end square
 
 namespace arrow
 
@@ -275,6 +304,9 @@ namespace square
 
 namespace is_cocartesian
 
+def op {Sq : square C} (hSq : Sq.is_cocartesian) : Sq.op.is_cartesian := sorry
+def unop {Sq : square Cᵒᵖ} (hSq : Sq.is_cocartesian) : Sq.unop.is_cartesian := sorry
+
 @[protected]
 def flip {Sq : square C} (hSq : Sq.is_cocartesian) : Sq.flip.is_cocartesian :=
 pushout_cocone.flip_is_colimit hSq
@@ -388,6 +420,9 @@ def has_pullback {Sq : square C} (hSq : Sq.is_cartesian) : has_pullback Sq.right
 ⟨nonempty.intro
   { cone := Sq.cone,
     is_limit := hSq, }⟩
+
+def op {Sq : square C} (hSq : Sq.is_cartesian) : Sq.op.is_cocartesian := sorry
+def unop {Sq : square Cᵒᵖ} (hSq : Sq.is_cartesian) : Sq.unop.is_cocartesian := sorry
 
 end is_cartesian
 
