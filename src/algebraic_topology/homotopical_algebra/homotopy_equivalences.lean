@@ -125,7 +125,7 @@ begin
     haveI : is_iso (M.Q.map w.hom) := hw,
     have hw' : is_iso (cofibrant_replacement.is_strict_localization.lift_functor.map
       (M.Q.map w.hom)) := infer_instance,
-    have eq := functor.congr_map_conjugate
+    have eq := functor.congr_hom
       cofibrant_replacement.is_strict_localization.lift_functor_fac w.hom,
     erw [id_comp, comp_id] at eq,
     erw eq at hw',

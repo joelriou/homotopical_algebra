@@ -6,6 +6,7 @@ Authors: Joël Riou
 
 import category_theory.limits.shapes.pullbacks
 import category_theory.limits.shapes.finite_products
+import category_theory.limits.opposites
 import category_theory.comma_op
 
 noncomputable theory
@@ -16,29 +17,7 @@ open category_theory.limits
 
 namespace category_theory
 
-variables (C : Type*) [category C]
-
-@[derive category]
-def square := arrow (arrow C)
-
-@[simps]
-def arrow.map_equivalence {D₁ D₂ : Type*} [category D₁] [category D₂] (e : D₁ ≌ D₂) : arrow D₁ ≌ arrow D₂ :=
-{ functor := e.functor.map_arrow,
-  inverse := e.inverse.map_arrow,
-  unit_iso := sorry,
-  counit_iso := sorry,
-  functor_unit_iso_comp' := sorry, }
-
-@[simps]
-def equivalence_square_op :
-  square C ≌ (square Cᵒᵖ)ᵒᵖ :=
-begin
-  apply (equivalence_arrow_op (arrow C)).trans (equivalence.op _),
-  apply arrow.map_equivalence,
-  apply (equivalence_arrow_op C).op.trans (op_op_equivalence _),
-end
-
-variables {C}
+variables {C : Type*} [category C]
 
 namespace arrow
 
@@ -120,6 +99,71 @@ def binary_coproduct_cofan (f₁ f₂ : arrow C) [has_binary_coproduct f₁.left
   end, } }
 
 end arrow
+
+variable (C)
+
+@[derive category]
+def square := arrow (arrow C)
+
+def arrow.map_arrow_functor (D₁ D₂ : Type*) [category D₁] [category D₂] :
+  (D₁ ⥤ D₂) ⥤ (arrow D₁ ⥤ arrow D₂) :=
+{ obj := functor.map_arrow,
+  map := λ F G φ,
+  { app := λ f,
+    { left := φ.app (f.left),
+      right := φ.app (f.right),
+      w' := by { symmetry, apply φ.naturality, }, },
+    naturality' := λ X Y f, begin
+      ext,
+      dsimp,
+      erw φ.naturality f.left,
+      dsimp,
+      erw φ.naturality f.right,
+    end, },
+  map_id' := λ X, rfl,
+  map_comp' := λ X Y Z f g, rfl, } 
+
+lemma arrow.map_arrow_id (D : Type*) [category D] :
+  (𝟭 D).map_arrow = 𝟭 _ :=
+begin
+  apply functor.ext,
+  { intros X Y f,
+    tidy, },
+  { intro X,
+    ext,
+    { erw [id_comp, comp_id], refl, },
+    { refl, },
+    { refl, }, },
+end
+
+@[simps]
+def arrow.map_equivalence {D₁ D₂ : Type*} [category D₁] [category D₂] (e : D₁ ≌ D₂) : arrow D₁ ≌ arrow D₂ :=
+{ functor := e.functor.map_arrow,
+  inverse := e.inverse.map_arrow,
+  unit_iso := begin
+    sorry,
+    --convert (arrow.map_arrow_functor _ _ ).map_iso e.unit_iso,
+    --exact (arrow.map_arrow_id _).symm,
+  end,
+  counit_iso := begin
+    sorry,
+    --convert (arrow.map_arrow_functor _ _ ).map_iso e.counit_iso,
+    --exact (arrow.map_arrow_id _).symm,
+  end,
+  functor_unit_iso_comp' := λ X, begin
+    sorry,
+  end, }
+
+@[simps]
+def equivalence_square_op :
+  square C ≌ (square Cᵒᵖ)ᵒᵖ :=
+begin
+  apply (equivalence_arrow_op (arrow C)).trans (equivalence.op _),
+  exact arrow.map_equivalence
+    ((equivalence_arrow_op C).op.trans (op_op_equivalence _)),
+end
+
+variables {C}
 
 namespace square
 
@@ -310,7 +354,14 @@ namespace square
 namespace is_cocartesian
 
 def op {Sq : square C} (hSq : Sq.is_cocartesian) : Sq.op.is_cartesian := sorry
-def unop {Sq : square Cᵒᵖ} (hSq : Sq.is_cocartesian) : Sq.unop.is_cartesian := sorry
+
+def unop {Sq : square Cᵒᵖ} (hSq : Sq.is_cocartesian) : Sq.unop.is_cartesian :=
+begin
+  dsimp only [is_cartesian],
+  erw [show Sq.unop.cone = Sq.unop.cone.op.unop, by refl],
+  apply is_limit_cocone_unop,
+  sorry
+end
 
 @[protected]
 def flip {Sq : square C} (hSq : Sq.is_cocartesian) : Sq.flip.is_cocartesian :=

@@ -299,7 +299,7 @@ begin
     cases category_theory.quotient.functor_map_surj _ _ _ f with f' hf',
     let f'' : X' ⟶ Y' := f',
     have eq : f = L.map f'' := hf'.symm,
-    convert functor.congr_map_conjugate h₁₂ f'', },
+    convert functor.congr_hom h₁₂ f'', },
   { intro X,
     convert functor.congr_obj h₁₂ ⟨X.val.as, X.2⟩,
     all_goals { ext, refl, }, }
@@ -538,7 +538,7 @@ begin
   apply category_theory.functor.ext,
   { intros X Y f,
     have G₁_fac := fibrant_and_cofibrant_objects.universal_property.fac (G₁ G hG) (G₁_inverts_W G hG),
-    have h := functor.congr_map_conjugate G₁_fac (map.Sq_lift f),
+    have h := functor.congr_hom G₁_fac (map.Sq_lift f),
     simp only [eq_to_hom_refl, id_comp, comp_id] at ⊢ h,
     simp only [functor.comp_map, lift_map] at ⊢ h,
     erw h,
@@ -914,7 +914,7 @@ begin
   apply category_theory.functor.ext,
   { intros X Y f,
     have G₁_fac := cofibrant_objects.fibrant_replacement.universal_property.fac (G₁ G hG) (G₁_inverts_W G hG),
-    have h := functor.congr_map_conjugate G₁_fac (map.Sq_lift f),
+    have h := functor.congr_hom G₁_fac (map.Sq_lift f),
     simp only [eq_to_hom_refl, id_comp, comp_id] at ⊢ h,
     simp only [functor.comp_map, lift_map] at ⊢ h,
     erw h,
@@ -960,8 +960,8 @@ begin
   conv_rhs { erw [← L.map_comp, ← map.Sq_lift_comm, L.map_comp], },
   rw ← assoc,
   congr' 1,
-  have eqφ := functor.congr_map_conjugate L_cof_fac φ,
-  have eqj := functor.congr_map_conjugate L_cof_fac (map.Sq_lift i'),
+  have eqφ := functor.congr_hom L_cof_fac φ,
+  have eqj := functor.congr_hom L_cof_fac (map.Sq_lift i'),
   dsimp at eqφ eqj,
   erw [hφ, id_comp, comp_id] at eqφ,
   erw [id_comp, comp_id] at eqj,
@@ -989,7 +989,7 @@ begin
     dsimp only [lift],
     rw ← cancel_epi ((L ⋙ G).map (p X)),
     slice_rhs 1 2 { rw is_iso.hom_inv_id, },
-    erw [functor.congr_map_conjugate h (R.map f), id_comp, id_comp, comp_id],
+    erw [functor.congr_hom h (R.map f), id_comp, id_comp, comp_id],
     dsimp,
     simp only [← G.map_comp],
     congr' 1,
@@ -1023,7 +1023,7 @@ cofibrant_objects.fibrant_replacement.is_strict_localization.nat_trans_extension
     erw ← h,
     congr' 1,
     conv_lhs { congr, erw [← functor.comp_map], },
-    erw [functor.congr_map_conjugate L_cof_fac, id_comp, comp_id],
+    erw [functor.congr_hom L_cof_fac, id_comp, comp_id],
     refl,
   end }
 
@@ -1076,7 +1076,7 @@ begin
   simp only at hf₂ hf₁ hf₀ ⊢,
   erw [← comp_id g, ← is_iso.inv_hom_id (L.map (p Y)), ← assoc, ← hf₀, ← hf₁, ← hf₂, L.map_comp],
   congr' 1,
-  convert functor.congr_map_conjugate universal_property.L_cof_fac.symm f₂,
+  convert functor.congr_hom universal_property.L_cof_fac.symm f₂,
   erw [id_comp, comp_id],
   refl,
 end
@@ -1155,7 +1155,7 @@ begin
   simp only at ⊢ hg,
   apply hF.map_injective',
   rw ← hg,
-  simpa only [id_comp, comp_id, eq_to_hom_refl] using functor.congr_map_conjugate (arrow_class.localization.fac cofibrant_replacement.L cofibrant_replacement.is_strict_localization.inverts_W) g,
+  simpa only [id_comp, comp_id, eq_to_hom_refl] using functor.congr_hom (arrow_class.localization.fac cofibrant_replacement.L cofibrant_replacement.is_strict_localization.inverts_W) g,
 end
 
 lemma eq_iff' {X Y : M.C} [hX : is_cofibrant X] [hY : is_fibrant Y] (P : path_object Y) (f₀ f₁ : X ⟶ Y) :
@@ -1168,8 +1168,8 @@ begin
   { calc M.Q.map f₀ = M.Q.map f₁ ↔ cofibrant_replacement.L.map f₀ = cofibrant_replacement.L.map f₁ : this
     ... ↔ nonempty (P.pre.right_homotopy f₀ f₁) : cofibrant_replacement.L_map_eq_iff' P f₀ f₁, },
   have eq : M.Q ⋙ F = cofibrant_replacement.L := arrow_class.localization.fac cofibrant_replacement.L cofibrant_replacement.is_strict_localization.inverts_W,
-  have eq₀ := functor.congr_map_conjugate eq f₀,
-  have eq₁ := functor.congr_map_conjugate eq f₁,
+  have eq₀ := functor.congr_hom eq f₀,
+  have eq₁ := functor.congr_hom eq f₁,
   erw [id_comp, comp_id, functor.comp_map] at eq₀ eq₁,
   erw [← eq₀, ← eq₁],
   split,

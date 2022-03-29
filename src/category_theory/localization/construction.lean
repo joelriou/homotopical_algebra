@@ -35,12 +35,12 @@ namespace functor
 --(h : F = G) : ∀ X : D₁, F.obj X = G.obj X :=
 --by { intro X, rw h, }
 
-lemma congr_map_conjugate {D₁ D₂ : Type*} [category D₁] [category D₂] {F G : D₁ ⥤ D₂}
-(h : F = G) {X Y : D₁} (f : X ⟶ Y) : F.map f =
-eq_to_hom (by rw h) ≫ G.map f ≫ eq_to_hom (by rw h) :=
-by { subst h, erw [id_comp, comp_id], }
+--lemma congr_map_conjugate {D₁ D₂ : Type*} [category D₁] [category D₂] {F G : D₁ ⥤ D₂}
+--(h : F = G) {X Y : D₁} (f : X ⟶ Y) : F.map f =
+--eq_to_hom (by rw h) ≫ G.map f ≫ eq_to_hom (by rw h) :=
+--by { subst h, erw [id_comp, comp_id], }
 
-lemma conjugate_inv_of_congr_map_conjugate {D₁ D₂ : Type*} [category D₁] [category D₂] (F G : D₁ ⥤ D₂)
+lemma congr_inv_of_congr_hom {D₁ D₂ : Type*} [category D₁] [category D₂] (F G : D₁ ⥤ D₂)
   {X Y : D₁} (e : X ≅ Y) (hX : F.obj X = G.obj X) (hY : F.obj Y = G.obj Y)
   (h₂ : F.map e.hom = eq_to_hom (by rw hX) ≫ G.map e.hom ≫ eq_to_hom (by rw hY)) :
 F.map e.inv = eq_to_hom (by rw hY) ≫ G.map e.inv ≫ eq_to_hom (by rw hX) :=
@@ -290,19 +290,19 @@ begin
   suffices h' : (quotient.functor (relations W)) ⋙ G₁ = (quotient.functor (relations W)) ⋙ G₂,
   { apply functor.ext,
     { rintros ⟨⟨X⟩⟩ ⟨⟨Y⟩⟩ ⟨f⟩,
-      convert functor.congr_map_conjugate h' f, },
+      convert functor.congr_hom h' f, },
     { rintro ⟨⟨X⟩⟩,
       convert functor.congr_obj h X, }, },
   { apply paths.ext_functor,
     { rintro ⟨X⟩ ⟨Y⟩ f,
       cases f,
-      { convert functor.congr_map_conjugate h f, },
+      { convert functor.congr_hom h f, },
       { rcases f with ⟨g, hg⟩,
         dsimp at g hg,
         have hα : (Wiso ⟨arrow.mk g, hg⟩).hom = (Q W).map g := rfl,
-        have h' := functor.congr_map_conjugate h g,
+        have h' := functor.congr_hom h g,
         simp only [functor.comp_map, ← hα] at h',
-        refine functor.conjugate_inv_of_congr_map_conjugate G₁ G₂ _ _ _ h',
+        refine functor.congr_inv_of_congr_hom G₁ G₂ _ _ _ h',
         { convert functor.congr_obj h Y, },
         { convert functor.congr_obj h X, }, }, },
     { ext X,
@@ -465,7 +465,7 @@ begin
   have h := functor.map_inv hL.lift_functor ((localization.Wiso w).hom),
   rw is_iso.iso.inv_hom at h,
   convert h,
-  erw [functor.congr_map_conjugate hL.lift_functor_fac.symm w.1.hom, comp_id, id_comp],
+  erw [functor.congr_hom hL.lift_functor_fac.symm w.1.hom, comp_id, id_comp],
   refl,
 end
 
@@ -481,8 +481,7 @@ begin
     { dsimp [f'],
       have h := hL.is_isomorphism.2.symm,
       ext,
-      { exact functor.congr_map_conjugate h f.hom, },
-      { exact functor.congr_obj h f.right, }, },
+      { exact functor.congr_hom h f.hom, }, },
     cases quotient.functor_map_surj _ _ _ f' with φ hφ,
     rw [eq, ← hφ],
     exact this φ, },
@@ -544,7 +543,7 @@ begin
           composable_morphisms.arrow_of_join, h₁],
         congr,
         simp only [composable_morphisms.mk_1_arrow, arrow.map_arrow_of_mk], },
-      { simp only [functor.congr_map_conjugate hL.lift_functor_fac.symm f,
+      { simp only [functor.congr_hom hL.lift_functor_fac.symm f,
           arrow.mk_eq_to_hom_comp, arrow.mk_comp_eq_to_hom, functor.comp_map, localization.Q_map_eq, localization.ψ₁,
           arrow.mk_hom], },
       { simp only [functor.comp_map],
