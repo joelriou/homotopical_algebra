@@ -35,7 +35,6 @@ lemma cofibration_is_inverted_by_L_iff (w : arrow M.fibrant_and_cofibrant_object
 begin
   split,
   { intro hw,
-    have foo := M.CM5a,
     rcases M.CM5a (arrow.mk w.hom) with ⟨Z, i, p, fac, hi, hp⟩,
     sorry, },
   { intro hw,
