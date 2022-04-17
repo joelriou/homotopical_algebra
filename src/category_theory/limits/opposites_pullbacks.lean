@@ -1,5 +1,6 @@
 
 import category_theory.limits.opposites
+import tactic.equiv_rw
 
 universes v u
 
@@ -94,7 +95,7 @@ variables {C : Type u} [category.{v} C]
 
 namespace pushout_cocone
 
-def span_op {X Y Z : C} {f : X ⟶ Z} {g : Y ⟶ Z} :
+def span_op {X Y Z : C} (f : X ⟶ Z) (g : Y ⟶ Z) :
   span f.op g.op = walking_cospan_op_equiv.inverse ⋙ (cospan f g).op :=
 begin
   apply functor.ext,
@@ -108,7 +109,7 @@ begin
     rcases i with (_|_|_); refl, }
 end
 
-def op_cospan {X Y Z : C} {f : X ⟶ Z} {g : Y ⟶ Z} :
+def op_cospan {X Y Z : C} (f : X ⟶ Z) (g : Y ⟶ Z) :
   (cospan f g).op = walking_cospan_op_equiv.functor ⋙ span f.op g.op :=
 begin
   nth_rewrite 0 ← functor.id_comp (cospan f g).op,
@@ -118,26 +119,55 @@ begin
   apply wide_pullback_shape_op_unop,
 end
 
+def cospan_op {X Y Z : C} (f : X ⟶ Y) (g : X ⟶ Z) :
+  cospan f.op g.op = walking_span_op_equiv.inverse ⋙ (span f g).op :=
+begin
+  apply functor.ext,
+  { intros i j g,
+    rcases g with (_|_|_),
+    { erw [functor.map_id, functor.map_id],
+      simp only [category.id_comp, eq_to_hom_trans, eq_to_hom_refl], },
+    { erw [category.id_comp, category.comp_id], refl, },
+    { erw [category.id_comp, category.comp_id], refl, }, },
+  { intro i,
+    rcases i with (_|_|_); refl, }
+end
+
 def unop {X Y Z : C} {f : X ⟶ Z} {g : Y ⟶ Z} (c : pushout_cocone f.op g.op) :
   pullback_cone f g :=
 begin
   apply cocone.unop,
-  convert cocone.whisker walking_cospan_op_equiv.functor c,
-  apply op_cospan,
+  apply (cocones.precompose (eq_to_iso (op_cospan f g)).hom).obj,
+  exact cocone.whisker walking_cospan_op_equiv.functor c,
 end
 
 def unop_is_colimit {X Y Z : C} {f : X ⟶ Z} {g : Y ⟶ Z} (c : pushout_cocone f.op g.op)
   (h : is_colimit c) : is_limit c.unop :=
 begin
-  apply is_limit.of_whisker_equivalence walking_span_op_equiv,
-  convert is_limit_cone_left_op_of_cocone _ h,
-  sorry,
-  sorry,
+  apply is_limit_cocone_unop,
+  equiv_rw is_colimit.precompose_hom_equiv _ _,
+  equiv_rw (is_colimit.whisker_equivalence_equiv _).symm,
+  exact h,
+end
+
+def op {X Y Z : C} {f : X ⟶ Y} {g : X ⟶ Z} (c : pushout_cocone f g) :
+  pullback_cone f.op g.op :=
+begin
+  apply (cones.postcompose (eq_to_iso (cospan_op f g).symm).hom).obj,
+  exact cone.whisker walking_span_op_equiv.inverse (cocone.op c),
+end
+
+def op_is_colimit {X Y Z : C} {f : X ⟶ Y} {g : X ⟶ Z} (c : pushout_cocone f g)
+  (h : is_colimit c) : is_limit c.op :=
+begin
+  equiv_rw is_limit.postcompose_hom_equiv _ _,
+  equiv_rw (is_limit.whisker_equivalence_equiv walking_span_op_equiv.symm).symm,
+  exact is_limit_cocone_op _ h,
 end
 
 end pushout_cocone
 
-lemma unop_has_pushout {X Y Z : C} {f : X ⟶ Z} {g : Y ⟶ Z}
+lemma unop_has_pushout {X Y Z : C} (f : X ⟶ Z) (g : Y ⟶ Z)
   [h : has_pushout f.op g.op] : has_pullback f g :=
 begin
   refine ⟨nonempty.intro ⟨_,
@@ -145,7 +175,13 @@ begin
   apply colimit.is_colimit,
 end
 
-
+lemma op_has_pushout {X Y Z : C} (f : X ⟶ Y) (g : X ⟶ Z)
+  [h : has_pushout f g] : has_pullback f.op g.op :=
+begin
+  refine ⟨nonempty.intro ⟨_,
+    pushout_cocone.op_is_colimit (colimit.cocone (span f g)) _⟩⟩,
+  apply colimit.is_colimit,
+end
 
 end limits
 
