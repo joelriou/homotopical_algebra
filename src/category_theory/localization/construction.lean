@@ -132,8 +132,6 @@ variable (C)
 def R₁ := { t : arrow C × arrow C // t.1.right = t.2.left }
 variable {C}
 
-def ρ₁ {X Y Z : C} (f : X ⟶ Y) (g : Y ⟶ Z) : R₁ C := ⟨⟨arrow.mk f, arrow.mk g⟩, rfl⟩
-
 @[simps]
 def relations₁ : R₁ C → relation W := λ t,
 { X := W.ι_loc_quiver t.1.1.left,
@@ -168,21 +166,15 @@ namespace localization
 variable (W)
 
 def Q : C ⥤ W.localization :=
-{ obj := λ X, (quotient.functor (relations W)).obj (W.ι_loc_quiver X),
-  map := λ X Y f, (quotient.functor (relations W)).map (ψ₁ W (arrow.mk f)),
-  map_id' := λ X, begin
-    apply quotient.sound (localization.relations W),
-    exact or.inl ⟨X, rfl⟩,
-  end,
-  map_comp' := λ X Y Z f g, begin
-    apply quotient.sound (localization.relations W),
-    exact or.inr (or.inl (begin
-      use localization.ρ₁ f g, dsimp only [localization.relations₁],
-      congr,
-      erw id_comp,refl,
-    end)),
-  end }
-
+{ obj := λ X, (quotient.functor _).obj (W.ι_loc_quiver X),
+  map := λ X Y f, (quotient.functor _).map (ψ₁ W (arrow.mk f)),
+  map_id' := λ X, quotient.sound _ (or.inl ⟨X, rfl⟩),
+  map_comp' := λ X Y Z f g, quotient.sound _ (or.inr (or.inl begin
+    use ⟨⟨arrow.mk f, arrow.mk g⟩, rfl⟩,
+    dsimp only [relations₁],
+    congr,
+    apply id_comp,
+  end)) }
 
 variable {W}
 

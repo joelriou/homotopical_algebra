@@ -93,8 +93,6 @@ wide_pullback_shape_op_equiv _
 
 variables {C : Type u} [category.{v} C]
 
-namespace pushout_cocone
-
 def span_op {X Y Z : C} (f : X ⟶ Z) (g : Y ⟶ Z) :
   span f.op g.op = walking_cospan_op_equiv.inverse ⋙ (cospan f g).op :=
 begin
@@ -133,6 +131,18 @@ begin
     rcases i with (_|_|_); refl, }
 end
 
+def op_span {X Y Z : C} (f : X ⟶ Y) (g : X ⟶ Z) :
+  (span f g).op = walking_span_op_equiv.functor ⋙ cospan f.op g.op :=
+begin
+  nth_rewrite 0 ← functor.id_comp (span f g).op,
+  rw [cospan_op, ← functor.assoc],
+  congr,
+  symmetry,
+  apply wide_pushout_shape_op_unop,
+end
+
+namespace pushout_cocone
+
 def unop {X Y Z : C} {f : X ⟶ Z} {g : Y ⟶ Z} (c : pushout_cocone f.op g.op) :
   pullback_cone f g :=
 begin
@@ -167,6 +177,42 @@ end
 
 end pushout_cocone
 
+namespace pullback_cone
+
+def unop {X Y Z : C} {f : X ⟶ Y} {g : X ⟶ Z} (c : pullback_cone f.op g.op) :
+  pushout_cocone f g :=
+begin
+  apply cone.unop,
+  apply (cones.postcompose (eq_to_iso (op_span f g)).symm.hom).obj,
+  exact cone.whisker walking_span_op_equiv.functor c,
+end
+
+def unop_is_limit {X Y Z : C} {f : X ⟶ Y} {g : X ⟶ Z} (c : pullback_cone f.op g.op)
+  (h : is_limit c) : is_colimit c.unop :=
+begin
+  apply is_colimit_cone_unop,
+  equiv_rw is_limit.postcompose_hom_equiv _ _,
+  equiv_rw (is_limit.whisker_equivalence_equiv _).symm,
+  exact h,
+end
+
+def op {X Y Z : C} {f : X ⟶ Z} {g : Y ⟶ Z} (c : pullback_cone f g) :
+  pushout_cocone f.op g.op :=
+begin
+  apply (cocones.precompose (eq_to_iso (span_op f g)).hom).obj,
+  exact cocone.whisker walking_cospan_op_equiv.inverse (cone.op c),
+end
+
+def op_is_limit {X Y Z : C} {f : X ⟶ Z} {g : Y ⟶ Z} (c : pullback_cone f g)
+  (h : is_limit c) : is_colimit c.op :=
+begin
+  equiv_rw is_colimit.precompose_hom_equiv _ _,
+  equiv_rw (is_colimit.whisker_equivalence_equiv walking_cospan_op_equiv.symm).symm,
+  exact is_colimit_cone_op _ h,
+end
+
+end pullback_cone
+
 lemma unop_has_pushout {X Y Z : C} (f : X ⟶ Z) (g : Y ⟶ Z)
   [h : has_pushout f.op g.op] : has_pullback f g :=
 begin
@@ -181,6 +227,36 @@ begin
   refine ⟨nonempty.intro ⟨_,
     pushout_cocone.op_is_colimit (colimit.cocone (span f g)) _⟩⟩,
   apply colimit.is_colimit,
+end
+
+lemma unop_has_pullback {X Y Z : C} (f : X ⟶ Y) (g : X ⟶ Z)
+  [h : has_pullback f.op g.op] : has_pushout f g :=
+begin
+  refine ⟨nonempty.intro ⟨_,
+    pullback_cone.unop_is_limit (limit.cone (cospan f.op g.op)) _⟩⟩,
+  apply limit.is_limit,
+end
+
+lemma op_has_pullback {X Y Z : C} (f : X ⟶ Z) (g : Y ⟶ Z)
+  [h : has_pullback f g] : has_pushout f.op g.op :=
+begin
+  refine ⟨nonempty.intro ⟨_,
+    pullback_cone.op_is_limit (limit.cone (cospan f g)) _⟩⟩,
+  apply limit.is_limit,
+end
+
+lemma has_pullbacks_opposite [has_pushouts C] : has_pullbacks Cᵒᵖ :=
+begin
+  haveI : has_colimits_of_shape walking_cospan.{v}ᵒᵖ C :=
+    has_colimits_of_shape_of_equivalence walking_cospan_op_equiv.symm,
+  apply has_limits_of_shape_op_of_has_colimits_of_shape,
+end
+
+lemma has_pushouts_opposite [has_pullbacks C] : has_pushouts Cᵒᵖ :=
+begin
+  haveI : has_limits_of_shape walking_span.{v}ᵒᵖ C :=
+    has_limits_of_shape_of_equivalence walking_span_op_equiv.symm,
+  apply has_colimits_of_shape_op_of_has_limits_of_shape,
 end
 
 end limits

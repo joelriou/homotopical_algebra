@@ -15,9 +15,11 @@ open category_theory
 open category_theory.category
 open category_theory.limits
 
+universes v u v₁ u₁ v₂ u₂
+
 namespace category_theory
 
-variables {C : Type*} [category C]
+variables {C : Type u} [category.{v} C]
 
 namespace arrow
 
@@ -105,7 +107,8 @@ variable (C)
 @[derive category]
 def square := arrow (arrow C)
 
-def arrow.map_arrow_functor (D₁ D₂ : Type*) [category D₁] [category D₂] :
+@[simps]
+def arrow.map_arrow_functor (D₁ : Type u₁) (D₂ : Type u₂) [category.{v₁} D₁] [category.{v₂} D₂] :
   (D₁ ⥤ D₂) ⥤ (arrow D₁ ⥤ arrow D₂) :=
 { obj := functor.map_arrow,
   map := λ F G φ,
@@ -121,8 +124,8 @@ def arrow.map_arrow_functor (D₁ D₂ : Type*) [category D₁] [category D₂] 
       erw φ.naturality f.right,
     end, },
   map_id' := λ X, rfl,
-  map_comp' := λ X Y Z f g, rfl, } 
-
+  map_comp' := λ X Y Z f g, rfl, }
+  
 lemma arrow.map_arrow_id (D : Type*) [category D] :
   (𝟭 D).map_arrow = 𝟭 _ :=
 begin
@@ -137,31 +140,27 @@ begin
 end
 
 @[simps]
-def arrow.map_equivalence {D₁ D₂ : Type*} [category D₁] [category D₂] (e : D₁ ≌ D₂) : arrow D₁ ≌ arrow D₂ :=
-{ functor := e.functor.map_arrow,
-  inverse := e.inverse.map_arrow,
-  unit_iso := begin
-    sorry,
-    --convert (arrow.map_arrow_functor _ _ ).map_iso e.unit_iso,
-    --exact (arrow.map_arrow_id _).symm,
-  end,
-  counit_iso := begin
-    sorry,
-    --convert (arrow.map_arrow_functor _ _ ).map_iso e.counit_iso,
-    --exact (arrow.map_arrow_id _).symm,
-  end,
-  functor_unit_iso_comp' := λ X, begin
-    sorry,
-  end, }
+def arrow.map_arrow_iso {D₁ : Type u₁} {D₂ : Type u₂} [category.{v₁} D₁] [category.{v₂} D₂]
+  {F G : D₁ ⥤ D₂} (e : F ≅ G) : F.map_arrow ≅ G.map_arrow :=
+(arrow.map_arrow_functor D₁ D₂).map_iso e
 
 @[simps]
-def equivalence_square_op :
-  square C ≌ (square Cᵒᵖ)ᵒᵖ :=
-begin
-  apply (equivalence_arrow_op (arrow C)).trans (equivalence.op _),
-  exact arrow.map_equivalence
-    ((equivalence_arrow_op C).op.trans (op_op_equivalence _)),
-end
+def arrow.map_equivalence {D₁ : Type u₁} {D₂ : Type u₂} [category D₁] [category D₂] (e : D₁ ≌ D₂) : arrow D₁ ≌ arrow D₂ :=
+{ functor := e.functor.map_arrow,
+  inverse := e.inverse.map_arrow,
+  unit_iso := (eq_to_iso (arrow.map_arrow_id D₁).symm).trans (arrow.map_arrow_iso e.unit_iso),
+  counit_iso := (arrow.map_arrow_iso e.counit_iso).trans (eq_to_iso (arrow.map_arrow_id D₂)),
+  functor_unit_iso_comp' := λ X, begin
+    ext,
+    { simpa only [iso.trans_hom, eq_to_iso.hom, nat_trans.comp_app, eq_to_hom_app,
+        functor.map_comp, eq_to_hom_map, eq_to_hom_refl, id_comp, comp_id, comma.comp_left,
+        functor.map_arrow_map_left, arrow.map_arrow_iso_hom_app_left]
+        using e.functor_unit_iso_comp X.left, },
+    { simpa only [iso.trans_hom, eq_to_iso.hom, nat_trans.comp_app, eq_to_hom_app,
+        functor.map_comp, eq_to_hom_map, eq_to_hom_refl, id_comp, comp_id, comma.comp_right,
+        functor.map_arrow_map_right, arrow.map_arrow_iso_hom_app_right]
+        using e.functor_unit_iso_comp X.right,}
+  end, }
 
 variables {C}
 
@@ -205,9 +204,15 @@ def hom_vert (Sq : square C) : Sq.top ⟶ Sq.bottom :=
   w' := Sq.hom.w'.symm }
 
 @[simp, protected]
-def op (f : square C) : square Cᵒᵖ := ((equivalence_square_op C).functor.obj f).unop
+def op (f : square C) : square Cᵒᵖ :=
+begin
+  refine (functor.map_arrow _).obj f.op,
+  exact (equivalence_arrow_op C).op.functor ⋙ op_op (arrow Cᵒᵖ),
+end
+
 @[simp, protected]
-def unop (f : square Cᵒᵖ) : square C := (equivalence_square_op C).inverse.obj (opposite.op f)
+def unop (f : square Cᵒᵖ) : square C :=
+(functor.map_arrow (functor.map_arrow (op_op C))).obj f.op
 
 lemma unop_op (f : square C) : f.op.unop = f := by tidy
 lemma op_unop (f : square Cᵒᵖ) : f.unop.op = f := by tidy
@@ -353,7 +358,7 @@ namespace square
 
 namespace is_cocartesian
 
-def op {Sq : square C} (hSq : Sq.is_cocartesian) : Sq.op.is_cartesian := sorry
+/-def op {Sq : square C} (hSq : Sq.is_cocartesian) : Sq.op.is_cartesian := sorry
 
 def unop {Sq : square Cᵒᵖ} (hSq : Sq.is_cocartesian) : Sq.unop.is_cartesian :=
 begin
@@ -361,7 +366,7 @@ begin
   erw [show Sq.unop.cone = Sq.unop.cone.op.unop, by refl],
   apply is_limit_cocone_unop,
   sorry
-end
+end-/
 
 @[protected]
 def flip {Sq : square C} (hSq : Sq.is_cocartesian) : Sq.flip.is_cocartesian :=
@@ -477,8 +482,8 @@ def has_pullback {Sq : square C} (hSq : Sq.is_cartesian) : has_pullback Sq.right
   { cone := Sq.cone,
     is_limit := hSq, }⟩
 
-def op {Sq : square C} (hSq : Sq.is_cartesian) : Sq.op.is_cocartesian := sorry
-def unop {Sq : square Cᵒᵖ} (hSq : Sq.is_cartesian) : Sq.unop.is_cocartesian := sorry
+--def op {Sq : square C} (hSq : Sq.is_cartesian) : Sq.op.is_cocartesian := sorry
+--def unop {Sq : square Cᵒᵖ} (hSq : Sq.is_cartesian) : Sq.unop.is_cocartesian := sorry
 
 end is_cartesian
 
