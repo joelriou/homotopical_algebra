@@ -99,9 +99,19 @@ begin
 end
 
 lemma obj_d_eq (K : homological_complex V (c.pull f hf)) (i j : ι) (i' j' : ι') (hi : i = f i') (hj : j = f j') :
-  obj_d c f hf K i j = eq_to_hom sorry ≫ K.d i' j' ≫ eq_to_hom sorry :=
+  obj_d c f hf K i j = eq_to_hom (obj_X_eq_X _ _ _ _ _ _ hi) ≫ K.d i' j' ≫
+    eq_to_hom (obj_X_eq_X _ _ _ _ _ _ hj).symm :=
 begin
-  sorry
+  dsimp only [obj_d],
+  split_ifs,
+  { subst hi,
+    subst hj,
+    have h₁ := hf h.1.some_spec.symm,
+    have h₂ := hf h.2.some_spec.symm,
+    congr', },
+  { exfalso,
+    apply h,
+    exact ⟨⟨i', hi⟩, ⟨j', hj⟩⟩, },
 end
 
 @[simp]
@@ -115,6 +125,7 @@ begin
 end
 
 end inclusion
+#exit
 
 def inclusion :
   homological_complex V (c.pull f hf) ⥤ homological_complex V c :=
@@ -134,7 +145,6 @@ def inclusion :
   map := sorry,
   map_id' := sorry,
   map_comp' := sorry, }
-#exit
 
 
 end complex_shape
