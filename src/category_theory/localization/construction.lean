@@ -44,16 +44,16 @@ lemma congr_inv_of_congr_hom {D₁ D₂ : Type*} [category D₁] [category D₂]
   {X Y : D₁} (e : X ≅ Y) (hX : F.obj X = G.obj X) (hY : F.obj Y = G.obj Y)
   (h₂ : F.map e.hom = eq_to_hom (by rw hX) ≫ G.map e.hom ≫ eq_to_hom (by rw hY)) :
 F.map e.inv = eq_to_hom (by rw hY) ≫ G.map e.inv ≫ eq_to_hom (by rw hX) :=
-by simp only [← is_iso.iso.inv_hom e, functor.map_inv, h₂, is_iso.inv_comp, inv_eq_to_hom, assoc]
+by simp only [← is_iso.iso.inv_hom e, functor.map_inv, h₂, is_iso.inv_comp, inv_eq_to_hom, category.assoc]
 
 lemma congr_map {D D' : Type*} [category D] [category D'] (F : D ⥤ D')
 {X Y : D} {f g : X ⟶ Y} (h : f = g) : F.map f = F.map g :=
 by { subst h, }
 
-lemma assoc {C D E F : Type*} [category C] [category D]
+/-lemma assoc {C D E F : Type*} [category C] [category D]
   [category E] [category F] (φ : C ⥤ D)
   (φ' : D ⥤ E) (φ'' : E ⥤ F) : (φ ⋙ φ') ⋙ φ'' = φ ⋙ (φ' ⋙ φ'') :=
-by refl
+by refl-/
 
 end functor
 
