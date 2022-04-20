@@ -398,7 +398,17 @@ end
 
 def unop {Sq : square Cᵒᵖ} (hSq : Sq.is_cocartesian) : Sq.unop.is_cartesian :=
 begin
-  sorry
+  suffices eq : Sq.flip.cocone.unop = Sq.unop.cone,
+  { have h := pushout_cocone.unop_is_colimit _ hSq.flip,
+    rw eq at h,
+    exact h, },
+  ext,
+  { dsimp [square.flip, functor.map_arrow, square.cone, square.cocone,
+      pushout_cocone.unop],
+    erw [id_comp, eq_to_hom_app],
+    rcases x with (_|_|_);
+    { erw comp_id, refl, }, },
+  { refl, },
 end
 
 @[protected]
@@ -530,7 +540,20 @@ begin
   { refl, },
 end
 
---def unop {Sq : square Cᵒᵖ} (hSq : Sq.is_cartesian) : Sq.unop.is_cocartesian := sorry
+def unop {Sq : square Cᵒᵖ} (hSq : Sq.is_cartesian) : Sq.unop.is_cocartesian :=
+begin
+  suffices eq : Sq.flip.cone.unop = Sq.unop.cocone,
+  { have h := pullback_cone.unop_is_limit _ hSq.flip,
+    rw eq at h,
+    exact h, },
+  ext,
+  { dsimp [square.flip, functor.map_arrow, square.cone, square.cocone,
+      pullback_cone.unop],
+    erw [comp_id, eq_to_hom_app],
+    rcases x with (_|_|_);
+    { erw id_comp, refl, }, },
+  { refl, },
+end
 
 end is_cartesian
 

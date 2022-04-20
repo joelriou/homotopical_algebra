@@ -143,15 +143,15 @@ end
 
 namespace pushout_cocone
 
-def unop {X Y Z : C} {f : X ⟶ Z} {g : Y ⟶ Z} (c : pushout_cocone f.op g.op) :
-  pullback_cone f g :=
+def unop {X Y Z : Cᵒᵖ} {f : X ⟶ Y} {g : X ⟶ Z} (c : pushout_cocone f g) :
+  pullback_cone f.unop g.unop :=
 begin
   apply cocone.unop,
-  apply (cocones.precompose (eq_to_iso (op_cospan f g)).hom).obj,
-  exact cocone.whisker walking_cospan_op_equiv.functor c,
+  refine (cocones.precompose (eq_to_iso (op_cospan f.unop g.unop)).hom).obj _,
+  exact cocone.whisker walking_cospan_op_equiv.functor c,  
 end
 
-def unop_is_colimit {X Y Z : C} {f : X ⟶ Z} {g : Y ⟶ Z} (c : pushout_cocone f.op g.op)
+def unop_is_colimit {X Y Z : Cᵒᵖ} {f : X ⟶ Y} {g : X ⟶ Z} (c : pushout_cocone f g)
   (h : is_colimit c) : is_limit c.unop :=
 begin
   apply is_limit_cocone_unop,
@@ -179,15 +179,15 @@ end pushout_cocone
 
 namespace pullback_cone
 
-def unop {X Y Z : C} {f : X ⟶ Y} {g : X ⟶ Z} (c : pullback_cone f.op g.op) :
-  pushout_cocone f g :=
+def unop {X Y Z : Cᵒᵖ} {f : X ⟶ Z} {g : Y ⟶ Z} (c : pullback_cone f g) :
+  pushout_cocone f.unop g.unop :=
 begin
-  apply cone.unop,
-  apply (cones.postcompose (eq_to_iso (op_span f g)).symm.hom).obj,
-  exact cone.whisker walking_span_op_equiv.functor c,
+  apply cone.unop, 
+  apply (cones.postcompose (eq_to_iso (op_span f.unop g.unop)).symm.hom ).obj,
+  exact cone.whisker walking_span_op_equiv.functor c,  
 end
 
-def unop_is_limit {X Y Z : C} {f : X ⟶ Y} {g : X ⟶ Z} (c : pullback_cone f.op g.op)
+def unop_is_limit {X Y Z : Cᵒᵖ} {f : X ⟶ Z} {g : Y ⟶ Z} (c : pullback_cone f g)
   (h : is_limit c) : is_colimit c.unop :=
 begin
   apply is_colimit_cone_unop,
@@ -213,11 +213,12 @@ end
 
 end pullback_cone
 
-lemma unop_has_pushout {X Y Z : C} (f : X ⟶ Z) (g : Y ⟶ Z)
-  [h : has_pushout f.op g.op] : has_pullback f g :=
+lemma unop_has_pushout {X Y Z : Cᵒᵖ} (f : X ⟶ Y) (g : X ⟶ Z)
+  [h : has_pushout f g] : has_pullback f.unop g.unop :=
 begin
+  haveI : has_pushout f.unop.op g.unop.op := h,
   refine ⟨nonempty.intro ⟨_,
-    pushout_cocone.unop_is_colimit (colimit.cocone (span f.op g.op)) _⟩⟩,
+    pushout_cocone.unop_is_colimit (colimit.cocone (span f g)) _⟩⟩,
   apply colimit.is_colimit,
 end
 
@@ -229,11 +230,11 @@ begin
   apply colimit.is_colimit,
 end
 
-lemma unop_has_pullback {X Y Z : C} (f : X ⟶ Y) (g : X ⟶ Z)
-  [h : has_pullback f.op g.op] : has_pushout f g :=
+lemma unop_has_pullback {X Y Z : Cᵒᵖ} (f : X ⟶ Z) (g : Y ⟶ Z)
+  [h : has_pullback f g] : has_pushout f.unop g.unop :=
 begin
   refine ⟨nonempty.intro ⟨_,
-    pullback_cone.unop_is_limit (limit.cone (cospan f.op g.op)) _⟩⟩,
+    pullback_cone.unop_is_limit (limit.cone (cospan f g)) _⟩⟩,
   apply limit.is_limit,
 end
 
