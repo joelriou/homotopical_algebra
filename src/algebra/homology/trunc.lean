@@ -1,4 +1,5 @@
 import algebra.homology.homological_complex
+import category_theory.limits.shapes.zero
 
 noncomputable theory
 open_locale classical zero_object
@@ -77,14 +78,13 @@ begin
     exact hij, },
 end
 
-def obj_X_eq_zero (K : homological_complex V (c.pull f hf)) (i : ι) (hi : ∀ (j : ι'), i ≠ f j) :
+def obj_X_eq_zero (K : homological_complex V (c.pull f hf)) (i : ι) (hi : ¬∃ (i' : ι'), i = f i') :
   obj_X c f hf K i = 0 :=
 begin
   dsimp,
   split_ifs,
   { exfalso,
-    cases h with j hj,
-    exact hi j hj, },
+    exact hi h,},
   { refl, },
 end
 
@@ -114,6 +114,51 @@ begin
     exact ⟨⟨i', hi⟩, ⟨j', hj⟩⟩, },
 end
 
+lemma obj_d_eq_zero (K : homological_complex V (c.pull f hf)) (i j : ι)
+  (hi : ¬∃ (i' : ι'), i = f i') : obj_d c f hf K i j = 0 :=
+begin
+  dsimp only [obj_d],
+  split_ifs,
+  { exfalso,
+    exact hi h.1, },
+  { refl, }
+end
+
+lemma obj_d_eq_zero' (K : homological_complex V (c.pull f hf)) (i j : ι)
+  (hj : ¬∃ (j' : ι'), j = f j') : obj_d c f hf K i j = 0 :=
+begin
+  dsimp only [obj_d],
+  split_ifs,
+  { exfalso,
+    exact hj h.2, },
+  { refl, }
+end
+
+def obj (K : homological_complex V (c.pull f hf)) : homological_complex V c :=
+{ X := obj_X c f hf K,
+  d := obj_d c f hf K,
+  shape' := λ i j hij, begin
+    simp only [obj_d],
+    split_ifs,
+    { rw [h.1.some_spec] at hij,
+      conv at hij { congr, congr, skip, skip, rw h.2.some_spec, },
+      rw [K.shape h.1.some h.2.some hij, zero_comp, comp_zero], },
+    { refl, },
+  end,
+  d_comp_d' := λ i j k hij hjk, begin
+    by_cases hi : ∃ (i' : ι'), i = f i',
+    { by_cases hj : ∃ (j' : ι'), j = f j',
+      { by_cases hk : ∃ (k' : ι'), k = f k',
+        { cases hi with i' hi',
+          cases hj with j' hj',
+          cases hk with k' hk',
+          rw [obj_d_eq c f hf K i j i' j' hi' hj', obj_d_eq c f hf K j k j' k' hj' hk'],
+          simp only [assoc, eq_to_hom_trans_assoc, eq_to_hom_refl, id_comp, homological_complex.d_comp_d_assoc, zero_comp, comp_zero], },
+        { rw [obj_d_eq_zero' c f hf K j k hk, comp_zero], }, },
+      { rw [obj_d_eq_zero' c f hf K i j hj, zero_comp], }, },
+    { rw [obj_d_eq_zero c f hf K i j hi, zero_comp], },
+  end, }
+
 @[simp]
 def map_f {K L : homological_complex V (c.pull f hf)} (g : K ⟶ L) (i : ι) :
   obj_X c f hf K i ⟶ obj_X c f hf L i :=
@@ -124,28 +169,82 @@ begin
   { exact 0, },
 end
 
+@[simp]
+lemma map_f_eq {K L : homological_complex V (c.pull f hf)} (g : K ⟶ L) (i : ι) (i' : ι') (hi : i = f i') :
+  map_f c f hf g i = eq_to_hom (obj_X_eq_X c f hf K i i' hi) ≫ g.f i' ≫
+      (eq_to_hom (obj_X_eq_X c f hf L i i' hi).symm) :=
+begin
+  dsimp only [map_f],
+  split_ifs,
+  { have eq : h.some = i',
+    { apply hf,
+      rw ← hi,
+      exact h.some_spec.symm, },
+    congr', },
+  { exfalso,
+    apply h,
+    exact ⟨i', hi⟩, },
+end
+
+@[simp]
+lemma map_f_eq_zero {K L : homological_complex V (c.pull f hf)} (g : K ⟶ L) (i : ι) (hi : ¬∃ (i' : ι'), i = f i') :
+  map_f c f hf g i = 0 :=
+begin
+  dsimp only [map_f],
+  split_ifs,
+  { exfalso,
+    exact hi h, },
+  { refl, },
+end
+
+@[simps]
+def map {K L : homological_complex V (c.pull f hf)} (g : K ⟶ L) : obj c f hf K ⟶ obj c f hf L :=
+{ f := map_f c f hf g,
+  comm' := λ i j hij, begin
+    by_cases hi : ∃ (i' : ι'), i = f i',
+    { by_cases hj : ∃ (j' : ι'), j = f j',
+      { cases hi with i' hi',
+        cases hj with j' hj',
+        dsimp only [obj],
+        rw [map_f_eq c f hf g i i' hi', map_f_eq c f hf g j j' hj',
+          obj_d_eq c f hf K i j i' j' hi' hj', obj_d_eq c f hf L i j i' j' hi' hj'],
+        simp only [assoc, eq_to_hom_trans_assoc, eq_to_hom_refl, id_comp, homological_complex.hom.comm_assoc], },
+      { apply is_zero.eq_of_tgt,
+        dsimp only [obj],
+        rw obj_X_eq_zero c f hf L j hj,
+        apply is_zero_zero, }, },
+    { apply is_zero.eq_of_src,
+      dsimp only [obj],
+      rw obj_X_eq_zero c f hf K i hi,
+      apply is_zero_zero, },  
+  end }
+
 end inclusion
-#exit
 
 def inclusion :
   homological_complex V (c.pull f hf) ⥤ homological_complex V c :=
-{ obj := λ K,
-  { X := inclusion.obj_X c f hf K,
-    d := inclusion.obj_d c f hf K,
-    shape' := λ i j hij, begin
-      simp only [inclusion.obj_d],
-      split_ifs,
-      { rw [h.1.some_spec] at hij,
-        conv at hij { congr, congr, skip, skip, rw h.2.some_spec, },
-        rw [K.shape h.1.some h.2.some hij, zero_comp, comp_zero], },
-      { refl, },
-    end,
-    d_comp_d' := sorry, --λ i j k hij hjk, begin
-  },
-  map := sorry,
-  map_id' := sorry,
-  map_comp' := sorry, }
-
+{ obj := inclusion.obj c f hf,
+  map := λ K L, inclusion.map c f hf,
+  map_id' := λ K, begin
+    ext i,
+    dsimp only [inclusion.map],
+    by_cases hi : ∃ (i' : ι'), i = f i',
+    { cases hi with i' hi',
+      simpa only [inclusion.map_f_eq c f hf _ i i' hi', homological_complex.id_f, id_comp, eq_to_hom_trans, eq_to_hom_refl], },
+    { apply is_zero.eq_of_src,
+      rw inclusion.obj_X_eq_zero c f hf K i hi,
+      apply is_zero_zero, },   
+  end,
+  map_comp' := λ K L M g₁ g₂, begin
+    ext i,
+    simp only [homological_complex.comp_f],
+    dsimp only [inclusion.map],
+    by_cases hi : ∃ (i' : ι'), i = f i',
+    { cases hi with i' hi',
+      simp only [inclusion.map_f_eq c f hf _ i i' hi',
+        homological_complex.comp_f, assoc, eq_to_hom_trans_assoc, eq_to_hom_refl, id_comp], },
+    { simp only [inclusion.map_f_eq_zero c f hf _ i hi, zero_comp], },
+  end, }
 
 end complex_shape
 
