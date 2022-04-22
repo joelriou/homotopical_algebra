@@ -29,10 +29,12 @@ def pull_hom {ι' : Type*} (f : ι' → ι) (hf : function.injective f) : hom (c
 { f := f,
   hf := λ i j h, h, }
 
-namespace hom
+end complex_shape
+
+namespace homological_complex
 
 def pull_homological_complex {ι₁ ι₂ : Type*} {c₁ : complex_shape ι₁} {c₂ : complex_shape ι₂}
-  (φ : hom c₁ c₂) : homological_complex V c₂ ⥤ homological_complex V c₁ :=
+  (φ : complex_shape.hom c₁ c₂) : homological_complex V c₂ ⥤ homological_complex V c₁ :=
 { obj := λ K,
   { X := λ i, K.X (φ.f i),
     d := λ i j, K.d (φ.f i) (φ.f j),
@@ -47,8 +49,6 @@ def pull_homological_complex {ι₁ ι₂ : Type*} {c₁ : complex_shape ι₁} 
     comm' := λ i j hij, f.comm _ _, },
   map_id' := λ K, rfl,
   map_comp' := λ K L M f g, rfl, }
-
-end hom
 
 variables {ι' : Type*} (f : ι' → ι) (hf : function.injective f)
 
@@ -212,11 +212,11 @@ def map {K L : homological_complex V (c.pull f hf)} (g : K ⟶ L) : obj c f hf K
       { apply is_zero.eq_of_tgt,
         dsimp only [obj],
         rw obj_X_eq_zero c f hf L j hj,
-        apply is_zero_zero, }, },
+        apply limits.is_zero_zero, }, },
     { apply is_zero.eq_of_src,
       dsimp only [obj],
       rw obj_X_eq_zero c f hf K i hi,
-      apply is_zero_zero, },  
+      apply limits.is_zero_zero, },  
   end }
 
 end inclusion
@@ -233,7 +233,7 @@ def inclusion :
       simpa only [inclusion.map_f_eq c f hf _ i i' hi', homological_complex.id_f, id_comp, eq_to_hom_trans, eq_to_hom_refl], },
     { apply is_zero.eq_of_src,
       rw inclusion.obj_X_eq_zero c f hf K i hi,
-      apply is_zero_zero, },   
+      apply limits.is_zero_zero, },   
   end,
   map_comp' := λ K L M g₁ g₂, begin
     ext i,
@@ -246,139 +246,13 @@ def inclusion :
     { simp only [inclusion.map_f_eq_zero c f hf _ i hi, zero_comp], },
   end, }
 
-end complex_shape
+end homological_complex
 
-namespace homological_complex
+--def pull_homological_complex {ι₁ ι₂ : Type*} {c₁ : complex_shape ι₁} {c₂ : complex_shape ι₂}
+--  (φ : complex_shape.hom c₁ c₂) : homological_complex V c₂ ⥤ homological_complex V c₁ :=
 
-variables (V) (c)
-
-namespace trunc
 
 /-
-@[simps]
-def functor (ι' : set ι) : homological_complex V c ⥤ homological_complex V (c.trunc ι') :=
-{ obj := λ K,
-  { X := λ i, K.X i.1,
-    d := λ i j, K.d i.1 j.1,
-    shape' := λ i j hij, K.shape i.1 j.1 hij,
-    d_comp_d' := λ i j k hij hjk, K.d_comp_d i.1 j.1 k.1, },
-  map := λ K L f, 
-  { f := λ i, f.f i.1,
-    comm' := λ i j hij, f.comm i j, },
-  map_id' := λ K, rfl,
-  map_comp' := λ K L M f g, rfl, }-/
-
-/-namespace inclusion
-
-@[simp]
-def obj_X (ι' : set ι) (K : homological_complex V (c.trunc ι')) (i : ι) : V :=
-begin
-  by_cases hi : i ∈ ι',
-  { exact K.X ⟨i, hi⟩, },
-  { exact 0, },
-end
-
-def obj_X_eq_X (ι' : set ι) (K : homological_complex V (c.trunc ι')) (i : ι) (hi : i ∈ ι') :
-  obj_X V c ι' K i = K.X ⟨i, hi⟩ :=
-by { dsimp, split_ifs, refl, }
-
-def obj_X_eq_zero (ι' : set ι) (K : homological_complex V (c.trunc ι')) (i : ι) (hi : ¬i ∈ ι') :
-  obj_X V c ι' K i = 0 :=
-by { dsimp, split_ifs, refl, }
-
-@[simp]
-def obj_d (ι' : set ι) (K : homological_complex V (c.trunc ι')) (i j : ι) :
-  obj_X V c ι' K i ⟶ obj_X V c ι' K j :=
-begin
-  by_cases h : (i ∈ ι') ∧ (j ∈ ι'),
-  { exact eq_to_hom (obj_X_eq_X V c ι' K i h.1) ≫ K.d ⟨i, h.1⟩ ⟨j, h.2⟩ ≫ eq_to_hom (obj_X_eq_X V c ι' K j h.2).symm, },
-  { exact 0, },
-end
-
-def obj_d_eq_d (ι' : set ι) (K : homological_complex V (c.trunc ι')) (i j : ι) (hi : i ∈ ι') (hj : j ∈ ι') :
-  obj_d V c ι' K i j = eq_to_hom (obj_X_eq_X V c ι' K i hi) ≫ K.d ⟨i, hi⟩ ⟨j, hj⟩ ≫ eq_to_hom (obj_X_eq_X V c ι' K j hj).symm :=
-begin
-  simp only [obj_d],
-  split_ifs,
-  { refl, },
-  { exfalso,
-    exact h ⟨hi, hj⟩,}
-end
-
-def obj_d_eq_zero (ι' : set ι) (K : homological_complex V (c.trunc ι')) (i j : ι) (hij : ¬(i ∈ ι' ∧ j ∈ ι')) :
-  obj_d V c ι' K i j = 0 :=
-by { simp only [obj_d], split_ifs, refl, }
-
-@[simp]
-def map_f (ι' : set ι) {K L : homological_complex V (c.trunc ι')} (f : K ⟶ L) (i : ι):
-  obj_X V c ι' K i ⟶ obj_X V c ι' L i :=
-begin
-  by_cases i ∈ ι',
-  { exact eq_to_hom (inclusion.obj_X_eq_X V c ι' K i h) ≫ f.f ⟨i, h⟩ ≫
-      eq_to_hom (inclusion.obj_X_eq_X V c ι' L i h).symm, },
-  { exact 0, },
-end
-
-lemma map_comm (ι' : set ι) {K L : homological_complex V (c.trunc ι')} (f : K ⟶ L) (i j : ι) (hij : c.rel i j) :
-inclusion.map_f V c ι' f i ≫ obj_d V c ι' L i j = obj_d V c ι' K i j ≫ inclusion.map_f V c ι' f j :=
-begin
-  simp only [inclusion.obj_d, inclusion.map_f],
-  by_cases hi : i ∈ ι',
-  by_cases hj : j ∈ ι',
-  { have hij : i ∈ ι' ∧ j ∈ ι' := ⟨hi, hj⟩,
-    split_ifs,
-    simp only [assoc, eq_to_hom_trans_assoc, eq_to_hom_refl, id_comp, hom.comm_assoc], },
-  { have hij : ¬(i ∈ ι' ∧ j ∈ ι'),
-    { intro h,
-      exact hj h.2, },
-    split_ifs,
-    simp only [comp_zero], },
-  { have hij : ¬(i ∈ ι' ∧ j ∈ ι'),
-    { intro h,
-      exact hi h.1, },
-    split_ifs,
-    repeat { erw zero_comp, }, },
-end
-
-end inclusion
-
-@[simps]
-def inclusion (ι' : set ι) : homological_complex V (c.trunc ι') ⥤ homological_complex V c :=
-{ obj := λ K,
-  { X := inclusion.obj_X V c ι' K,
-    d := inclusion.obj_d V c ι' K,
-    shape' := λ i j hij, begin
-      simp only [inclusion.obj_d],
-      split_ifs,
-      { rw [K.shape ⟨i, h.1⟩ ⟨j, h.2⟩ hij, zero_comp, comp_zero], },
-      { refl, },
-    end,
-    d_comp_d' := λ i j k hij hjk, begin
-      simp only [inclusion.obj_d],
-      split_ifs,
-      { simp only [assoc, eq_to_hom_trans_assoc, eq_to_hom_refl, id_comp,
-          d_comp_d_assoc, zero_comp, comp_zero], },
-      all_goals { simp only [comp_zero, zero_comp], },
-    end, },
-  map := λ K L f,
-  { f := λ i, inclusion.map_f V c ι' f i,
-    comm' := λ i j hij, inclusion.map_comm _ _ _ _ _ _ hij, },
-  map_id' := λ K, begin
-    ext i,
-    dsimp,
-    split_ifs,
-    { simp only [id_comp, eq_to_hom_trans, eq_to_hom_refl], },
-    { apply is_terminal.hom_ext,
-      split_ifs,
-      exact has_zero_object.zero_is_terminal, },
-  end,
-  map_comp' := λ K L M f g, begin
-    ext i,
-    dsimp,
-    split_ifs,
-    { simp only [assoc, eq_to_hom_trans_assoc, eq_to_hom_refl, id_comp], },
-    { rw zero_comp, },
-  end, }
 
 lemma inclusion_comp_trunc (ι' : set ι) : inclusion V c ι' ⋙ functor V c ι' = 𝟭 _ :=
 begin
