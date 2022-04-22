@@ -1,5 +1,5 @@
 import algebra.homology.homological_complex
-import category_theory.limits.shapes.zero
+import category_theory.limits.shapes.zero_objects
 
 noncomputable theory
 open_locale classical zero_object
