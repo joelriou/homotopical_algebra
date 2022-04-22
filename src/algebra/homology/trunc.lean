@@ -25,6 +25,7 @@ structure hom {ι₁ ι₂ : Type*} (c₁ : complex_shape ι₁) (c₂ : complex
 (f : ι₁ → ι₂)
 (hf : ∀ (i j : ι₁), c₂.rel (f i) (f j) → c₁.rel i j)
 
+@[simps]
 def pull_hom {ι' : Type*} (f : ι' → ι) (hf : function.injective f) : hom (c.pull f hf) c :=
 { f := f,
   hf := λ i j h, h, }
@@ -88,7 +89,6 @@ begin
   { refl, },
 end
 
-@[simp]
 def obj_d (K : homological_complex V (c.pull f hf)) (i j : ι) :
   obj_X c f hf K i ⟶ obj_X c f hf K j :=
 begin
@@ -134,6 +134,7 @@ begin
   { refl, }
 end
 
+@[simps]
 def obj (K : homological_complex V (c.pull f hf)) : homological_complex V c :=
 { X := obj_X c f hf K,
   d := obj_d c f hf K,
@@ -221,6 +222,7 @@ def map {K L : homological_complex V (c.pull f hf)} (g : K ⟶ L) : obj c f hf K
 
 end inclusion
 
+@[simps]
 def inclusion :
   homological_complex V (c.pull f hf) ⥤ homological_complex V c :=
 { obj := inclusion.obj c f hf,
@@ -246,40 +248,32 @@ def inclusion :
     { simp only [inclusion.map_f_eq_zero c f hf _ i hi, zero_comp], },
   end, }
 
-end homological_complex
+@[simps]
+def trunc :
+  homological_complex V c ⥤ homological_complex V (c.pull f hf) :=
+pull_homological_complex (complex_shape.pull_hom c f hf)
 
---def pull_homological_complex {ι₁ ι₂ : Type*} {c₁ : complex_shape ι₁} {c₂ : complex_shape ι₂}
---  (φ : complex_shape.hom c₁ c₂) : homological_complex V c₂ ⥤ homological_complex V c₁ :=
-
-
-/-
-
-lemma inclusion_comp_trunc (ι' : set ι) : inclusion V c ι' ⋙ functor V c ι' = 𝟭 _ :=
+def inclusion_comp_trunc :
+  inclusion c f hf ⋙ trunc c f hf = 𝟭 (homological_complex V _) :=
 begin
   apply category_theory.functor.ext,
-  { intros X Y f,
-    ext i,
-    simp only [subtype.val_eq_coe, subtype.coe_prop, inclusion.map_f, functor.comp_map, functor_map_f, inclusion_map_f, dif_pos,
-  functor.id_map, comp_f, eq_to_hom_f],
-    have h : (⟨i.1, i.2⟩ : ι') = i,
-    { simp only [subtype.val_eq_coe, subtype.coe_eta], },
-    congr', },
+  { intros K L φ,
+    ext i',
+    simp only [functor.comp_map, inclusion_map],
+    dsimp only [inclusion.map, trunc, pull_homological_complex],
+    erw inclusion.map_f_eq c f hf φ _ i' (by refl),
+    simpa only [comp_f, eq_to_hom_f], },
   { intro K,
     apply homological_complex.ext,
-    { intros i j hij,
+    { intros i' j' hij',
       dsimp,
-      have h : i.1 ∈ ι' ∧ j.1 ∈ ι' := ⟨i.2, j.2⟩,
-      split_ifs with h',
-      { rcases i with ⟨i, hi⟩,
-        rcases j with ⟨j, hj⟩,
-        simpa only [assoc, eq_to_hom_trans, eq_to_hom_refl, comp_id], },
-      { exfalso,
-        exact h' i.2, }, },
-    { ext i,
-      simp only [inclusion.obj_X, functor.comp_obj, functor_obj_X, subtype.val_eq_coe,
-        inclusion_obj_X, subtype.coe_prop, subtype.coe_eta, dite_eq_ite, if_true,
-          functor.id_obj], }, },
-end-/
+      rw inclusion.obj_d_eq c f hf K (f i') (f j') i' j' rfl rfl,
+      simpa only [assoc, eq_to_hom_trans, eq_to_hom_refl, comp_id], },
+    { ext i',
+      exact inclusion.obj_X_eq_X c f hf K (f i') i' rfl, }, },
+end
+
+end homological_complex
 
 structure rebuild_preorder (c : complex_shape ι) (J : Type*) [preorder J] :=
 (S : J → set ι) (hS₀ : monotone S)
@@ -291,7 +285,4 @@ structure rebuild_preorder (c : complex_shape ι) (J : Type*) [preorder J] :=
 (K : Π (j : J), homological_complex V (c.trunc (P.S j)))
 (hK : ∀ (j₁ j₂ : J) (hj₁j₂ : j₁ ≤ j₂), true)-/
 
-end trunc
-
-end homological_complex
 
