@@ -31,6 +31,7 @@ colim_map (under.nat_trans F)
 def under.arrow₂ {X : C} (F : J ⥤ under X) [has_colimit ((functor.const J).obj X)] :
   colimit ((functor.const J).obj X) ⟶ X := colimit.desc _ (cocone.mk X (𝟙 _))
 
+@[simps]
 def under.cocone {X : C} (F : J ⥤ under X) [has_colimit (F ⋙ under.forget _)]
   [has_colimit ((functor.const J).obj X)] [has_pushout (under.arrow₁ F) (under.arrow₂ F)] : cocone F :=
 begin
@@ -52,8 +53,39 @@ begin
     end },
 end
 
+def under.cocone_is_colimit {X : C} (F : J ⥤ under X) [has_colimit (F ⋙ under.forget _)]
+  [has_colimit ((functor.const J).obj X)] [has_pushout (under.arrow₁ F) (under.arrow₂ F)] :
+  is_colimit (under.cocone F) :=
+{ desc := λ s, begin
+    refine under.hom_mk (pushout.desc (colimit.desc _ (cocone.mk s.X.right (s.ι ◫ (𝟙 (under.forget X))))) s.X.hom _) _,
+    { ext j,
+      simp only [under.arrow₁, under.arrow₂, under.nat_trans, ι_colim_map_assoc,
+        nat_trans.hcomp_app, comma.nat_trans_app, nat_trans.id_app, functor.comp_map, 
+        comma.snd_map, under.id_right, functor.id_map, colimit.ι_desc, category.id_comp,
+        nat_trans.hcomp_id_app, under.forget_map, category.assoc, colimit.ι_desc_assoc],
+      erw [category.id_comp, under.w],
+      refl, },
+    { dsimp,
+      simp only [pushout.inr_desc], },
+  end,
+  fac' := λ s j, begin
+    ext,
+    simp only [colimit.ι_desc, nat_trans.hcomp_id_app, under.forget_map, category.assoc,
+      colimit.ι_desc_assoc, category.id_comp, under.w, pushout.inr_desc, under.cocone_ι_app,
+      under.comp_right, under.hom_mk_right, pushout.inl_desc],
+  end,
+  uniq' := λ s m h, begin
+    ext j,
+    { simp only [colimit.ι_desc, nat_trans.hcomp_id_app, under.forget_map, category.assoc,
+        colimit.ι_desc_assoc, category.id_comp, under.w, pushout.inr_desc, under.hom_mk_right,
+        pushout.inl_desc, ← h j, under.cocone_ι_app, under.comp_right], },
+    { simpa only [pushout.inr_desc, under.hom_mk_right] using under.w m, },
+  end, }
+
 def under.colimit_cocone {X : C} (F : J ⥤ under X) [has_colimit (F ⋙ under.forget _)]
-  [has_colimit ((functor.const J).obj X)] [has_pushout (under.arrow₁ F) (under.arrow₂ F)] : colimit_cocone F := sorry
+  [has_colimit ((functor.const J).obj X)] [has_pushout (under.arrow₁ F) (under.arrow₂ F)] : colimit_cocone F :=
+{ cocone := under.cocone F,
+  is_colimit := under.cocone_is_colimit F, }
 
 instance under.has_colimit {X : C} (F : J ⥤ under X) [has_colimit (F ⋙ under.forget _)]
   [has_colimit ((functor.const J).obj X)] [has_pushout (under.arrow₁ F) (under.arrow₂ F)] : has_colimit F :=
