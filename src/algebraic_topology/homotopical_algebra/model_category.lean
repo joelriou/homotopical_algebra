@@ -13,7 +13,7 @@ open category_theory.limits
 open opposite
 
 
-universes v u
+--universes v u
 
 namespace algebraic_topology
 
@@ -127,10 +127,15 @@ by { dsimp only [CM5], rw [data.CM5a_iff_op, data.CM5b_iff_op], finish, }
 lemma CM5_iff_unop : data'.CM5 ↔ data'.unop.CM5 :=
 by { rw [CM5_iff_op data'.unop, data'.op_unop], }
 
+def inverse_image {D' : Type*} [category D'] (F : D' ⥤ D) : category_with_fib_cof_W D' :=
+{ fib := data.fib.inverse_image F,
+  cof := data.cof.inverse_image F,
+  W := data.W.inverse_image F }
+
 end category_with_fib_cof_W
 
 @[nolint check_univs]
-structure model_category :=
+structure {u v} model_category :=
 (C : Type u) [hC : category.{v} C]
 (fib_cof_we : category_with_fib_cof_W C)
 (CM1 : has_finite_limits C ∧ has_finite_colimits C)
