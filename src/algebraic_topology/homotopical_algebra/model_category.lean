@@ -12,24 +12,21 @@ open category_theory.category
 open category_theory.limits
 open opposite
 
-
---universes v u
-
 namespace algebraic_topology
 
-variables (D : Type*) [category D]
 
 @[ext]
-structure category_with_fib_cof_W := (fib cof W : arrow_class D)
+class category_with_fib_cof_W  (D : Type*) [category D] :=
+(fib cof W : arrow_class D)
 
-variable {D}
+variables {D : Type*} [category D]
 
 namespace category_with_fib_cof_W
 
 variables (data : category_with_fib_cof_W D) (data' : category_with_fib_cof_W Dᵒᵖ)
 
 @[simps]
-def op : (category_with_fib_cof_W Dᵒᵖ) :=
+def op : category_with_fib_cof_W Dᵒᵖ :=
 { fib := data.cof.op,
   cof := data.fib.op,
   W := data.W.op }
@@ -134,9 +131,8 @@ def inverse_image {D' : Type*} [category D'] (F : D' ⥤ D) : category_with_fib_
 
 end category_with_fib_cof_W
 
-@[nolint check_univs]
-structure {u v} model_category :=
-(C : Type u) [hC : category.{v} C]
+structure model_category :=
+(C : Type*) [hC : category C]
 (fib_cof_we : category_with_fib_cof_W C)
 (CM1 : has_finite_limits C ∧ has_finite_colimits C)
 (CM2 : fib_cof_we.CM2)
