@@ -104,30 +104,31 @@ namespace algebraic_topology
 
 namespace model_category
 
-def under (M : model_category) (X : M.C) : model_category :=
-{ C := under X,
-  fib_cof_we :=
+variables {C : Type u} [category.{v} C]
+
+def under [M : model_category C] (X : C) : model_category (under X) :=
+{ to_category_with_fib_cof_W :=
   { W := M.W.inverse_image (under.forget _),
     cof := M.cof.inverse_image (under.forget _),
     fib := M.fib.inverse_image (under.forget _), },
-  CM1 := begin
+  CM1axiom := begin
     split,
     { constructor,
       intros J hJ hJ',
-      haveI := M.CM1.1,
+      haveI := M.CM1axiom.1,
       apply comma.has_limits_of_shape, },
     { constructor,
       intros J hJ hJ',
-      haveI := M.CM1.2,
+      haveI := M.CM1axiom.2,
       apply limits.under.has_colimits_of_shape, },
   end,
-  CM2 := M.CM2.inverse_image (under.forget _),
-  CM3 :=
-  { W := M.CM3.W.inverse_image (under.forget _),
-    cof := M.CM3.cof.inverse_image (under.forget _),
-    fib := M.CM3.fib.inverse_image (under.forget _), },
-  CM4 := ⟨M.CM4a.under X, M.CM4b.under X⟩,
-  CM5 := ⟨M.CM5a.under X, M.CM5b.under X⟩, }
+  CM2axiom := CM2axiom.inverse_image (under.forget _),
+  CM3axiom :=
+  { W := CM3.W.inverse_image (under.forget _),
+    cof := CM3.cof.inverse_image (under.forget _),
+    fib := CM3.fib.inverse_image (under.forget _), },
+  CM4axiom := ⟨CM4a.under X, CM4b.under X⟩,
+  CM5axiom := ⟨CM5a.under X, CM5b.under X⟩, }
 
 end model_category
 

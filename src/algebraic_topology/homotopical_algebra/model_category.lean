@@ -14,9 +14,8 @@ open opposite
 
 namespace algebraic_topology
 
-
 @[ext]
-class category_with_fib_cof_W  (D : Type*) [category D] :=
+class category_with_fib_cof_W (D : Type*) [category D] :=
 (fib cof W : arrow_class D)
 
 variables {D : Type*} [category D]
@@ -131,126 +130,136 @@ def inverse_image {D' : Type*} [category D'] (F : D' ⥤ D) : category_with_fib_
 
 end category_with_fib_cof_W
 
-structure model_category :=
-(C : Type*) [hC : category C]
-(fib_cof_we : category_with_fib_cof_W C)
-(CM1 : has_finite_limits C ∧ has_finite_colimits C)
-(CM2 : fib_cof_we.CM2)
-(CM3 : fib_cof_we.CM3)
-(CM4 : fib_cof_we.CM4)
-(CM5 : fib_cof_we.CM5)
+class model_category (D : Type*) [category D] extends category_with_fib_cof_W D :=
+(CM1axiom : has_finite_limits D ∧ has_finite_colimits D)
+(CM2axiom : to_category_with_fib_cof_W.CM2)
+(CM3axiom : to_category_with_fib_cof_W.CM3)
+(CM4axiom : to_category_with_fib_cof_W.CM4)
+(CM5axiom : to_category_with_fib_cof_W.CM5)
+
 
 namespace model_category
 
-variable (M : model_category)
+variable {D}
+variable [M : model_category D]
 
-instance : category M.C := M.hC
-instance : has_finite_limits M.C := M.CM1.1
-instance : has_finite_colimits M.C := M.CM1.2
+include M
 
-def fib := M.fib_cof_we.fib
-def cof := M.fib_cof_we.cof
-def W := M.fib_cof_we.W
-def triv_fib := M.fib_cof_we.triv_fib
-def triv_cof := M.fib_cof_we.triv_cof
+def CM1 := M.CM1axiom
+def CM2 := M.CM2axiom
+def CM3 := M.CM3axiom
+def CM4 := M.CM4axiom
+def CM5 := M.CM5axiom
 
-lemma triv_cof_contains_W : M.triv_cof ⊆ M.W := λ f hf, hf.2
-lemma triv_fib_contains_W : M.triv_fib ⊆ M.W := λ f hf, hf.2
+def CM4a := (@CM4 D _ _).1
+def CM4b := (@CM4 D _ _).2
+def CM5a := (@CM5 D _ _).1
+def CM5b := (@CM5 D _ _).2
 
-def CM4a := M.CM4.1
-def CM4b := M.CM4.2
-def CM5a := M.CM5.1
-def CM5b := M.CM5.2
+instance : has_finite_limits D := (@CM1 D _ _).1
+instance : has_finite_colimits D := (@CM1 D _ _).2
 
-@[simps, protected]
-def op : model_category :=
-{ C := M.Cᵒᵖ,
-  fib_cof_we := M.fib_cof_we.op,
-  CM1 := ⟨has_finite_limits_opposite, has_finite_colimits_opposite⟩,
-  CM2 := by simpa only [← M.fib_cof_we.CM2_iff_op] using M.CM2,
-  CM3 := by simpa only [← M.fib_cof_we.CM3_iff_op] using M.CM3,
-  CM4 := by simpa only [← M.fib_cof_we.CM4_iff_op] using M.CM4,
-  CM5 := by simpa only [← M.fib_cof_we.CM5_iff_op] using M.CM5, }
+def fib := M.to_category_with_fib_cof_W.fib
+def cof := M.to_category_with_fib_cof_W.cof
+def W := M.to_category_with_fib_cof_W.W
+def triv_fib := M.to_category_with_fib_cof_W.triv_fib
+def triv_cof := M.to_category_with_fib_cof_W.triv_cof
 
-instance : has_finite_limits M.Cᵒᵖ := M.op.CM1.1
-instance : has_finite_colimits M.Cᵒᵖ := M.op.CM1.2
+lemma triv_cof_contains_W : (triv_cof : arrow_class D) ⊆ W := λ f hf, hf.2
+lemma triv_fib_contains_W : (triv_fib : arrow_class D) ⊆ W := λ f hf, hf.2
 
-def cof_retract_stable : M.cof.is_stable_by_retract := M.CM3.cof
-def fib_retract_stable : M.fib.is_stable_by_retract := M.CM3.fib
-def triv_cof_retract_stable : M.triv_cof.is_stable_by_retract :=
-arrow_class.is_stable_by_retract.of_intersection _ _ M.CM3.cof M.CM3.W
-def triv_fib_retract_stable : M.triv_fib.is_stable_by_retract :=
-arrow_class.is_stable_by_retract.of_intersection _ _ M.CM3.fib M.CM3.W
+--@[simps, protected]
+instance : model_category Dᵒᵖ :=
+{ to_category_with_fib_cof_W := M.to_category_with_fib_cof_W.op,
+  CM1axiom := ⟨has_finite_limits_opposite, has_finite_colimits_opposite⟩,
+  CM2axiom := by simpa only [← M.to_category_with_fib_cof_W.CM2_iff_op] using CM2axiom,
+  CM3axiom := by simpa only [← M.to_category_with_fib_cof_W.CM3_iff_op] using CM3axiom,
+  CM4axiom := by simpa only [← M.to_category_with_fib_cof_W.CM4_iff_op] using CM4axiom,
+  CM5axiom := by simpa only [← M.to_category_with_fib_cof_W.CM5_iff_op] using CM5axiom, }
 
-lemma cof_equals_llp_triv_fib : M.cof = M.triv_fib.left_lifting_property_with :=
-M.cof.eq_left_lifting_property_with M.triv_fib M.CM5b M.CM4a M.CM3.cof
-lemma triv_cof_equals_llp_fib : M.triv_cof = M.fib.left_lifting_property_with :=
-M.triv_cof.eq_left_lifting_property_with M.fib
-  M.CM5a M.CM4b M.triv_cof_retract_stable
 
-lemma fib_equals_rlp_triv_cof : M.fib = M.triv_cof.right_lifting_property_with :=
+--variable {D}
+
+def cof_retract_stable : (cof : arrow_class D).is_stable_by_retract := CM3.cof
+def fib_retract_stable : (fib : arrow_class D).is_stable_by_retract := CM3.fib
+def triv_cof_retract_stable : (triv_cof : arrow_class D).is_stable_by_retract :=
+arrow_class.is_stable_by_retract.of_intersection _ _ CM3.cof CM3.W
+def triv_fib_retract_stable : (triv_fib : arrow_class D).is_stable_by_retract :=
+arrow_class.is_stable_by_retract.of_intersection _ _ CM3.fib CM3.W
+
+lemma cof_equals_llp_triv_fib : (cof : arrow_class D) = (triv_fib : arrow_class D).left_lifting_property_with :=
+(cof: arrow_class D).eq_left_lifting_property_with triv_fib CM5b CM4a CM3.cof
+lemma triv_cof_equals_llp_fib : (triv_cof : arrow_class D) = (fib : arrow_class D).left_lifting_property_with :=
+(triv_cof : arrow_class D).eq_left_lifting_property_with fib CM5a CM4b triv_cof_retract_stable
+
+lemma fib_equals_rlp_triv_cof : (fib : arrow_class D) = (triv_cof : arrow_class D).right_lifting_property_with :=
 begin
-  convert congr_arg arrow_class.unop M.op.cof_equals_llp_triv_fib,
+  convert congr_arg arrow_class.unop cof_equals_llp_triv_fib,
   { exact (arrow_class.unop_op _).symm, },
   { apply arrow_class.op_inj,
     simpa only [← arrow_class.left_lifting_property_with_op, arrow_class.op_unop], },
 end
 
-lemma triv_fib_equals_rlp_cof : M.triv_fib = M.cof.right_lifting_property_with :=
+lemma triv_fib_equals_rlp_cof : (triv_fib : arrow_class D) = (cof : arrow_class D).right_lifting_property_with :=
 begin
-  convert congr_arg arrow_class.unop M.op.triv_cof_equals_llp_fib,
+  convert congr_arg arrow_class.unop triv_cof_equals_llp_fib,
   { exact (arrow_class.unop_op _).symm, },
   { apply arrow_class.op_inj,
     simpa only [← arrow_class.left_lifting_property_with_op, arrow_class.op_unop], },
 end
 
-lemma cof_comp_stable : M.cof.is_stable_by_composition :=
+lemma cof_comp_stable : (cof : arrow_class D).is_stable_by_composition :=
 by { rw cof_equals_llp_triv_fib, apply arrow_class.is_stable_by_composition_of_llp_with, }
-lemma triv_cof_comp_stable : M.triv_cof.is_stable_by_composition :=
+lemma triv_cof_comp_stable : (triv_cof : arrow_class D).is_stable_by_composition :=
 by { rw triv_cof_equals_llp_fib, apply arrow_class.is_stable_by_composition_of_llp_with, }
 
-lemma fib_comp_stable : M.fib.is_stable_by_composition :=
+lemma fib_comp_stable : (fib : arrow_class D).is_stable_by_composition :=
 by { rw fib_equals_rlp_triv_cof, apply arrow_class.is_stable_by_composition_of_rlp_with, }
-lemma triv_fib_comp_stable : M.triv_fib.is_stable_by_composition :=
+lemma triv_fib_comp_stable : (triv_fib : arrow_class D).is_stable_by_composition :=
 by { rw triv_fib_equals_rlp_cof, apply arrow_class.is_stable_by_composition_of_rlp_with, }
 
-lemma cof_contains_iso : arrow_class.isomorphisms ⊆ M.cof :=
+lemma cof_contains_iso : arrow_class.isomorphisms ⊆ (cof : arrow_class D) :=
 by { rw cof_equals_llp_triv_fib, apply arrow_class.contains_isomorphisms_of_llp_with, }
-lemma triv_cof_contains_iso : arrow_class.isomorphisms ⊆ M.triv_cof :=
+lemma triv_cof_contains_iso : arrow_class.isomorphisms ⊆ (triv_cof : arrow_class D) :=
 by { rw triv_cof_equals_llp_fib, apply arrow_class.contains_isomorphisms_of_llp_with, }
-lemma fib_contains_iso : arrow_class.isomorphisms ⊆ M.fib :=
+lemma fib_contains_iso : arrow_class.isomorphisms ⊆ (fib : arrow_class D) :=
 by { rw fib_equals_rlp_triv_cof, apply arrow_class.contains_isomorphisms_of_rlp_with, }
-lemma triv_fib_contains_iso : arrow_class.isomorphisms ⊆ M.triv_fib :=
+lemma triv_fib_contains_iso : arrow_class.isomorphisms ⊆ (triv_fib : arrow_class D) :=
 by { rw triv_fib_equals_rlp_cof, apply arrow_class.contains_isomorphisms_of_rlp_with, }
 
-lemma W_contains_iso : arrow_class.isomorphisms ⊆ M.W :=
+lemma W_contains_triv_cof : (triv_cof : arrow_class D) ⊆ W := λ f hf, hf.2
+lemma cof_contains_triv_cof : (triv_cof : arrow_class D) ⊆ cof := λ f hf, hf.1
+lemma W_contains_triv_fib : (triv_fib : arrow_class D) ⊆ W := λ f hf, hf.2
+lemma fib_contains_triv_fib : (triv_fib : arrow_class D) ⊆ fib := λ f hf, hf.1
+
+lemma W_contains_iso : arrow_class.isomorphisms ⊆ (W : arrow_class D) :=
 begin
   intros f hf,
-  suffices : f ∈ M.triv_cof,
-  { exact this.2, },
+  suffices : f ∈ triv_cof,
+  { exact W_contains_triv_cof this, },
   rw triv_cof_equals_llp_fib,
-  exact M.fib.contains_isomorphisms_of_llp_with hf,
+  exact (fib : arrow_class D).contains_isomorphisms_of_llp_with hf,
 end 
 
-lemma cof_iff_of_arrow_iso : M.cof.iff_of_arrow_iso :=
+lemma cof_iff_of_arrow_iso : (cof : arrow_class D).iff_of_arrow_iso :=
 arrow_class.iff_of_arrow_iso.of_comp_stable_and_contains_iso _
-  M.cof_comp_stable M.cof_contains_iso
-lemma triv_cof_iff_of_arrow_iso : M.triv_cof.iff_of_arrow_iso :=
+  cof_comp_stable cof_contains_iso
+lemma triv_cof_iff_of_arrow_iso : (triv_cof : arrow_class D).iff_of_arrow_iso :=
 arrow_class.iff_of_arrow_iso.of_comp_stable_and_contains_iso _
-  M.triv_cof_comp_stable M.triv_cof_contains_iso
-lemma fib_iff_of_arrow_iso : M.fib.iff_of_arrow_iso :=
+  triv_cof_comp_stable triv_cof_contains_iso
+lemma fib_iff_of_arrow_iso : (fib : arrow_class D).iff_of_arrow_iso :=
 arrow_class.iff_of_arrow_iso.of_comp_stable_and_contains_iso _
-  M.fib_comp_stable M.fib_contains_iso
-lemma triv_fib_iff_of_arrow_iso : M.triv_fib.iff_of_arrow_iso :=
+  fib_comp_stable fib_contains_iso
+lemma triv_fib_iff_of_arrow_iso : (triv_fib : arrow_class D).iff_of_arrow_iso :=
 arrow_class.iff_of_arrow_iso.of_comp_stable_and_contains_iso _
-  M.triv_fib_comp_stable M.triv_fib_contains_iso
-lemma W_iff_of_arrow_iso : M.W.iff_of_arrow_iso :=
+  triv_fib_comp_stable triv_fib_contains_iso
+lemma W_iff_of_arrow_iso : (W : arrow_class D).iff_of_arrow_iso :=
 arrow_class.iff_of_arrow_iso.of_comp_stable_and_contains_iso _
-  M.CM2.of_comp M.W_contains_iso
+  CM2.of_comp W_contains_iso
 
-lemma cof_co_bc_stable : M.cof.is_stable_by_cobase_change :=
+lemma cof_co_bc_stable : (cof : arrow_class D).is_stable_by_cobase_change :=
 by { rw cof_equals_llp_triv_fib, apply arrow_class.is_stable_by_cobase_change_of_llp_with, }
-lemma triv_cof_co_bc_stable : M.triv_cof.is_stable_by_cobase_change :=
+lemma triv_cof_co_bc_stable : (triv_cof : arrow_class D).is_stable_by_cobase_change :=
 by { rw triv_cof_equals_llp_fib, apply arrow_class.is_stable_by_cobase_change_of_llp_with, }
 /-lemma fib_base_change_stable : M.fib.is_stable_by_base_change :=
 by { rw fib_equals_rlp_triv_cof, apply arrow_class.is_stable_by_base_change_of_rlp_with, }
@@ -258,13 +267,17 @@ lemma triv_fib_base_change_stable : M.triv_fib.is_stable_by_base_change :=
 by { rw triv_fib_equals_rlp_cof, apply arrow_class.is_stable_by_base_change_of_rlp_with, }
 -/
 
-@[simp]
-def op_obj (X : M.C) : M.op.C := opposite.op X
+--@[simp]
+--def op_obj (X : M.C) : M.op.C := opposite.op X
+
+variable (D)
 
 @[derive category]
-def Ho := M.W.localization
+def Ho := (W : arrow_class D).localization
 
-def Q : M.C ⥤ Ho M := arrow_class.localization.Q M.W
+variable {D}
+
+def Q : D ⥤ Ho D := arrow_class.localization.Q W
 
 end model_category
 

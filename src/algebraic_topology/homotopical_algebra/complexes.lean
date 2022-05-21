@@ -107,14 +107,13 @@ def CM5 : (Cminus_fib_cof_W C).CM5 := sorry
 
 variable (C)
 
-def model : model_category :=
-{ C := Cminus C,
-  fib_cof_we := Cminus_fib_cof_W C,
-  CM1 := ⟨CM1a, CM1b⟩,
-  CM2 := CM2,
-  CM3 := CM3,
-  CM4 := CM4,
-  CM5 := CM5 }
+def model : model_category (Cminus C) :=
+{ to_category_with_fib_cof_W := Cminus_fib_cof_W C,
+  CM1axiom := ⟨CM1a, CM1b⟩,
+  CM2axiom := CM2,
+  CM3axiom := CM3,
+  CM4axiom := CM4,
+  CM5axiom := CM5 }
 
 end projective_structure
 
