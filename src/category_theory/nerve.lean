@@ -7,6 +7,7 @@ open category_theory.category
 open opposite
 open_locale simplicial
 
+
 lemma fin.eq_last_of_geq_last {n : ℕ} {i : fin (n+1)} (hi : fin.last _ ≤ i) : i = fin.last _ :=
 le_antisymm (fin.le_last i) hi
 

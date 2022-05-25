@@ -83,7 +83,6 @@ def is_inverted_by (W : arrow_class C) (F : C ⥤ D) : Prop :=
 def is_inverted_by_of_comp (W : arrow_class C) (F : C ⥤ D) (G : D ⥤ E) (hW : W.is_inverted_by F) : W.is_inverted_by (F ⋙ G) :=
 by { intro w, exact w.1.is_inverted_by_of_comp F G (hW w), }
 
-
 structure loc_quiver (W : arrow_class C) := (obj : C)
 
 variable (W : arrow_class C)
