@@ -622,6 +622,7 @@ end
 
 end nat_trans_extension
 
+@[simps]
 def nat_trans_extension {W : arrow_class C} {L : C ⥤ D} (hL : is_strict_localization W L) {F G : D ⥤ E} (τ : L ⋙ F ⟶ L ⋙ G) :
   F ⟶ G :=
 begin
@@ -644,8 +645,8 @@ lemma nat_trans_extension_hcomp {W : arrow_class C} {L : C ⥤ D} (hL : is_stric
   (𝟙 L) ◫ nat_trans_extension hL τ = τ :=
 begin
   ext X,
-  simp only [nat_trans.hcomp_app, nat_trans.id_app, functor.map_id, comp_id],
-  apply nat_trans_extension.app_eq,
+  simp only [nat_trans.hcomp_app, nat_trans.id_app, functor.map_id, comp_id, nat_trans_extension_app,
+    nat_trans_extension.app_eq],
 end
 
 end is_strict_localization

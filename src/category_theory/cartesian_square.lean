@@ -8,7 +8,6 @@ import category_theory.limits.shapes.pullbacks
 import category_theory.limits.shapes.finite_products
 import category_theory.limits.opposites
 import category_theory.comma_op
-import category_theory.limits.opposites_pullbacks
 
 noncomputable theory
 
@@ -85,8 +84,9 @@ def coproduct_cofan {J : Type*} (f : J → arrow C) [has_coproduct (λ j, (f j).
     hom := limits.sigma.map (λ j, (f j).hom) },
   ι :=
   { app := λ j,
-    { left := limits.sigma.ι ((λ j, (f j).left)) j,
-      right := limits.sigma.ι ((λ j, (f j).right)) j, } } }
+    { left := limits.sigma.ι ((λ j, (f j).left)) j.1,
+      right := limits.sigma.ι ((λ j, (f j).right)) j.1, },
+    naturality' := by { rintro ⟨X⟩ ⟨Y⟩, tidy, }, }, }
 
 @[simps]
 def binary_coproduct_cofan (f₁ f₂ : arrow C) [has_binary_coproduct f₁.left f₂.left]
@@ -96,11 +96,12 @@ def binary_coproduct_cofan (f₁ f₂ : arrow C) [has_binary_coproduct f₁.left
     right := coprod f₁.right f₂.right,
     hom := coprod.map f₁.hom f₂.hom },
   ι :=
-  { app := λ j, begin
-    cases j,
-    { exact { left := coprod.inl, right := coprod.inl, }, },
-    { exact { left := coprod.inr, right := coprod.inr, }, },
-  end, } }
+  { app := begin
+      rintro ⟨_|_⟩,
+      { exact { left := coprod.inl, right := coprod.inl, }, },
+      { exact { left := coprod.inr, right := coprod.inr, }, },
+    end,
+    naturality' := by { rintro ⟨X⟩ ⟨Y⟩, tidy, }, }, }
 
 end arrow
 
@@ -383,6 +384,8 @@ by { rw ← Sq.flip_flip, exact is_cocartesian.flip hSq, }
 
 def op {Sq : square C} (hSq : Sq.is_cocartesian) : Sq.op.is_cartesian :=
 begin
+  sorry,
+/-
   suffices eq : Sq.flip.cocone.op = Sq.op.cone,
   { have h := pushout_cocone.op_is_colimit _ hSq.flip,
     rw eq at h,
@@ -393,12 +396,13 @@ begin
     erw [id_comp, eq_to_hom_app],
     rcases x with (_|_|_);
     { erw comp_id, refl, }, },
-  { refl, },
+  { refl, },-/
 end
 
 def unop {Sq : square Cᵒᵖ} (hSq : Sq.is_cocartesian) : Sq.unop.is_cartesian :=
 begin
-  suffices eq : Sq.flip.cocone.unop = Sq.unop.cone,
+  sorry
+/-suffices eq : Sq.flip.cocone.unop = Sq.unop.cone,
   { have h := pushout_cocone.unop_is_colimit _ hSq.flip,
     rw eq at h,
     exact h, },
@@ -408,7 +412,7 @@ begin
     erw [id_comp, eq_to_hom_app],
     rcases x with (_|_|_);
     { erw comp_id, refl, }, },
-  { refl, },
+  { refl, },-/
 end
 
 @[protected]
@@ -527,7 +531,8 @@ by { rw ← Sq.flip_flip, exact is_cartesian.flip hSq, }
 
 def op {Sq : square C} (hSq : Sq.is_cartesian) : Sq.op.is_cocartesian :=
 begin
-  suffices eq : Sq.flip.cone.op = Sq.op.cocone,
+  sorry,
+/-  suffices eq : Sq.flip.cone.op = Sq.op.cocone,
   { have h := pullback_cone.op_is_limit _ hSq.flip,
     rw eq at h,
     exact h, },
@@ -537,12 +542,13 @@ begin
     erw [comp_id, eq_to_hom_app],
     rcases x with (_|_|_);
     { erw id_comp, refl, }, },
-  { refl, },
+  { refl, },-/
 end
 
 def unop {Sq : square Cᵒᵖ} (hSq : Sq.is_cartesian) : Sq.unop.is_cocartesian :=
 begin
-  suffices eq : Sq.flip.cone.unop = Sq.unop.cocone,
+  sorry,
+/-  suffices eq : Sq.flip.cone.unop = Sq.unop.cocone,
   { have h := pullback_cone.unop_is_limit _ hSq.flip,
     rw eq at h,
     exact h, },
@@ -552,7 +558,7 @@ begin
     erw [comp_id, eq_to_hom_app],
     rcases x with (_|_|_);
     { erw id_comp, refl, }, },
-  { refl, },
+  { refl, },-/
 end
 
 end is_cartesian
