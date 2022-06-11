@@ -119,6 +119,7 @@ end limits
 
 variables (i p)
 open limits
+
 class has_lifting_property_new : Prop :=
 (sq_has_lift : ∀ {f : A ⟶ X} {g : B ⟶ Y} (sq : comm_sq f i p g), sq.has_lift)
 
@@ -128,40 +129,34 @@ instance sq_has_lift_of_has_lifting_property (sq : comm_sq f i p g)
 
 namespace has_lifting_property_new
 
-lemma iff_op : has_lifting_property_new i p ↔ has_lifting_property_new p.op i.op :=
+variables {i p}
+
+def op (h : has_lifting_property_new i p) : has_lifting_property_new p.op i.op :=
 begin
-  split,
-  { intro h,
-    constructor,
-    intros f g sq,
-    rw comm_sq.has_lift.iff_unop,
-    have h' := h.sq_has_lift,
-    exact (h' sq.unop), },
-  { intro h,
-    constructor,
-    intros f g sq,
-    rw comm_sq.has_lift.iff_op,
-    have h' := h.sq_has_lift,
-    exact (h' sq.op), },
+  constructor,
+  intros f g sq,
+  simp only [comm_sq.has_lift.iff_unop, quiver.hom.unop_op],
+  haveI := h,
+  apply_instance,
 end
 
-lemma iff_unop {A B X Y : Cᵒᵖ} (i : A ⟶ B) (p : X ⟶ Y) :
-  has_lifting_property_new i p ↔ has_lifting_property_new p.unop i.unop :=
+def unop {A B X Y : Cᵒᵖ} {i : A ⟶ B} {p : X ⟶ Y}
+  (h : has_lifting_property_new i p) : has_lifting_property_new p.unop i.unop :=
 begin
-  split,
-  { intro h,
-    constructor,
-    intros f g sq,
-    rw comm_sq.has_lift.iff_op,
-    have h' := h.sq_has_lift,
-    exact (h' sq.op), },
-  { intro h,
-    constructor,
-    intros f g sq,
-    rw comm_sq.has_lift.iff_unop,
-    have h' := h.sq_has_lift,
-    exact (h' sq.unop), },
+  constructor,
+  intros f g sq,
+  rw comm_sq.has_lift.iff_op,
+  simp only [quiver.hom.op_unop],
+  haveI := h,
+  apply_instance,
 end
+
+lemma iff_op : has_lifting_property_new i p ↔ has_lifting_property_new p.op i.op := ⟨op, unop⟩
+
+lemma iff_unop {A B X Y : Cᵒᵖ} (i : A ⟶ B) (p : X ⟶ Y) :
+  has_lifting_property_new i p ↔ has_lifting_property_new p.unop i.unop := ⟨unop, op⟩
+
+variables (i p)
 
 @[priority 100]
 instance of_left_iso [is_iso i] : has_lifting_property_new i p :=
@@ -240,14 +235,34 @@ namespace arrow_class
 
 @[protected]
 def has_lifting_property (F G : arrow_class C) :=
-∀ {A B X Y : C} (i : A ⟶ B) (p : X ⟶ Y), has_lifting_property_new i p
+∀ (A B X Y : C) (i : A ⟶ B) (hi : arrow.mk i ∈ F) (p : X ⟶ Y) (hp : arrow.mk p ∈ G),
+has_lifting_property_new i p
 
 namespace has_lifting_property
+
+def lifting_property {F G : arrow_class C} (h : has_lifting_property F G)
+{A B X Y : C} (i : A ⟶ B) (hi : arrow.mk i ∈ F) (p : X ⟶ Y) (hp : arrow.mk p ∈ G) :
+  has_lifting_property_new i p :=
+h _ _ _ _ i hi p hp
 
 def has_lift {F G : arrow_class C} (h : has_lifting_property F G)
 {A B X Y : C} {f : A ⟶ X} {i : A ⟶ B} {p : X ⟶ Y} {g : B ⟶ Y}
 (sq : comm_sq f i p g) (hi : arrow.mk i ∈ F) (hp : arrow.mk p ∈ G) :
-  sq.has_lift := by { haveI := h i p, apply_instance, }
+  sq.has_lift := by { haveI := h.lifting_property i hi p hp, apply_instance, }
+
+def op {F G : arrow_class C} (h : has_lifting_property F G) :
+  has_lifting_property G.op F.op :=
+λ A B X Y i hi p hp, (h.lifting_property p.unop hp i.unop hi).op
+
+def unop {F G : arrow_class Cᵒᵖ} (h : has_lifting_property F G) :
+  has_lifting_property G.unop F.unop :=
+λ A B X Y i hi p hp, (h.lifting_property p.op hp i.op hi).unop
+
+lemma iff_op (F G : arrow_class C) :
+  has_lifting_property F G ↔ has_lifting_property G.op F.op := ⟨op, unop⟩
+
+lemma iff_unop (F' G' : arrow_class Cᵒᵖ) :
+  has_lifting_property F' G' ↔ has_lifting_property G'.unop F'.unop := ⟨unop, op⟩
 
 end has_lifting_property
 
@@ -256,18 +271,18 @@ def has_lifting_property_iff_op (F G : arrow_class C) :
 begin
   split,
   { intro h,
-    intros A B X Y i p,
+    intros A B X Y i hi p hp,
     constructor,
     intros f g sq,
     rw comm_sq.has_lift.iff_unop,
-    haveI := h p.unop i.unop,
+    haveI := h.lifting_property p.unop hp i.unop hi,
     apply_instance, },
   { intro h,
-    intros A B X Y i p,
+    intros A B X Y i hi p hp,
     constructor,
     intros f g sq,
     rw comm_sq.has_lift.iff_op,
-    haveI := h p.op i.op,
+    haveI := h.lifting_property p.op hp i.op hi,
     apply_instance, },
 end
 
