@@ -10,13 +10,13 @@ open category_theory
 open category_theory.category
 open opposite
 
-variables {C : Type*} [category C]
+variables {C D : Type*} [category C] [category D] (F : C ⥤ D)
 
 namespace category_theory
 
 def is_retract (X Y : C) : Prop := ∃ (s : X ⟶ Y) (r : Y ⟶ X), s ≫ r = 𝟙 X
 
-def is_retract_iff_op (X Y : C) : is_retract X Y ↔ is_retract (opposite.op X) (opposite.op Y) :=
+lemma is_retract_iff_op (X Y : C) : is_retract X Y ↔ is_retract (opposite.op X) (opposite.op Y) :=
 begin
   split,
   { intro h,
@@ -29,7 +29,7 @@ begin
     exact congr_arg (λ (φ : _ ⟶ _), φ.unop) fac, },
 end
 
-def is_retract_imp_of_isos {X Y X' Y' : C} (e₁ : X ≅ X') (e₂ : Y ≅ Y')
+lemma is_retract_imp_of_isos {X Y X' Y' : C} (e₁ : X ≅ X') (e₂ : Y ≅ Y')
   (h : is_retract X Y) : is_retract X' Y' :=
 begin
   rcases h with ⟨s, p, r⟩,
@@ -40,7 +40,7 @@ begin
   erw [id_comp, iso.inv_hom_id],
 end
 
-def is_retract_iff_of_isos {X Y X' Y' : C} (e₁ : X ≅ X') (e₂ : Y ≅ Y') :
+lemma is_retract_iff_of_isos {X Y X' Y' : C} (e₁ : X ≅ X') (e₂ : Y ≅ Y') :
   is_retract X Y ↔ is_retract X' Y' :=
 begin
   split,
@@ -48,16 +48,14 @@ begin
   { exact is_retract_imp_of_isos e₁.symm e₂.symm, },
 end
 
-variables {D : Type*} [category D] (F : C ⥤ D)
-
-def is_retract_imp_of_functor (X Y : C) (h : is_retract X Y) : is_retract (F.obj X) (F.obj Y) :=
+lemma is_retract_imp_of_functor (X Y : C) (h : is_retract X Y) : is_retract (F.obj X) (F.obj Y) :=
 begin
   rcases h with ⟨s, p, r⟩,
   use [F.map s, F.map p],
   rw [← F.map_comp, r, F.map_id],
 end
 
-def is_retract_iff_of_is_equivalence (X Y : C) [is_equivalence F] :
+lemma is_retract_iff_of_is_equivalence (X Y : C) [is_equivalence F] :
   is_retract X Y ↔ is_retract (F.obj X) (F.obj Y) :=
 begin
   split,

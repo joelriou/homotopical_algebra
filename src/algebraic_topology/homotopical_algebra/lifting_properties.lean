@@ -18,7 +18,7 @@ variables {C : Type*} [category C]
 
 namespace category_theory
 
-namespace has_lifting_property
+/-namespace has_lifting_property
 
 lemma under_imp {X : C} (i p : arrow (under X))
   (h : has_lifting_property ((under.forget X).map_arrow.obj i)
@@ -43,11 +43,11 @@ begin
     fac_right' := by { ext, exact l.fac_right, }, }⟩,
 end
 
-end has_lifting_property
+end has_lifting_property-/
 
 namespace arrow
 
-noncomputable
+/-noncomputable
 lemma lift_struct_equiv_op {i p : arrow C} (sq : i ⟶ p) : lift_struct sq ≃ lift_struct (op_hom sq) :=
 { to_fun := λ L,
   { lift := L.lift.op,
@@ -58,7 +58,7 @@ lemma lift_struct_equiv_op {i p : arrow C} (sq : i ⟶ p) : lift_struct sq ≃ l
     fac_left' := congr_arg (λ (φ : _ ⟶ _), φ.unop) L.fac_right,
     fac_right' := congr_arg (λ (φ : _ ⟶ _), φ.unop) L.fac_left },
   left_inv := λ L, by { cases L, refl, },
-  right_inv := λ L, by { cases L, refl, }, }
+  right_inv := λ L, by { cases L, refl, }, }-/
 
 lemma has_lift_iff_op {i p : arrow C} (sq : i ⟶ p) : has_lift sq ↔ has_lift (op_hom sq) :=
 begin
