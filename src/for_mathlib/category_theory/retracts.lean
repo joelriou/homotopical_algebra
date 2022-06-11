@@ -5,6 +5,8 @@ Authors: Joël Riou
 -/
 
 import category_theory.opposites
+import category_theory.arrow
+import for_mathlib.category_theory.comma_op
 
 open category_theory
 open category_theory.category
@@ -16,7 +18,9 @@ namespace category_theory
 
 def is_retract (X Y : C) : Prop := ∃ (s : X ⟶ Y) (r : Y ⟶ X), s ≫ r = 𝟙 X
 
-lemma is_retract_iff_op (X Y : C) : is_retract X Y ↔ is_retract (opposite.op X) (opposite.op Y) :=
+namespace is_retract
+
+lemma iff_op (X Y : C) : is_retract X Y ↔ is_retract (opposite.op X) (opposite.op Y) :=
 begin
   split,
   { intro h,
@@ -29,7 +33,7 @@ begin
     exact congr_arg (λ (φ : _ ⟶ _), φ.unop) fac, },
 end
 
-lemma is_retract_imp_of_isos {X Y X' Y' : C} (e₁ : X ≅ X') (e₂ : Y ≅ Y')
+lemma imp_of_isos {X Y X' Y' : C} (e₁ : X ≅ X') (e₂ : Y ≅ Y')
   (h : is_retract X Y) : is_retract X' Y' :=
 begin
   rcases h with ⟨s, p, r⟩,
@@ -40,30 +44,60 @@ begin
   erw [id_comp, iso.inv_hom_id],
 end
 
-lemma is_retract_iff_of_isos {X Y X' Y' : C} (e₁ : X ≅ X') (e₂ : Y ≅ Y') :
+lemma iff_of_isos {X Y X' Y' : C} (e₁ : X ≅ X') (e₂ : Y ≅ Y') :
   is_retract X Y ↔ is_retract X' Y' :=
 begin
   split,
-  { exact is_retract_imp_of_isos e₁ e₂, },
-  { exact is_retract_imp_of_isos e₁.symm e₂.symm, },
+  { exact imp_of_isos e₁ e₂, },
+  { exact imp_of_isos e₁.symm e₂.symm, },
 end
 
-lemma is_retract_imp_of_functor (X Y : C) (h : is_retract X Y) : is_retract (F.obj X) (F.obj Y) :=
+lemma imp_of_functor (X Y : C) (h : is_retract X Y) : is_retract (F.obj X) (F.obj Y) :=
 begin
   rcases h with ⟨s, p, r⟩,
   use [F.map s, F.map p],
   rw [← F.map_comp, r, F.map_id],
 end
 
-lemma is_retract_iff_of_is_equivalence (X Y : C) [is_equivalence F] :
+lemma iff_of_is_equivalence (X Y : C) [is_equivalence F] :
   is_retract X Y ↔ is_retract (F.obj X) (F.obj Y) :=
 begin
   split,
-  { apply is_retract_imp_of_functor, },
+  { apply imp_of_functor, },
   { intro h,
     have e : is_equivalence F := infer_instance,
-    erw is_retract_iff_of_isos (e.unit_iso.app X) (e.unit_iso.app Y),
-    convert is_retract_imp_of_functor e.inverse _ _ h, }
+    erw iff_of_isos (e.unit_iso.app X) (e.unit_iso.app Y),
+    convert imp_of_functor e.inverse _ _ h, }
 end
+
+end is_retract
+
+def is_retract_hom {X₁ X₂ Y₁ Y₂ : C} (x : X₁ ⟶ X₂) (y : Y₁ ⟶ Y₂) := is_retract (arrow.mk x) (arrow.mk y) 
+
+namespace is_retract_hom
+
+def iff_op {X₁ X₂ Y₁ Y₂ : C} (x : X₁ ⟶ X₂) (y : Y₁ ⟶ Y₂) :
+  is_retract_hom x y ↔ is_retract_hom x.op y.op :=
+begin
+  calc is_retract (arrow.mk x) (arrow.mk y) ↔ is_retract (op (arrow.mk x)) (op (arrow.mk y)) :
+    is_retract.iff_op (arrow.mk x) (arrow.mk y)
+  ... ↔ is_retract (arrow.mk x.op) (arrow.mk y.op) : _,
+  rw is_retract.iff_of_is_equivalence (equivalence_arrow_op C).functor,
+  congr',
+end
+
+def iff_unop {X₁ X₂ Y₁ Y₂ : Cᵒᵖ} (x : X₁ ⟶ X₂) (y : Y₁ ⟶ Y₂) :
+  is_retract_hom x y ↔ is_retract_hom x.unop y.unop :=
+(iff_op x.unop y.unop).symm
+
+def op {X₁ X₂ Y₁ Y₂ : C} {x : X₁ ⟶ X₂} {y : Y₁ ⟶ Y₂}
+  (hxy : is_retract_hom x y) : is_retract_hom x.op y.op :=
+(iff_op x y).mp hxy
+
+def unop {X₁ X₂ Y₁ Y₂ : Cᵒᵖ} {x : X₁ ⟶ X₂} {y : Y₁ ⟶ Y₂}
+  (hxy : is_retract_hom x y) : is_retract_hom x.unop y.unop :=
+(iff_op x.unop y.unop).mpr hxy
+
+end is_retract_hom
 
 end category_theory

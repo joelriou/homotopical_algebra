@@ -6,6 +6,7 @@ Authors: Joël Riou
 
 import for_mathlib.category_theory.comm_sq
 import for_mathlib.category_theory.retracts
+import for_mathlib.category_theory.arrow_class
 
 noncomputable theory
 
@@ -199,8 +200,8 @@ instance of_comp_right [has_lifting_property_new i p] [has_lifting_property_new 
     fac_right := by simp only [comm_sq.fac_right_assoc, comm_sq.fac_right], }⟩,
 end⟩
 
-lemma of_retract {A' B' : C} {i : A ⟶ B} {i' : A' ⟶ B'} {p : X ⟶ Y}
-  (h : is_retract (arrow.mk i) (arrow.mk i')) [has_lifting_property_new i' p] :
+lemma of_retract_left {A' B' : C} {i : A ⟶ B} {i' : A' ⟶ B'} {p : X ⟶ Y}
+  (h : is_retract_hom i i') [has_lifting_property_new i' p] :
   has_lifting_property_new i p :=
 begin
   constructor,
@@ -223,6 +224,124 @@ begin
     end, },
 end
 
+lemma of_retract_right {X' Y' : C} {i : A ⟶ B} {p : X ⟶ Y} {p' : X' ⟶ Y'}
+  (h : is_retract_hom p p') [hip' : has_lifting_property_new i p'] :
+  has_lifting_property_new i p :=
+begin
+  rw iff_op at ⊢ hip',
+  rw is_retract_hom.iff_op at h,
+  haveI := hip',
+  exact of_retract_left h,
+end
+
 end has_lifting_property_new
+
+namespace arrow_class
+
+@[protected]
+def has_lifting_property (F G : arrow_class C) :=
+∀ {A B X Y : C} (i : A ⟶ B) (p : X ⟶ Y), has_lifting_property_new i p
+
+namespace has_lifting_property
+
+def has_lift {F G : arrow_class C} (h : has_lifting_property F G)
+{A B X Y : C} {f : A ⟶ X} {i : A ⟶ B} {p : X ⟶ Y} {g : B ⟶ Y}
+(sq : comm_sq f i p g) (hi : arrow.mk i ∈ F) (hp : arrow.mk p ∈ G) :
+  sq.has_lift := by { haveI := h i p, apply_instance, }
+
+end has_lifting_property
+
+def has_lifting_property_iff_op (F G : arrow_class C) :
+  F.has_lifting_property G ↔ G.op.has_lifting_property F.op :=
+begin
+  split,
+  { intro h,
+    intros A B X Y i p,
+    constructor,
+    intros f g sq,
+    rw comm_sq.has_lift.iff_unop,
+    haveI := h p.unop i.unop,
+    apply_instance, },
+  { intro h,
+    intros A B X Y i p,
+    constructor,
+    intros f g sq,
+    rw comm_sq.has_lift.iff_op,
+    haveI := h p.op i.op,
+    apply_instance, },
+end
+
+@[simp]
+def llp_with (G : arrow_class C) : arrow_class C :=
+λ i, ∀ {X Y : C} (p : X ⟶ Y), arrow.mk p ∈ G → has_lifting_property_new i.hom p
+
+@[simp]
+def rlp_with (F : arrow_class C) : arrow_class C :=
+λ p, ∀ {X Y : C} (i : X ⟶ Y), arrow.mk i ∈ F → has_lifting_property_new i p.hom
+
+def llp_with_op (F : arrow_class C) :
+  F.op.llp_with = F.rlp_with.op :=
+begin
+  ext i,
+  split,
+  { intros h X Y p hp,
+    simpa only [has_lifting_property_new.iff_unop] using h p.op hp, },
+  { intros h X Y p hp,
+    have hp' := h p.unop hp,
+    rw has_lifting_property_new.iff_op at hp',
+    exact hp', },
+end
+
+def llp_with_unop (F : arrow_class Cᵒᵖ) :
+  F.unop.rlp_with = F.llp_with.unop :=
+begin
+  have h := llp_with_op F.unop,
+  rw F.op_unop at h,
+  rw [h, arrow_class.unop_op],
+end
+
+def rlp_with_op (F : arrow_class C) :
+  F.op.rlp_with = F.llp_with.op :=
+begin
+  ext p,
+  split,
+  { intros h X Y i hi,
+    have paf := h i.op,
+    simpa only [has_lifting_property_new.iff_unop] using h i.op hi, },
+  { intros h X Y i hi,
+    have hi' := h i.unop hi,
+    rw has_lifting_property_new.iff_op at hi',
+    exact hi', },
+end
+
+def rlp_with_unop (F : arrow_class Cᵒᵖ) :
+   F.unop.llp_with = F.rlp_with.unop :=
+begin
+  have h := rlp_with_op F.unop,
+  rw F.op_unop at h,
+  rw [h, arrow_class.unop_op],
+end
+
+lemma llp_with_is_stable_by_composition (F : arrow_class C) :
+  F.llp_with.is_stable_by_composition :=
+begin
+  intros X Y Z f g hf hg A B p hp,
+  rw arrow.mk_hom,
+  haveI : has_lifting_property_new f p := hf p hp,
+  haveI : has_lifting_property_new g p := hg p hp,
+  apply_instance,
+end
+
+lemma rlp_with_is_stable_by_composition (F : arrow_class C) :
+  F.rlp_with.is_stable_by_composition :=
+begin
+  intros A B C f g hf hg X Y i hi,
+  rw arrow.mk_hom,
+  haveI : has_lifting_property_new i f := hf i hi,
+  haveI : has_lifting_property_new i g := hg i hi,
+  apply_instance,
+end
+
+end arrow_class
 
 end category_theory

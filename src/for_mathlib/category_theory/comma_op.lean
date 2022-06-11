@@ -23,69 +23,79 @@ variables {T : Type u₃} [category.{v₃} T]
 
 @[simps]
 def functor_comma_op (L : A ⥤ T) (R : B ⥤ T) :
-  comma L R ⥤ (comma R.op L.op)ᵒᵖ :=
-{ obj := λ X, op
-  { left := op X.right,
-    right := op X.left,
-    hom := X.hom.op, },
-  map := λ X Y f, quiver.hom.op
-  { left := f.right.op,
-    right := f.left.op,
-    w' := congr_arg (λ (φ : _ ⟶ _), φ.op) f.w'.symm, }, }
+  (comma L R)ᵒᵖ ⥤ comma R.op L.op :=
+{ obj := λ X,
+  { left := op X.unop.right,
+    right := op X.unop.left,
+    hom := X.unop.hom.op, },
+  map := λ X Y f,
+  { left := f.unop.right.op,
+    right := f.unop.left.op,
+    w' := by { apply quiver.hom.unop_inj, exact f.unop.w'.symm, },  }, }
 
 @[simps]
 def functor_comma_unop (L : A ⥤ T) (R : B ⥤ T) :
-  (comma R.op L.op)ᵒᵖ ⥤ comma L R :=
-{ obj := λ X,
-  { left := X.unop.right.unop,
-    right := X.unop.left.unop,
-    hom := X.unop.hom.unop, },
-  map := λ X Y f,
-  { left := f.unop.right.unop,
-    right := f.unop.left.unop,
-    w' := congr_arg (λ (φ : _ ⟶ _), φ.unop) f.unop.w'.symm, }, }
+  comma R.op L.op ⥤ (comma L R)ᵒᵖ :=
+{ obj := λ X, op
+  { left := X.right.unop,
+    right := X.left.unop,
+    hom := X.hom.unop, },
+  map := λ X Y f, quiver.hom.op
+  { left := f.right.unop,
+    right := f.left.unop,
+    w' := by { apply quiver.hom.op_inj, exact f.w'.symm, }, } }
 
 @[simps]
 def equivalence_comma_op (L : A ⥤ T) (R : B ⥤ T) :
-  comma L R ≌ (comma R.op L.op)ᵒᵖ :=
+  (comma L R)ᵒᵖ ≌ comma R.op L.op :=
 { functor := functor_comma_op L R,
   inverse := functor_comma_unop L R,
   unit_iso := eq_to_iso begin
     apply functor.ext,
-    { tidy, },
-    { intro X, cases X, refl, }
+    { intros X Y f,
+      apply quiver.hom.unop_inj,
+      apply comma_morphism.ext,
+      tidy, },
+    { intro X,
+      rw ← op_unop X,
+      generalize : X.unop = Y,
+      cases Y,
+      refl, }
   end,
   counit_iso := eq_to_iso begin
-    suffices h : (functor_comma_unop L R ⋙ functor_comma_op L R).unop = 𝟭 _,
-    { exact congr_arg functor.op h, },
-    { apply functor.ext,
-      { tidy, },
-      { intro X, cases X, refl, }, },
+    apply functor.ext,
+    { tidy, },
+    { intro X,
+      cases X,
+      refl, }
   end,
-  functor_unit_iso_comp' := begin
-    intro X,
-    simpa only [eq_to_iso.hom, eq_to_hom_app, eq_to_hom_map, eq_to_hom_trans],
-  end }
+  functor_unit_iso_comp' := by tidy, }
 
 variable (T)
 @[simps]
 def equivalence_arrow_op :
-  arrow T ≌ (arrow Tᵒᵖ)ᵒᵖ := equivalence_comma_op (𝟭 T) (𝟭 T)
+  (arrow T)ᵒᵖ ≌ arrow Tᵒᵖ := equivalence_comma_op (𝟭 T) (𝟭 T)
 
 variable {T}
 
 namespace arrow
 
-lemma mk_eq (f : arrow T) : arrow.mk f.hom = f :=
-by { cases f, dsimp [arrow.mk], refl, }
-
 @[simp, protected]
-def op (f : arrow T) : arrow Tᵒᵖ := ((equivalence_arrow_op T).functor.obj f).unop
+def op (f : arrow T) : arrow Tᵒᵖ := ((equivalence_arrow_op T).functor.obj (op f))
 @[simp, protected]
-def unop (f : arrow Tᵒᵖ) : arrow T := (equivalence_arrow_op T).inverse.obj (opposite.op f)
+def unop (f : arrow Tᵒᵖ) : arrow T := ((equivalence_arrow_op T).inverse.obj f).unop
 
 lemma unop_op (f : arrow T) : f.op.unop = f := by { cases f, refl, }
 lemma op_unop (f : arrow Tᵒᵖ) : f.unop.op = f := by { cases f, refl, }
+
+end arrow
+#exit
+
+
+lemma mk_eq (f : arrow T) : arrow.mk f.hom = f :=
+by { cases f, dsimp [arrow.mk], refl, }
+
+
 
 def op_hom {f g : arrow T} (sq : f ⟶ g) : g.op ⟶ f.op :=
 ((equivalence_arrow_op T).functor.map sq).unop

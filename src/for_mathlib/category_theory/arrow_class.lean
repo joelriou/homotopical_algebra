@@ -5,6 +5,9 @@ Authors: Joël Riou
 -/
 
 import category_theory.arrow
+import for_mathlib.category_theory.arrow
+import for_mathlib.category_theory.comma_op
+import for_mathlib.category_theory.retracts
 
 /-!
 
@@ -35,6 +38,118 @@ namespace arrow_class
 means that all morphisms in `W` are sent to isomorphisms in `D`. -/
 def is_inverted_by (W : arrow_class C) (F : C ⥤ D) : Prop :=
 ∀ (f : W), f.val.is_inverted_by F
+
+variables (F : arrow_class C) (F' : arrow_class Cᵒᵖ)
+
+def op : arrow_class Cᵒᵖ := λ f, f.unop ∈ F
+def unop : arrow_class C := λ f, f.op ∈ F'
+
+lemma mem_op_iff (f : arrow Cᵒᵖ) : f ∈ F.op ↔ f.unop ∈ F := by refl
+lemma mem_unop_iff (f : arrow C) : f ∈ F'.unop ↔ f.op ∈ F' := by refl
+
+lemma unop_op : F.op.unop = F :=
+begin
+  ext f,
+  split;
+  { intro h,
+    simpa only [mem_unop_iff, mem_op_iff, arrow.unop_op] using h, },
+end
+
+lemma op_unop : F'.unop.op = F' :=
+begin
+  ext f,
+  split;
+  { intro h,
+    simpa only [mem_unop_iff, mem_op_iff, arrow.op_unop] using h, },
+end
+
+class is_stable_by_composition : Prop :=
+(comp_stable : ∀ {X Y Z : C} (f : X ⟶ Y) (g : Y ⟶ Z),
+    arrow.mk f ∈ F → arrow.mk g ∈ F → arrow.mk (f ≫ g) ∈ F)
+
+namespace is_stable_by_composition
+
+variables {F F'}
+
+lemma stability (h : is_stable_by_composition F)
+  {X Y Z : C} (f : X ⟶ Y) (g : Y ⟶ Z)
+  (hf : arrow.mk f ∈ F) (hg : arrow.mk g ∈ F) :
+  arrow.mk (f ≫ g) ∈ F :=
+begin
+  have s := h.comp_stable,
+  exact s f g hf hg,
+end
+
+lemma op (h : is_stable_by_composition F) :
+  is_stable_by_composition F.op :=
+⟨λ X Y Z f g hf hg, h.stability g.unop f.unop hg hf⟩
+
+lemma unop (h : is_stable_by_composition F') :
+  is_stable_by_composition F'.unop :=
+⟨λ X Y Z f g hf hg, h.stability g.op f.op hg hf⟩
+
+variables (F F')
+
+lemma iff_op :
+  is_stable_by_composition F ↔ is_stable_by_composition F.op :=
+begin
+  split,
+  { intro h,
+    exact h.op, },
+  { intro h,
+    simpa only [F.unop_op] using h.unop, },
+end
+
+lemma iff_unop :
+  is_stable_by_composition F' ↔ is_stable_by_composition F'.unop :=
+by simpa only [F'.op_unop] using (iff_op F'.unop).symm
+
+end is_stable_by_composition
+
+variable (F)
+
+class is_stable_by_retract : Prop :=
+(retract_stable : ∀ {X₁ X₂ Y₁ Y₂ : C} (x : X₁ ⟶ X₂) (y : Y₁ ⟶ Y₂)
+  (hxy : is_retract_hom x y) (hx : arrow.mk y ∈ F), arrow.mk x ∈ F)
+
+namespace is_stable_by_retract
+
+variables {F F'}
+
+lemma stability (h : is_stable_by_retract F)
+  {X₁ X₂ Y₁ Y₂ : C} (x : X₁ ⟶ X₂) (y : Y₁ ⟶ Y₂)
+  (hxy : is_retract_hom x y) (hx : arrow.mk y ∈ F) :
+  arrow.mk x ∈ F :=
+begin
+  have r := h.retract_stable,
+  exact r x y hxy hx,
+end
+
+lemma op (h : is_stable_by_retract F) :
+  is_stable_by_retract F.op :=
+⟨λ X₁ X₂ Y₁ Y₂ x y hxy hy, h.stability x.unop y.unop hxy.unop hy⟩
+
+lemma unop (h : is_stable_by_retract F') :
+  is_stable_by_retract F'.unop :=
+⟨λ X₁ X₂ Y₁ Y₂ x y hxy hy, h.stability x.op y.op hxy.op hy⟩
+
+variables (F F')
+
+lemma iff_op (F : arrow_class C) :
+  is_stable_by_retract F ↔ is_stable_by_retract F.op :=
+begin
+  split,
+  { intro h,
+    exact h.op, },
+  { intro h,
+    simpa only [F.unop_op] using h.unop, },
+end
+
+lemma iff_unop :
+  is_stable_by_retract F' ↔ is_stable_by_retract F'.unop :=
+by simpa only [F'.op_unop] using (iff_op F'.unop).symm
+
+end is_stable_by_retract
 
 end arrow_class
 
