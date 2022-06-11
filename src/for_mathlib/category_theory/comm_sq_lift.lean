@@ -324,23 +324,21 @@ end
 
 lemma llp_with_is_stable_by_composition (F : arrow_class C) :
   F.llp_with.is_stable_by_composition :=
-begin
-  intros X Y Z f g hf hg A B p hp,
+⟨λ X Y Z f g hf hg A B p hp, begin
   rw arrow.mk_hom,
   haveI : has_lifting_property_new f p := hf p hp,
   haveI : has_lifting_property_new g p := hg p hp,
   apply_instance,
-end
+end⟩
 
 lemma rlp_with_is_stable_by_composition (F : arrow_class C) :
   F.rlp_with.is_stable_by_composition :=
-begin
-  intros A B C f g hf hg X Y i hi,
+⟨λ A B C f g hf hg X Y i hi, begin
   rw arrow.mk_hom,
   haveI : has_lifting_property_new i f := hf i hi,
   haveI : has_lifting_property_new i g := hg i hi,
   apply_instance,
-end
+end⟩
 
 end arrow_class
 

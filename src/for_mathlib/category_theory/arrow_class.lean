@@ -7,7 +7,6 @@ Authors: Joël Riou
 import category_theory.arrow
 import for_mathlib.category_theory.arrow
 import for_mathlib.category_theory.comma_op
-import for_mathlib.category_theory.retracts
 
 /-!
 
@@ -105,51 +104,6 @@ lemma iff_unop :
 by simpa only [F'.op_unop] using (iff_op F'.unop).symm
 
 end is_stable_by_composition
-
-variable (F)
-
-class is_stable_by_retract : Prop :=
-(retract_stable : ∀ {X₁ X₂ Y₁ Y₂ : C} (x : X₁ ⟶ X₂) (y : Y₁ ⟶ Y₂)
-  (hxy : is_retract_hom x y) (hx : arrow.mk y ∈ F), arrow.mk x ∈ F)
-
-namespace is_stable_by_retract
-
-variables {F F'}
-
-lemma stability (h : is_stable_by_retract F)
-  {X₁ X₂ Y₁ Y₂ : C} (x : X₁ ⟶ X₂) (y : Y₁ ⟶ Y₂)
-  (hxy : is_retract_hom x y) (hx : arrow.mk y ∈ F) :
-  arrow.mk x ∈ F :=
-begin
-  have r := h.retract_stable,
-  exact r x y hxy hx,
-end
-
-lemma op (h : is_stable_by_retract F) :
-  is_stable_by_retract F.op :=
-⟨λ X₁ X₂ Y₁ Y₂ x y hxy hy, h.stability x.unop y.unop hxy.unop hy⟩
-
-lemma unop (h : is_stable_by_retract F') :
-  is_stable_by_retract F'.unop :=
-⟨λ X₁ X₂ Y₁ Y₂ x y hxy hy, h.stability x.op y.op hxy.op hy⟩
-
-variables (F F')
-
-lemma iff_op (F : arrow_class C) :
-  is_stable_by_retract F ↔ is_stable_by_retract F.op :=
-begin
-  split,
-  { intro h,
-    exact h.op, },
-  { intro h,
-    simpa only [F.unop_op] using h.unop, },
-end
-
-lemma iff_unop :
-  is_stable_by_retract F' ↔ is_stable_by_retract F'.unop :=
-by simpa only [F'.op_unop] using (iff_op F'.unop).symm
-
-end is_stable_by_retract
 
 end arrow_class
 

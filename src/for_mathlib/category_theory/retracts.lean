@@ -5,14 +5,14 @@ Authors: Joël Riou
 -/
 
 import category_theory.opposites
-import category_theory.arrow
+import for_mathlib.category_theory.arrow_class
 import for_mathlib.category_theory.comma_op
 
 open category_theory
 open category_theory.category
 open opposite
 
-variables {C D : Type*} [category C] [category D] (F : C ⥤ D)
+variables {C D : Type*} [category C] [category D] (G : C ⥤ D)
 
 namespace category_theory
 
@@ -52,20 +52,20 @@ begin
   { exact imp_of_isos e₁.symm e₂.symm, },
 end
 
-lemma imp_of_functor (X Y : C) (h : is_retract X Y) : is_retract (F.obj X) (F.obj Y) :=
+lemma imp_of_functor (X Y : C) (h : is_retract X Y) : is_retract (G.obj X) (G.obj Y) :=
 begin
   rcases h with ⟨s, p, r⟩,
-  use [F.map s, F.map p],
-  rw [← F.map_comp, r, F.map_id],
+  use [G.map s, G.map p],
+  rw [← G.map_comp, r, G.map_id],
 end
 
-lemma iff_of_is_equivalence (X Y : C) [is_equivalence F] :
-  is_retract X Y ↔ is_retract (F.obj X) (F.obj Y) :=
+lemma iff_of_is_equivalence (X Y : C) [is_equivalence G] :
+  is_retract X Y ↔ is_retract (G.obj X) (G.obj Y) :=
 begin
   split,
   { apply imp_of_functor, },
   { intro h,
-    have e : is_equivalence F := infer_instance,
+    have e : is_equivalence G := infer_instance,
     erw iff_of_isos (e.unit_iso.app X) (e.unit_iso.app Y),
     convert imp_of_functor e.inverse _ _ h, }
 end
@@ -99,5 +99,54 @@ def unop {X₁ X₂ Y₁ Y₂ : Cᵒᵖ} {x : X₁ ⟶ X₂} {y : Y₁ ⟶ Y₂}
 (iff_op x.unop y.unop).mpr hxy
 
 end is_retract_hom
+
+namespace arrow_class
+
+variables (F : arrow_class C) {F' : arrow_class Cᵒᵖ}
+
+class is_stable_by_retract : Prop :=
+(retract_stable : ∀ {X₁ X₂ Y₁ Y₂ : C} (x : X₁ ⟶ X₂) (y : Y₁ ⟶ Y₂)
+  (hxy : is_retract_hom x y) (hx : arrow.mk y ∈ F), arrow.mk x ∈ F)
+
+namespace is_stable_by_retract
+
+variable {F}
+
+lemma stability (h : is_stable_by_retract F)
+  {X₁ X₂ Y₁ Y₂ : C} (x : X₁ ⟶ X₂) (y : Y₁ ⟶ Y₂)
+  (hxy : is_retract_hom x y) (hx : arrow.mk y ∈ F) :
+  arrow.mk x ∈ F :=
+begin
+  have r := h.retract_stable,
+  exact r x y hxy hx,
+end
+
+lemma op (h : is_stable_by_retract F) :
+  is_stable_by_retract F.op :=
+⟨λ X₁ X₂ Y₁ Y₂ x y hxy hy, h.stability x.unop y.unop hxy.unop hy⟩
+
+lemma unop (h : is_stable_by_retract F') :
+  is_stable_by_retract F'.unop :=
+⟨λ X₁ X₂ Y₁ Y₂ x y hxy hy, h.stability x.op y.op hxy.op hy⟩
+
+variables (F F')
+
+lemma iff_op (F : arrow_class C) :
+  is_stable_by_retract F ↔ is_stable_by_retract F.op :=
+begin
+  split,
+  { intro h,
+    exact h.op, },
+  { intro h,
+    simpa only [F.unop_op] using h.unop, },
+end
+
+lemma iff_unop :
+  is_stable_by_retract F' ↔ is_stable_by_retract F'.unop :=
+by simpa only [F'.op_unop] using (iff_op F'.unop).symm
+
+end is_stable_by_retract
+
+end arrow_class
 
 end category_theory
