@@ -71,7 +71,6 @@ instance CM4a' [hi₁ : cofibration i] [hi₂ : weak_eq i] [hp : fibration p] :
 instance CM4b' [hi : cofibration i] [hp₁ : fibration p] [hp₂ : weak_eq p] :
   has_lifting_property_new i p := CM4b i hi.mem p ⟨hp₁.mem, hp₂.mem⟩
 
-
 lemma cofibration_retract_stable [hp : cofibration p] : cofibration i := ⟨CM3.cof i p hip hp.mem⟩
 lemma fibration_retract_stable [hp : fibration p] : fibration i := ⟨CM3.fib i p hip hp.mem⟩
 lemma weq_retract_stable [hp : weak_eq p] : weak_eq i := ⟨CM3.weq i p hip hp.mem⟩
@@ -96,6 +95,18 @@ instance comp_cofibration [hp : cofibration p] [hq : cofibration q] : cofibratio
 ⟨cof_comp_stable p q hp.mem hq.mem⟩
 instance comp_fibration [hp : fibration p] [hq : fibration q] : fibration (p ≫ q) :=
 ⟨fib_comp_stable p q hp.mem hq.mem⟩
+
+namespace weak_eq
+
+variables (p q)
+
+lemma of_comp_left [hp : weak_eq p] [hpq : weak_eq (p ≫ q)] : weak_eq q :=
+⟨CM2.of_comp_left p q hp.mem hpq.mem⟩
+
+lemma of_comp_right [hq : weak_eq q] [hpq : weak_eq (p ≫ q)] : weak_eq p :=
+⟨CM2.of_comp_right p q hq.mem hpq.mem⟩
+
+end weak_eq
 
 lemma cof_contains_iso : arrow_class.isomorphisms ⊆ (cof : arrow_class C) :=
 by { rw cof_eq_llp_with_triv_fib, apply arrow_class.isomorphisms_subset_llp_with, }
@@ -154,6 +165,13 @@ lemma iff_op : cofibration p ↔ fibration p.op := ⟨op, fibration.unop⟩
 lemma iff_unop {X Y : Cᵒᵖ} (p : X ⟶ Y) : cofibration p ↔ fibration p.unop := ⟨unop, fibration.op⟩
 
 end cofibration
+
+namespace weak_eq
+
+lemma op (hp : weak_eq p) : weak_eq p.op := ⟨hp.mem⟩
+lemma unop {X Y : Cᵒᵖ} {p : X ⟶ Y} (hp : weak_eq p) : weak_eq p.unop := ⟨hp.mem⟩
+
+end weak_eq
 
 end model_category
 
