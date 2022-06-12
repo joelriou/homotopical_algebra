@@ -101,6 +101,9 @@ def inverse_image (G : D ⥤ C) : arrow_class D :=
 
 def isomorphisms : arrow_class C := λ f, is_iso f.hom
 
+def mem_isomorphisms_of_is_iso {X Y : C} (f : X ⟶ Y) [hf : is_iso f] :
+  arrow.mk f ∈ (isomorphisms : arrow_class C) := hf
+
 end arrow_class
 
 end category_theory

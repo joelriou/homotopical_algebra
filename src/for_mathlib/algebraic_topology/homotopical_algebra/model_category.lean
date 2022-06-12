@@ -108,6 +108,13 @@ by { rw triv_fib_eq_rlp_with_cof, apply arrow_class.isomorphisms_subset_rlp_with
 lemma weq_contains_iso : arrow_class.isomorphisms ⊆ (weq : arrow_class C) := λ f hf,
 (triv_cof_contains_iso hf).2
 
+instance cofibration_of_is_iso [is_iso p] : cofibration p :=
+⟨cof_contains_iso (arrow_class.mem_isomorphisms_of_is_iso p)⟩
+instance fibration_of_is_iso [is_iso p] : fibration p :=
+⟨fib_contains_iso (arrow_class.mem_isomorphisms_of_is_iso p)⟩
+instance weak_eq_of_is_iso [is_iso p] : weak_eq p :=
+⟨weq_contains_iso (arrow_class.mem_isomorphisms_of_is_iso p)⟩
+
 instance CM5a_cofibration : cofibration (CM5a.i f) := ⟨(CM5a.i_mem f).1⟩
 instance CM5a_weak_eq : weak_eq (CM5a.i f) := ⟨(CM5a.i_mem f).2⟩
 instance CM5a_fibration : fibration (CM5a.p f) := ⟨CM5a.p_mem f⟩
@@ -120,6 +127,23 @@ instance CM5b_weak_eq : weak_eq (CM5b.p f) := ⟨(CM5b.p_mem f).2⟩
 by { rw cof_equals_llp_triv_fib, apply arrow_class.is_stable_by_cobase_change_of_llp_with, }
 lemma triv_cof_co_bc_stable : (triv_cof : arrow_class D).is_stable_by_cobase_change :=
 by { rw triv_cof_equals_llp_fib, apply arrow_class.is_stable_by_cobase_change_of_llp_with, }-/
+
+namespace cofibration
+
+lemma op (hi : cofibration i) : fibration i.op := ⟨hi.mem⟩
+lemma unop {A B : Cᵒᵖ} {i : A ⟶ B} (hi : cofibration i) : fibration i.unop := ⟨hi.mem⟩
+
+end cofibration
+
+namespace fibration
+
+lemma op (hp : fibration p) : cofibration p.op := ⟨hp.mem⟩
+lemma unop {X Y : Cᵒᵖ} {p : X ⟶ Y} (hp : fibration p) : cofibration p.unop := ⟨hp.mem⟩
+
+variable (p)
+--lemma iff_op : fibration p ↔ cofibration p.op := 
+
+end fibration
 
 end model_category
 
