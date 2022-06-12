@@ -62,7 +62,7 @@ instance CM4b' (i : A ⟶ B) (p : X ⟶ Y) [hi : cofibration i] [hp₁ : fibrati
   has_lifting_property_new i p := CM4b i hi.mem p ⟨hp₁.mem, hp₂.mem⟩
 
 instance comp_weq (f : X ⟶ Y) (g : Y ⟶ Z) [hf : weq f] [hg : weq g] : weq (f ≫ g) :=
-⟨CM2.of_comp f g hf.mem hg.mem⟩ 
+⟨CM2.of_comp f g hf.mem hg.mem⟩
 
 end model_category
 
