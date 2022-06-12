@@ -105,6 +105,9 @@ by simpa only [F'.op_unop] using (iff_op F'.unop).symm
 
 end is_stable_by_composition
 
+def inverse_image (G : D ⥤ C) : arrow_class D :=
+λ w, G.map_arrow.obj w ∈ F
+
 end arrow_class
 
 end category_theory

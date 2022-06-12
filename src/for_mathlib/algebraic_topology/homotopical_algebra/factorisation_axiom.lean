@@ -10,7 +10,7 @@ open category_theory category_theory.category category_theory.limits opposite
 
 namespace algebraic_topology
 
-variables {C : Type*} [category C] (F G : arrow_class C)
+variables {C : Type*} [category C] (F G : arrow_class C) {F' G' : arrow_class Cᵒᵖ}
 
 def factorisation_axiom :=
 ∀ (X Z : C) (f : X ⟶ Z), ∃ (Y : C) (i : X ⟶ Y) (hi : arrow.mk i ∈ F) (p : Y ⟶ Z) (hp : arrow.mk p ∈ G),
@@ -29,13 +29,18 @@ begin
   rw [← op_comp, ← fac, f.op_unop],
 end
 
-lemma unop {F' G' : arrow_class Cᵒᵖ} (h : factorisation_axiom F' G') : factorisation_axiom G'.unop F'.unop :=
+lemma unop (h : factorisation_axiom F' G') : factorisation_axiom G'.unop F'.unop :=
 λ X Z f,
 begin
   rcases h _ _ f.op with ⟨Y, i, hi, p, hp, fac⟩,
   use [Y.unop, p.unop, hp, i.unop, hi],
   rw [← unop_comp, ← fac, f.unop_op],
 end
+
+variables (F G F' G')
+
+lemma iff_op : factorisation_axiom F G ↔ factorisation_axiom G.op F.op := ⟨op, unop⟩
+lemma iff_unop : factorisation_axiom F' G' ↔ factorisation_axiom G'.unop F'.unop := ⟨unop, op⟩
 
 lemma is_retract_of_fac_and_llp {X Y Z : C} (i : X ⟶ Z) {j : X ⟶ Y} {p : Y ⟶ Z} (fac : i = j ≫ p)
   [has_lifting_property_new i p] : is_retract_hom i j :=
