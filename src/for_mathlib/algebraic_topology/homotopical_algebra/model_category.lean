@@ -60,9 +60,9 @@ instance : model_category Cᵒᵖ :=
 
 variables {A B X Y Z : C} (i : A ⟶ B) {p : X ⟶ Y} {q : Y ⟶ Z} {f : X ⟶ Y} (hip : is_retract_hom i p)
 
-class cofibration := (mem : arrow.mk i ∈ M.cof)
-class fibration := (mem : arrow.mk i ∈ M.fib)
-class weak_eq := (mem : arrow.mk i ∈ M.weq)
+class cofibration : Prop := (mem : arrow.mk i ∈ M.cof)
+class fibration : Prop := (mem : arrow.mk i ∈ M.fib)
+class weak_eq : Prop := (mem : arrow.mk i ∈ M.weq)
 
 variable {i}
 
@@ -141,9 +141,19 @@ lemma op (hp : fibration p) : cofibration p.op := ⟨hp.mem⟩
 lemma unop {X Y : Cᵒᵖ} {p : X ⟶ Y} (hp : fibration p) : cofibration p.unop := ⟨hp.mem⟩
 
 variable (p)
---lemma iff_op : fibration p ↔ cofibration p.op := 
+lemma iff_op : fibration p ↔ cofibration p.op := ⟨op, cofibration.unop⟩
+lemma iff_unop {X Y : Cᵒᵖ} (p : X ⟶ Y) : fibration p ↔ cofibration p.unop := ⟨unop, cofibration.op⟩
 
 end fibration
+
+namespace cofibration
+
+variable (p)
+
+lemma iff_op : cofibration p ↔ fibration p.op := ⟨op, fibration.unop⟩
+lemma iff_unop {X Y : Cᵒᵖ} (p : X ⟶ Y) : cofibration p ↔ fibration p.unop := ⟨unop, fibration.op⟩
+
+end cofibration
 
 end model_category
 
