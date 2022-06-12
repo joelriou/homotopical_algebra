@@ -104,30 +104,21 @@ namespace arrow_class
 
 variables (F : arrow_class C) {F' : arrow_class Cᵒᵖ}
 
-class is_stable_by_retract : Prop :=
-(retract_stable : ∀ {X₁ X₂ Y₁ Y₂ : C} (x : X₁ ⟶ X₂) (y : Y₁ ⟶ Y₂)
-  (hxy : is_retract_hom x y) (hx : arrow.mk y ∈ F), arrow.mk x ∈ F)
+def is_stable_by_retract : Prop :=
+∀ ⦃X₁ X₂ Y₁ Y₂ : C⦄ (x : X₁ ⟶ X₂) (y : Y₁ ⟶ Y₂)
+  (hxy : is_retract_hom x y) (hx : arrow.mk y ∈ F), arrow.mk x ∈ F
 
 namespace is_stable_by_retract
 
 variable {F}
 
-lemma stability (h : is_stable_by_retract F)
-  {X₁ X₂ Y₁ Y₂ : C} (x : X₁ ⟶ X₂) (y : Y₁ ⟶ Y₂)
-  (hxy : is_retract_hom x y) (hx : arrow.mk y ∈ F) :
-  arrow.mk x ∈ F :=
-begin
-  have r := h.retract_stable,
-  exact r x y hxy hx,
-end
-
 lemma op (h : is_stable_by_retract F) :
   is_stable_by_retract F.op :=
-⟨λ X₁ X₂ Y₁ Y₂ x y hxy hy, h.stability x.unop y.unop hxy.unop hy⟩
+λ X₁ X₂ Y₁ Y₂ x y hxy hy, h x.unop y.unop hxy.unop hy
 
 lemma unop (h : is_stable_by_retract F') :
   is_stable_by_retract F'.unop :=
-⟨λ X₁ X₂ Y₁ Y₂ x y hxy hy, h.stability x.op y.op hxy.op hy⟩
+λ X₁ X₂ Y₁ Y₂ x y hxy hy, h x.op y.op hxy.op hy
 
 variables (F F')
 
@@ -144,6 +135,12 @@ end
 lemma iff_unop :
   is_stable_by_retract F' ↔ is_stable_by_retract F'.unop :=
 by simpa only [F'.op_unop] using (iff_op F'.unop).symm
+
+variable {F}
+
+lemma of_inter {G : arrow_class C} (hF : F.is_stable_by_retract) (hG : G.is_stable_by_retract) :
+  (F ∩ G).is_stable_by_retract :=
+λ X₁ X₂ Y₁ Y₂ x y hxy hy, ⟨hF x y hxy hy.1, hG x y hxy hy.2⟩
 
 end is_stable_by_retract
 

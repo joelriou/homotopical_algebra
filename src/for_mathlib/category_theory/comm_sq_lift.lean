@@ -350,6 +350,12 @@ lemma rlp_with_is_stable_by_composition (F : arrow_class C) :
   apply_instance,
 end
 
+lemma isomorphisms_subset_llp_with (F : arrow_class C) : isomorphisms ⊆ F.llp_with :=
+λ f hf X Y p hp, by { haveI : is_iso f.hom := hf, apply_instance, }
+
+lemma isomorphisms_subset_rlp_with (F : arrow_class C) : isomorphisms ⊆ F.rlp_with :=
+λ f hf X Y i hi, by { haveI : is_iso f.hom := hf, apply_instance, }
+
 end arrow_class
 
 end category_theory

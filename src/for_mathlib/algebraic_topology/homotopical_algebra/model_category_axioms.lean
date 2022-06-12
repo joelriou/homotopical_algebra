@@ -14,7 +14,7 @@ namespace algebraic_topology
 variables (C : Type*) [category C]
 
 @[ext]
-class category_with_fib_cof_weq := (fib cof W : arrow_class C)
+class category_with_fib_cof_weq := (fib cof weq : arrow_class C)
 
 namespace category_with_fib_cof_weq
 
@@ -24,13 +24,13 @@ variables {C} (data : category_with_fib_cof_weq C) (data' : category_with_fib_co
 def op : category_with_fib_cof_weq Cᵒᵖ :=
 { fib := data.cof.op,
   cof := data.fib.op,
-  W := data.W.op }
+  weq := data.weq.op }
 
 @[simps]
 def unop : category_with_fib_cof_weq C :=
 { fib := data'.cof.unop,
   cof := data'.fib.unop,
-  W := data'.W.unop }
+  weq := data'.weq.unop }
 
 lemma unop_op : data.op.unop = data :=
 by ext1; apply arrow_class.unop_op
@@ -38,25 +38,36 @@ by ext1; apply arrow_class.unop_op
 lemma op_unop : data'.unop.op = data' :=
 by ext1; apply arrow_class.op_unop
 
-def triv_fib := data.fib ∩ data.W
-def triv_cof := data.cof ∩ data.W
+def triv_fib := data.fib ∩ data.weq
+def triv_cof := data.cof ∩ data.weq
 
 def inverse_image {D : Type*} [category D] (F : D ⥤ C) : category_with_fib_cof_weq D :=
 { fib := data.fib.inverse_image F,
   cof := data.cof.inverse_image F,
-  W := data.W.inverse_image F }
+  weq := data.weq.inverse_image F }
 
-def CM2 := data.W.three_of_two
+def CM2 := data.weq.three_of_two
 lemma CM2_iff_op : data.CM2 ↔ data.op.CM2 := arrow_class.three_of_two.iff_op _
 
-def CM3a := data.W.is_stable_by_retract
+def CM3a := data.weq.is_stable_by_retract
 def CM3b := data.fib.is_stable_by_retract
 def CM3c := data.cof.is_stable_by_retract
 
 structure CM3 : Prop :=
-(W : data.CM3a)
+(weq : data.CM3a)
 (fib : data.CM3b)
 (cof : data.CM3c)
+
+namespace CM3
+
+variable {data}
+
+def triv_cof (h : data.CM3) : data.triv_cof.is_stable_by_retract :=
+arrow_class.is_stable_by_retract.of_inter h.cof h.weq
+def triv_fib (h : data.CM3) : data.triv_fib.is_stable_by_retract :=
+arrow_class.is_stable_by_retract.of_inter h.fib h.weq
+
+end CM3
 
 lemma CM3a_iff_op : data.CM3a ↔ data.op.CM3a := arrow_class.is_stable_by_retract.iff_op _
 lemma CM3b_iff_op : data.CM3b ↔ data.op.CM3c := arrow_class.is_stable_by_retract.iff_op _

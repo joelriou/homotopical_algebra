@@ -70,14 +70,6 @@ namespace is_stable_by_composition
 
 variables {F F'}
 
-/-lemma stability (h : is_stable_by_composition F)
-  {X Y Z : C} (f : X ⟶ Y) (g : Y ⟶ Z)
-  (hf : arrow.mk f ∈ F) (hg : arrow.mk g ∈ F) :
-  arrow.mk (f ≫ g) ∈ F :=
-begin
-  exact s f g hf hg,
-end-/
-
 lemma op (h : is_stable_by_composition F) :
   is_stable_by_composition F.op :=
 λ X Y Z f g hf hg, h g.unop f.unop hg hf
@@ -106,6 +98,8 @@ end is_stable_by_composition
 
 def inverse_image (G : D ⥤ C) : arrow_class D :=
 λ w, G.map_arrow.obj w ∈ F
+
+def isomorphisms : arrow_class C := λ f, is_iso f.hom
 
 end arrow_class
 
