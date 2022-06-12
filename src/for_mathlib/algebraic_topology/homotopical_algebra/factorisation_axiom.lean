@@ -13,8 +13,8 @@ namespace algebraic_topology
 variables {C : Type*} [category C] (F G : arrow_class C) {F' G' : arrow_class Cᵒᵖ}
 
 def factorisation_axiom :=
-∀ ⦃X Z : C⦄ (f : X ⟶ Z), ∃ (Y : C) (i : X ⟶ Y) (hi : arrow.mk i ∈ F) (p : Y ⟶ Z) (hp : arrow.mk p ∈ G),
-  f = i ≫ p
+∀ ⦃X Z : C⦄ (f : X ⟶ Z), ∃ (Y : C) (i : X ⟶ Y) (hi : arrow.mk i ∈ F)
+  (p : Y ⟶ Z) (hp : arrow.mk p ∈ G), f = i ≫ p
 
 namespace factorisation_axiom
 

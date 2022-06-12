@@ -62,30 +62,29 @@ begin
     simpa only [mem_unop_iff, mem_op_iff, arrow.op_unop] using h, },
 end
 
-class is_stable_by_composition : Prop :=
-(comp_stable : ∀ {X Y Z : C} (f : X ⟶ Y) (g : Y ⟶ Z),
-    arrow.mk f ∈ F → arrow.mk g ∈ F → arrow.mk (f ≫ g) ∈ F)
+def is_stable_by_composition : Prop :=
+∀ ⦃X Y Z : C⦄ (f : X ⟶ Y) (g : Y ⟶ Z),
+    arrow.mk f ∈ F → arrow.mk g ∈ F → arrow.mk (f ≫ g) ∈ F
 
 namespace is_stable_by_composition
 
 variables {F F'}
 
-lemma stability (h : is_stable_by_composition F)
+/-lemma stability (h : is_stable_by_composition F)
   {X Y Z : C} (f : X ⟶ Y) (g : Y ⟶ Z)
   (hf : arrow.mk f ∈ F) (hg : arrow.mk g ∈ F) :
   arrow.mk (f ≫ g) ∈ F :=
 begin
-  have s := h.comp_stable,
   exact s f g hf hg,
-end
+end-/
 
 lemma op (h : is_stable_by_composition F) :
   is_stable_by_composition F.op :=
-⟨λ X Y Z f g hf hg, h.stability g.unop f.unop hg hf⟩
+λ X Y Z f g hf hg, h g.unop f.unop hg hf
 
 lemma unop (h : is_stable_by_composition F') :
   is_stable_by_composition F'.unop :=
-⟨λ X Y Z f g hf hg, h.stability g.op f.op hg hf⟩
+λ X Y Z f g hf hg, h g.op f.op hg hf
 
 variables (F F')
 

@@ -5,27 +5,29 @@ Authors: Joël Riou
 -/
 
 import for_mathlib.algebraic_topology.homotopical_algebra.factorisation_axiom
+import for_mathlib.algebraic_topology.homotopical_algebra.three_of_two
 
 open category_theory category_theory.limits
 
 namespace algebraic_topology
 
 variables (C : Type*) [category C]
+
 @[ext]
-class category_with_fib_cof_W := (fib cof W : arrow_class C)
+class category_with_fib_cof_weq := (fib cof W : arrow_class C)
 
-namespace category_with_fib_cof_W
+namespace category_with_fib_cof_weq
 
-variables {C} (data : category_with_fib_cof_W C) (data' : category_with_fib_cof_W Cᵒᵖ)
+variables {C} (data : category_with_fib_cof_weq C) (data' : category_with_fib_cof_weq Cᵒᵖ)
 
 @[simps]
-def op : category_with_fib_cof_W Cᵒᵖ :=
+def op : category_with_fib_cof_weq Cᵒᵖ :=
 { fib := data.cof.op,
   cof := data.fib.op,
   W := data.W.op }
 
 @[simps]
-def unop : category_with_fib_cof_W C :=
+def unop : category_with_fib_cof_weq C :=
 { fib := data'.cof.unop,
   cof := data'.fib.unop,
   W := data'.W.unop }
@@ -39,12 +41,13 @@ by ext1; apply arrow_class.op_unop
 def triv_fib := data.fib ∩ data.W
 def triv_cof := data.cof ∩ data.W
 
-def inverse_image {D : Type*} [category D] (F : D ⥤ C) : category_with_fib_cof_W D :=
+def inverse_image {D : Type*} [category D] (F : D ⥤ C) : category_with_fib_cof_weq D :=
 { fib := data.fib.inverse_image F,
   cof := data.cof.inverse_image F,
   W := data.W.inverse_image F }
 
-def CM1 := has_finite_limits C ∧ has_finite_colimits C
+def CM2 := data.W.three_of_two
+lemma CM2_iff_op : data.CM2 ↔ data.op.CM2 := arrow_class.three_of_two.iff_op _
 
 def CM3a := data.W.is_stable_by_retract
 def CM3b := data.fib.is_stable_by_retract
@@ -80,6 +83,6 @@ lemma CM5b_iff_op : data.CM5b ↔ data.op.CM5a := factorisation_axiom.iff_op _ _
 lemma CM5_iff_op : data.CM5 ↔ data.op.CM5 :=
 by { dsimp only [CM5], rw [← CM5a_iff_op, ← CM5b_iff_op], tauto, }
 
-end category_with_fib_cof_W
+end category_with_fib_cof_weq
 
 end algebraic_topology
