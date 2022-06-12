@@ -13,7 +13,7 @@ namespace algebraic_topology
 variables {C : Type*} [category C] (F G : arrow_class C) {F' G' : arrow_class Cᵒᵖ}
 
 def factorisation_axiom :=
-∀ (X Z : C) (f : X ⟶ Z), ∃ (Y : C) (i : X ⟶ Y) (hi : arrow.mk i ∈ F) (p : Y ⟶ Z) (hp : arrow.mk p ∈ G),
+∀ ⦃X Z : C⦄ (f : X ⟶ Z), ∃ (Y : C) (i : X ⟶ Y) (hi : arrow.mk i ∈ F) (p : Y ⟶ Z) (hp : arrow.mk p ∈ G),
   f = i ≫ p
 
 namespace factorisation_axiom
@@ -24,7 +24,7 @@ variables {F G}
 lemma op (h : factorisation_axiom F G) : factorisation_axiom G.op F.op :=
 λ X Z f,
 begin
-  rcases h _ _ f.unop with ⟨Y, i, hi, p, hp, fac⟩,
+  rcases h f.unop with ⟨Y, i, hi, p, hp, fac⟩,
   use [op Y, p.op, hp, i.op, hi],
   rw [← op_comp, ← fac, f.op_unop],
 end
@@ -32,7 +32,7 @@ end
 lemma unop (h : factorisation_axiom F' G') : factorisation_axiom G'.unop F'.unop :=
 λ X Z f,
 begin
-  rcases h _ _ f.op with ⟨Y, i, hi, p, hp, fac⟩,
+  rcases h f.op with ⟨Y, i, hi, p, hp, fac⟩,
   use [Y.unop, p.unop, hp, i.unop, hi],
   rw [← unop_comp, ← fac, f.unop_op],
 end
@@ -71,9 +71,9 @@ begin
   ext i,
   rcases i with ⟨X, Y, i⟩,
   split,
-  { exact λ hi X Y, h₂.lifting_property i hi, },
+  { exact λ hi X Y, h₂ i hi, },
   { intro hi,
-    rcases h₁ _ _ i with ⟨Z, j, hj, p, hp, fac⟩,
+    rcases h₁ i with ⟨Z, j, hj, p, hp, fac⟩,
     haveI : has_lifting_property_new i p := hi p hp,
     exact h₃.stability i j (is_retract_of_fac_and_llp i fac) hj, },
 end
@@ -84,6 +84,5 @@ lemma eq_rlp_with
 by rw [← G.unop_op, eq_llp_with h₁.op h₂.op h₃.op, F.llp_with_op, arrow_class.unop_op]
 
 end factorisation_axiom
-
 
 end algebraic_topology

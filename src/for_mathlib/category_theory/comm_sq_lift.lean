@@ -235,28 +235,23 @@ namespace arrow_class
 
 @[protected]
 def has_lifting_property (F G : arrow_class C) :=
-∀ (A B X Y : C) (i : A ⟶ B) (hi : arrow.mk i ∈ F) (p : X ⟶ Y) (hp : arrow.mk p ∈ G),
+∀ ⦃A B X Y : C⦄ (i : A ⟶ B) (hi : arrow.mk i ∈ F) (p : X ⟶ Y) (hp : arrow.mk p ∈ G),
 has_lifting_property_new i p
 
 namespace has_lifting_property
 
-def lifting_property {F G : arrow_class C} (h : has_lifting_property F G)
-{A B X Y : C} (i : A ⟶ B) (hi : arrow.mk i ∈ F) (p : X ⟶ Y) (hp : arrow.mk p ∈ G) :
-  has_lifting_property_new i p :=
-h _ _ _ _ i hi p hp
-
 def has_lift {F G : arrow_class C} (h : has_lifting_property F G)
 {A B X Y : C} {f : A ⟶ X} {i : A ⟶ B} {p : X ⟶ Y} {g : B ⟶ Y}
 (sq : comm_sq f i p g) (hi : arrow.mk i ∈ F) (hp : arrow.mk p ∈ G) :
-  sq.has_lift := by { haveI := h.lifting_property i hi p hp, apply_instance, }
+  sq.has_lift := by { haveI := h i hi p hp, apply_instance, }
 
 def op {F G : arrow_class C} (h : has_lifting_property F G) :
   has_lifting_property G.op F.op :=
-λ A B X Y i hi p hp, (h.lifting_property p.unop hp i.unop hi).op
+λ A B X Y i hi p hp, (h p.unop hp i.unop hi).op
 
 def unop {F G : arrow_class Cᵒᵖ} (h : has_lifting_property F G) :
   has_lifting_property G.unop F.unop :=
-λ A B X Y i hi p hp, (h.lifting_property p.op hp i.op hi).unop
+λ A B X Y i hi p hp, (h p.op hp i.op hi).unop
 
 lemma iff_op (F G : arrow_class C) :
   has_lifting_property F G ↔ has_lifting_property G.op F.op := ⟨op, unop⟩
@@ -275,14 +270,14 @@ begin
     constructor,
     intros f g sq,
     rw comm_sq.has_lift.iff_unop,
-    haveI := h.lifting_property p.unop hp i.unop hi,
+    haveI := h p.unop hp i.unop hi,
     apply_instance, },
   { intro h,
     intros A B X Y i hi p hp,
     constructor,
     intros f g sq,
     rw comm_sq.has_lift.iff_op,
-    haveI := h.lifting_property p.op hp i.op hi,
+    haveI := h p.op hp i.op hi,
     apply_instance, },
 end
 
