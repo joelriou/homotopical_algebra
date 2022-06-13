@@ -39,7 +39,7 @@ Bicartesian squares, and
 show that the pullback and pushout squares for a biproduct are bicartesian.
 -/
 
-open category_theory
+open category_theory category_theory.category
 
 namespace category_theory.limits
 
@@ -70,12 +70,12 @@ lemma flip {W X Y Z : C} {f : W ⟶ X} {g : W ⟶ Y} {h : X ⟶ Z} {i : Y ⟶ Z}
 lemma of_arrow {f g : arrow C} (h : f ⟶ g) : comm_sq f.hom h.left h.right g.hom := ⟨h.w.symm⟩
 
 @[simps]
-def op {W X Y Z : C} {f : W ⟶ X} {g : W ⟶ Y} {h : X ⟶ Z} {i : Y ⟶ Z}
+lemma op {W X Y Z : C} {f : W ⟶ X} {g : W ⟶ Y} {h : X ⟶ Z} {i : Y ⟶ Z}
   (p : comm_sq f g h i) : comm_sq i.op h.op g.op f.op :=
 ⟨by simp only [← op_comp, p.w]⟩
 
 @[simps]
-def unop {W X Y Z : Cᵒᵖ} {f : W ⟶ X} {g : W ⟶ Y} {h : X ⟶ Z} {i : Y ⟶ Z}
+lemma unop {W X Y Z : Cᵒᵖ} {f : W ⟶ X} {g : W ⟶ Y} {h : X ⟶ Z} {i : Y ⟶ Z}
   (p : comm_sq f g h i) : comm_sq i.unop h.unop g.unop f.unop :=
 ⟨by simp only [← unop_comp, p.w]⟩
 
@@ -87,12 +87,19 @@ def cone {W X Y Z : C} {f : W ⟶ X} {g : W ⟶ Y} {h : X ⟶ Z} {i : Y ⟶ Z}
 def cocone {W X Y Z : C} {f : W ⟶ X} {g : W ⟶ Y} {h : X ⟶ Z} {i : Y ⟶ Z}
   (p : comm_sq f g h i) : pushout_cocone f g := pushout_cocone.mk _ _ p.w
 
-def paste_vert {X₁₁ X₁₂ X₂₁ X₂₂ X₃₁ X₃₂ : C}
+lemma paste_vert {X₁₁ X₁₂ X₂₁ X₂₂ X₃₁ X₃₂ : C}
   {h₁₁ : X₁₁ ⟶ X₁₂} {h₂₁ : X₂₁ ⟶ X₂₂} {h₃₁ : X₃₁ ⟶ X₃₂}
   {v₁₁ : X₁₁ ⟶ X₂₁} {v₁₂ : X₁₂ ⟶ X₂₂} {v₂₁ : X₂₁ ⟶ X₃₁} {v₂₂ : X₂₂ ⟶ X₃₂}
   (s : comm_sq h₁₁ v₁₁ v₁₂ h₂₁) (t : comm_sq h₂₁ v₂₁ v₂₂ h₃₁) :
   comm_sq h₁₁ (v₁₁ ≫ v₂₁) (v₁₂ ≫ v₂₂) h₃₁ :=
 mk (by simp [category.assoc, s.w_assoc, t.w])
+
+lemma paste_horiz {X₁₁ X₁₂ X₁₃ X₂₁ X₂₂ X₂₃ : C}
+  {h₁₁ : X₁₁ ⟶ X₁₂} {h₁₂ : X₁₂ ⟶ X₁₃} {h₂₁ : X₂₁ ⟶ X₂₂} {h₂₂ : X₂₂ ⟶ X₂₃}
+  {v₁₁ : X₁₁ ⟶ X₂₁} {v₁₂ : X₁₂ ⟶ X₂₂} {v₁₃ : X₁₃ ⟶ X₂₃}
+  (s : comm_sq h₁₁ v₁₁ v₁₂ h₂₁) (t : comm_sq h₁₂ v₁₂ v₁₃ h₂₂) :
+  comm_sq (h₁₁ ≫ h₁₂) v₁₁ v₁₃ (h₂₁ ≫ h₂₂) :=
+(paste_vert s.flip t.flip).flip
 
 end comm_sq
 
@@ -447,6 +454,34 @@ begin
   apply is_limit.of_iso_limit (pushout_cocone.unop_is_limit _ h.flip.is_colimit'.some),
   apply unop_cocone,
 end
+
+lemma of_coprod_inl_with_id {A B : C} (f : A ⟶ B) (X : C) [has_binary_coproduct A X]
+  [has_binary_coproduct B X] :
+  is_pushout coprod.inl f (coprod.map f (𝟙 X)) coprod.inl :=
+is_pushout.of_is_colimit' (comm_sq.mk (coprod.inl_map f (𝟙 X)))
+{ desc := λ s, coprod.desc (s.ι.app walking_span.right) (coprod.inr ≫ s.ι.app walking_span.left),
+  fac' := λ s, begin
+    have h₁ := s.ι.naturality walking_span.hom.fst,
+    have h₂ := s.ι.naturality walking_span.hom.snd,
+    dsimp at h₁ h₂,
+    simp only [comp_id] at h₁ h₂,
+    have eq : f ≫ s.ι.app walking_span.right = coprod.inl ≫ pushout_cocone.inl s,
+    { rw [h₂, ← h₁], },
+    rintro (_|_|_),
+    { dsimp, simpa only [coprod.inl_map, assoc, coprod.inl_desc, pushout_cocone.condition_zero] using eq, },
+    { ext,
+      { simpa only [comm_sq.cocone_ι_app, coprod.map_desc, coprod.inl_desc] using eq, },
+      { simp only [comm_sq.cocone_ι_app, coprod.map_desc, id_comp, coprod.inr_desc], }, },
+    { simp only [comm_sq.cocone_ι_app, coprod.inl_desc], },
+  end,
+  uniq' := λ s g h, begin
+    have h₁ := h walking_span.left,
+    have h₂ := h walking_span.right,
+    dsimp at h₁ h₂,
+    ext,
+    { simp only [h₂, coprod.inl_desc], },
+    { simp only [← h₁, coprod.inr_map_assoc, id_comp, coprod.inr_desc], },
+  end, }
 
 end is_pushout
 
