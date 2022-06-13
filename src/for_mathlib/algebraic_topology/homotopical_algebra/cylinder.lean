@@ -119,6 +119,33 @@ begin
   apply_instance,
 end
 
+def is_pushout_ad_hoc {A B : C} (f : A ⟶ B) (X : C) :
+  is_pushout coprod.inl f (coprod.map f (𝟙 X)) coprod.inl :=
+is_pushout.of_is_colimit' (comm_sq.mk (coprod.inl_map f (𝟙 X)))
+{ desc := λ s, coprod.desc (s.ι.app walking_span.right) (coprod.inr ≫ s.ι.app walking_span.left),
+  fac' := λ s, begin
+    have h₁ := s.ι.naturality walking_span.hom.fst,
+    have h₂ := s.ι.naturality walking_span.hom.snd,
+    dsimp at h₁ h₂,
+    simp only [comp_id] at h₁ h₂,
+    have eq : f ≫ s.ι.app walking_span.right = coprod.inl ≫ pushout_cocone.inl s,
+    { rw [h₂, ← h₁], },
+    rintro (_|_|_),
+    { dsimp, simpa only [coprod.inl_map, assoc, coprod.inl_desc, pushout_cocone.condition_zero] using eq, },
+    { ext,
+      { simpa only [comm_sq.cocone_ι_app, coprod.map_desc, coprod.inl_desc] using eq, },
+      { simp only [comm_sq.cocone_ι_app, coprod.map_desc, id_comp, coprod.inr_desc], }, },
+    { simp only [comm_sq.cocone_ι_app, coprod.inl_desc], },
+  end,
+  uniq' := λ s g h, begin
+    have h₁ := h walking_span.left,
+    have h₂ := h walking_span.right,
+    dsimp at h₁ h₂,
+    ext,
+    { simp only [h₂, coprod.inl_desc], },
+    { simp only [← h₁, coprod.inr_map_assoc, id_comp, coprod.inr_desc], },
+  end, }
+
 @[simps]
 def trans [is_cofibrant A] (Q Q' : cylinder A) : cylinder A :=
 begin
@@ -136,12 +163,24 @@ begin
     σd₀ := by simp only [assoc, pushout.inl_desc, precylinder.d₀_comp_σ],
     σd₁ := by simp only [assoc, pushout.inr_desc, precylinder.d₁_comp_σ], },
   apply mk' P,
-  let φ : Q.to_precylinder.I ⨿ A ⟶ P.I := coprod.desc pushout.inl (Q'.d₁ ≫ pushout.inr),
-  have eq : P.ι = (coprod.map Q.d₀ (𝟙 A)) ≫ φ,
+  let ψ : Q.to_precylinder.I ⨿ A ⟶ P.I := coprod.desc pushout.inl (Q'.d₁ ≫ pushout.inr),
+  have eq : P.ι = (coprod.map Q.d₀ (𝟙 A)) ≫ ψ,
   { by simp only [precylinder.ι, coprod.map_desc, id_comp], },
   rw eq,
-  haveI : cofibration (coprod.map Q.to_precylinder.d₀ (𝟙 A)) := sorry,
-  haveI : cofibration φ := sorry,
+  have fac₂ : coprod.map Q.d₁ (𝟙 A) ≫ ψ = Q'.to_precylinder.ι ≫ pushout.inr,
+  { dsimp [ψ],
+    ext,
+    { simp only [coprod.map_desc, coprod.inl_desc, coprod.desc_comp, pushout.condition], },
+    { simp only [coprod.map_desc, id_comp, coprod.inr_desc, coprod.desc_comp], }, },
+  have sq₁ := is_pushout_ad_hoc Q'.d₁ A,
+  have sq₂ := comm_sq.mk fac₂,
+/-  have sq₁₂ := comm_sq.paste_vert sq₁.to_comm_sq sq₂,
+  have sq₃ := is_pushout_ad_hoc (Q'.d₁ ≫ pushout.inr : A ⟶ P.I) A,
+  have foo := is_pushout.of_bot (sq₃) fac₂,
+  let sq := is_pushout.of_is_colimit' (comm_sq.mk fac₂) sorry,-/
+  haveI : cofibration ψ,
+  { refine cofibration.direct_image (is_pushout.of_is_colimit' (comm_sq.mk fac₂) _),
+    sorry, },
   apply_instance,
 end
 

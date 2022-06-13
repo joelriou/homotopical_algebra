@@ -350,7 +350,9 @@ begin
   rw [h, arrow_class.unop_op],
 end
 
-lemma llp_with_is_stable_by_composition (F : arrow_class C) :
+namespace is_stable_by_composition
+
+lemma for_llp_with (F : arrow_class C) :
   F.llp_with.is_stable_by_composition :=
 λ X Y Z f g hf hg A B p hp, begin
   rw arrow.mk_hom,
@@ -359,7 +361,7 @@ lemma llp_with_is_stable_by_composition (F : arrow_class C) :
   apply_instance,
 end
 
-lemma rlp_with_is_stable_by_composition (F : arrow_class C) :
+lemma for_rlp_with (F : arrow_class C) :
   F.rlp_with.is_stable_by_composition :=
 λ A B C f g hf hg X Y i hi, begin
   rw arrow.mk_hom,
@@ -368,13 +370,18 @@ lemma rlp_with_is_stable_by_composition (F : arrow_class C) :
   apply_instance,
 end
 
+end is_stable_by_composition
+
+
 lemma isomorphisms_subset_llp_with (F : arrow_class C) : isomorphisms ⊆ F.llp_with :=
 λ f hf X Y p hp, by { haveI : is_iso f.hom := hf, apply_instance, }
 
 lemma isomorphisms_subset_rlp_with (F : arrow_class C) : isomorphisms ⊆ F.rlp_with :=
 λ f hf X Y i hi, by { haveI : is_iso f.hom := hf, apply_instance, }
 
-lemma llp_with_is_stable_by_direct_image (F : arrow_class C) :
+namespace is_stable_by_direct_image
+
+lemma for_llp_with (F : arrow_class C) :
   F.llp_with.is_stable_by_direct_image :=
 λ A B A' B' f i i' g h hi X Y p hp,
 begin
@@ -382,26 +389,15 @@ begin
   exact has_lifting_property_new.of_direct_image h p,
 end
 
-def is_stable_by_coproduct (F : arrow_class C) :=
-∀ ⦃I : Type v⦄ (X Y : I → C) [hX : has_coproduct X] [hY : has_coproduct Y]
-  (f : Π i, X i ⟶ Y i) (hf : ∀ i, arrow.mk (f i) ∈ F),
-    arrow.mk (@limits.sigma.map _ _ _ X Y hX hY f) ∈ F
+end is_stable_by_direct_image
 
 namespace is_stable_by_coproduct
 
-lemma binary {F : arrow_class C} [h : F.is_stable_by_coproduct]
-{X₁ X₂ Y₁ Y₂ : C} [hX : has_binary_coproduct X₁ X₂] [hY : has_binary_coproduct Y₁ Y₂] (f₁ : X₁ ⟶ Y₁) (f₂ : X₂ ⟶ Y₂)
-(hf₁ : arrow.mk f₁ ∈ F) (hf₂ : arrow.mk f₂ ∈ F) : arrow.mk (coprod.map f₁ f₂) ∈ F :=
-begin
-  haveI : has_coproduct (pair_function X₁ X₂) := hX,
-  haveI : has_coproduct (pair_function Y₁ Y₂) := hY,
-  dsimp [coprod.map],
-  convert h (pair_function X₁ X₂) (pair_function Y₁ Y₂) (λ j, walking_pair.cases_on j f₁ f₂) _,
-  { ext, cases x, refl, },
-  { rintro (_|_), exacts [hf₁, hf₂], },
-end
+lemma for_llp_with (F : arrow_class C) :
+  F.llp_with.is_stable_by_coproduct := sorry
 
 end is_stable_by_coproduct
+
 
 end arrow_class
 

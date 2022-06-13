@@ -87,6 +87,13 @@ def cone {W X Y Z : C} {f : W ⟶ X} {g : W ⟶ Y} {h : X ⟶ Z} {i : Y ⟶ Z}
 def cocone {W X Y Z : C} {f : W ⟶ X} {g : W ⟶ Y} {h : X ⟶ Z} {i : Y ⟶ Z}
   (p : comm_sq f g h i) : pushout_cocone f g := pushout_cocone.mk _ _ p.w
 
+def paste_vert {X₁₁ X₁₂ X₂₁ X₂₂ X₃₁ X₃₂ : C}
+  {h₁₁ : X₁₁ ⟶ X₁₂} {h₂₁ : X₂₁ ⟶ X₂₂} {h₃₁ : X₃₁ ⟶ X₃₂}
+  {v₁₁ : X₁₁ ⟶ X₂₁} {v₁₂ : X₁₂ ⟶ X₂₂} {v₂₁ : X₂₁ ⟶ X₃₁} {v₂₂ : X₂₂ ⟶ X₃₂}
+  (s : comm_sq h₁₁ v₁₁ v₁₂ h₂₁) (t : comm_sq h₂₁ v₂₁ v₂₂ h₃₁) :
+  comm_sq h₁₁ (v₁₁ ≫ v₂₁) (v₁₂ ≫ v₂₂) h₃₁ :=
+mk (by simp [category.assoc, s.w_assoc, t.w])
+
 end comm_sq
 
 /-- The proposition that a square
