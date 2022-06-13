@@ -136,7 +136,13 @@ begin
     σd₀ := by simp only [assoc, pushout.inl_desc, precylinder.d₀_comp_σ],
     σd₁ := by simp only [assoc, pushout.inr_desc, precylinder.d₁_comp_σ], },
   apply mk' P,
-  sorry
+  let φ : Q.to_precylinder.I ⨿ A ⟶ P.I := coprod.desc pushout.inl (Q'.d₁ ≫ pushout.inr),
+  have eq : P.ι = (coprod.map Q.d₀ (𝟙 A)) ≫ φ,
+  { by simp only [precylinder.ι, coprod.map_desc, id_comp], },
+  rw eq,
+  haveI : cofibration (coprod.map Q.to_precylinder.d₀ (𝟙 A)) := sorry,
+  haveI : cofibration φ := sorry,
+  apply_instance,
 end
 
 end cylinder

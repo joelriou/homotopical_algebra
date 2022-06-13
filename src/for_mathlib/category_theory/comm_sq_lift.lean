@@ -7,14 +7,18 @@ Authors: Joël Riou
 import for_mathlib.category_theory.comm_sq
 import for_mathlib.category_theory.retracts
 import for_mathlib.category_theory.arrow_class
+import category_theory.limits.shapes.products
+
 
 noncomputable theory
 
 open category_theory.category category_theory.limits
 
+universe v
+
 namespace category_theory
 
-variables {C : Type*} [category C]
+variables {C : Type*} [category.{v} C]
 
 variables {A B B' X Y Y' : C} {f : A ⟶ X} {i : A ⟶ B} (i' : B ⟶ B') {p : X ⟶ Y} (p' : Y ⟶ Y') {g : B ⟶ Y}
 variables {W Z : C} {q : W ⟶ Z} {f' : X ⟶ W} {g' : Y ⟶ Z}
@@ -377,6 +381,11 @@ begin
   haveI : has_lifting_property_new i p := hi p hp,
   exact has_lifting_property_new.of_direct_image h p,
 end
+
+def is_stable_by_coproduct (F : arrow_class C) :=
+∀ ⦃I : Type v⦄ ⦃X Y : I → C⦄ [hX : has_coproduct X] [hY : has_coproduct Y]
+  (f : Π i, X i ⟶ Y i) (hf : ∀ i, arrow.mk (f i) ∈ F),
+    arrow.mk (@limits.sigma.map _ _ _ X Y hX hY f) ∈ F
 
 end arrow_class
 
