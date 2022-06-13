@@ -196,6 +196,36 @@ lemma of_has_pushout (f : Z ⟶ X) (g : Z ⟶ Y) [has_pushout f g] :
   is_pushout f g (pushout.inl : X ⟶ pushout f g) (pushout.inr : Y ⟶ pushout f g) :=
 of_is_colimit (colimit.is_colimit (span f g))
 
+noncomputable
+def desc (h : is_pushout f g inl inr) {Q : C} (l : X ⟶ Q) (r : Y ⟶ Q)
+  (fac : f ≫ l = g ≫ r) : P ⟶ Q :=
+h.is_colimit.desc (comm_sq.mk fac).cocone
+
+@[simp, reassoc]
+lemma inl_desc (h : is_pushout f g inl inr) {Q : C} (l : X ⟶ Q) (r : Y ⟶ Q)
+  (fac : f ≫ l = g ≫ r) : inl ≫ h.desc l r fac = l :=
+h.is_colimit.fac (comm_sq.mk fac).cocone walking_span.left
+
+@[simp, reassoc]
+lemma inr_desc (h : is_pushout f g inl inr) {Q : C} (l : X ⟶ Q) (r : Y ⟶ Q)
+  (fac : f ≫ l = g ≫ r) : inr ≫ h.desc l r fac = r :=
+h.is_colimit.fac (comm_sq.mk fac).cocone walking_span.right
+
+lemma uniq (h : is_pushout f g inl inr) {Q : C} (φ : P ⟶ Q) :
+  φ = h.desc (inl ≫ φ) (inr ≫ φ) (by simp only [← category.assoc, h.w]) :=
+begin
+  have fac : f ≫ (inl ≫ φ) = g ≫ (inr ≫ φ),
+  { simp only [← category.assoc, h.w], },
+  apply h.is_colimit.uniq (comm_sq.mk fac).cocone φ,
+  rintro (_|_|_),
+  tidy,
+end
+
+lemma hom_ext (h : is_pushout f g inl inr) {Q : C} (φ₁ φ₂ : P ⟶ Q)
+  (hl : inl ≫ φ₁ = inl ≫ φ₂) (hr : inr ≫ φ₁ = inr ≫ φ₂) :
+  φ₁ = φ₂ :=
+by { rw [h.uniq φ₁, h.uniq φ₂], congr', }
+
 variables (X Y)
 
 lemma of_has_binary_coproduct [has_binary_coproduct X Y] [has_initial C] :

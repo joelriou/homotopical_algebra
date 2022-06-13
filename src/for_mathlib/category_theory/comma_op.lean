@@ -89,7 +89,8 @@ lemma unop_op (f : arrow T) : f.op.unop = f := by { cases f, refl, }
 lemma op_unop (f : arrow Tᵒᵖ) : f.unop.op = f := by { cases f, refl, }
 
 end arrow
-#exit
+
+/-#exit
 
 
 lemma mk_eq (f : arrow T) : arrow.mk f.hom = f :=
@@ -116,6 +117,6 @@ begin
   congr,
 end
 
-end arrow
+end arrow-/
 
 end category_theory

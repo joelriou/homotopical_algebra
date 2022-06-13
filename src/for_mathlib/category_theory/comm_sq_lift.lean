@@ -229,6 +229,20 @@ begin
   exact of_retract_left h,
 end
 
+variables {i}
+
+lemma of_direct_image {A' B' : C} {f : A ⟶ A'} {g : B ⟶ B'} {i' : A' ⟶ B'}
+  (h : is_pushout f i i' g) (p : X ⟶ Y) [hi : has_lifting_property_new i p] :
+  has_lifting_property_new i' p :=
+⟨λ f' g' sq, begin
+  have fac : (f ≫ f') ≫ p = i ≫ (g ≫ g') := by rw [assoc, sq.w, ← assoc, h.w, assoc],
+  exact ⟨nonempty.intro 
+  { l := h.desc f' (comm_sq.mk fac).lift (by simp only [comm_sq.fac_left]),
+    fac_left := by simp only [is_pushout.inl_desc],
+    fac_right := h.hom_ext _ _ (by simpa using sq.w)
+      (by simp only [is_pushout.inr_desc_assoc, comm_sq.fac_right]), }⟩,
+end⟩
+
 end has_lifting_property_new
 
 namespace arrow_class
@@ -357,7 +371,12 @@ lemma isomorphisms_subset_rlp_with (F : arrow_class C) : isomorphisms ⊆ F.rlp_
 λ f hf X Y i hi, by { haveI : is_iso f.hom := hf, apply_instance, }
 
 lemma llp_with_is_stable_by_direct_image (F : arrow_class C) :
-  F.llp_with.is_stable_by_direct_image := sorry
+  F.llp_with.is_stable_by_direct_image :=
+λ A B A' B' f i i' g h hi X Y p hp,
+begin
+  haveI : has_lifting_property_new i p := hi p hp,
+  exact has_lifting_property_new.of_direct_image h p,
+end
 
 end arrow_class
 
