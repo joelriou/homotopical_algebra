@@ -21,6 +21,9 @@ lemma of_is_iso {f : arrow C} {F : C ⥤ D} (h : is_iso (F.map f.hom)) : f.is_in
 
 end is_inverted_by
 
+lemma congr_left {f g : arrow C} (h : f = g) : f.left = g.left := by rw h
+lemma congr_right {f g : arrow C} (h : f = g) : f.right = g.right := by rw h
+
 end arrow
 
 end category_theory

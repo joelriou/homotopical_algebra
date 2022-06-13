@@ -247,6 +247,27 @@ lemma of_direct_image {A' B' : C} {f : A ⟶ A'} {g : B ⟶ B'} {i' : A' ⟶ B'}
       (by simp only [is_pushout.inr_desc_assoc, comm_sq.fac_right]), }⟩,
 end⟩
 
+instance ⦃I : Type v⦄ (A B : I → C) [hA : has_coproduct A] [hB : has_coproduct B]
+  (φ : Π i, A i ⟶ B i) [hφ : ∀ i, has_lifting_property_new (φ i) p] :
+    has_lifting_property_new (@limits.sigma.map _ _ _ A B hA hB φ) p :=
+⟨λ f g sq, begin
+  have fac : ∀ (i : I), (sigma.ι _ i ≫ f) ≫ p = φ i ≫ (sigma.ι _ i ≫ g) :=
+    λ i, by simp only [sq.w, assoc, ι_colim_map_assoc, discrete.nat_trans_app],
+  have sq := λ i, (comm_sq.mk (fac i)).lift,
+  exact ⟨nonempty.intro
+  { l := sigma.desc (λ i, (comm_sq.mk (fac i)).lift),
+    fac_left := begin
+      ext i,
+      cases i,
+      simp only [ι_colim_map_assoc, colimit.ι_desc, cofan.mk_ι_app, comm_sq.fac_left],
+    end,
+    fac_right := begin
+      ext i,
+      cases i,
+      simp only [colimit.ι_desc_assoc, cofan.mk_ι_app, comm_sq.fac_right],
+    end, }⟩,
+end⟩
+
 end has_lifting_property_new
 
 namespace arrow_class
@@ -394,10 +415,45 @@ end is_stable_by_direct_image
 namespace is_stable_by_coproduct
 
 lemma for_llp_with (F : arrow_class C) :
-  F.llp_with.is_stable_by_coproduct := sorry
+  F.llp_with.is_stable_by_coproduct :=
+λ I X Y hX hY f hf X Y p hp,
+begin
+  simp only [arrow.mk_hom],
+  haveI : ∀ i, has_lifting_property_new (f i) p := λ i, hf i p hp,
+  apply_instance,
+end
 
 end is_stable_by_coproduct
 
+namespace has_lifting_property_new
+
+lemma llp_with_singleton_iff : arrow.mk i ∈ ({arrow.mk p} : arrow_class C).llp_with ↔ has_lifting_property_new i p :=
+begin
+  split,
+  { exact λ hi, hi p (set.mem_singleton _), },
+  { intro hi,
+    intros X' Y' q hq,
+    simp only [set.mem_singleton_iff] at hq,
+    simp only [arrow.mk_hom],
+    have h₁ := arrow.congr_left hq.symm,
+    have h₂ := arrow.congr_right hq.symm,
+    simp at h₁ h₂,
+    substs h₁ h₂,
+    rw arrow.mk_inj at hq,
+    rw hq,
+    exact hi, }
+end
+
+instance binary_coproduct {X₁ X₂ Y₁ Y₂ : C} (f₁ : X₁ ⟶ Y₁) (f₂ : X₂ ⟶ Y₂) [has_binary_coproduct X₁ X₂] [has_binary_coproduct Y₁ Y₂]
+  [has_lifting_property_new f₁ p] [has_lifting_property_new f₂ p] :
+  has_lifting_property_new (coprod.map f₁ f₂) p :=
+begin
+  refine (is_stable_by_coproduct.for_llp_with {arrow.mk p}).binary f₁ f₂ _ _ p (set.mem_singleton _),
+  { simp only [llp_with_singleton_iff], apply_instance, },
+  { simp only [llp_with_singleton_iff], apply_instance, },
+end
+
+end has_lifting_property_new
 
 end arrow_class
 
