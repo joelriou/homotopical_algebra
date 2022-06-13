@@ -135,7 +135,7 @@ namespace has_lifting_property_new
 
 variables {i p}
 
-def op (h : has_lifting_property_new i p) : has_lifting_property_new p.op i.op :=
+lemma op (h : has_lifting_property_new i p) : has_lifting_property_new p.op i.op :=
 begin
   constructor,
   intros f g sq,
@@ -144,7 +144,7 @@ begin
   apply_instance,
 end
 
-def unop {A B X Y : Cᵒᵖ} {i : A ⟶ B} {p : X ⟶ Y}
+lemma unop {A B X Y : Cᵒᵖ} {i : A ⟶ B} {p : X ⟶ Y}
   (h : has_lifting_property_new i p) : has_lifting_property_new p.unop i.unop :=
 begin
   constructor,
@@ -279,16 +279,16 @@ has_lifting_property_new i p
 
 namespace has_lifting_property
 
-def has_lift {F G : arrow_class C} (h : has_lifting_property F G)
+lemma has_lift {F G : arrow_class C} (h : has_lifting_property F G)
 {A B X Y : C} {f : A ⟶ X} {i : A ⟶ B} {p : X ⟶ Y} {g : B ⟶ Y}
 (sq : comm_sq f i p g) (hi : arrow.mk i ∈ F) (hp : arrow.mk p ∈ G) :
   sq.has_lift := by { haveI := h i hi p hp, apply_instance, }
 
-def op {F G : arrow_class C} (h : has_lifting_property F G) :
+lemma op {F G : arrow_class C} (h : has_lifting_property F G) :
   has_lifting_property G.op F.op :=
 λ A B X Y i hi p hp, (h p.unop hp i.unop hi).op
 
-def unop {F G : arrow_class Cᵒᵖ} (h : has_lifting_property F G) :
+lemma unop {F G : arrow_class Cᵒᵖ} (h : has_lifting_property F G) :
   has_lifting_property G.unop F.unop :=
 λ A B X Y i hi p hp, (h p.op hp i.op hi).unop
 
@@ -300,26 +300,6 @@ lemma iff_unop (F' G' : arrow_class Cᵒᵖ) :
 
 end has_lifting_property
 
-def has_lifting_property_iff_op (F G : arrow_class C) :
-  F.has_lifting_property G ↔ G.op.has_lifting_property F.op :=
-begin
-  split,
-  { intro h,
-    intros A B X Y i hi p hp,
-    constructor,
-    intros f g sq,
-    rw comm_sq.has_lift.iff_unop,
-    haveI := h p.unop hp i.unop hi,
-    apply_instance, },
-  { intro h,
-    intros A B X Y i hi p hp,
-    constructor,
-    intros f g sq,
-    rw comm_sq.has_lift.iff_op,
-    haveI := h p.op hp i.op hi,
-    apply_instance, },
-end
-
 @[simp]
 def llp_with (G : arrow_class C) : arrow_class C :=
 λ i, ∀ {X Y : C} (p : X ⟶ Y), arrow.mk p ∈ G → has_lifting_property_new i.hom p
@@ -328,7 +308,7 @@ def llp_with (G : arrow_class C) : arrow_class C :=
 def rlp_with (F : arrow_class C) : arrow_class C :=
 λ p, ∀ {X Y : C} (i : X ⟶ Y), arrow.mk i ∈ F → has_lifting_property_new i p.hom
 
-def llp_with_op (F : arrow_class C) :
+lemma llp_with_op (F : arrow_class C) :
   F.op.llp_with = F.rlp_with.op :=
 begin
   ext i,
@@ -341,7 +321,7 @@ begin
     exact hp', },
 end
 
-def llp_with_unop (F : arrow_class Cᵒᵖ) :
+lemma llp_with_unop (F : arrow_class Cᵒᵖ) :
   F.unop.rlp_with = F.llp_with.unop :=
 begin
   have h := llp_with_op F.unop,
@@ -349,7 +329,7 @@ begin
   rw [h, arrow_class.unop_op],
 end
 
-def rlp_with_op (F : arrow_class C) :
+lemma rlp_with_op (F : arrow_class C) :
   F.op.rlp_with = F.llp_with.op :=
 begin
   ext p,
@@ -363,7 +343,7 @@ begin
     exact hi', },
 end
 
-def rlp_with_unop (F : arrow_class Cᵒᵖ) :
+lemma rlp_with_unop (F : arrow_class Cᵒᵖ) :
    F.unop.llp_with = F.rlp_with.unop :=
 begin
   have h := rlp_with_op F.unop,

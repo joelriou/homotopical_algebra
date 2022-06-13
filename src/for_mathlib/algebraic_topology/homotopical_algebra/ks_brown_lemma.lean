@@ -89,5 +89,3 @@ end brown_factorisation
 end model_category
 
 end algebraic_topology
-
-

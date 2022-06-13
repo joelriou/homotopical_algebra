@@ -24,10 +24,10 @@ namespace three_of_two_of_comp_left
 
 variable {F}
 
-def op (h : F.three_of_two_of_comp_left) : F.op.three_of_two_of_comp_right :=
+lemma op (h : F.three_of_two_of_comp_left) : F.op.three_of_two_of_comp_right :=
 λ X Y Z f g hg hgf, h g.unop f.unop hg hgf
 
-def unop (h : F'.three_of_two_of_comp_left) : F'.unop.three_of_two_of_comp_right :=
+lemma unop (h : F'.three_of_two_of_comp_left) : F'.unop.three_of_two_of_comp_right :=
 λ X Y Z f g hg hgf, h g.op f.op hg hgf
 
 variable (F)
@@ -38,10 +38,10 @@ namespace three_of_two_of_comp_right
 
 variable {F}
 
-def op (h : F.three_of_two_of_comp_right) : F.op.three_of_two_of_comp_left :=
+lemma op (h : F.three_of_two_of_comp_right) : F.op.three_of_two_of_comp_left :=
 λ X Y Z f g hg hgf, h g.unop f.unop hg hgf
 
-def unop (h : F'.three_of_two_of_comp_right) : F'.unop.three_of_two_of_comp_left :=
+lemma unop (h : F'.three_of_two_of_comp_right) : F'.unop.three_of_two_of_comp_left :=
 λ X Y Z f g hg hgf, h g.op f.op hg hgf
 
 variables (F F')
@@ -76,12 +76,12 @@ namespace three_of_two
 
 variables {F F'}
 
-def op (h : three_of_two F) : three_of_two F.op :=
+lemma op (h : three_of_two F) : three_of_two F.op :=
 { of_comp := h.of_comp.op,
   of_comp_left := h.of_comp_right.op,
   of_comp_right := h.of_comp_left.op, }
 
-def unop (h : three_of_two F') : three_of_two F'.unop :=
+lemma unop (h : three_of_two F') : three_of_two F'.unop :=
 { of_comp := h.of_comp.unop,
   of_comp_left := h.of_comp_right.unop,
   of_comp_right := h.of_comp_left.unop, }
@@ -99,4 +99,3 @@ end three_of_two
 end arrow_class
 
 end category_theory
-

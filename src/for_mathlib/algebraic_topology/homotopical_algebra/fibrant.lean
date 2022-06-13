@@ -48,7 +48,7 @@ end fibration
 
 namespace is_cofibrant
 
-def of_initial (hA : is_initial A) : is_cofibrant A :=
+lemma of_initial (hA : is_initial A) : is_cofibrant A :=
 begin
   change cofibration (initial.to A),
   rw [show initial.to A = (is_initial.unique_up_to_iso initial_is_initial hA).hom,
@@ -56,7 +56,7 @@ begin
   apply_instance,
 end
 
-def mk (f : A ⟶ B) [cofibration f] (hA : is_initial A) : is_cofibrant B :=
+lemma mk (f : A ⟶ B) [cofibration f] (hA : is_initial A) : is_cofibrant B :=
 begin
   change cofibration (initial.to B),
   rw [show initial.to B = initial.to A ≫ f, by apply subsingleton.elim],
@@ -68,7 +68,7 @@ end is_cofibrant
 
 namespace is_fibrant
 
-def of_terminal (hY : is_terminal Y) : is_fibrant Y :=
+lemma of_terminal (hY : is_terminal Y) : is_fibrant Y :=
 begin
   change fibration (terminal.from Y),
   rw [show terminal.from Y = (is_terminal.unique_up_to_iso hY terminal_is_terminal).hom,
@@ -76,7 +76,7 @@ begin
   apply_instance,
 end
 
-def mk (f : X ⟶ Y) [fibration f] (hY : is_terminal Y) : is_fibrant X :=
+lemma mk (f : X ⟶ Y) [fibration f] (hY : is_terminal Y) : is_fibrant X :=
 begin
   change fibration (terminal.from X),
   rw [show terminal.from X = f ≫ terminal.from Y, by apply subsingleton.elim],

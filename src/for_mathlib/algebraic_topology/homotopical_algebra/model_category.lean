@@ -33,22 +33,21 @@ def weq := M.weq
 def triv_fib := M.to_category_with_fib_cof_weq.triv_fib
 def triv_cof := M.to_category_with_fib_cof_weq.triv_cof
 
-def CM1 := M.CM1axiom
-def CM2 := M.CM2axiom
-def CM3 := M.CM3axiom
-def CM4 := M.CM4axiom
-def CM5 := M.CM5axiom
+lemma CM1 : has_finite_limits C ∧ has_finite_colimits C := M.CM1axiom
+lemma CM2 : M.to_category_with_fib_cof_weq.CM2 := M.CM2axiom
+lemma CM3 : M.to_category_with_fib_cof_weq.CM3 := M.CM3axiom
+lemma CM3a : M.to_category_with_fib_cof_weq.CM3a := CM3.weq
+lemma CM3b : M.to_category_with_fib_cof_weq.CM3b := CM3.fib
+lemma CM3c : M.to_category_with_fib_cof_weq.CM3c := CM3.cof
+lemma CM4 : M.to_category_with_fib_cof_weq.CM4 := M.CM4axiom
+lemma CM4a : M.to_category_with_fib_cof_weq.CM4a := CM4.1
+lemma CM4b : M.to_category_with_fib_cof_weq.CM4b := CM4.2
+lemma CM5 : M.to_category_with_fib_cof_weq.CM5 := M.CM5axiom
+lemma CM5a : M.to_category_with_fib_cof_weq.CM5a := CM5.1
+lemma CM5b : M.to_category_with_fib_cof_weq.CM5b := CM5.2
 
-def CM3a : M.to_category_with_fib_cof_weq.CM3a := CM3.weq
-def CM3b : M.to_category_with_fib_cof_weq.CM3b := CM3.fib
-def CM3c : M.to_category_with_fib_cof_weq.CM3c := CM3.cof
-def CM4a : M.to_category_with_fib_cof_weq.CM4a := CM4.1
-def CM4b : M.to_category_with_fib_cof_weq.CM4b := CM4.2
-def CM5a : M.to_category_with_fib_cof_weq.CM5a := CM5.1
-def CM5b : M.to_category_with_fib_cof_weq.CM5b := CM5.2
-
-instance : has_finite_limits C := CM1.1
-instance : has_finite_colimits C := CM1.2
+@[priority 100] instance : has_finite_limits C := CM1.1
+@[priority 100] instance : has_finite_colimits C := CM1.2
 
 instance : model_category Cᵒᵖ :=
 { to_category_with_fib_cof_weq := M.to_category_with_fib_cof_weq.op,
@@ -66,9 +65,9 @@ class weak_eq : Prop := (mem : arrow.mk i ∈ M.weq)
 
 variable {i}
 
-instance CM4a' [hi₁ : cofibration i] [hi₂ : weak_eq i] [hp : fibration p] :
+@[priority 100] instance CM4a' [hi₁ : cofibration i] [hi₂ : weak_eq i] [hp : fibration p] :
   has_lifting_property_new i p := CM4a i ⟨hi₁.mem, hi₂.mem⟩ p hp.mem
-instance CM4b' [hi : cofibration i] [hp₁ : fibration p] [hp₂ : weak_eq p] :
+@[priority 100] instance CM4b' [hi : cofibration i] [hp₁ : fibration p] [hp₂ : weak_eq p] :
   has_lifting_property_new i p := CM4b i hi.mem p ⟨hp₁.mem, hp₂.mem⟩
 
 lemma cofibration_retract_stable [hp : cofibration p] : cofibration i := ⟨CM3.cof i p hip hp.mem⟩
@@ -123,11 +122,11 @@ by { rw triv_fib_eq_rlp_with_cof, apply arrow_class.isomorphisms_subset_rlp_with
 lemma weq_contains_iso : arrow_class.isomorphisms ⊆ (weq : arrow_class C) := λ f hf,
 (triv_cof_contains_iso hf).2
 
-instance cofibration_of_is_iso [is_iso p] : cofibration p :=
+@[priority 100] instance cofibration_of_is_iso [is_iso p] : cofibration p :=
 ⟨cof_contains_iso (arrow_class.mem_isomorphisms_of_is_iso p)⟩
-instance fibration_of_is_iso [is_iso p] : fibration p :=
+@[priority 100] instance fibration_of_is_iso [is_iso p] : fibration p :=
 ⟨fib_contains_iso (arrow_class.mem_isomorphisms_of_is_iso p)⟩
-instance weak_eq_of_is_iso [is_iso p] : weak_eq p :=
+@[priority 100] instance weak_eq_of_is_iso [is_iso p] : weak_eq p :=
 ⟨weq_contains_iso (arrow_class.mem_isomorphisms_of_is_iso p)⟩
 
 instance CM5a_cofibration : cofibration (CM5a.i f) := ⟨(CM5a.i_mem f).1⟩

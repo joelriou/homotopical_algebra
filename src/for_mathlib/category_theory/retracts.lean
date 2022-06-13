@@ -76,7 +76,7 @@ def is_retract_hom {X₁ X₂ Y₁ Y₂ : C} (x : X₁ ⟶ X₂) (y : Y₁ ⟶ Y
 
 namespace is_retract_hom
 
-def iff_op {X₁ X₂ Y₁ Y₂ : C} (x : X₁ ⟶ X₂) (y : Y₁ ⟶ Y₂) :
+lemma iff_op {X₁ X₂ Y₁ Y₂ : C} (x : X₁ ⟶ X₂) (y : Y₁ ⟶ Y₂) :
   is_retract_hom x y ↔ is_retract_hom x.op y.op :=
 begin
   calc is_retract (arrow.mk x) (arrow.mk y) ↔ is_retract (op (arrow.mk x)) (op (arrow.mk y)) :
@@ -86,15 +86,15 @@ begin
   congr',
 end
 
-def iff_unop {X₁ X₂ Y₁ Y₂ : Cᵒᵖ} (x : X₁ ⟶ X₂) (y : Y₁ ⟶ Y₂) :
+lemma iff_unop {X₁ X₂ Y₁ Y₂ : Cᵒᵖ} (x : X₁ ⟶ X₂) (y : Y₁ ⟶ Y₂) :
   is_retract_hom x y ↔ is_retract_hom x.unop y.unop :=
 (iff_op x.unop y.unop).symm
 
-def op {X₁ X₂ Y₁ Y₂ : C} {x : X₁ ⟶ X₂} {y : Y₁ ⟶ Y₂}
+lemma op {X₁ X₂ Y₁ Y₂ : C} {x : X₁ ⟶ X₂} {y : Y₁ ⟶ Y₂}
   (hxy : is_retract_hom x y) : is_retract_hom x.op y.op :=
 (iff_op x y).mp hxy
 
-def unop {X₁ X₂ Y₁ Y₂ : Cᵒᵖ} {x : X₁ ⟶ X₂} {y : Y₁ ⟶ Y₂}
+lemma unop {X₁ X₂ Y₁ Y₂ : Cᵒᵖ} {x : X₁ ⟶ X₂} {y : Y₁ ⟶ Y₂}
   (hxy : is_retract_hom x y) : is_retract_hom x.unop y.unop :=
 (iff_op x.unop y.unop).mpr hxy
 

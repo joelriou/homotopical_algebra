@@ -62,9 +62,9 @@ namespace CM3
 
 variable {data}
 
-def triv_cof (h : data.CM3) : data.triv_cof.is_stable_by_retract :=
+lemma triv_cof (h : data.CM3) : data.triv_cof.is_stable_by_retract :=
 arrow_class.is_stable_by_retract.of_inter h.cof h.weq
-def triv_fib (h : data.CM3) : data.triv_fib.is_stable_by_retract :=
+lemma triv_fib (h : data.CM3) : data.triv_fib.is_stable_by_retract :=
 arrow_class.is_stable_by_retract.of_inter h.fib h.weq
 
 end CM3
