@@ -383,9 +383,25 @@ begin
 end
 
 def is_stable_by_coproduct (F : arrow_class C) :=
-∀ ⦃I : Type v⦄ ⦃X Y : I → C⦄ [hX : has_coproduct X] [hY : has_coproduct Y]
+∀ ⦃I : Type v⦄ (X Y : I → C) [hX : has_coproduct X] [hY : has_coproduct Y]
   (f : Π i, X i ⟶ Y i) (hf : ∀ i, arrow.mk (f i) ∈ F),
     arrow.mk (@limits.sigma.map _ _ _ X Y hX hY f) ∈ F
+
+namespace is_stable_by_coproduct
+
+lemma binary {F : arrow_class C} [h : F.is_stable_by_coproduct]
+{X₁ X₂ Y₁ Y₂ : C} [hX : has_binary_coproduct X₁ X₂] [hY : has_binary_coproduct Y₁ Y₂] (f₁ : X₁ ⟶ Y₁) (f₂ : X₂ ⟶ Y₂)
+(hf₁ : arrow.mk f₁ ∈ F) (hf₂ : arrow.mk f₂ ∈ F) : arrow.mk (coprod.map f₁ f₂) ∈ F :=
+begin
+  haveI : has_coproduct (pair_function X₁ X₂) := hX,
+  haveI : has_coproduct (pair_function Y₁ Y₂) := hY,
+  dsimp [coprod.map],
+  convert h (pair_function X₁ X₂) (pair_function Y₁ Y₂) (λ j, walking_pair.cases_on j f₁ f₂) _,
+  { ext, cases x, refl, },
+  { rintro (_|_), exacts [hf₁, hf₂], },
+end
+
+end is_stable_by_coproduct
 
 end arrow_class
 
