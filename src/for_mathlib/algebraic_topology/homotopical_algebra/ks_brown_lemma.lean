@@ -57,9 +57,6 @@ end
 
 instance fibration_p : fibration (p f) := by { dsimp [p], apply_instance, }
 
-instance [is_cofibrant Y] : cofibration (coprod.inl : X ⟶  X ⨿ Y) := sorry
-instance [is_cofibrant X] : cofibration (coprod.inr : Y ⟶  X ⨿ Y) := sorry
-
 instance cof_i [is_cofibrant Y] : cofibration (i f) := by { dsimp [i], apply_instance, }
 instance cof_s [is_cofibrant X] : cofibration (s f) := by { dsimp [s], apply_instance, }
 

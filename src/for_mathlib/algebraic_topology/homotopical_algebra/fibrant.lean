@@ -114,6 +114,11 @@ end
 
 end is_cofibrant
 
+instance cof_coprod_inl [hB : is_cofibrant B] : cofibration (coprod.inl : A ⟶ A ⨿ B) :=
+⟨cof_is_stable_by_direct_image.for_coprod_inl _ _ hB.mem⟩
+instance for_coprod_inr [hA : is_cofibrant A] : cofibration (coprod.inr : B ⟶ A ⨿ B) :=
+⟨cof_is_stable_by_direct_image.for_coprod_inr _ _ hA.mem⟩
+
 end model_category
 
 end algebraic_topology

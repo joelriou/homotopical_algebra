@@ -356,6 +356,9 @@ lemma isomorphisms_subset_llp_with (F : arrow_class C) : isomorphisms ⊆ F.llp_
 lemma isomorphisms_subset_rlp_with (F : arrow_class C) : isomorphisms ⊆ F.rlp_with :=
 λ f hf X Y i hi, by { haveI : is_iso f.hom := hf, apply_instance, }
 
+lemma llp_with_is_stable_by_direct_image (F : arrow_class C) :
+  F.llp_with.is_stable_by_direct_image := sorry
+
 end arrow_class
 
 end category_theory

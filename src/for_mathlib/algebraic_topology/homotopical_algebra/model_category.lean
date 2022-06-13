@@ -134,6 +134,23 @@ instance CM5b_cofibration : cofibration (CM5b.i f) := ⟨CM5b.i_mem f⟩
 instance CM5b_fibration : fibration (CM5b.p f) := ⟨(CM5b.p_mem f).1⟩
 instance CM5b_weak_eq : weak_eq (CM5b.p f) := ⟨(CM5b.p_mem f).2⟩
 
+lemma cof_is_stable_by_direct_image : (cof : arrow_class C).is_stable_by_direct_image :=
+by { rw cof_eq_llp_with_triv_fib, apply arrow_class.llp_with_is_stable_by_direct_image, }
+lemma triv_cof_is_stable_by_direct_image : (triv_cof : arrow_class C).is_stable_by_direct_image :=
+by { rw triv_cof_eq_llp_with_fib, apply arrow_class.llp_with_is_stable_by_direct_image, }
+
+namespace cofibration
+
+lemma direct_image ⦃f : A ⟶ X⦄ ⦃i : A ⟶ B⦄ ⦃i' : X ⟶ Y⦄ ⦃g : B ⟶ Y⦄
+  (h : is_pushout f i i' g) [hi : cofibration i] : cofibration i' :=
+⟨cof_is_stable_by_direct_image h hi.mem⟩
+
+lemma direct_image_is_weak_eq ⦃f : A ⟶ X⦄ ⦃i : A ⟶ B⦄ ⦃i' : X ⟶ Y⦄ ⦃g : B ⟶ Y⦄
+  (h : is_pushout f i i' g) [hi₁ : cofibration i] [hi₂ : weak_eq i] : weak_eq i' :=
+⟨(triv_cof_is_stable_by_direct_image h ⟨hi₁.mem, hi₂.mem⟩).2⟩
+
+end cofibration
+
 /-lemma cof_co_bc_stable : (cof : arrow_class D).is_stable_by_cobase_change :=
 by { rw cof_equals_llp_triv_fib, apply arrow_class.is_stable_by_cobase_change_of_llp_with, }
 lemma triv_cof_co_bc_stable : (triv_cof : arrow_class D).is_stable_by_cobase_change :=

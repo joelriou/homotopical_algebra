@@ -196,6 +196,19 @@ lemma of_has_pushout (f : Z ⟶ X) (g : Z ⟶ Y) [has_pushout f g] :
   is_pushout f g (pushout.inl : X ⟶ pushout f g) (pushout.inr : Y ⟶ pushout f g) :=
 of_is_colimit (colimit.is_colimit (span f g))
 
+variables (X Y)
+
+lemma of_has_binary_coproduct [has_binary_coproduct X Y] [has_initial C] :
+  is_pushout (initial.to X) (initial.to Y) coprod.inl coprod.inr :=
+{ w := by apply subsingleton.elim,
+  is_colimit' := nonempty.intro (pushout_cocone.is_colimit_aux _ (λ s, coprod.desc (s.ι.app walking_span.left) (s.ι.app walking_span.right)) ((λ s, coprod.inl_desc _ _)) (λ s, coprod.inr_desc _ _)
+    begin
+      intros s m h,
+      ext,
+      { simpa only [coprod.inl_desc] using h walking_span.left, },
+      { simpa only [coprod.inr_desc] using h walking_span.right, },
+    end) }
+
 end is_pushout
 
 namespace is_pullback

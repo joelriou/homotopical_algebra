@@ -7,6 +7,7 @@ Authors: Joël Riou
 import category_theory.arrow
 import for_mathlib.category_theory.arrow
 import for_mathlib.category_theory.comma_op
+import for_mathlib.category_theory.comm_sq
 
 /-!
 
@@ -19,6 +20,8 @@ If `W : arrow_class C`, and `f : X ⟶ Y` is a morphism in `C`, `W f` is the
 condition that `arrow.mk f` belongs to `W`.
 
 -/
+
+open category_theory.limits
 
 noncomputable theory
 
@@ -103,6 +106,26 @@ def isomorphisms : arrow_class C := λ f, is_iso f.hom
 
 def mem_isomorphisms_of_is_iso {X Y : C} (f : X ⟶ Y) [hf : is_iso f] :
   arrow.mk f ∈ (isomorphisms : arrow_class C) := hf
+
+def is_stable_by_direct_image :=
+∀ ⦃A B X Y : C⦄ ⦃f : A ⟶ X⦄ ⦃i : A ⟶ B⦄ ⦃p : X ⟶ Y⦄ ⦃g : B ⟶ Y⦄
+(sq : is_pushout f i p g) (hi : arrow.mk i ∈ F), arrow.mk p ∈ F
+
+namespace is_stable_by_direct_image
+
+variable {F}
+
+lemma for_coprod_inl (h : is_stable_by_direct_image F) (A B : C)
+  [has_binary_coproduct A B] [has_initial C] (hB : arrow.mk (initial.to B) ∈ F) :
+  arrow.mk (coprod.inl : A ⟶ A ⨿ B) ∈ F :=
+h (is_pushout.of_has_binary_coproduct A B) hB
+
+lemma for_coprod_inr (h : is_stable_by_direct_image F) (A B : C)
+  [has_binary_coproduct A B] [has_initial C] (hA : arrow.mk (initial.to A) ∈ F) :
+  arrow.mk (coprod.inr : B ⟶ A ⨿ B) ∈ F :=
+h (is_pushout.of_has_binary_coproduct A B).flip hA
+
+end is_stable_by_direct_image
 
 end arrow_class
 
