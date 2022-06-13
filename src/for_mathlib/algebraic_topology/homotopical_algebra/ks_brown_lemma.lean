@@ -44,16 +44,10 @@ by simp only [s, p, assoc, factorisation_axiom.fac, coprod.inr_desc]
 instance weak_eq_p : weak_eq (p f) := by { dsimp [p], apply_instance, }
 
 instance weak_eq_s : weak_eq (s f) :=
-begin
-  haveI : weak_eq (s f ≫ p f) := by { rw fac₂, apply_instance, },
-  exact weak_eq.of_comp_right (s f) (p f),
-end
+weak_eq.of_comp_right (s f) (p f) infer_instance (by { rw fac₂, apply_instance, })
 
 instance weak_eq_i [weak_eq f] : weak_eq (i f) :=
-begin
-  haveI : weak_eq (i f ≫ p f) := by { rw fac₁, apply_instance, },
-  exact weak_eq.of_comp_right (i f) (p f),
-end
+weak_eq.of_comp_right (i f) (p f) infer_instance (by { rw fac₁, apply_instance, })
 
 instance fibration_p : fibration (p f) := by { dsimp [p], apply_instance, }
 

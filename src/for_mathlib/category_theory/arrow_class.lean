@@ -125,6 +125,16 @@ lemma for_coprod_inr (h : is_stable_by_direct_image F) (A B : C)
   arrow.mk (coprod.inr : B ⟶ A ⨿ B) ∈ F :=
 h (is_pushout.of_has_binary_coproduct A B).flip hA
 
+lemma for_pushout_inl (h : is_stable_by_direct_image F) {A B₁ B₂ : C} (f : A ⟶ B₁) (g : A ⟶ B₂)
+  [has_pushout f g] (hg : arrow.mk g ∈ F) :
+  arrow.mk (pushout.inl : B₁ ⟶ pushout f g) ∈ F :=
+h (is_pushout.of_has_pushout f g) hg
+
+lemma for_pushout_inr (h : is_stable_by_direct_image F) {A B₁ B₂ : C} (f : A ⟶ B₁) (g : A ⟶ B₂)
+  [has_pushout f g] (hf : arrow.mk f ∈ F) :
+  arrow.mk (pushout.inr : B₂ ⟶ pushout f g) ∈ F :=
+h (is_pushout.of_has_pushout f g).flip hf
+
 end is_stable_by_direct_image
 
 end arrow_class

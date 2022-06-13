@@ -100,11 +100,15 @@ namespace weak_eq
 
 variables (p q)
 
-lemma of_comp_left [hp : weak_eq p] [hpq : weak_eq (p ≫ q)] : weak_eq q :=
+lemma of_comp_left (hp : weak_eq p) (hpq : weak_eq (p ≫ q)) : weak_eq q :=
 ⟨CM2.of_comp_left p q hp.mem hpq.mem⟩
+lemma of_comp_left' [hp : weak_eq p] [hpq : weak_eq (p ≫ q)] : weak_eq q :=
+of_comp_left p q hp hpq
 
-lemma of_comp_right [hq : weak_eq q] [hpq : weak_eq (p ≫ q)] : weak_eq p :=
+lemma of_comp_right (hq : weak_eq q) (hpq : weak_eq (p ≫ q)) : weak_eq p :=
 ⟨CM2.of_comp_right p q hq.mem hpq.mem⟩
+lemma of_comp_right' [hq : weak_eq q] [hpq : weak_eq (p ≫ q)] : weak_eq p :=
+of_comp_right p q hq hpq
 
 end weak_eq
 
@@ -149,6 +153,14 @@ lemma direct_image_is_weak_eq ⦃f : A ⟶ X⦄ ⦃i : A ⟶ B⦄ ⦃i' : X ⟶ 
   (h : is_pushout f i i' g) [hi₁ : cofibration i] [hi₂ : weak_eq i] : weak_eq i' :=
 ⟨(triv_cof_is_stable_by_direct_image h ⟨hi₁.mem, hi₂.mem⟩).2⟩
 
+instance {A X₁ X₂ : C} (f : A ⟶ X₁) (g : A ⟶ X₂) [hg : cofibration g] :
+  cofibration (pushout.inl : X₁ ⟶ pushout f g) :=
+⟨cof_is_stable_by_direct_image.for_pushout_inl f g hg.mem⟩
+
+instance {A X₁ X₂ : C} (f : A ⟶ X₁) (g : A ⟶ X₂) [hf : cofibration f] :
+  cofibration (pushout.inr : X₂ ⟶ pushout f g) :=
+⟨cof_is_stable_by_direct_image.for_pushout_inr f g hf.mem⟩
+
 end cofibration
 
 /-lemma cof_co_bc_stable : (cof : arrow_class D).is_stable_by_cobase_change :=
@@ -187,6 +199,14 @@ namespace weak_eq
 
 lemma op (hp : weak_eq p) : weak_eq p.op := ⟨hp.mem⟩
 lemma unop {X Y : Cᵒᵖ} {p : X ⟶ Y} (hp : weak_eq p) : weak_eq p.unop := ⟨hp.mem⟩
+
+instance {A X₁ X₂ : C} (f : A ⟶ X₁) (g : A ⟶ X₂) [hg₁ : cofibration g] [hg₂ : weak_eq g] :
+  weak_eq (pushout.inl : X₁ ⟶ pushout f g) :=
+⟨(triv_cof_is_stable_by_direct_image.for_pushout_inl f g ⟨hg₁.mem, hg₂.mem⟩).2⟩
+
+instance {A X₁ X₂ : C} (f : A ⟶ X₁) (g : A ⟶ X₂) [hf₁ : cofibration f] [hf₂ : weak_eq f] :
+  weak_eq (pushout.inr : X₂ ⟶ pushout f g) :=
+⟨(triv_cof_is_stable_by_direct_image.for_pushout_inr f g ⟨hf₁.mem, hf₂.mem⟩).2⟩
 
 end weak_eq
 
