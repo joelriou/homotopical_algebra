@@ -67,7 +67,7 @@ def mk_iso {f g : arrow C} (e₁ : f.left ≅ g.left) (e₂ : f.right ≅ g.righ
   end, }
 
 @[simps]
-def op_prod {C : Type*} [category C] {X Y : C} [has_binary_product X Y] 
+def op_prod {C : Type*} [category C] (X Y : C) [has_binary_product X Y] 
   [has_binary_coproduct (op X) (op Y)] :
   op (X ⨯ Y) ≅ op X ⨿ op Y :=
 begin
@@ -75,11 +75,7 @@ begin
     binary_cofan.mk (limits.prod.fst : X ⨯ Y ⟶ X).op ((limits.prod.snd : X ⨯ Y ⟶ Y).op),
   refine (is_colimit.cocone_point_unique_up_to_iso (coprod_is_coprod (op X) (op Y)) (_ : is_colimit cofan)).symm,
   exact
-  { desc := λ s, begin
-      let blah := discrete,
-      let φ : _ ⟶ X ⨯ Y := limits.prod.lift (s.ι.app (discrete.mk walking_pair.left)).unop (s.ι.app (discrete.mk walking_pair.right)).unop,
-      exact φ.op,
-    end,
+  { desc := λ s, (limits.prod.lift (s.ι.app (discrete.mk walking_pair.left)).unop (s.ι.app (discrete.mk walking_pair.right)).unop).op,
     fac' := λ s j, begin
       cases j,
       cases j; dsimp [cofan],
@@ -92,9 +88,9 @@ begin
       rw quiver.hom.unop_op,
       ext,
       { simp only [prod.lift_fst],
-        exact congr_arg (quiver.hom.unop) (hs (discrete.mk walking_pair.left)), },
+        exact congr_arg quiver.hom.unop (hs (discrete.mk walking_pair.left)), },
       { simp only [prod.lift_snd],
-        exact congr_arg (quiver.hom.unop) (hs (discrete.mk walking_pair.right)), },
+        exact congr_arg quiver.hom.unop (hs (discrete.mk walking_pair.right)), },
     end, },
 end
 
@@ -103,14 +99,52 @@ def iso_op_prod_lift {A X Y : C} [has_binary_product X Y]
   arrow.mk (prod.lift f g).op ≅ arrow.mk (coprod.desc f.op g.op) :=
 begin
   symmetry,
-  refine mk_iso op_prod.symm (by refl) _,
-  dsimp,
-  erw [comp_id],
+  refine mk_iso (op_prod _ _).symm (by refl) _,
   ext,
   { dsimp [limits.is_colimit.cocone_point_unique_up_to_iso, coprod_is_coprod],
-    simp only [coprod.inl_desc, id_comp, comp_id, coprod.desc_comp, ← op_comp, prod.lift_fst], },
+    simp only [coprod.inl_desc, id_comp, comp_id, coprod.desc_comp, ← op_comp, prod.lift_fst, comp_id], },
   { dsimp [limits.is_colimit.cocone_point_unique_up_to_iso, coprod_is_coprod],
-    simp only [coprod.inr_desc, id_comp, comp_id, coprod.desc_comp, ← op_comp, prod.lift_snd], },
+    simp only [coprod.inr_desc, id_comp, comp_id, coprod.desc_comp, ← op_comp, prod.lift_snd, comp_id], },
+end
+
+@[simps]
+def unop_prod (X Y : Cᵒᵖ) [has_binary_coproduct X.unop Y.unop] [has_binary_product X Y] :
+  unop (X ⨯ Y) ≅ X.unop ⨿ Y.unop :=
+begin
+  let cofan : binary_cofan X.unop Y.unop :=
+    binary_cofan.mk (limits.prod.fst : X ⨯ Y ⟶ X).unop ((limits.prod.snd : X ⨯ Y ⟶ Y)).unop,
+  refine (is_colimit.cocone_point_unique_up_to_iso (coprod_is_coprod X.unop Y.unop) (_ : is_colimit cofan)).symm,
+  exact
+  { desc := λ s, (limits.prod.lift (s.ι.app (discrete.mk walking_pair.left)).op (s.ι.app (discrete.mk walking_pair.right)).op).unop,
+    fac' := λ s j, begin
+      cases j,
+      cases j; dsimp [cofan],
+      { rw [← unop_comp, prod.lift_fst, quiver.hom.unop_op], },
+      { rw [← unop_comp, prod.lift_snd, quiver.hom.unop_op], },
+    end,
+    uniq' := λ s j hs, begin
+      dsimp,
+      apply quiver.hom.op_inj,
+      rw quiver.hom.op_unop,
+      ext,
+      { simp only [prod.lift_fst],
+        exact congr_arg quiver.hom.op (hs (discrete.mk walking_pair.left)), },
+      { simp only [prod.lift_snd],
+        exact congr_arg quiver.hom.op (hs (discrete.mk walking_pair.right)), },
+    end, },
+end
+
+def iso_unop_prod_lift {A X Y : Cᵒᵖ} [has_binary_product X Y]
+  [has_binary_coproduct (unop X) (unop Y)] (f : A ⟶ X) (g : A ⟶ Y) :
+  arrow.mk (prod.lift f g).unop ≅ arrow.mk (coprod.desc f.unop g.unop) :=
+begin
+  symmetry,
+  refine mk_iso (unop_prod _ _).symm (by refl) _,
+  ext,
+  { dsimp [limits.is_colimit.cocone_point_unique_up_to_iso, coprod_is_coprod],
+    simp only [id_comp, coprod.desc_comp, coprod.inl_desc, comp_id, ← unop_comp, prod.lift_fst], },
+  { dsimp [limits.is_colimit.cocone_point_unique_up_to_iso, coprod_is_coprod],
+    simp only [id_comp, coprod.desc_comp, coprod.inr_desc, comp_id, ← unop_comp, prod.lift_snd], },
 end
 
 end arrow

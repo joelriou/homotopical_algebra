@@ -18,7 +18,8 @@ namespace model_category
 variables {C : Type*} [category C] [M : model_category C]
 include M
 
-variable (A : C)
+variables (A B : C)
+
 structure precylinder  :=
 (I : C) (d₀ d₁: A ⟶ I) (σ : I ⟶ A) [weq_σ : weak_eq σ]
 (σd₀' : d₀ ≫ σ = 𝟙 A . obviously) (σd₁' : d₁ ≫ σ = 𝟙 A . obviously)
@@ -152,42 +153,195 @@ end
 
 end cylinder
 
-def pre_path_object (A : C) := precylinder (op A)
-def path_object (A : C) := cylinder (op A)
+structure pre_path_object :=
+(I : C) (d₀ d₁: I ⟶ B) (σ : B ⟶ I) [weq_σ : weak_eq σ]
+(d₀σ' : σ ≫ d₀ = 𝟙 B . obviously) (d₁σ' : σ ≫ d₁ = 𝟙 B . obviously)
 
 namespace pre_path_object
 
-variables {A} (P : pre_path_object A)
+restate_axiom d₀σ'
+restate_axiom d₁σ'
+attribute [simp, reassoc] d₀σ d₁σ
 
-def I' := P.I.unop
-def d₀' : P.I' ⟶ A := P.d₀.unop
-def d₁' : P.I' ⟶ A := P.d₁.unop
-def σ' : A ⟶ P.I' := P.σ.unop
-instance : weak_eq P.σ' := P.weq_σ.unop
-instance : weak_eq P.d₀' := P.weq_d₀.unop
-instance : weak_eq P.d₁' := P.weq_d₁.unop
+variables {B} (P : pre_path_object B)
 
-lemma d₀σ' : P.σ' ≫ P.d₀' = 𝟙 A :=
-by { apply quiver.hom.op_inj, exact precylinder.σd₀ P, }
+instance : weak_eq P.σ := P.weq_σ
 
-lemma d₁σ' : P.σ' ≫ P.d₁' = 𝟙 A :=
-by { apply quiver.hom.op_inj, exact precylinder.σd₁ P, }
-
-def change_I' {I' : C} {f : I' ⟶ P.I'} {g : A ⟶ I'} (fac : g ≫ f = P.σ') [hf : weak_eq f] :
-  pre_path_object A :=
+def op (P : pre_path_object B) : precylinder (op B) :=
 begin
-  haveI : weak_eq f.op := hf.op,
-  exact P.change_I (show f.op ≫ g.op = P.σ, by simpa only [← op_comp, fac]),
+  haveI : weak_eq P.σ.op := weak_eq.op infer_instance,
+  exact
+  { I := op P.I,
+    d₀ := P.d₀.op,
+    d₁ := P.d₁.op,
+    σ := P.σ.op,
+    σd₀' := by simp only [← op_comp, d₀σ, op_id],
+    σd₁' := by simp only [← op_comp, d₁σ, op_id], }
 end
 
-def π := prod.lift P.d₀' P.d₁'
-
-lemma fibration_π_iff_cofibration_ι (P : pre_path_object A) :
-  fibration P.π ↔ cofibration P.ι :=
-by simpa only [fibration.iff_op]
-  using cofibration.iso_invariance _ _ (arrow.iso_op_prod_lift P.d₀' P.d₁')
+def unop {B : Cᵒᵖ} (P : pre_path_object B) : precylinder B.unop :=
+begin
+  haveI : weak_eq P.σ.unop := weak_eq.unop infer_instance,
+  exact
+  { I := unop P.I,
+    d₀ := P.d₀.unop,
+    d₁ := P.d₁.unop,
+    σ := P.σ.unop,
+    σd₀' := by simp only [← unop_comp, d₀σ, unop_id],
+    σd₁' := by simp only [← unop_comp, d₁σ, unop_id], }
+end
 
 end pre_path_object
+
+namespace precylinder
+
+variable {A}
+
+def op (P : precylinder A) : pre_path_object (op A) :=
+begin
+  haveI : weak_eq P.σ.op := weak_eq.op infer_instance,
+  exact
+  { I := op P.I,
+    d₀ := P.d₀.op,
+    d₁ := P.d₁.op,
+    σ := P.σ.op,
+    d₀σ' := by simp only [← op_comp, σd₀, op_id],
+    d₁σ' := by simp only [← op_comp, σd₁, op_id], }
+end
+
+def unop {A : Cᵒᵖ} (P : precylinder A) : pre_path_object (unop A) :=
+begin
+  haveI : weak_eq P.σ.unop := weak_eq.unop infer_instance,
+  exact
+  { I := unop P.I,
+    d₀ := P.d₀.unop,
+    d₁ := P.d₁.unop,
+    σ := P.σ.unop,
+    d₀σ' := by simp only [← unop_comp, σd₀, unop_id],
+    d₁σ' := by simp only [← unop_comp, σd₁, unop_id], }
+end
+
+lemma unop_op (P : precylinder A) : P.op.unop = P := by { cases P, refl, }
+lemma op_unop {A : Cᵒᵖ} (P : precylinder A) : P.unop.op = P := by { cases P, refl, }
+
+end precylinder
+
+namespace pre_path_object
+
+variables {B} (P : pre_path_object B)
+
+lemma unop_op : P.op.unop = P := by { cases P, refl, }
+lemma op_unop {B : Cᵒᵖ} (P : precylinder B) : P.unop.op = P := by { cases P, refl, }
+
+instance weq_d₀ : weak_eq P.d₀ := weak_eq.unop (infer_instance : weak_eq P.op.d₀)
+instance weq_d₁ : weak_eq P.d₁ := weak_eq.unop (infer_instance : weak_eq P.op.d₁)
+
+def change_I {I' : C} {f : I' ⟶ P.I} {g : B ⟶ I'} (fac : g ≫ f = P.σ) [weak_eq f] :
+  pre_path_object B :=
+begin
+  haveI : weak_eq f.op := weak_eq.op infer_instance,
+  have eq : f.op ≫ g.op = P.σ.op := by rw [← op_comp, fac],
+  exact (P.op.change_I eq).unop,
+end
+
+@[simp]
+def π := prod.lift P.d₀ P.d₁
+
+lemma fibration_π_iff_cofibration_op_ι (P : pre_path_object B) :
+  fibration P.π ↔ cofibration P.op.ι :=
+by simpa only [fibration.iff_op]
+  using cofibration.iso_invariance _ _ (arrow.iso_op_prod_lift P.d₀ P.d₁)
+
+lemma fibration_π_iff_cofibration_unop_ι {B : Cᵒᵖ} (P : pre_path_object B) :
+  fibration P.π ↔ cofibration P.unop.ι :=
+by simpa only [fibration.iff_unop]
+  using cofibration.iso_invariance _ _ (arrow.iso_unop_prod_lift P.d₀ P.d₁)
+
+@[simps]
+def symm : pre_path_object B :=
+{ I := P.I,
+  d₀ := P.d₁,
+  d₁ := P.d₀,
+  σ := P.σ, }
+
+end pre_path_object
+
+structure path_object extends pre_path_object B :=
+[fib_π : fibration to_pre_path_object.π]
+
+namespace path_object
+
+variable {B}
+
+def mk' (P : pre_path_object B) (h : fibration P.π) : path_object B :=
+by { haveI := h, exact mk P, }
+
+abbreviation pre (Q : path_object B) := Q.to_pre_path_object
+
+instance (Q : path_object B) : fibration Q.pre.π := Q.fib_π
+
+end path_object
+
+namespace cylinder
+
+@[simps]
+def unop {A : Cᵒᵖ} (Q : cylinder A) : path_object A.unop :=
+begin
+  apply path_object.mk' Q.pre.unop,
+  rw [pre_path_object.fibration_π_iff_cofibration_op_ι, precylinder.op_unop],
+  apply_instance,
+end
+
+variable {A}
+
+@[simps]
+def op (Q : cylinder A) : path_object (op A) :=
+begin
+  apply path_object.mk' Q.pre.op,
+  rw [pre_path_object.fibration_π_iff_cofibration_unop_ι, precylinder.unop_op],
+  apply_instance,
+end
+
+end cylinder
+
+namespace path_object 
+
+variable {B}
+
+@[simps]
+def op (Q : path_object B) : cylinder (op B) :=
+begin
+  apply cylinder.mk' Q.pre.op,
+  rw ← Q.pre.fibration_π_iff_cofibration_op_ι,
+  apply_instance,
+end
+
+@[simps]
+def unop {B : Cᵒᵖ} (Q : path_object B) : cylinder B.unop :=
+begin
+  apply cylinder.mk' Q.pre.unop,
+  rw ← Q.pre.fibration_π_iff_cofibration_unop_ι,
+  apply_instance,
+end
+
+variable (B)
+
+def some : path_object B := (cylinder.some (opposite.op B)).unop
+
+instance : inhabited (path_object B) := ⟨some B⟩
+instance : inhabited (pre_path_object B) := ⟨(some B).pre⟩
+
+variable {B}
+
+@[simp]
+def symm (P : path_object B) : path_object B := P.op.symm.unop
+
+@[simps]
+def trans [hB : is_fibrant B] (P P' : path_object B) : path_object B :=
+by { haveI := hB.op, exact (P.op.trans P'.op).unop, }
+/- TODO : use change_I to replace the dual of the pushout by a pullback -/
+
+end path_object
 
 end model_category
 
