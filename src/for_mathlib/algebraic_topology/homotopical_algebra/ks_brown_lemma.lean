@@ -50,9 +50,13 @@ instance weak_eq_i [weak_eq f] : weak_eq (i f) :=
 weak_eq.of_comp_right (i f) (p f) infer_instance (by { rw fac₁, apply_instance, })
 
 instance fibration_p : fibration (p f) := by { dsimp [p], apply_instance, }
+instance fib_obj [is_fibrant Y] : is_fibrant (obj f) :=
+is_fibrant.mk (p f ≫ terminal.from Y) terminal_is_terminal
 
 instance cof_i [is_cofibrant Y] : cofibration (i f) := by { dsimp [i], apply_instance, }
 instance cof_s [is_cofibrant X] : cofibration (s f) := by { dsimp [s], apply_instance, }
+instance cof_obj [is_cofibrant X] [is_cofibrant Y] : is_cofibrant (obj f) :=
+is_cofibrant.mk (initial.to X ≫ i f) initial_is_initial
 
 end cofibrant
 
@@ -76,11 +80,17 @@ instance weak_eq_i : weak_eq (i f) := (infer_instance : weak_eq (cofibrant.p f.o
 instance weak_eq_r : weak_eq (r f) := (infer_instance : weak_eq (cofibrant.s f.op)).unop
 instance weak_eq_p [hf : weak_eq f] : weak_eq (p f) :=
 by { haveI := hf.op, apply weak_eq.unop, apply_instance, }
+
 instance cof_i : cofibration (i f) := (infer_instance : fibration (cofibrant.p f.op)).unop
+instance cof_obj [is_cofibrant X] : is_cofibrant (obj f) :=
+is_cofibrant.mk (initial.to X ≫ i f) initial_is_initial
+
 instance fib_p [hX : is_fibrant X] : fibration (p f) :=
 by { haveI := hX.op, apply cofibration.unop, apply_instance, }
 instance fib_s [hY : is_fibrant Y] : fibration (r f) :=
 by { haveI := hY.op, apply cofibration.unop, apply_instance, }
+instance fib_obj [is_fibrant X] [is_fibrant Y] : is_fibrant (obj f) :=
+is_fibrant.mk (p f ≫ terminal.from Y) terminal_is_terminal
 
 end fibrant
 
