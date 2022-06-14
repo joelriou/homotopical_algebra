@@ -147,6 +147,13 @@ by { rw cof_eq_llp_with_triv_fib, apply arrow_class.is_stable_by_coproduct.for_l
 lemma triv_cof_is_stable_by_coproduct : (triv_cof : arrow_class C).is_stable_by_coproduct :=
 by { rw triv_cof_eq_llp_with_fib, apply arrow_class.is_stable_by_coproduct.for_llp_with, }
 
+lemma cof_is_iso_invariant : (cof : arrow_class C).is_iso_invariant :=
+arrow_class.is_iso_invariant.of_comp_stable_and_contains_iso cof cof_comp_stable cof_contains_iso
+lemma fib_is_iso_invariant : (fib : arrow_class C).is_iso_invariant :=
+arrow_class.is_iso_invariant.of_comp_stable_and_contains_iso fib fib_comp_stable fib_contains_iso
+lemma weq_is_iso_invariant : (weq : arrow_class C).is_iso_invariant :=
+arrow_class.is_iso_invariant.of_comp_stable_and_contains_iso weq CM2.of_comp weq_contains_iso
+
 namespace cofibration
 
 lemma op (hi : cofibration i) : fibration i.op := ⟨hi.mem⟩
@@ -177,6 +184,14 @@ instance {X₁ X₂ Y₁ Y₂ : C} (f₁ : X₁ ⟶ Y₁) (f₂ : X₂ ⟶ Y₂)
   weak_eq (coprod.map f₁ f₂) :=
 ⟨(triv_cof_is_stable_by_coproduct.binary f₁ f₂ ⟨h₁.mem, h₁'.mem⟩ ⟨h₂.mem, h₂'.mem⟩).2⟩
 
+lemma iso_invariance {X₁ X₂ Y₁ Y₂ : C} (f₁ : X₁ ⟶ Y₁) (f₂ : X₂ ⟶ Y₂) (e : arrow.mk f₁ ≅ arrow.mk f₂) :
+  cofibration f₁ ↔ cofibration f₂ :=
+begin
+  split,
+  { exact λ h, ⟨cof_is_iso_invariant e h.mem⟩, },
+  { exact λ h, ⟨cof_is_iso_invariant e.symm h.mem⟩, },
+end
+
 end cofibration
 
 namespace fibration
@@ -187,6 +202,14 @@ lemma unop {X Y : Cᵒᵖ} {p : X ⟶ Y} (hp : fibration p) : cofibration p.unop
 variable (p)
 lemma iff_op : fibration p ↔ cofibration p.op := ⟨op, cofibration.unop⟩
 lemma iff_unop {X Y : Cᵒᵖ} (p : X ⟶ Y) : fibration p ↔ cofibration p.unop := ⟨unop, cofibration.op⟩
+
+lemma iso_invariance {X₁ X₂ Y₁ Y₂ : C} (f₁ : X₁ ⟶ Y₁) (f₂ : X₂ ⟶ Y₂) (e : arrow.mk f₁ ≅ arrow.mk f₂) :
+  fibration f₁ ↔ fibration f₂ :=
+begin
+  split,
+  { exact λ h, ⟨fib_is_iso_invariant e h.mem⟩, },
+  { exact λ h, ⟨fib_is_iso_invariant e.symm h.mem⟩, },
+end
 
 end fibration
 
@@ -211,6 +234,14 @@ instance {A X₁ X₂ : C} (f : A ⟶ X₁) (g : A ⟶ X₂) [hg₁ : cofibratio
 instance {A X₁ X₂ : C} (f : A ⟶ X₁) (g : A ⟶ X₂) [hf₁ : cofibration f] [hf₂ : weak_eq f] :
   weak_eq (pushout.inr : X₂ ⟶ pushout f g) :=
 ⟨(triv_cof_is_stable_by_direct_image.for_pushout_inr f g ⟨hf₁.mem, hf₂.mem⟩).2⟩
+
+lemma iso_invariance {X₁ X₂ Y₁ Y₂ : C} (f₁ : X₁ ⟶ Y₁) (f₂ : X₂ ⟶ Y₂) (e : arrow.mk f₁ ≅ arrow.mk f₂) :
+  weak_eq f₁ ↔ weak_eq f₂ :=
+begin
+  split,
+  { exact λ h, ⟨weq_is_iso_invariant e h.mem⟩, },
+  { exact λ h, ⟨weq_is_iso_invariant e.symm h.mem⟩, },
+end
 
 end weak_eq
 

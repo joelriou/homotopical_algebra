@@ -64,13 +64,12 @@ lemma iff_unop : F'.three_of_two_of_comp_left ↔ F'.unop.three_of_two_of_comp_r
 
 end three_of_two_of_comp_left
 
-
 variable (F)
 
 structure three_of_two (F : arrow_class C) : Prop :=
-  (of_comp : F.is_stable_by_composition)
-  (of_comp_left : F.three_of_two_of_comp_left)
-  (of_comp_right : F.three_of_two_of_comp_right)
+(of_comp : F.is_stable_by_composition)
+(of_comp_left : F.three_of_two_of_comp_left)
+(of_comp_right : F.three_of_two_of_comp_right)
 
 namespace three_of_two
 

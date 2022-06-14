@@ -21,7 +21,7 @@ condition that `arrow.mk f` belongs to `W`.
 
 -/
 
-open category_theory.limits
+open category_theory.limits category_theory.category
 
 noncomputable theory
 
@@ -139,12 +139,14 @@ h (is_pushout.of_has_pushout f g).flip hf
 
 end is_stable_by_direct_image
 
-def is_stable_by_coproduct (F : arrow_class C) :=
+def is_stable_by_coproduct :=
 ∀ ⦃I : Type v⦄ (X Y : I → C) [hX : has_coproduct X] [hY : has_coproduct Y]
   (f : Π i, X i ⟶ Y i) (hf : ∀ i, arrow.mk (f i) ∈ F),
     arrow.mk (@limits.sigma.map _ _ _ X Y hX hY f) ∈ F
 
 namespace is_stable_by_coproduct
+
+variable {F}
 
 lemma binary {F : arrow_class C} (h : F.is_stable_by_coproduct)
 {X₁ X₂ Y₁ Y₂ : C} [hX : has_binary_coproduct X₁ X₂] [hY : has_binary_coproduct Y₁ Y₂] (f₁ : X₁ ⟶ Y₁) (f₂ : X₂ ⟶ Y₂)
@@ -159,6 +161,37 @@ begin
 end
 
 end is_stable_by_coproduct
+
+def is_iso_invariant := ∀ ⦃w w' : arrow C⦄ (e : w ≅ w') (hw : w ∈ F), w' ∈ F
+
+namespace is_iso_invariant
+
+variable {F}
+
+lemma iff (h : is_iso_invariant F) {w w' : arrow C} (e : w ≅ w') : w ∈ F ↔ w' ∈ F :=
+begin
+  split,
+  exacts [λ hw, h e hw, λ hw', h e.symm hw'],
+end
+
+variable (F)
+
+lemma of_comp_stable_and_contains_iso (h₁ : is_stable_by_composition F) (h₂ : arrow_class.isomorphisms ⊆ F) :
+  is_iso_invariant F := λ w w' e hw,
+begin
+  have fac : w'.hom = e.inv.left ≫ w.hom ≫ e.hom.right,
+  { have eq := arrow.hom.congr_right (e.inv_hom_id),
+    dsimp at eq,
+    rw [arrow.w_assoc e.inv, eq],
+    dsimp,
+    rw comp_id, },
+  rw [← arrow.mk_eq w', fac],
+  rw [← arrow.mk_eq w] at hw,
+  exact h₁ e.inv.left _ (h₂ (mem_isomorphisms_of_is_iso _))
+    (h₁ w.hom e.hom.right hw (h₂ (mem_isomorphisms_of_is_iso _))),
+end
+
+end is_iso_invariant
 
 end arrow_class
 
