@@ -21,6 +21,7 @@ condition that `arrow.mk f` belongs to `W`.
 
 -/
 
+open category_theory
 open category_theory.limits category_theory.category
 
 noncomputable theory
@@ -105,9 +106,43 @@ def inverse_image (G : D ⥤ C) : arrow_class D :=
 λ w, G.map_arrow.obj w ∈ F
 
 def isomorphisms : arrow_class C := λ f, is_iso f.hom
+def monomorphisms : arrow_class C := λ f, mono f.hom
+def epimorphisms : arrow_class C := λ f, epi f.hom
 
 lemma mem_isomorphisms_of_is_iso {X Y : C} (f : X ⟶ Y) [hf : is_iso f] :
   arrow.mk f ∈ (isomorphisms : arrow_class C) := hf
+lemma mem_monomorphisms_of_mono {X Y : C} (f : X ⟶ Y) [hf : mono f] :
+  arrow.mk f ∈ (monomorphisms : arrow_class C) := hf
+lemma mem_epimorphisms_of_epi {X Y : C} (f : X ⟶ Y) [hf : epi f] :
+  arrow.mk f ∈ (epimorphisms : arrow_class C) := hf
+
+lemma epimorphisms_eq_op : (epimorphisms : arrow_class C) = (monomorphisms : arrow_class Cᵒᵖ).unop :=
+begin
+  ext f,
+  rcases f with ⟨X, Y, f⟩,
+  dsimp at X Y f,
+  split,
+  { intro hf,
+    haveI : epi f := hf,
+    exact category_theory.op_mono_of_epi f, },
+  { intro hf,
+    haveI : mono f.op := hf,
+    exact category_theory.unop_epi_of_mono f.op, },
+end
+
+lemma monomorphisms_eq_op : (monomorphisms : arrow_class C) = (epimorphisms : arrow_class Cᵒᵖ).unop :=
+begin
+  ext f,
+  rcases f with ⟨X, Y, f⟩,
+  dsimp at X Y f,
+  split,
+  { intro hf,
+    haveI : mono f := hf,
+    exact category_theory.op_epi_of_mono f, },
+  { intro hf,
+    haveI : epi f.op := hf,
+    exact category_theory.unop_mono_of_epi f.op, },
+end
 
 def is_stable_by_direct_image :=
 ∀ ⦃A B X Y : C⦄ ⦃f : A ⟶ X⦄ ⦃i : A ⟶ B⦄ ⦃p : X ⟶ Y⦄ ⦃g : B ⟶ Y⦄

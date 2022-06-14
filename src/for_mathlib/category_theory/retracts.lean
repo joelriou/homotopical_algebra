@@ -142,6 +142,40 @@ lemma of_inter {G : arrow_class C} (hF : F.is_stable_by_retract) (hG : G.is_stab
   (F ∩ G).is_stable_by_retract :=
 λ X₁ X₂ Y₁ Y₂ x y hxy hy, ⟨hF x y hxy hy.1, hG x y hxy hy.2⟩
 
+lemma for_isomorphisms : (isomorphisms : arrow_class C).is_stable_by_retract :=
+λ X₁ X₂ Y₁ Y₂ x y hxy hy,
+begin
+  haveI : is_iso y := hy,
+  rcases hxy with ⟨s, r, fac⟩,
+  use s.right ≫ inv y ≫ r.left,
+  have hs := s.w,
+  have hr := r.w,
+  have fac₁ := arrow.hom.congr_left fac,
+  have fac₂ := arrow.hom.congr_right fac,
+  dsimp at hs hr fac₁ fac₂ ⊢,
+  split,
+  { slice_lhs 1 2 { rw ← hs, },
+    slice_lhs 2 3 { rw is_iso.hom_inv_id, },
+    rw [id_comp, fac₁], },
+  { slice_lhs 3 4 { rw hr, },
+    slice_lhs 2 3 { rw is_iso.inv_hom_id, },
+    rw [id_comp, fac₂], },
+end
+
+lemma for_monomorphisms : (monomorphisms : arrow_class C).is_stable_by_retract :=
+λ X₁ X₂ Y₁ Y₂ x y hxy hy, ⟨λ Z g g' hgg', begin
+  haveI : mono y := hy,
+  rcases hxy with ⟨s, r, fac⟩,
+  haveI : split_mono s.left := ⟨r.left, arrow.hom.congr_left fac⟩,
+  have hs := s.w,
+  dsimp at hs hgg',
+  rw [← cancel_mono s.left, ← cancel_mono y,
+    assoc, assoc, hs, ← assoc, ← assoc, hgg'],
+end⟩
+
+lemma for_epimorphisms : (epimorphisms : arrow_class C).is_stable_by_retract :=
+by simpa only [epimorphisms_eq_op] using for_monomorphisms.unop
+
 end is_stable_by_retract
 
 end arrow_class
