@@ -164,10 +164,6 @@ def zero_cycle_of_hom_equiv (F G : chain_complex C α) :
     rw add_comp,
   end, }
 
-example : 2+2=4 := rfl
-
-
-
 def bij_homotopies {F G : chain_complex C α} (f g : F ⟶ G) :
   homotopy f g ≃ { z : (hom_complex F G).X 1 // (zero_cycle_of_hom f).1 = (hom_complex F G).d 1 0 z + (zero_cycle_of_hom g).1 } :=
 { to_fun := λ h, begin
@@ -185,9 +181,53 @@ def bij_homotopies {F G : chain_complex C α} (f g : F ⟶ G) :
       eq_to_hom_f'' h.hom (n+0-1) (n+0-1+1) (n+0-1) n rfl (by abel)],
     apply add_comm,
   end,
-  inv_fun := sorry,
-  left_inv := sorry,
-  right_inv := sorry, }
+  inv_fun := λ z,
+  { hom := λ i j, begin
+      by_cases i+1 = j,
+      { exact z.1 i ≫ eq_to_hom (by rw h), },
+      { exact 0, }
+    end,
+    zero' := λ i j hij, begin
+      change ¬ i+1=j at hij,
+      split_ifs,
+      refl,
+    end,
+    comm := λ n, begin
+      have hz := congr_fun z.2 n,
+      have hz' := eq_to_hom_f 1 z.1 (n+0-1) (n-1) (by abel),
+      dsimp at hz hz',
+      simp only [← cancel_mono (eq_to_hom (show G.X (n+0) = G.X n, by rw add_zero)),
+        add_zero, assoc, eq_to_hom_trans, eq_to_hom_refl, comp_id, add_comp,
+        homological_complex.d_comp_eq_to_hom, complex_shape.down_rel, linear.smul_comp, hε, hε₁,
+        neg_neg, one_zsmul] at hz,
+      have h₁ : (complex_shape.down α).rel (n+1) n := rfl,
+      have h₂ : (complex_shape.down α).rel n (n-1) := by { change (n-1)+1 = n, abel, },
+      have h₃ : n-1+1=n := by abel,
+      rw [d_next_eq _ h₂, prev_d_eq _ h₁],
+      split_ifs,
+      dsimp,
+      simp only [hz, hz', comp_id, add_left_inj,
+        eq_to_hom_d F n (n+0-1) n (n-1) rfl (by abel),
+        assoc, eq_to_hom_refl, id_comp, eq_to_hom_trans_assoc, eq_to_hom_trans],
+      apply add_comm,
+    end, },
+  left_inv := λ h, begin
+    ext i j,
+    dsimp,
+    split_ifs with hij,
+    { subst hij,
+      simp only [eq_to_hom_refl, comp_id], },
+    { rw h.zero i j hij, },
+  end,
+  right_inv := λ z, begin
+    ext n,
+    dsimp,
+    split_ifs,
+    { rw comp_id, },
+    { exfalso,
+      apply h,
+      refl, },
+  end, }
 
 end homology
 
