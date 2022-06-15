@@ -24,6 +24,8 @@ class has_sign (α : Type*) [add_comm_group α] [has_one α] :=
 def ε {α : Type*} [add_comm_group α] [has_one α] [s : has_sign α] : α → ℤ := s.ε
 def hε {α : Type*} [add_comm_group α] [has_one α] [s : has_sign α] (x : α) : ε (x+1) = - ε x := by apply s.hε
 def hε₀ {α : Type*} [add_comm_group α] [has_one α] [s : has_sign α] : ε (0 : α) = 1 := s.hε₀
+def hε₁ {α : Type*} [add_comm_group α] [has_one α] [s : has_sign α] : ε (1 : α) = -1 := 
+by rw [← zero_add (1 : α), hε, hε₀]
 
 variables {C : Type u} [category.{v} C] [preadditive C] {α : Type*} [add_comm_group α] [has_one α] [has_sign α]
 
@@ -99,23 +101,45 @@ def hom_complex.Z (F G : chain_complex C α) (n : α) :
   add_subgroup ((hom_complex F G).X n) :=
 add_monoid_hom.ker ((hom_complex F G).d n (n-1))
 
-def e (F G : chain_complex C α) :
+@[simps]
+def zero_cycle_of_hom {F G : chain_complex C α} (φ : F ⟶ G) : hom_complex.Z F G 0 :=
+begin
+  refine ⟨λ q, φ.f q ≫ eq_to_hom (by abel), _⟩,
+  dsimp only [hom_complex.Z],
+  rw [add_monoid_hom.mem_ker],
+  ext n,
+  dsimp,
+  simp only [eq_to_hom_d G (n+0) (n+(0-1)) n (n-1) (by abel) (by abel),
+    eq_to_hom_d F n (n+(0-1)-0) n (n-1) (by abel) (by abel),
+    eq_to_hom_f' φ (n+(0-1)-0) (n-1) (by abel), hε, hε₀],
+  simp only [assoc, eq_to_hom_refl, eq_to_hom_trans_assoc, eq_to_hom_trans,
+    comp_id, id_comp, neg_smul, one_zsmul, add_right_neg, φ.comm_assoc],
+end
+
+@[simps]
+def zero_cycle_of_hom_equiv (F G : chain_complex C α) :
   (F ⟶ G) ≃+ hom_complex.Z F G 0 :=
-{ to_fun := λ φ, begin
-    refine ⟨λ q, φ.f q ≫ eq_to_hom (by abel), _⟩,
-    dsimp only [hom_complex.Z],
-    rw [add_monoid_hom.mem_ker],
-    ext n,
-    dsimp,
-    simp only [eq_to_hom_d G (n+0) (n+(0-1)) n (n-1) (by abel) (by abel),
-      eq_to_hom_d F n (n+(0-1)-0) n (n-1) (by abel) (by abel),
-      eq_to_hom_f' φ (n+(0-1)-0) (n-1) (by abel), hε, hε₀],
-    simp only [assoc, eq_to_hom_refl, eq_to_hom_trans_assoc, eq_to_hom_trans,
-      comp_id, id_comp, neg_smul, one_zsmul, add_right_neg, φ.comm_assoc],
-  end,
+{ to_fun := λ φ, zero_cycle_of_hom φ,
   inv_fun := λ ψ, begin
     refine ⟨λ n, ψ.1 n ≫ eq_to_hom (by abel), _⟩,
-    sorry,
+    intros n m hnm,
+    change m+1=n at hnm,
+    subst hnm,
+    have hψ₀ := ψ.2,
+    dsimp only [hom_complex.Z] at hψ₀,
+    rw add_monoid_hom.mem_ker at hψ₀,
+    have hψ₁ := congr_fun hψ₀ (m+1),
+    have eq : G.X (m+1+(0-1)) = G.X m := by { congr, abel, },
+    have hψ₂ := congr_arg (λ g, g ≫ eq_to_hom eq) hψ₁,
+    have h := eq_to_hom_f 0 ψ.1 (m+1+(0-1)-0) m (by abel),
+    dsimp at hψ₂ ⊢ h,
+    simp only [add_comp, h,
+      eq_to_hom_d G (m+1+0) (m+1+(0-1)) (m+1) m (by abel) (by abel),
+      eq_to_hom_d F (m+1) (m+1+(0-1)-0) (m+1) m (by abel) (by abel),
+      zero_add, hε₁, neg_zsmul, one_zsmul, neg_comp, zero_comp] at hψ₂,
+    rw [tactic.ring.add_neg_eq_sub, sub_eq_zero] at hψ₂,
+    simpa only [assoc, eq_to_hom_refl, eq_to_hom_trans, eq_to_hom_trans_assoc,
+      comp_id, id_comp] using hψ₂,
   end,
   left_inv := λ φ, begin
     ext n,
@@ -132,6 +156,7 @@ def e (F G : chain_complex C α) :
     dsimp,
     rw add_comp,
   end, }
+
 end homology
 
 end algebra
