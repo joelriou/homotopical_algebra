@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Joël Riou
 -/
 
-import algebra.homology.homological_complex
+import algebra.homology.homotopy
 import algebra.homology.additive
 import algebra.category.Group.abelian
 
@@ -47,6 +47,13 @@ lemma eq_to_hom_f' {F G : chain_complex C α} (φ : F ⟶ G) (n n' : α) (h : n=
 φ.f n = eq_to_hom (by rw h) ≫ φ.f n' ≫ eq_to_hom (by rw h) :=
 begin
   subst h,
+  simp only [eq_to_hom_refl, comp_id, id_comp],
+end
+
+lemma eq_to_hom_f'' {F G : chain_complex C α} (φ : Π i j, F.X i ⟶ G.X j) (i j i' j' : α) (hi : i = i') (hj : j = j') :
+  φ i j = eq_to_hom (by rw [hi]) ≫ φ i' j' ≫ eq_to_hom (by rw [hj]) :=
+begin
+  substs hi hj,
   simp only [eq_to_hom_refl, comp_id, id_comp],
 end
 
@@ -156,6 +163,31 @@ def zero_cycle_of_hom_equiv (F G : chain_complex C α) :
     dsimp,
     rw add_comp,
   end, }
+
+example : 2+2=4 := rfl
+
+
+
+def bij_homotopies {F G : chain_complex C α} (f g : F ⟶ G) :
+  homotopy f g ≃ { z : (hom_complex F G).X 1 // (zero_cycle_of_hom f).1 = (hom_complex F G).d 1 0 z + (zero_cycle_of_hom g).1 } :=
+{ to_fun := λ h, begin
+    refine ⟨λ n, h.hom n (n+1), _⟩,
+    ext n,
+    dsimp,
+    have comm := h.comm n,
+    have h₁ : (complex_shape.down α).rel (n+1) n := rfl,
+    have h₂ : (complex_shape.down α).rel n (n+0-1) := by { change (n+0-1)+1 = n, abel, },
+    rw [d_next_eq _ h₂, prev_d_eq _ h₁] at comm,
+    simp only [← cancel_mono (eq_to_hom (show G.X (n+0) = G.X n, by rw add_zero)), comm,
+      add_zero, add_comp, assoc, homological_complex.d_comp_eq_to_hom,
+      complex_shape.down_rel, add_left_inj, eq_to_hom_trans, eq_to_hom_refl, comp_id,
+      linear.smul_comp, hε, hε₁, neg_neg, one_zsmul, id_comp,
+      eq_to_hom_f'' h.hom (n+0-1) (n+0-1+1) (n+0-1) n rfl (by abel)],
+    apply add_comm,
+  end,
+  inv_fun := sorry,
+  left_inv := sorry,
+  right_inv := sorry, }
 
 end homology
 
