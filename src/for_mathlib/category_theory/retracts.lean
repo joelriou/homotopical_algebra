@@ -7,6 +7,7 @@ Authors: Joël Riou
 import category_theory.opposites
 import for_mathlib.category_theory.arrow_class
 import for_mathlib.category_theory.comma_op
+import category_theory.preadditive.projective
 
 open category_theory
 open category_theory.category
@@ -179,5 +180,17 @@ by simpa only [epimorphisms_eq_op] using for_monomorphisms.unop
 end is_stable_by_retract
 
 end arrow_class
+
+namespace projective
+
+lemma of_retract {X Y : C} (hXY : is_retract X Y) (hY : projective Y) : projective X :=
+⟨λ E Z f e, begin
+  introI,
+  rcases hXY with ⟨s, r, fac⟩,
+  use s ≫ projective.factor_thru (r ≫ f) e,
+  rw [assoc, factor_thru_comp, ← assoc, fac, id_comp],
+end⟩
+
+end projective
 
 end category_theory

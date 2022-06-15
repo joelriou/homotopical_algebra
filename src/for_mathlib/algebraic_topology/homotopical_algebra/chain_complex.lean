@@ -9,6 +9,7 @@ import category_theory.abelian.basic
 import category_theory.preadditive.projective
 import algebra.homology.homological_complex
 import algebra.homology.quasi_iso
+import for_mathlib.category_theory.limits.kernel_functor
 
 open category_theory category_theory.limits category_theory.category
 open algebraic_topology
@@ -25,8 +26,8 @@ namespace chain_complex
 
 def projective_structure : category_with_fib_cof_weq (chain_complex C ℕ) :=
 { weq := λ w, quasi_iso w.hom,
-  fib := λ w, ∀ i, epi (w.hom.f i),
-  cof := λ w, ∀ i, mono (w.hom.f i) ∧ (projective (cokernel (w.hom.f i))), }
+  fib := λ w, ∀ n, epi (w.hom.f n),
+  cof := λ w, ∀ n, mono (w.hom.f n) ∧ (projective (cokernel (w.hom.f n))), }
 
 variable {C}
 namespace projective_structure
@@ -55,17 +56,15 @@ def CM3 : (projective_structure C).CM3 :=
     apply arrow_class.is_stable_by_retract.for_isomorphisms _ _ hfg',
     apply hg.1,
   end⟩,
-  cof := begin
-    sorry,
---    split,
---    { exact arrow_class.is_stable_by_retract.for_monomorphisms _ _ (by exact (hf' i).1)
---      (is_retract_imp_of_functor (eval i).map_arrow f f' hff'), },
- --   { apply category_theory.projective.of_retract _ (hf' i).2,
-  --    sorry, },
+  cof := λ X₁ X₂ Y₁ Y₂ f g hfg hg n, begin
+    split,
+    { exact arrow_class.is_stable_by_retract.for_monomorphisms _ _ 
+      (is_retract.imp_of_functor (homological_complex.eval _ _ n).map_arrow _ _ hfg) (hg n).1, },
+    { exact projective.of_retract (is_retract.imp_of_functor
+      ((homological_complex.eval _ _ n).map_arrow ⋙ limits.cokernel_functor C) _ _ hfg) (hg n).2, },
   end,
-  fib := sorry, }
-  --λ f f' hf' hff' i, arrow_class.is_stable_by_retract.for_epimorphisms _ _ (by exact hf' i)
-  --    (is_retract_imp_of_functor (eval i).map_arrow f f' hff'), }
+  fib := λ X₁ X₂ Y₁ Y₂ f g hfg hg n, arrow_class.is_stable_by_retract.for_epimorphisms _ _ 
+      (is_retract.imp_of_functor (homological_complex.eval _ _ n).map_arrow _ _ hfg) (hg n), }
 
 def CM4 : (projective_structure C).CM4 := sorry
 def CM5 : (projective_structure C).CM5 := sorry
