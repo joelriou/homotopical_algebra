@@ -78,10 +78,60 @@ def twist (z : hom_complex.Z F G n) : chain_complex C ℤ :=
     { exfalso, exact h rfl, },
   end }
 
+@[simps]
 def twist.ι (z : hom_complex.Z F G n) : G ⟶ twist z :=
 { f := λ p, biprod.lift 0 (𝟙 (G.X p)), }
 
-example : 2+2 = 4 := rfl
+def twist.desc (z : hom_complex.Z F G n) {K : chain_complex C ℤ}
+  (γ : G ⟶ K) (φ : (hom_complex F K).X (n+1))
+  (hφγ : (hom_complex F K).d (n+1) n φ = ((hom_complex_functor_source_fixed F).map γ).f n z.1) :
+  twist z ⟶ K :=
+{ f := λ p, biprod.desc (φ (p-1-n) ≫ eq_to_hom (by { congr, linarith, })) (γ.f p),
+  comm' := λ p q hpq, begin
+    change q+1 = p at hpq,
+    subst hpq,
+    ext,
+    { dsimp,
+      simp only [biprod.lift_desc, biprod.inl_desc_assoc, assoc, dif_pos, linear.smul_comp],
+      have h₁ : q+1-1-n = q-n := by linarith,
+      have h₂ : q-n+n = q := by linarith,
+      have h₃ := congr_fun hφγ (q-n),
+      have h₄ := congr_arg (λ φ, eq_to_hom (congr_arg F.X h₁) ≫ φ ≫ eq_to_hom (congr_arg K.X h₂)) h₃,
+      have h₅ := eq_to_hom_f n z.1 (q+1-1-n) (q-n) (by linarith),
+      dsimp at h₄ h₅,
+      rw [eq_to_hom_d K (q-n+(n+1)) (q-n+n) (q+1) q (by linarith) (by linarith),
+        eq_to_hom_d F (q-n) (q-n+n-(n+1)) (q-n) (q-1-n) (by linarith) (by linarith),
+        eq_to_hom_f (n+1) φ (q-n+n-(n+1)) (q-1-n) (by linarith),
+        eq_to_hom_f' γ (q-n+n) q (by linarith)] at h₄,
+      rw [eq_to_hom_d F (q+1-1-n) (q-1-n) (q-n) (q-1-n) (by linarith) (by linarith),
+        eq_to_hom_f (n+1) φ (q+1-1-n) (q-n) (by linarith), h₅],
+      simp only [add_comp, assoc, linear.smul_comp, eq_to_hom_trans, comp_add, linear.comp_smul,
+        eq_to_hom_trans_assoc, eq_to_hom_refl, comp_id, id_comp, hε', neg_neg, neg_smul] at h₄ ⊢,
+      rw ← h₄,
+      abel, },
+    { dsimp,
+      simp only [zero_add, biprod.inr_desc_assoc, homological_complex.hom.comm, biprod.lift_desc, zero_comp], },
+  end, }
+
+@[simp]
+def twist.φ {z : hom_complex.Z F G n} {K : chain_complex C ℤ} (f : twist z ⟶ K) :
+  (hom_complex F K).X (n+1) :=
+λ q, eq_to_hom (by { congr, linarith, }) ≫ biprod.inl ≫ f.f (q+(n+1))
+
+@[simps]
+def twist.γ {z : hom_complex.Z F G n} {K : chain_complex C ℤ} (f : twist z ⟶ K) : G ⟶ K :=
+twist.ι z ≫ f
+
+def twist.dφ {z : hom_complex.Z F G n} {K : chain_complex C ℤ} (f : twist z ⟶ K) :
+  (hom_complex F K).d (n+1) n (twist.φ f) = ((hom_complex_functor_source_fixed F).map (twist.γ f)).f n z.1 :=
+begin
+  ext q,
+  dsimp,
+  simp only [assoc, homological_complex.hom.comm, twist_d, biprod.inl_desc_assoc],
+  have h₁₂ := f.comm (q+(n+1)) (q+n),
+  rw dif_pos (show q+n+1=q+(n+1), by linarith),
+  sorry,
+end
 
 end hom_complex
 

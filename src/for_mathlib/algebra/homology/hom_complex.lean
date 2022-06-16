@@ -246,20 +246,23 @@ def bij_homotopies {F G : chain_complex C α} (f g : F ⟶ G) [has_sign α] :
       refl, },
   end, }
 
+abbreviation hom_complex_functor_target_fixed_map {F₁ F₂ : chain_complex C α} (φ : F₁ ⟶ F₂)
+  (G : chain_complex C α) [has_sign α] : hom_complex F₂ G ⟶ hom_complex F₁ G :=
+{ f := λ n, AddCommGroup.of_hom
+  { to_fun := λ f q, φ.f q ≫ f q,
+    map_zero' := by { ext q, dsimp, rw comp_zero, },
+    map_add' := λ f₁ f₂, by { ext q, dsimp, rw comp_add, }, },
+  comm' := λ i j hij, begin
+    ext f q,
+    simp only [comp_apply],
+    dsimp,
+    simp only [assoc, comp_add, linear.comp_smul, homological_complex.hom.comm_assoc],
+  end, }
+
 @[simps]
 def hom_complex_functor_target_fixed (G : chain_complex C α) [has_sign α] : (chain_complex C α)ᵒᵖ ⥤ chain_complex AddCommGroup α :=
 { obj := λ F, hom_complex F.unop G,
-  map := λ F₁ F₂ φ,
-  { f := λ n, AddCommGroup.of_hom
-    { to_fun := λ f q, φ.unop.f q ≫ f q,
-      map_zero' := by { ext q, dsimp, rw comp_zero, },
-      map_add' := λ f₁ f₂, by { ext q, dsimp, rw comp_add, }, },
-    comm' := λ i j hij, begin
-      ext f q,
-      simp only [comp_apply],
-      dsimp,
-      simp only [assoc, comp_add, linear.comp_smul, homological_complex.hom.comm_assoc],
-    end, },
+  map := λ F₁ F₂ φ, hom_complex_functor_target_fixed_map φ.unop G,
   map_id' := λ F, begin
     ext n f q,
     dsimp,
@@ -269,6 +272,37 @@ def hom_complex_functor_target_fixed (G : chain_complex C α) [has_sign α] : (c
     ext n f q,
     dsimp,
     simpa only [comp_apply, assoc],
+  end, }
+
+abbreviation hom_complex_functor_source_fixed_map (F : chain_complex C α)
+  {G₁ G₂ : chain_complex C α} [has_sign α] (φ : G₁ ⟶ G₂) : hom_complex F G₁ ⟶ hom_complex F G₂ :=
+{ f := λ n, AddCommGroup.of_hom
+  { to_fun := λ f q, f q ≫ φ.f (q+n),
+    map_zero' := by { ext q, dsimp, rw zero_comp, },
+    map_add' := λ f₁ f₂, by { ext q, dsimp, rw add_comp, }, },
+  comm' := λ i j hij, begin
+    ext f q,
+    simp only [comp_apply],
+    dsimp,
+    simp only [assoc, homological_complex.hom.comm, add_comp, linear.smul_comp,
+      eq_to_hom_f' φ (q+j-i+i) (q+j) (by abel), eq_to_hom_trans, eq_to_hom_refl, comp_id],
+  end, }
+
+@[simps]
+def hom_complex_functor_source_fixed (F : chain_complex C α) [has_sign α] : chain_complex C α ⥤ chain_complex AddCommGroup α :=
+{ obj := λ G, hom_complex F G,
+  map := λ G₁ G₂ φ, hom_complex_functor_source_fixed_map F φ,
+  map_id' := λ G, begin
+    ext n f q,
+    dsimp,
+    simp only [comp_id, id_apply],
+  end,
+  map_comp' := λ G₁ G₂ G₃ φ₁₂ φ₂₃, begin
+    ext n f q,
+    dsimp,
+    simp only [comp_apply],
+    dsimp,
+    rw [assoc],
   end, }
 
 def hom_complex_left_homotopies {F₁ F₂ : chain_complex C α} {φ₁ φ₂ : F₁ ⟶ F₂} (h₁₂ : homotopy φ₁ φ₂)
@@ -352,34 +386,6 @@ instance : has_sign ℤ :=
       exact h odd_one, },
     { refl, },
   end, }
-
-example : 2+2=4 := rfl
-/-
-@[simps]
-def hom_complex_functor_source_fixed (F : chain_complex C α) [has_sign α] : chain_complex C α ⥤ chain_complex AddCommGroup α :=
-{ obj := λ G, hom_complex F G,
-  map := λ G₁ G₂ φ,
-  { f := λ n, AddCommGroup.of_hom
-    { to_fun := λ f q, f q ≫ φ.f (q+n),
-      map_zero' := by { ext q, dsimp, rw zero_comp, },
-      map_add' := λ f₁ f₂, by { ext q, dsimp, rw add_comp, }, },
-    comm' := λ i j hij, begin
-      ext f q,
-      simp only [comp_apply],
-      dsimp,
-      simp only [assoc, homological_complex.hom.comm, add_comp, linear.smul_comp,
-        eq_to_hom_f' φ (q+j-i+i) (q+j) (by abel), eq_to_hom_trans, eq_to_hom_refl, comp_id],
-    end, },
-  map_id' := λ G, begin
-    ext n f q,
-    dsimp,
-    simp only [comp_id, id_apply],
-  end,
-  map_comp' := λ G₁ G₂ G₃ φ₁₂ φ₂₃, begin
-    ext n f q,
-    dsimp,
-    sorry,
-  end, }-/
 
 end homology
 
