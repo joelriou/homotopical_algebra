@@ -353,6 +353,34 @@ instance : has_sign ℤ :=
     { refl, },
   end, }
 
+example : 2+2=4 := rfl
+/-
+@[simps]
+def hom_complex_functor_source_fixed (F : chain_complex C α) [has_sign α] : chain_complex C α ⥤ chain_complex AddCommGroup α :=
+{ obj := λ G, hom_complex F G,
+  map := λ G₁ G₂ φ,
+  { f := λ n, AddCommGroup.of_hom
+    { to_fun := λ f q, f q ≫ φ.f (q+n),
+      map_zero' := by { ext q, dsimp, rw zero_comp, },
+      map_add' := λ f₁ f₂, by { ext q, dsimp, rw add_comp, }, },
+    comm' := λ i j hij, begin
+      ext f q,
+      simp only [comp_apply],
+      dsimp,
+      simp only [assoc, homological_complex.hom.comm, add_comp, linear.smul_comp,
+        eq_to_hom_f' φ (q+j-i+i) (q+j) (by abel), eq_to_hom_trans, eq_to_hom_refl, comp_id],
+    end, },
+  map_id' := λ G, begin
+    ext n f q,
+    dsimp,
+    simp only [comp_id, id_apply],
+  end,
+  map_comp' := λ G₁ G₂ G₃ φ₁₂ φ₂₃, begin
+    ext n f q,
+    dsimp,
+    sorry,
+  end, }-/
+
 end homology
 
 end algebra

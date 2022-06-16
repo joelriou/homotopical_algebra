@@ -20,6 +20,7 @@ variables {C : Type*} [category C] [preadditive C]
 
 variables {F G : chain_complex C ℤ} {n : ℤ} [∀ p, has_binary_biproduct (F.X (p-1-n)) (G.X p)]
 
+@[simps]
 def twist (z : hom_complex.Z F G n) : chain_complex C ℤ :=
 { X := λ p, biprod (F.X (p-1-n)) (G.X p),
   d := λ p q, begin
@@ -76,6 +77,11 @@ def twist (z : hom_complex.Z F G n) : chain_complex C ℤ :=
           biprod.lift_snd, homological_complex.d_comp_d, comp_zero], }, },
     { exfalso, exact h rfl, },
   end }
+
+def twist.ι (z : hom_complex.Z F G n) : G ⟶ twist z :=
+{ f := λ p, biprod.lift 0 (𝟙 (G.X p)), }
+
+example : 2+2 = 4 := rfl
 
 end hom_complex
 
