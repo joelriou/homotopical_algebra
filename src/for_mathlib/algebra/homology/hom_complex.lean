@@ -8,7 +8,6 @@ import algebra.homology.homotopy
 import algebra.homology.additive
 import algebra.category.Group.abelian
 import data.int.parity
-import category_theory.abelian.projective
 
 noncomputable theory
 
@@ -43,8 +42,6 @@ begin
   { rw [h, mul_one], },
   { rw [h, mul_neg, mul_one, neg_neg], },
 end
-
-section
 
 variables {C : Type u} [category.{v} C] [preadditive C] {α : Type*} [add_comm_group α] [has_one α]
 
@@ -355,88 +352,6 @@ instance : has_sign ℤ :=
       exact h odd_one, },
     { refl, },
   end, }
-
-end
-
-
-section
-
-variables {C : Type*} [category C] [abelian C] {F G : chain_complex C ℤ}
-
-structure lift_cycle {n : ℤ} (z : hom_complex.Z F G n) (p : ℤ) :=
-(y : (hom_complex F G).X (n+1)) (hy : ∀ q, q ≤ p → (hom_complex F G).d (n+1) n y q = z.1 q)
-
-def lift_cycle_induction {n p : ℤ} (z : hom_complex.Z F G n) (l : lift_cycle z p) [projective (F.X (p+1))]
-  (hG : G.cycles (p+1+n) = G.boundaries (p+1+n)) : {l' : lift_cycle z (p+1) // ∀ q, q ≤ p → l'.y q = l.y q} :=
-begin
-  let u := z.1 (p+1) - ((hom_complex F G).d (n + 1) n) l.y (p+1),
-  have du : (G.boundaries (p+1+n)).factors u,
-  { rw [← hG, G.cycles_eq_kernel_subobject (show  p+n+1 = p+1+n, by linarith), kernel_subobject_factors_iff],
-    let u' := z.1 - ((hom_complex F G).d (n + 1) n) l.y,
-    have du' : (hom_complex F G).d n (n-1) u' = 0,
-    { dsimp only [u'],
-      rw map_sub,
-      have hz := z.2,
-      dsimp only [hom_complex.Z] at hz,
-      rw add_monoid_hom.mem_ker at hz,
-      rw [hz, ← comp_apply, (hom_complex F G).d_comp_d (n+1) n (n-1), AddCommGroup.zero_apply, sub_self], },
-    have hu' := congr_fun du' (p+1),
-    dsimp at hu',
-    have hu'' : u' (p + 1 + (n - 1) - n) = 0,
-    { dsimp only [u'],
-      rw [pi.sub_apply, l.hy (p+1+(n-1)-n) (by linarith), sub_self], },
-    rw hu'' at hu',
-    simp only [zero_comp, comp_zero, smul_zero, add_zero] at hu',
-    rw [show u = u' (p+1), by refl],
-    have hG' := eq_to_hom_d G (p+1+n) (p+n) (p+1+n) (p+1+(n-1)) (by linarith) (by linarith),
-    simp only [eq_to_hom_refl, id_comp] at hG',
-    rw [hG', ← assoc, hu', zero_comp], },
-  rw G.boundaries_eq_image_subobject (show p+1+n+1 = p+1+(n+1), by linarith) at du,
-  let φ : F.X (p + 1) ⟶ G.X (p + 1 + (n + 1)) := projective.factor_thru (subobject.factor_thru _ u du) (factor_thru_image_subobject _),
-  have hφ : φ ≫ G.d (p + 1 + (n + 1)) (p + 1 + n) = u := begin
-    rw ← subobject.factor_thru_arrow _ u du,
-    dsimp only [φ],
-    simp only [subobject.factor_thru_arrow, ← image_subobject_arrow_comp (G.d (p+1+(n+1)) (p+1+n)), ← assoc,
-      projective.factor_thru_comp ((subobject.factor_thru _ u du)) (factor_thru_image_subobject _)],
-  end,
-  let δ : (hom_complex F G).X (n+1) := λ q, begin
-    by_cases q = p+1,
-    { exact eq_to_hom (by rw h) ≫ φ ≫ eq_to_hom (by rw h), },
-    { exact 0, },
-  end,
-  have hδ₁ : ∀ q, q ≤ p → δ q = 0 := λ q hq, begin
-    dsimp [δ],
-    split_ifs,
-    { exfalso, linarith, },
-    { refl, },
-  end,
-  have hδ₂ : δ (p + 1) ≫ G.d (p + 1 + (n + 1)) (p + 1 + n) = u,
-  { dsimp only [δ],
-    split_ifs,
-    { simpa only [eq_to_hom_refl, comp_id, id_comp] using hφ, },
-    { exfalso, exact h rfl, }, },
-  let l' : lift_cycle z (p+1) :=
-  { y := l.y + δ,
-    hy := λ q hq, begin
-      rw [map_add, pi.add_apply],
-      by_cases q ≤ p,
-      { rw [l.hy q h, add_right_eq_self],
-        dsimp,
-        simp only [hδ₁ q h, hδ₁ (q+n-(n+1)) (by linarith), zero_comp, comp_zero, smul_zero, add_zero], },
-      { have hq : q = p+1 := by linarith,
-        subst hq,
-        conv_lhs { congr, skip, dsimp, },
-        simp only [hδ₁ (p+1+n-(n+1)) (by linarith), zero_comp, comp_zero, smul_zero, add_zero, hδ₂],
-        dsimp only [u],
-        abel, },
-    end, },
-  refine ⟨l', _⟩,
-  intros q hq,
-  dsimp,
-  rw [add_right_eq_self, hδ₁ q hq],
-end
-
-end
 
 end homology
 
