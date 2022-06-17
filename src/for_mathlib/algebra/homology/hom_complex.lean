@@ -103,6 +103,10 @@ lemma zero_apply (n : ℤ) (q q' : ℤ) (hqq' : q' = q+n) :
 lemma add_apply {n : ℤ} (f₁ f₂ : cochain F G n) (q q' : ℤ) (hqq' : q' = q+n) :
   (f₁ + f₂) q q' hqq' = f₁ q q' hqq' + f₂ q q' hqq' := rfl
 
+@[simp]
+lemma sub_apply {n : ℤ} (f : cochain F G n) (q q' : ℤ) (hqq' : q' = q+n) :
+  (-f) q q' hqq' = -f q q' hqq' := rfl
+
 variables {F G}
 
 def of_hom (φ : F ⟶ G) : cochain F G 0 :=
@@ -111,6 +115,13 @@ def of_hom (φ : F ⟶ G) : cochain F G 0 :=
 @[simp]
 lemma of_hom_eq (φ : F ⟶ G) (q : ℤ) : of_hom φ q q (add_zero q).symm = φ.f q :=
 by { dsimp [of_hom], rw comp_id, }
+
+def of_homs (φ : Π n, F.X n ⟶ G.X n) : cochain F G 0 :=
+λ q q' hqq', φ q ≫ eq_to_hom (by { congr, rw [hqq', add_zero],})
+
+@[simp]
+lemma of_homs_eq (φ : Π n, F.X n ⟶ G.X n) (q : ℤ) : of_homs φ q q (add_zero q).symm = φ q :=
+by { dsimp [of_homs], rw comp_id, }
 
 @[simp]
 def of_homotopy {φ₁ φ₂ : F ⟶ G} (ho : homotopy φ₁ φ₂) : cochain F G (-1) :=
@@ -124,6 +135,18 @@ def comp_eq {K : cochain_complex C ℤ} {n₁ n₂ n₁₂ : ℤ} (z₁ : cochai
   (q q' q'' : ℤ) (h₁ : q'=q+n₁) (h₂ : q'' = q'+n₂) :
   comp z₁ z₂ h q q'' (by { rw [h₂, h₁, h, add_assoc], }) = z₁ q q' h₁ ≫ z₂ q' q'' h₂ :=
 by { subst h₁, refl, }
+
+lemma comp_eq' {F G K : cochain_complex C ℤ} (n₁ n₂ : ℤ) (q q₁' q₂' q'' : ℤ) (h₁ : q₁'=q+n₁) (h₂ : q'' = q₁'+n₂) (h₃ : q₁'=q₂')
+  (z₁ : cochain F G n₁) (z₂ : cochain G K n₂) :
+  z₁ q q₁' h₁ ≫ z₂ q₁' q'' h₂ = z₁ q q₂' (by rw [← h₃, h₁]) ≫ z₂ q₂' q'' (by rw [← h₃, h₂]) :=
+by subst h₃
+
+lemma eval' {F G : cochain_complex C ℤ} (n : ℤ) (q₁ q₁' : ℤ) (hqq' : q₁'=q₁+n) (q₂ q₂' : ℤ) (h : q₁=q₂) (h' : q₁' = q₂') (z : cochain F G n) :
+  z q₁ q₁' hqq' = eq_to_hom (by rw h) ≫ z q₂ q₂' (by { rw [← h, ← h', hqq'], }) ≫ eq_to_hom (by rw h') :=
+begin
+  substs h h',
+  simp only [eq_to_hom_refl, comp_id, id_comp],
+end
 
 end cochain
 
@@ -305,8 +328,6 @@ def equiv_homotopy {φ₁ φ₂ : F ⟶ G} :
     { refl, },
     { exfalso, apply h, linarith, },
   end, }
-
-
 
 end hom_complex
 

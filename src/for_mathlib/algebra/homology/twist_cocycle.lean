@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Joël Riou
 -/
 
-import for_mathlib.algebra.homology.hom_complex2
+import for_mathlib.algebra.homology.hom_complex
 
 noncomputable theory
 
@@ -118,6 +118,63 @@ begin
     zero_add, neg_smul, neg_comp, linear.smul_comp, add_comp,
     neg_add_cancel_comm, zero_comp, id_comp],
 end
+
+@[simps]
+def twist.desc (z : cocycle F G n) {K : cochain_complex C ℤ}
+  (γ : G ⟶ K) {n' : ℤ} (hn' : n'+1 = n) (φ : cochain F K n')
+  (hφγ : δ n' n φ = cochain.comp z.1 (cochain.of_hom γ) (add_zero n).symm) :
+  twist z ⟶ K :=
+{ f := λ p, biprod.desc (φ (p+1-n) p (by linarith)) (γ.f p),
+  comm' := λ i j hij, begin
+    ext,
+    { change i+1 = j at hij,
+      subst hij,
+      simp only [biprod.inl_desc_assoc, twist.δ, twist_d, biprod.lift_desc, linear.smul_comp, dif_pos],
+      have hφγ₂ := congr_fun₃ hφγ (i+1-n) (i+1) (by linarith),
+      simp only [δ_eq n' n hn' (i+1-n) (i+1)  (by linarith) i (i+1+1-n) (by linarith) (by linarith),
+        cochain.comp_eq z.1 (cochain.of_hom γ) (add_zero n).symm (i+1-n) (i+1) (i+1) (by linarith) (by linarith),
+        cochain.of_hom_eq] at hφγ₂,
+      have hn'' : ε (n+1) = -ε (n'+1) := by { rw hn', apply hε', },
+      simp only [← hφγ₂, hn'', neg_smul, neg_add_cancel_comm_assoc], },
+    { simp only [zero_add, biprod.inr_desc_assoc, homological_complex.hom.comm,
+        twist.δ, twist_d, biprod.lift_desc, zero_comp], },
+  end, }
+
+@[simps]
+def twist.lift (z : cocycle F G n) {K : cochain_complex C ℤ} {n' : ℤ} (hn' : n'+n=1)
+  (ψ : cocycle K F n') (υ : cochain K G 0) (hψυ : δ 0 1 υ = -cochain.comp ψ.1 z.1 hn'.symm) :
+  K ⟶ twist z :=
+{ f := λ p, biprod.lift (ψ.1 p (p+1-n) (by linarith)) (υ p p (by linarith)),
+  comm' := λ i j hij, begin
+    have hn'' : n' = 1-n := by linarith,
+    change i+1 = j at hij,
+    substs hij hn'',
+    ext,
+    { simp only [twist_d, add_zero, twist.δ, biprod.lift_desc, add_comp, assoc, biprod.lift_fst,
+        linear.comp_smul, comp_zero],
+      have hψ₁ := ψ.2,
+      rw cocycle.mem_iff (1-n) (1+1-n) (by linarith) at hψ₁,
+      have hψ₂ := congr_fun₃ hψ₁ i (i+1+1-n) (by linarith),
+      simp only [δ_eq (1-n) (1+1-n) (by linarith) i (i+1+1-n) (by linarith) (i+1-n) (i+1) (by linarith) rfl ψ.1,
+        cochain.zero_apply, add_eq_zero_iff_eq_neg] at hψ₂,
+      rw [hψ₂],
+      have eq : -ε (n+1) * ε (1-n+1) = 1,
+      { rw [show 1-n+1=(-n)+1+1, by linarith],
+        simp only [hε, hε₁, mul_neg, mul_one, neg_neg],
+        rw [← hε n (-n), add_right_neg, hε₀], },
+      simp only [zsmul_neg', neg_smul, smul_smul, eq, one_smul], },
+    { have hψυ₂ := congr_fun₃ hψυ i (i+1) (by linarith),
+      simp only [cochain.sub_apply,
+        cochain.comp_eq ψ.1 z.1 (show 1=1-n+n, by linarith) i (i+1-n) (i+1) (by linarith) (by linarith),
+        δ_eq 0 1 rfl i (i+1) rfl i (i+1) (by linarith) rfl, zero_add, hε₁, neg_smul, one_smul] at hψυ₂,
+      simp only [twist_d, twist.δ, dif_pos, biprod.lift_desc, biprod.lift_snd, add_comp, assoc],
+      suffices : Π (a b c : K.X i ⟶ G.X (i + 1)), a + (-b) = -c → c+a=b,
+      { exact this _ _ _ hψυ₂, },
+      intros a b c h,
+      have h' := congr_arg (λ x, -x) h,
+      simp only [neg_add_rev, neg_neg] at h',
+      rw [← h', neg_add_cancel_right], },
+  end, }
 
 end twist
 
