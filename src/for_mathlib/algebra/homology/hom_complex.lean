@@ -91,7 +91,12 @@ instance (n : ℤ) : add_comm_group (cochain F G n) :=
   add_comm := λ f₁ f₂, by { ext q q' hqq', apply_rules [add_comm], },
   add_left_neg := λ f, by { ext q q' hqq', apply_rules [add_left_neg], },
   zero_add := λ f, by { ext q q' hqq', apply_rules [zero_add], },
-  add_zero := λ f, by { ext q q' hqq', apply_rules [add_zero], }, }
+  add_zero := λ f, by { ext q q' hqq', apply_rules [add_zero], },
+  zsmul := λ n f q q' hqq', n • (f q q' hqq'),
+  zsmul_zero' := λ f, by { ext q q' hqq', apply_rules [zero_zsmul], },
+  zsmul_succ' := λ n f, by { ext q q' hqq', simpa only [nat.succ_eq_one_add,
+    int.of_nat_eq_coe, int.coe_nat_add, add_zsmul, coe_nat_zsmul, one_smul], },
+  zsmul_neg' := λ n f, by { ext q q' hqq', rw [← neg_inj, neg_neg, ← neg_zsmul], refl, }, }
 
 namespace cochain
 
@@ -106,6 +111,10 @@ lemma add_apply {n : ℤ} (f₁ f₂ : cochain F G n) (q q' : ℤ) (hqq' : q' = 
 @[simp]
 lemma sub_apply {n : ℤ} (f : cochain F G n) (q q' : ℤ) (hqq' : q' = q+n) :
   (-f) q q' hqq' = -f q q' hqq' := rfl
+
+@[simp]
+lemma zsmul_apply {n : ℤ} (k : ℤ) (f : cochain F G n) (q q' : ℤ) (hqq' : q' = q+n) :
+  (k • f) q q' hqq' = k • (f q q' hqq') := rfl
 
 variables {F G}
 
@@ -148,6 +157,24 @@ begin
   simp only [eq_to_hom_refl, comp_id, id_comp],
 end
 
+@[simp]
+def add_comp {K : cochain_complex C ℤ} {n₁ n₂ n₁₂ : ℤ} (z₁ z₁': cochain F G n₁) (z₂ : cochain G K n₂) (h : n₁₂ = n₁ + n₂) :
+  comp (z₁+z₁') z₂ h = comp z₁ z₂ h + comp z₁' z₂ h :=
+begin
+  ext q q' hqq',
+  dsimp [comp],
+  simp only [add_comp],
+end
+
+@[simp]
+def comp_add {K : cochain_complex C ℤ} {n₁ n₂ n₁₂ : ℤ} (z₁ : cochain F G n₁) (z₂ z₂': cochain G K n₂) (h : n₁₂ = n₁ + n₂) :
+  comp z₁ (z₂+z₂') h = comp z₁ z₂ h + comp z₁ z₂' h :=
+begin
+  ext q q' hqq',
+  dsimp [comp],
+  simp only [comp_add],
+end
+
 end cochain
 
 variables {F G}
@@ -182,6 +209,28 @@ def δ_hom (n m : ℤ) : cochain F G n →+ cochain F G m :=
     simp only [add_comp, comp_add, smul_add],
     abel,
   end, }
+
+def δ_comp {K : cochain_complex C ℤ} {n₁ n₂ n₁₂ : ℤ} (z₁ : cochain F G n₁) (z₂ : cochain G K n₂) (h : n₁₂ = n₁ + n₂)
+  (m₁ m₂ m₁₂ : ℤ) (h₁₂ : n₁₂+1 = m₁₂) (h₁ : n₁+1 = m₁) (h₂ : n₂+1 = m₂) :
+δ n₁₂ m₁₂ (cochain.comp z₁ z₂ h) = cochain.comp z₁ (δ n₂ m₂ z₂) (by linarith) + ε n₂ • cochain.comp (δ n₁ m₁ z₁) z₂ (by linarith) :=
+begin
+  ext q q' hqq',
+  have hqq'' : q' = q+n₁+n₂+1 := by linarith,
+  substs h h₁ h₂ h₁₂ hqq'',
+  have eq : ε n₂ * ε (n₁+1) = ε (n₁+n₂+1),
+  { rw ← hε, congr' 1, linarith, },
+  simp only [assoc, cochain.add_apply, cochain.zsmul_apply,
+    δ_eq (n₁+n₂) (n₁+n₂+1) rfl q (q+n₁+n₂+1) hqq' (q+n₁+n₂) (q+1) (by linarith) (by linarith),
+    cochain.comp_eq z₁ z₂ rfl q (q+n₁) (q+n₁+n₂) rfl rfl,
+    cochain.comp_eq z₁ z₂ rfl (q+1) (q+n₁+1) (q+n₁+n₂+1) (by linarith) (by linarith),
+    cochain.comp_eq (δ n₁ (n₁+1) z₁) z₂ (show n₁+n₂+1=n₁+1+n₂, by linarith) q (q+n₁+1) (q+n₁+n₂+1) (by linarith) (by linarith),
+    δ_eq n₁ (n₁+1) rfl q (q+n₁+1) (by linarith) (q+n₁) (q+1) (by linarith) rfl,
+    cochain.comp_eq z₁ (δ n₂ (n₂+1) z₂) (add_assoc n₁ n₂ 1) q (q+n₁) (q+n₁+n₂+1) rfl (by linarith),
+    δ_eq n₂ (n₂+1) rfl (q+n₁) (q+n₁+n₂+1) (by linarith) (q+n₁+n₂) (q+n₁+1) (by linarith) rfl,
+    comp_add, linear.comp_smul, add_comp, assoc, linear.smul_comp, smul_add, hε' n₂, smul_smul, eq, neg_smul, comp_neg],
+  have simplif : Π (a b c : F.X q ⟶ K.X (q + n₁ + n₂ + 1)), a+b=a+(-c)+(c+b) := λ a b c, by abel,
+  apply simplif,
+end
 
 end hom_complex
 
