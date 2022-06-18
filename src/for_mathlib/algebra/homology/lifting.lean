@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Joël Riou
 -/
 
-import for_mathlib.algebra.homology.termwise_split
+import for_mathlib.algebra.homology.twist_cocycle
 import for_mathlib.category_theory.comm_sq_lift
 
 noncomputable theory
@@ -33,6 +33,8 @@ variable {g}
 def L : cochain B X 0 := cochain.of_homs (λ q, eq_to_hom (by { congr, linarith, }) ≫ biprod.inl ≫ (l q).l)
 
 include sq l
+
+@[simps]
 def obs₀ : cocycle B X 1 :=
 begin
   refine ⟨δ 0 1 (L sq l) - z.1.comp (cochain.of_hom f) (add_zero 1).symm, _⟩,
@@ -43,7 +45,8 @@ end
 
 include hpj
 
-def obs₁ : cocycle B K 1 :=
+@[simps]
+def obs : cocycle B K 1 :=
 begin
   refine cocycle.lift_to_kernel (obs₀ sq l) _ hpj,
   dsimp only [obs₀],
@@ -61,8 +64,36 @@ begin
     L, cochain.of_homs_eq, cochain.of_hom_eq, twist.φ, ← hl, assoc],
 end
 
-lemma obs₁_comp : cochain.comp (obs₁ sq l hpj).1 (cochain.of_hom j) (zero_add 1).symm = (obs₀ sq l).1 :=
+@[simp]
+lemma obs_comp : cochain.comp (obs sq l hpj).1 (cochain.of_hom j) (add_zero 1).symm = (obs₀ sq l).1 :=
 by apply cocycle.lift_to_kernel_comp
+
+variables (w : cochain B K 0) (hw : δ 0 1 w = (obs sq l hpj).1)
+
+include w hw
+
+@[simp]
+def F : cochain B X 0 := L sq l - w.comp (cochain.of_hom j) (add_zero 0).symm
+
+lemma dF : δ 0 1 (F sq l hpj w hw) = z.1.comp (cochain.of_hom f) (add_zero 1).symm :=
+by simp only [F, δ_sub, δ_comp_cochain_of_hom, hw, obs_comp, obs₀, sub_sub_cancel]
+
+lemma lift_of_coboundary : comm_sq.lifts sq :=
+{ l := twist.desc z f (zero_add 1) (F sq l hpj w hw) (dF sq l hpj w hw),
+  fac_left := by apply twist.ι_desc,
+  fac_right := begin
+    ext q,
+    { simp only [F, homological_complex.comp_f, twist.desc_f, cochain.sub_apply, cochain.comp₀, cochain.of_hom_eq,
+        biprod.inl_desc_assoc, sub_comp, assoc,
+        cochain.eval' 0 (q+1-1) q (by linarith) q q (by linarith) rfl w,
+        cochain.eval' 0 (q+1-1) q (by linarith) q q (by linarith) rfl (L sq l)],
+      have hl := (l q).fac_right,
+      dsimp at hl,
+      simp only [L, cochain.of_homs_eq, eq_to_hom_refl, id_comp, assoc, eq_to_hom_trans_assoc, hl,
+        sub_eq_self, is_iso.comp_left_eq_zero, (hpj q).exact.w, comp_zero], },
+    { simpa only [homological_complex.comp_f, twist.desc_f, biprod.inr_desc_assoc]
+        using homological_complex.congr_hom sq.w q, },
+  end, }
 
 end lifting
 

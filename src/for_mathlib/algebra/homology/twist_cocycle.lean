@@ -84,7 +84,7 @@ namespace twist
 
 @[simps]
 def ι (z : cocycle F G n) : G ⟶ twist z :=
-{ f := λ p, biprod.lift 0 (𝟙 (G.X p)), }
+{ f := λ p, biprod.inr, }
 
 @[simp]
 def φ {z : cocycle F G n} {K : cochain_complex C ℤ} (f : twist z ⟶ K) {n' : ℤ} (hn' : n'+1 = n) :
@@ -120,7 +120,7 @@ begin
 end
 
 @[simps]
-def twist.desc (z : cocycle F G n) {K : cochain_complex C ℤ}
+def desc (z : cocycle F G n) {K : cochain_complex C ℤ}
   (γ : G ⟶ K) {n' : ℤ} (hn' : n'+1 = n) (φ : cochain F K n')
   (hφγ : δ n' n φ = cochain.comp z.1 (cochain.of_hom γ) (add_zero n).symm) :
   twist z ⟶ K :=
@@ -140,8 +140,18 @@ def twist.desc (z : cocycle F G n) {K : cochain_complex C ℤ}
         twist.δ, twist_d, biprod.lift_desc, zero_comp], },
   end, }
 
+@[simp]
+def ι_desc (z : cocycle F G n) {K : cochain_complex C ℤ}
+  (γ : G ⟶ K) {n' : ℤ} (hn' : n'+1 = n) (φ : cochain F K n')
+  (hφγ : δ n' n φ = cochain.comp z.1 (cochain.of_hom γ) (add_zero n).symm) :
+  twist.ι z ≫ (twist.desc z γ hn' φ hφγ) = γ :=
+begin
+  ext q,
+  simp only [homological_complex.comp_f, ι_f, desc_f, biprod.inr_desc],
+end
+
 @[simps]
-def twist.lift (z : cocycle F G n) {K : cochain_complex C ℤ} {n' : ℤ} (hn' : n'+n=1)
+def lift (z : cocycle F G n) {K : cochain_complex C ℤ} {n' : ℤ} (hn' : n'+n=1)
   (ψ : cocycle K F n') (υ : cochain K G 0) (hψυ : δ 0 1 υ = -cochain.comp ψ.1 z.1 hn'.symm) :
   K ⟶ twist z :=
 { f := λ p, biprod.lift (ψ.1 p (p+1-n) (by linarith)) (υ p p (by linarith)),
