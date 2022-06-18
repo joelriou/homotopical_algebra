@@ -32,29 +32,37 @@ variable {g}
 
 def L : cochain B X 0 := cochain.of_homs (λ q, eq_to_hom (by { congr, linarith, }) ≫ biprod.inl ≫ (l q).l)
 
-def obs₀ : cochain B X 1 := δ 0 1 (L sq l) - z.1.comp (cochain.of_hom f) (zero_add 1).symm
-
-include sq l hpj
-
-lemma test (a b : ℤ) (h : a =b) : a-b=0 := sub_eq_zero.mpr h
-
-def obs : cochain B K 1 :=
+include sq l
+def obs₀ : cocycle B X 1 :=
 begin
-  refine (obs₀ sq l).lift_to_kernel _ hpj,
-  dsimp only [obs₀],
-  rw [cochain.sub_comp, ← δ_comp_cochain_of_hom _ _ _ (zero_add 1), sub_eq_zero, cochain.comp_assoc₀],
-  have foo := twist.dφ g (zero_add 1),
-  sorry,
-/-  rw ← δ_comp_cochain_of_hom _ _ _ (zero_add 1),
-  have eq : (L sq l).comp (cochain.of_hom p) (zero_add 0).symm = cochain.of_hom u :=
-  begin
-    sorry,
-  end,
-  simp only [eq, δ_cochain_of_hom],-/
+  refine ⟨δ 0 1 (L sq l) - z.1.comp (cochain.of_hom f) (add_zero 1).symm, _⟩,
+  have hz := z.2,
+  rw cocycle.mem_iff 1 2 rfl at ⊢ hz,
+  simp only [δ_sub, δδ, zero_sub, neg_eq_zero, δ_comp_cochain_of_hom, hz, cochain.zero_comp],
 end
 
-lemma obs_comp : cochain.comp (obs sq l hpj) (cochain.of_hom j) (zero_add 1).symm = obs₀ sq l :=
-by apply cochain.lift_to_kernel_comp
+include hpj
+
+def obs₁ : cocycle B K 1 :=
+begin
+  refine cocycle.lift_to_kernel (obs₀ sq l) _ hpj,
+  dsimp only [obs₀],
+  rw [cochain.sub_comp, ← δ_comp_cochain_of_hom _ _ _, sub_eq_zero, cochain.comp_assoc₀],
+  have hg := twist.dφ g (zero_add 1),
+  simp only [twist.γ] at hg,
+  simp only [cochain.cochain_of_hom_comp, sq.w, ← hg],
+  congr' 1,
+  ext q q' hqq',
+  have hq' : q = q' := by linarith,
+  subst hq',
+  have hl := (l q).fac_right,
+  dsimp at hl,
+  simp only [cochain.comp_eq _ _ (zero_add 0).symm q q q (by linarith) (by linarith),
+    L, cochain.of_homs_eq, cochain.of_hom_eq, twist.φ, ← hl, assoc],
+end
+
+lemma obs₁_comp : cochain.comp (obs₁ sq l hpj).1 (cochain.of_hom j) (zero_add 1).symm = (obs₀ sq l).1 :=
+by apply cocycle.lift_to_kernel_comp
 
 end lifting
 

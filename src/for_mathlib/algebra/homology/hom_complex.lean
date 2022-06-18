@@ -253,6 +253,12 @@ lemma comp_assoc₀ {K L : cochain_complex C ℤ} {n₁ n₂ n₁₂ : ℤ} (z�
 by { apply comp_assoc, linarith, }
 
 
+@[simp]
+lemma comp₀ {K : cochain_complex C ℤ} {n : ℤ} (z₁ : cochain F G n) (z₂ : cochain G K 0) (q q' : ℤ) (hqq' : q'=q+n) :
+  cochain.comp z₁ z₂ (add_zero n).symm q q' hqq' = z₁ q q' hqq' ≫ z₂ q' q' (add_zero q').symm :=
+comp_eq z₁ z₂ (add_zero n).symm q q' q' hqq' (add_zero q').symm
+
+/-- TODO generalise appropriately -/
 def lift_to_kernel {n : ℤ} {K L : cochain_complex C ℤ} (z : cochain F G n) {i : K ⟶ G} {p : G ⟶ L} [abelian C] 
   (hz : z.comp (cochain.of_hom p) (add_zero n).symm = 0) (ex : ∀ n, short_exact (i.f n) (p.f n)) : cochain F K n := λ q q' hqq',
 begin
@@ -260,8 +266,7 @@ begin
 end
 
 def lift_to_kernel_comp {n : ℤ} {K L : cochain_complex C ℤ} (z : cochain F G n) {i : K ⟶ G} {p : G ⟶ L}
-  [abelian C] (ex : ∀ n, short_exact (i.f n) (p.f n)) 
-  (hz : z.comp (cochain.of_hom p) (add_zero n).symm = 0) :
+  [abelian C] (hz : z.comp (cochain.of_hom p) (add_zero n).symm = 0) (ex : ∀ n, short_exact (i.f n) (p.f n)) :
   (z.lift_to_kernel hz ex).comp (cochain.of_hom i) (add_zero n).symm = z :=
 begin
   sorry
@@ -304,6 +309,17 @@ def δ_hom (n m : ℤ) : cochain F G n →+ cochain F G m :=
 
 variables {F G}
 
+@[simp]
+lemma δ_add {n m : ℤ} (z₁ z₂ : cochain F G n) : δ n m (z₁+z₂) = δ n m z₁ + δ n m z₂ :=
+(δ_hom F G n m).map_add z₁ z₂
+
+@[simp]
+lemma δ_zero {n m : ℤ} : δ n m (0 : cochain F G n) = 0 := (δ_hom F G n m).map_zero
+
+@[simp]
+lemma δ_sub {n m : ℤ} (z₁ z₂ : cochain F G n) : δ n m (z₁-z₂) = δ n m z₁ - δ n m z₂ :=
+(δ_hom F G n m).map_sub z₁ z₂
+
 def δ_comp {K : cochain_complex C ℤ} {n₁ n₂ n₁₂ : ℤ} (z₁ : cochain F G n₁) (z₂ : cochain G K n₂) (h : n₁₂ = n₁ + n₂)
   (m₁ m₂ m₁₂ : ℤ) (h₁₂ : n₁₂+1 = m₁₂) (h₁ : n₁+1 = m₁) (h₂ : n₂+1 = m₂) :
 δ n₁₂ m₁₂ (cochain.comp z₁ z₂ h) = cochain.comp z₁ (δ n₂ m₂ z₂) (by linarith) + ε n₂ • cochain.comp (δ n₁ m₁ z₁) z₂ (by linarith) :=
@@ -326,6 +342,40 @@ begin
   apply simplif,
 end
 
+lemma δ_shape (i j : ℤ) (hij : ¬ i+1=j) (z : cochain F G i) : δ i j z = 0 :=
+begin
+  ext q q' hqq',
+  dsimp [δ],
+  rw [F.shape, G.shape, comp_zero, zero_comp, smul_zero, add_zero],
+  { change ¬ (q+i)+1=q',
+    intro h,
+    apply hij,
+    linarith, },
+  { change ¬ q+1=q+j-i,
+    intro h,
+    apply hij,
+    linarith, },
+end
+
+@[simp]
+lemma δδ (i j k : ℤ) (z : cochain F G i) : δ j k (δ i j z) = 0 :=
+begin
+  by_cases hij : i+1=j, swap,
+  { rw [δ_shape i j hij, δ_zero], },
+  by_cases hjk : j+1=k, swap,
+  { rw [δ_shape j k hjk], },
+  have hjk' : k=i+2 := by linarith,
+  substs hij hjk',
+  ext q q' hqq',
+  rw δ_eq (i+1) (i+2) (by linarith) q q' hqq' (q'-1) (q+1) rfl rfl,
+  rw δ_eq i (i+1) rfl q (q'-1) (by linarith) (q'-2) (q+1) (by linarith) rfl,
+  rw δ_eq i (i+1) rfl (q+1) q' (by linarith) (q'-1) (q+2) rfl (by linarith),
+  simp only [hε', add_zero, neg_neg, zero_add, neg_zero, neg_smul, add_comp, assoc,
+    homological_complex.d_comp_d, comp_zero, neg_comp, linear.smul_comp, comp_add,
+    comp_neg, linear.comp_smul, homological_complex.d_comp_d_assoc, zero_comp,
+    smul_zero, add_left_neg, cochain.zero_apply],
+end
+
 end hom_complex
 
 variables (F G)
@@ -335,31 +385,8 @@ open hom_complex
 def hom_complex : cochain_complex AddCommGroup ℤ :=
 { X := λ n, AddCommGroup.of (cochain F G n),
   d := λ n m, AddCommGroup.of_hom (δ_hom F G n m),
-  shape' := λ n m hnm, begin
-    ext f q q' hqq',
-    dsimp [δ_hom, δ],
-    change ¬ n+1 = m at hnm,
-    rw [F.shape, G.shape, comp_zero, zero_comp, smul_zero, add_zero],
-    { change ¬ q+n+1 = q', intro h, apply hnm, linarith, },
-    { change ¬ q+1 = q+m-n, intro h, apply hnm, linarith, },
-  end,
-  d_comp_d' := λ i j k hij hjk, begin
-    ext f q q' hqq',
-    simp only [comp_apply],
-    dsimp [δ_hom],
-    change i+1=j at hij,
-    subst hij,
-    change i+1+1=k at hjk,
-    have hjk' : i+2 = k := by linarith,
-    subst hjk',
-    rw δ_eq (i+1) (i+2) (by linarith) q q' hqq' (q'-1) (q+1) rfl rfl,
-    rw δ_eq i (i+1) rfl q (q'-1) (by linarith) (q'-2) (q+1) (by linarith) rfl,
-    rw δ_eq i (i+1) rfl (q+1) q' (by linarith) (q'-1) (q+2) rfl (by linarith),
-    simp only [hε', add_zero, neg_neg, zero_add, neg_zero, neg_smul, add_comp, assoc,
-      homological_complex.d_comp_d, comp_zero, neg_comp, linear.smul_comp, comp_add,
-      comp_neg, linear.comp_smul, homological_complex.d_comp_d_assoc, zero_comp,
-      smul_zero, add_left_neg],
-  end, }
+  shape' := λ n m hnm, by { ext1 f, exact δ_shape n m hnm f, },
+  d_comp_d' := λ i j k hij hjk, by { ext1 f, apply δδ, } }
 
 namespace hom_complex
 
@@ -418,6 +445,34 @@ def equiv_hom : (F ⟶ G) ≃+ cocycle F G 0 :=
       add_subgroup.coe_add, cochain.add_apply],
   end, }
 
+variables {F G}
+def lift_to_kernel {n : ℤ} {K L : cochain_complex C ℤ} (z : cocycle F G n) {i : K ⟶ G} {p : G ⟶ L} [abelian C] 
+  (hz : z.1.comp (cochain.of_hom p) (add_zero n).symm = 0) (ex : ∀ n, short_exact (i.f n) (p.f n)) : cocycle F K n :=
+begin
+  refine ⟨z.1.lift_to_kernel hz ex, _⟩,
+  rw mem_iff n (n+1) rfl,
+  ext q q' hqq',
+  haveI := (ex q').mono,
+  rw ← cancel_mono (i.f q'),
+  simp only [cochain.zero_apply, zero_comp],
+  have hz₂ := z.2,
+  rw mem_iff n (n+1) rfl at hz₂,
+  have hz₃ := congr_arg (δ n (n+1)) (z.1.lift_to_kernel_comp hz ex),
+  rw [δ_comp _ _ (add_zero n).symm (n+1) 1 (n+1) rfl rfl (zero_add 1), hε₀, one_smul] at hz₃,
+  have hi := (cocycle.of_hom i).2,
+  rw mem_iff 0 1 rfl at hi,
+  dsimp only [of_hom] at hi,
+  rw [hi, cochain.comp_zero, zero_add, hz₂] at hz₃,
+  have hz₄ := congr_fun₃ hz₃ q q' hqq',
+  simpa only [cochain.comp₀, cochain.of_hom_eq, cochain.zero_apply] using hz₄,
+end
+
+def lift_to_kernel_comp {n : ℤ} {K L : cochain_complex C ℤ} (z : cocycle F G n) {i : K ⟶ G} {p : G ⟶ L}
+  [abelian C] (ex : ∀ n, short_exact (i.f n) (p.f n)) 
+  (hz : z.1.comp (cochain.of_hom p) (add_zero n).symm = 0) :
+  (lift_to_kernel z hz ex).1.comp (cochain.of_hom i) (add_zero n).symm = z.1 :=
+z.1.lift_to_kernel_comp hz ex
+
 end cocycle
 
 def equiv_homotopy {φ₁ φ₂ : F ⟶ G} :
@@ -471,17 +526,21 @@ def equiv_homotopy {φ₁ φ₂ : F ⟶ G} :
     { refl, },
     { exfalso, apply h, linarith, },
   end, }
-example : 2+2=4 := rfl
 
 variables {F G}
 
 @[simp]
 lemma δ_cochain_of_hom (φ : F ⟶ G) : δ 0 1 (cochain.of_hom φ) = 0 := (cocycle.of_hom φ).2
 
-lemma δ_comp_cochain_of_hom {K : cochain_complex C ℤ} {n : ℤ} (z₁ : cochain F G n) (f₂ : G ⟶ K) (n' : ℤ) (hn' : n+1=n') :
+@[simp]
+lemma δ_comp_cochain_of_hom {K : cochain_complex C ℤ} {n : ℤ} (z₁ : cochain F G n) (f₂ : G ⟶ K) (n' : ℤ) :
   δ n n' (cochain.comp z₁ (cochain.of_hom f₂) (add_zero n).symm) = cochain.comp (δ n n' z₁) (cochain.of_hom f₂) (add_zero n').symm :=
-by simp only [hε₀, zero_add, δ_cochain_of_hom, cochain.comp_zero, one_zsmul,
-    δ_comp z₁ (cochain.of_hom f₂) (add_zero n).symm n' 1 n' hn' hn' (zero_add 1)]
+begin
+  by_cases hn' : n+1=n',
+  { simp only [hε₀, zero_add, δ_cochain_of_hom, cochain.comp_zero, one_zsmul,
+      δ_comp z₁ (cochain.of_hom f₂) (add_zero n).symm n' 1 n' hn' hn' (zero_add 1)], },
+  { simp only [δ_shape n n' hn', cochain.zero_comp], },
+end
 
 end hom_complex
 
