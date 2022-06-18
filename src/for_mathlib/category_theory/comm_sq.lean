@@ -101,6 +101,10 @@ lemma paste_horiz {X₁₁ X₁₂ X₁₃ X₂₁ X₂₂ X₂₃ : C}
   comm_sq (h₁₁ ≫ h₁₂) v₁₁ v₁₃ (h₂₁ ≫ h₂₂) :=
 (paste_vert s.flip t.flip).flip
 
+def apply {W X Y Z : C} {f : W ⟶ X} {g : W ⟶ Y} {h : X ⟶ Z} {i : Y ⟶ Z} (p : comm_sq f g h i)
+  {D : Type*} [category D] (F : C ⥤ D) : comm_sq (F.map f) (F.map g) (F.map h) (F.map i) :=
+⟨by simp only [← F.map_comp, p.w]⟩
+
 end comm_sq
 
 /-- The proposition that a square

@@ -65,7 +65,7 @@ twist.lift (z spl) (zero_add 1) (cocycle.of_hom f₂₃) (cochain.of_homs (λ q,
 begin
   ext q q' hqq',
   subst hqq',
-  simp only [δ_eq 0 1 (zero_add 1).symm q (q+1) rfl q (q+1) (by linarith) rfl, zero_add, hε₁, cochain.sub_apply,
+  simp only [δ_eq 0 1 (zero_add 1).symm q (q+1) rfl q (q+1) (by linarith) rfl, zero_add, hε₁, cochain.neg_apply,
     cochain.comp_eq (cocycle.of_hom f₂₃).1 (z spl).1 (zero_add 1).symm q q (q+1) (by linarith) rfl],
   simp only [cochain.of_hom_eq, cocycle.of_hom, cochain.of_homs_eq, z],
   have h := congr_arg (λ φ, φ ≫ F₂.d q (q+1) ≫ (spl (q+1)).retraction) ((spl q).split_add),
@@ -75,7 +75,6 @@ begin
 end
 
 end iso_of_termwise_split
-
 
 def iso_of_termwise_split : twist (iso_of_termwise_split.z spl) ≅ F₂ :=
 { hom := iso_of_termwise_split.α spl,

@@ -88,7 +88,7 @@ def ι (z : cocycle F G n) : G ⟶ twist z :=
 
 @[simp]
 def φ {z : cocycle F G n} {K : cochain_complex C ℤ} (f : twist z ⟶ K) {n' : ℤ} (hn' : n'+1 = n) :
-  (hom_complex F K).X n' :=
+  cochain F K n' :=
 λ q q' hqq', eq_to_hom (by { congr, linarith, }) ≫ biprod.inl ≫ f.f q'
 
 @[simps]
@@ -164,7 +164,7 @@ def twist.lift (z : cocycle F G n) {K : cochain_complex C ℤ} {n' : ℤ} (hn' :
         rw [← hε n (-n), add_right_neg, hε₀], },
       simp only [zsmul_neg', neg_smul, smul_smul, eq, one_smul], },
     { have hψυ₂ := congr_fun₃ hψυ i (i+1) (by linarith),
-      simp only [cochain.sub_apply,
+      simp only [cochain.neg_apply,
         cochain.comp_eq ψ.1 z.1 (show 1=1-n+n, by linarith) i (i+1-n) (i+1) (by linarith) (by linarith),
         δ_eq 0 1 rfl i (i+1) rfl i (i+1) (by linarith) rfl, zero_add, hε₁, neg_smul, one_smul] at hψυ₂,
       simp only [twist_d, twist.δ, dif_pos, biprod.lift_desc, biprod.lift_snd, add_comp, assoc],

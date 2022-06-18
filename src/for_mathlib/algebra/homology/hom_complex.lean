@@ -8,7 +8,7 @@ import algebra.homology.homotopy
 import algebra.homology.additive
 import algebra.category.Group.abelian
 import data.int.parity
-
+import algebra.homology.short_exact.preadditive
 
 noncomputable theory
 
@@ -109,8 +109,17 @@ lemma add_apply {n : ℤ} (f₁ f₂ : cochain F G n) (q q' : ℤ) (hqq' : q' = 
   (f₁ + f₂) q q' hqq' = f₁ q q' hqq' + f₂ q q' hqq' := rfl
 
 @[simp]
-lemma sub_apply {n : ℤ} (f : cochain F G n) (q q' : ℤ) (hqq' : q' = q+n) :
+lemma neg_apply {n : ℤ} (f : cochain F G n) (q q' : ℤ) (hqq' : q' = q+n) :
   (-f) q q' hqq' = -f q q' hqq' := rfl
+
+@[simp]
+lemma sub_apply {n : ℤ} (f₁ f₂ : cochain F G n) (q q' : ℤ) (hqq' : q' = q+n) :
+  (f₁ - f₂) q q' hqq' = f₁ q q' hqq' - f₂ q q' hqq' :=
+begin
+  change (f₁ + (- f₂)) q q' hqq' = f₁ q q' hqq' - f₂ q q' hqq',
+  rw [add_apply, neg_apply],
+  abel,
+end
 
 @[simp]
 lemma zsmul_apply {n : ℤ} (k : ℤ) (f : cochain F G n) (q q' : ℤ) (hqq' : q' = q+n) :
@@ -158,7 +167,7 @@ begin
 end
 
 @[simp]
-def add_comp {K : cochain_complex C ℤ} {n₁ n₂ n₁₂ : ℤ} (z₁ z₁': cochain F G n₁) (z₂ : cochain G K n₂) (h : n₁₂ = n₁ + n₂) :
+lemma add_comp {K : cochain_complex C ℤ} {n₁ n₂ n₁₂ : ℤ} (z₁ z₁': cochain F G n₁) (z₂ : cochain G K n₂) (h : n₁₂ = n₁ + n₂) :
   comp (z₁+z₁') z₂ h = comp z₁ z₂ h + comp z₁' z₂ h :=
 begin
   ext q q' hqq',
@@ -167,12 +176,95 @@ begin
 end
 
 @[simp]
-def comp_add {K : cochain_complex C ℤ} {n₁ n₂ n₁₂ : ℤ} (z₁ : cochain F G n₁) (z₂ z₂': cochain G K n₂) (h : n₁₂ = n₁ + n₂) :
+lemma sub_comp {K : cochain_complex C ℤ} {n₁ n₂ n₁₂ : ℤ} (z₁ z₁': cochain F G n₁) (z₂ : cochain G K n₂) (h : n₁₂ = n₁ + n₂) :
+  comp (z₁-z₁') z₂ h = comp z₁ z₂ h - comp z₁' z₂ h :=
+begin
+  ext q q' hqq',
+  dsimp [comp],
+  simp only [sub_apply, sub_comp],
+end
+
+@[simp]
+lemma comp_add {K : cochain_complex C ℤ} {n₁ n₂ n₁₂ : ℤ} (z₁ : cochain F G n₁) (z₂ z₂': cochain G K n₂) (h : n₁₂ = n₁ + n₂) :
   comp z₁ (z₂+z₂') h = comp z₁ z₂ h + comp z₁ z₂' h :=
 begin
   ext q q' hqq',
   dsimp [comp],
   simp only [comp_add],
+end
+
+@[simp]
+lemma comp_sub {K : cochain_complex C ℤ} {n₁ n₂ n₁₂ : ℤ} (z₁ : cochain F G n₁) (z₂ z₂': cochain G K n₂) (h : n₁₂ = n₁ + n₂) :
+  comp z₁ (z₂-z₂') h = comp z₁ z₂ h - comp z₁ z₂' h :=
+begin
+  ext q q' hqq',
+  dsimp [comp],
+  simp only [sub_apply, comp_sub],
+end
+
+@[simp]
+lemma comp_zero {K : cochain_complex C ℤ} {n₁ n₂ n₁₂ : ℤ} (z : cochain F G n₁) (h : n₁₂ = n₁ + n₂) :
+  comp z (0 : cochain G K n₂) h = 0 :=
+begin
+  ext q q' hqq',
+  dsimp [comp],
+  simp only [comp_zero],
+end
+
+@[simp]
+lemma zero_comp {K : cochain_complex C ℤ} {n₁ n₂ n₁₂ : ℤ} (z : cochain G K n₂) (h : n₁₂ = n₁ + n₂) :
+  comp (0 : cochain F G n₁) z h = 0 :=
+begin
+  ext q q' hqq',
+  dsimp [comp],
+  simp only [zero_comp],
+end
+
+@[simp]
+lemma cochain_of_hom_comp {K : cochain_complex C ℤ} (f : F ⟶ G) (g : G ⟶ K) :
+  cochain.comp (cochain.of_hom f) (cochain.of_hom g) (zero_add 0).symm = cochain.of_hom (f ≫ g) :=
+begin
+  ext q q' hqq',
+  have hq' : q =q' := by linarith,
+  subst hq',
+  simp only [comp_eq _ _ (zero_add 0).symm q q q (by linarith) (by linarith),
+    of_hom_eq, homological_complex.comp_f],
+end
+
+lemma comp_assoc {K L : cochain_complex C ℤ} {n₁ n₂ n₃ n₁₂ n₂₃ n₁₂₃ : ℤ} (z₁ : cochain F G n₁) (z₂ : cochain G K n₂) (z₃ : cochain K L n₃)
+  (h₁₂ : n₁₂ = n₁ + n₂) (h₂₃ : n₂₃ = n₂ + n₃) (h₁₂₃ : n₁₂₃ = n₁ + n₂ + n₃) :
+  cochain.comp (cochain.comp z₁ z₂ h₁₂) z₃ (show n₁₂₃ = n₁₂ + n₃, by rw [h₁₂, h₁₂₃]) =
+    cochain.comp z₁ (cochain.comp z₂ z₃ h₂₃) (show n₁₂₃ = n₁ + n₂₃, by rw [h₂₃, h₁₂₃, add_assoc]) :=
+begin
+  ext q q' hqq',
+  have hqq'' : q' = q+n₁+n₂+n₃ := by linarith,
+  substs h₁₂ h₂₃ h₁₂₃ hqq'',
+  rw comp_eq (z₁.comp z₂ rfl) z₃ rfl q (q+n₁+n₂) (q+n₁+n₂+n₃) (by linarith) rfl,
+  rw comp_eq z₁ z₂ rfl q (q+n₁) (q+n₁+n₂) rfl rfl,
+  rw comp_eq z₁ (z₂.comp z₃ rfl) (show n₁+n₂+n₃ = n₁+(n₂+n₃), by linarith) q (q+n₁) (q+n₁+n₂+n₃) rfl (by linarith),
+  rw comp_eq z₂ z₃ rfl (q+n₁) (q+n₁+n₂) (q+n₁+n₂+n₃) rfl rfl,
+  rw assoc,
+end
+
+@[simp]
+lemma comp_assoc₀ {K L : cochain_complex C ℤ} {n₁ n₂ n₁₂ : ℤ} (z₁ : cochain F G n₁) (z₂ : cochain G K n₂) (z₃ : cochain K L 0)
+  (h₁₂ : n₁₂ = n₁ + n₂) :
+  cochain.comp (cochain.comp z₁ z₂ h₁₂) z₃ (add_zero n₁₂).symm = cochain.comp z₁ (cochain.comp z₂ z₃ (add_zero n₂).symm) h₁₂ :=
+by { apply comp_assoc, linarith, }
+
+
+def lift_to_kernel {n : ℤ} {K L : cochain_complex C ℤ} (z : cochain F G n) {i : K ⟶ G} {p : G ⟶ L} [abelian C] 
+  (hz : z.comp (cochain.of_hom p) (add_zero n).symm = 0) (ex : ∀ n, short_exact (i.f n) (p.f n)) : cochain F K n := λ q q' hqq',
+begin
+  sorry,
+end
+
+def lift_to_kernel_comp {n : ℤ} {K L : cochain_complex C ℤ} (z : cochain F G n) {i : K ⟶ G} {p : G ⟶ L}
+  [abelian C] (ex : ∀ n, short_exact (i.f n) (p.f n)) 
+  (hz : z.comp (cochain.of_hom p) (add_zero n).symm = 0) :
+  (z.lift_to_kernel hz ex).comp (cochain.of_hom i) (add_zero n).symm = z :=
+begin
+  sorry
 end
 
 end cochain
@@ -209,6 +301,8 @@ def δ_hom (n m : ℤ) : cochain F G n →+ cochain F G m :=
     simp only [add_comp, comp_add, smul_add],
     abel,
   end, }
+
+variables {F G}
 
 def δ_comp {K : cochain_complex C ℤ} {n₁ n₂ n₁₂ : ℤ} (z₁ : cochain F G n₁) (z₂ : cochain G K n₂) (h : n₁₂ = n₁ + n₂)
   (m₁ m₂ m₁₂ : ℤ) (h₁₂ : n₁₂+1 = m₁₂) (h₁ : n₁+1 = m₁) (h₂ : n₂+1 = m₂) :
@@ -377,6 +471,17 @@ def equiv_homotopy {φ₁ φ₂ : F ⟶ G} :
     { refl, },
     { exfalso, apply h, linarith, },
   end, }
+example : 2+2=4 := rfl
+
+variables {F G}
+
+@[simp]
+lemma δ_cochain_of_hom (φ : F ⟶ G) : δ 0 1 (cochain.of_hom φ) = 0 := (cocycle.of_hom φ).2
+
+lemma δ_comp_cochain_of_hom {K : cochain_complex C ℤ} {n : ℤ} (z₁ : cochain F G n) (f₂ : G ⟶ K) (n' : ℤ) (hn' : n+1=n') :
+  δ n n' (cochain.comp z₁ (cochain.of_hom f₂) (add_zero n).symm) = cochain.comp (δ n n' z₁) (cochain.of_hom f₂) (add_zero n').symm :=
+by simp only [hε₀, zero_add, δ_cochain_of_hom, cochain.comp_zero, one_zsmul,
+    δ_comp z₁ (cochain.of_hom f₂) (add_zero n).symm n' 1 n' hn' hn' (zero_add 1)]
 
 end hom_complex
 
