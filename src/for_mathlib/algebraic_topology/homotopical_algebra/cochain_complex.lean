@@ -117,6 +117,14 @@ begin
   { exfalso, exact h hq, },
 end
 
+lemma P_is_initial (L : Cminus C) (q : ℤ) (hq : nonempty (is_initial (L.1.X q))) :
+  is_initial (P L q) :=
+begin
+  rw P_eq_zero L q hq,
+  apply is_zero.is_initial,
+  apply is_zero_zero,
+end
+
 def P_π (L : Cminus C) (q : ℤ) : P L q ⟶ L.1.X q :=
 begin
   by_cases nonempty (is_initial (L.1.X q)),
@@ -130,6 +138,7 @@ instance (L : Cminus C) (q : ℤ) : epi (P_π L q) :=
 by { dsimp only [P_π], split_ifs; apply epi_comp, }
 
 def KPX (L : Cminus C) (q : ℤ) := (P L (q-1)) ⊞ (P L q)
+@[simp]
 def KPd₁ (L : Cminus C) (n m : ℤ) (h : n+1=m) : KPX L n ⟶ KPX L m :=
 biprod.desc 0 (biprod.lift (eq_to_hom (by { congr, linarith, })) 0)
 
@@ -143,10 +152,18 @@ begin
     fac' := λ s j, by { cases j, cases j, },
     uniq' := λ s m j, begin
       dsimp at m,
-      sorry,
+      apply is_initial.hom_ext,
+      exact
+      { desc := λ s, 0,
+        fac' := λ s k, by { cases k, cases k, },
+        uniq' := λ s m hm, begin
+          ext1;
+          exact is_initial.hom_ext (P_is_initial L _ (nonempty.intro (hr _ (by linarith)).some)) _ _,
+        end, },
     end, },
 end
-#exit
+
+@[simps]
 def KP (L : Cminus C) : Cminus C :=
 ⟨{ X := λ q, (P L (q-1)) ⊞ (P L q),
   d := λ n m, begin
@@ -171,19 +188,30 @@ def KP (L : Cminus C) : Cminus C :=
   end }, KPX_bound L⟩
 
 def KPπ (L : Cminus C) : KP L ⟶ L :=
-{ f := 0,
-  comm' := sorry }
+{ f := λ q, biprod.desc (P_π L (q-1) ≫ L.1.d (q-1) q) (P_π L q),
+  comm' := λ q q' hqq', begin
+    change q+1=q' at hqq',
+    have h : q = q'-1 := by linarith,
+    subst h,
+    dsimp only [KP],
+    ext,
+    { simp only [KPd₁, biprod.inl_desc_assoc, assoc, homological_complex.d_comp_d, comp_zero, sub_add_cancel, eq_self_iff_true,
+        eq_to_hom_refl, dite_eq_ite, if_true, zero_comp], },
+    { simp only [KPd₁, biprod.inr_desc_assoc, sub_add_cancel, eq_self_iff_true, eq_to_hom_refl, dite_eq_ite, if_true,
+        biprod.lift_desc, id_comp, zero_comp, add_zero], },
+  end, }
+
+instance : preadditive (Cminus C) := sorry
+instance : has_binary_biproducts (Cminus C) := sorry
+
+end CM5a
 
 lemma CM5a : (arrow_classes C).CM5a := λ X Y f,
 begin
   sorry,
 end
 
-end CM5a
-
-def CM5 : (arrow_classes C).CM5 := begin
-  split,
-end
+def CM5 : (arrow_classes C).CM5 := ⟨CM5a, sorry⟩
 
 variable (C)
 
