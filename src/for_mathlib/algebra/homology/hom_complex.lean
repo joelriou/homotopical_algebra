@@ -16,11 +16,18 @@ open category_theory category_theory.preadditive category_theory.limits category
 
 universes v u
 
+variables {C : Type u} [category.{v} C] [preadditive C]
+
+namespace cochain_complex
+
+def is_bounded_above (K : cochain_complex C ℤ) : Prop := ∃ (r : ℤ), ∀ (i : ℤ) (hi : r < i), is_zero (K.X i)
+
+end cochain_complex
+
 namespace algebra
 
 namespace homology
 
-variables {C : Type u} [category.{v} C] [preadditive C]
 variables (F G : cochain_complex C ℤ)
 
 namespace hom_complex
@@ -148,6 +155,8 @@ def of_homotopy {φ₁ φ₂ : F ⟶ G} (ho : homotopy φ₁ φ₂) : cochain F 
 def comp {K : cochain_complex C ℤ} {n₁ n₂ n₁₂ : ℤ} (z₁ : cochain F G n₁) (z₂ : cochain G K n₂) (h : n₁₂ = n₁ + n₂) :
   cochain F K n₁₂ := λ q q' hqq', z₁ q (q+n₁) rfl ≫ z₂ (q+n₁) q' (by linarith)
 
+notation a ` ≫[` b `] ` c := cochain.comp a c b
+
 @[simp]
 def comp_eq {K : cochain_complex C ℤ} {n₁ n₂ n₁₂ : ℤ} (z₁ : cochain F G n₁) (z₂ : cochain G K n₂) (h : n₁₂ = n₁ + n₂)
   (q q' q'' : ℤ) (h₁ : q'=q+n₁) (h₂ : q'' = q'+n₂) :
@@ -182,6 +191,42 @@ begin
   ext q q' hqq',
   dsimp [comp],
   simp only [sub_apply, sub_comp],
+end
+
+@[simp]
+lemma neg_comp {K : cochain_complex C ℤ} {n₁ n₂ n₁₂ : ℤ} (z₁ : cochain F G n₁) (z₂ : cochain G K n₂) (h : n₁₂ = n₁ + n₂) :
+  comp (-z₁) z₂ h = - comp z₁ z₂ h :=
+begin
+  ext q q' hqq',
+  dsimp [comp],
+  simp only [neg_comp],
+end
+
+@[simp]
+lemma comp_neg {K : cochain_complex C ℤ} {n₁ n₂ n₁₂ : ℤ} (z₁ : cochain F G n₁) (z₂ : cochain G K n₂) (h : n₁₂ = n₁ + n₂) :
+  comp z₁ (-z₂) h = - comp z₁ z₂ h :=
+begin
+  ext q q' hqq',
+  dsimp [comp],
+  simp only [comp_neg],
+end
+
+@[simp]
+lemma comp_zsmul {K : cochain_complex C ℤ} {n₁ n₂ n₁₂ : ℤ} (z₁ : cochain F G n₁) (z₂ : cochain G K n₂) (h : n₁₂ = n₁ + n₂) (k : ℤ) :
+  comp z₁ (k • z₂) h = k • comp z₁ z₂ h :=
+begin
+  ext q q' hqq',
+  dsimp [comp],
+  simp only [comp_zsmul],
+end
+@[simp]
+
+lemma zsmul_comp {K : cochain_complex C ℤ} {n₁ n₂ n₁₂ : ℤ} (z₁ : cochain F G n₁) (z₂ : cochain G K n₂) (h : n₁₂ = n₁ + n₂) (k : ℤ) :
+  comp (k • z₁) z₂ h = k • comp z₁ z₂ h :=
+begin
+  ext q q' hqq',
+  dsimp [comp],
+  simp only [zsmul_comp],
 end
 
 @[simp]
@@ -221,6 +266,24 @@ begin
 end
 
 @[simp]
+lemma id_comp {n : ℤ} (z : cochain F G n) :
+  cochain.comp (cochain.of_hom (𝟙 F)) z (zero_add n).symm = z :=
+begin
+  ext q q' hqq',
+  simp only [comp_eq _ _ (zero_add n).symm q q q' (add_zero q).symm hqq',
+    of_hom_eq, homological_complex.id_f, id_comp],
+end
+
+@[simp]
+lemma comp_id {n : ℤ} (z : cochain F G n) :
+  cochain.comp z (cochain.of_hom (𝟙 G)) (add_zero n).symm = z :=
+begin
+  ext q q' hqq',
+  simp only [comp_eq _ _ (add_zero n).symm q q' q' hqq' (add_zero q').symm,
+    of_hom_eq, homological_complex.id_f, comp_id],
+end
+
+@[simp]
 lemma cochain_of_hom_comp {K : cochain_complex C ℤ} (f : F ⟶ G) (g : G ⟶ K) :
   cochain.comp (cochain.of_hom f) (cochain.of_hom g) (zero_add 0).symm = cochain.of_hom (f ≫ g) :=
 begin
@@ -257,6 +320,11 @@ by { apply comp_assoc, linarith, }
 lemma comp₀ {K : cochain_complex C ℤ} {n : ℤ} (z₁ : cochain F G n) (z₂ : cochain G K 0) (q q' : ℤ) (hqq' : q'=q+n) :
   cochain.comp z₁ z₂ (add_zero n).symm q q' hqq' = z₁ q q' hqq' ≫ z₂ q' q' (add_zero q').symm :=
 comp_eq z₁ z₂ (add_zero n).symm q q' q' hqq' (add_zero q').symm
+
+@[simp]
+lemma comp₀' {K : cochain_complex C ℤ} {n : ℤ} (z₁ : cochain F G 0) (z₂ : cochain G K n) (q q' : ℤ) (hqq' : q'=q+n) :
+  cochain.comp z₁ z₂ (zero_add n).symm q q' hqq' = z₁ q q (add_zero q).symm ≫ z₂ q q' hqq' :=
+comp_eq z₁ z₂ (zero_add n).symm q q q' (add_zero q).symm hqq'
 
 /-- TODO generalise appropriately -/
 def lift_to_kernel {n : ℤ} {K L : cochain_complex C ℤ} (z : cochain F G n) {i : K ⟶ G} {p : G ⟶ L} [abelian C] 
@@ -401,11 +469,21 @@ def mem_iff (n m : ℤ) (hnm : n+1=m) (z : cochain F G n) :
   z ∈ cocycle F G n ↔ δ n m z = 0 :=
 by { subst hnm, refl, }
 
-@[simps]
-def of_hom (φ : F ⟶ G) : cocycle F G 0 :=
+def mk {n : ℤ} (z : cochain F G n) (m : ℤ) (hnm : n+1 = m) (h : δ n m z = 0) :
+  cocycle F G n :=
+⟨z, by simpa only [mem_iff n m hnm z] using h⟩
+
+lemma δ_eq_zero {n : ℤ} (z : cocycle F G n) (m : ℤ) : δ n m z.1 = 0 :=
 begin
-  refine ⟨cochain.of_hom φ, _⟩,
-  rw mem_iff 0 1 (by linarith),
+  by_cases n+1=m,
+  { rw ← mem_iff n m h,
+    exact z.2, },
+  { apply δ_shape n m h, }
+end
+
+@[simps]
+def of_hom (φ : F ⟶ G) : cocycle F G 0 := cocycle.mk (cochain.of_hom φ) 1 (by linarith)
+begin
   ext q q' hqq',
   rw δ_eq 0 1 (by linarith) q q' hqq' q q' (by linarith) hqq',
   simp only [zero_add, cochain.of_hom_eq, homological_complex.hom.comm, cochain.zero_apply, hε₁,
@@ -461,7 +539,7 @@ begin
   rw [δ_comp _ _ (add_zero n).symm (n+1) 1 (n+1) rfl rfl (zero_add 1), hε₀, one_smul] at hz₃,
   have hi := (cocycle.of_hom i).2,
   rw mem_iff 0 1 rfl at hi,
-  dsimp only [of_hom] at hi,
+  dsimp only [of_hom, mk] at hi,
   rw [hi, cochain.comp_zero, zero_add, hz₂] at hz₃,
   have hz₄ := congr_fun₃ hz₃ q q' hqq',
   simpa only [cochain.comp₀, cochain.of_hom_eq, cochain.zero_apply] using hz₄,

@@ -10,30 +10,33 @@ import category_theory.preadditive.projective
 import algebra.homology.homological_complex
 import algebra.homology.quasi_iso
 import for_mathlib.category_theory.limits.kernel_functor
+import for_mathlib.algebra.homology.twist_cocycle
 import tactic.linarith
 
 noncomputable theory
 
 open category_theory category_theory.limits category_theory.category
-open algebraic_topology
+open algebraic_topology algebra.homology.hom_complex
 
 open_locale zero_object
 
-variables (C : Type*) [category C] [abelian C] [enough_projectives C]
+variables (C : Type*) [category C] [abelian C]
 
 namespace cochain_complex
 
 @[derive category]
-def Cminus := { K : cochain_complex C ℤ // ∃ (r : ℤ), ∀ (i : ℤ) (hi : r < i), nonempty (is_initial (K.X i)) }
+def Cminus := { K : cochain_complex C ℤ // K.is_bounded_above }
 
 namespace Cminus
 
 variable {C}
 
+@[simps]
+def mk (K : cochain_complex C ℤ) (hK : K.is_bounded_above) : Cminus C := ⟨K, hK⟩
+
 def homology_functor (i : ℤ) : Cminus C ⥤ C := induced_functor _ ⋙ homology_functor _ _ i
 
 def eval (i : ℤ) : Cminus C ⥤ C := induced_functor _ ⋙ homological_complex.eval _ _ i
-
 
 namespace projective_structure
 
@@ -84,9 +87,11 @@ def CM4 : (arrow_classes C).CM4 := sorry
 
 namespace CM5a
 
+variable [enough_projectives C]
+
 def P (L : Cminus C) (q : ℤ) : C :=
 begin
-  by_cases nonempty (is_initial (L.1.X q)),
+  by_cases is_zero (L.1.X q),
   { exact 0, },
   { exact projective.over (L.1.X q), },
 end
@@ -99,7 +104,7 @@ begin
   { apply projective.projective_over, },
 end
 
-lemma P_eq (L : Cminus C) (q : ℤ) (hq : ¬(nonempty (is_initial (L.1.X q)))) :
+lemma P_eq (L : Cminus C) (q : ℤ) (hq : ¬(is_zero (L.1.X q))) :
   P L q = projective.over (L.1.X q) :=
 begin
   dsimp [P],
@@ -108,7 +113,7 @@ begin
   { refl, },
 end
 
-lemma P_eq_zero (L : Cminus C) (q : ℤ) (hq : nonempty (is_initial (L.1.X q))) :
+lemma P_eq_zero (L : Cminus C) (q : ℤ) (hq : is_zero (L.1.X q)) :
   P L q = 0 :=
 begin
   dsimp [P],
@@ -117,7 +122,7 @@ begin
   { exfalso, exact h hq, },
 end
 
-lemma P_is_initial (L : Cminus C) (q : ℤ) (hq : nonempty (is_initial (L.1.X q))) :
+lemma P_is_initial (L : Cminus C) (q : ℤ) (hq : is_zero (L.1.X q)) :
   is_initial (P L q) :=
 begin
   rw P_eq_zero L q hq,
@@ -125,17 +130,48 @@ begin
   apply is_zero_zero,
 end
 
+def is_zero.unique_up_to_iso {X Y : C} (hX : is_zero X) (hY : is_zero Y) : X ≅ Y :=
+{ hom := 0,
+  inv := 0,
+  hom_inv_id' := by { rw is_zero.iff_id_eq_zero at hX, rw [hX, comp_zero], },
+  inv_hom_id' := by { rw is_zero.iff_id_eq_zero at hY, rw [hY, comp_zero], }, }
+
 def P_π (L : Cminus C) (q : ℤ) : P L q ⟶ L.1.X q :=
 begin
-  by_cases nonempty (is_initial (L.1.X q)),
-  { have e : 0 ≅ L.1.X q := is_initial.unique_up_to_iso
-      (is_zero.is_initial (is_zero_zero C)) h.some, swap,
+  by_cases is_zero (L.1.X q),
+  { have e : 0 ≅ L.1.X q := is_zero.unique_up_to_iso
+      (is_zero_zero C) h, swap,
     exact eq_to_hom (P_eq_zero L q h) ≫ e.hom, },
   { exact eq_to_hom (P_eq L q h) ≫ projective.π (L.1.X q), },
 end
 
+def KP (L : Cminus C) : Cminus C := Cminus.mk
+{ X := λ q, P L q,
+  d := λ i j, 0,
+  shape' := λ i j hij, rfl,
+  d_comp_d' := λ i j k hij hjk, comp_zero, }
+begin
+  cases L.2 with r hr,
+  use r,
+  intros i hi,
+  dsimp,
+  rw P_eq_zero L i (hr i hi),
+  apply is_zero_zero,
+end
+
 instance (L : Cminus C) (q : ℤ) : epi (P_π L q) :=
 by { dsimp only [P_π], split_ifs; apply epi_comp, }
+
+def KP' (L : Cminus C) : Cminus C :=
+Cminus.mk (twist (cocycle.of_hom (𝟙 (KP L).1))) (twist.is_bounded_above _ (KP L).2 (KP L).2)
+
+#exit
+Cminus.mk
+(twist (cochain.of_hom (𝟙 (KP L).1)))
+begin
+  sorry
+end
+
 
 def KPX (L : Cminus C) (q : ℤ) := (P L (q-1)) ⊞ (P L q)
 @[simp]
@@ -162,6 +198,9 @@ begin
         end, },
     end, },
 end
+
+
+#exit
 
 @[simps]
 def KP (L : Cminus C) : Cminus C :=
