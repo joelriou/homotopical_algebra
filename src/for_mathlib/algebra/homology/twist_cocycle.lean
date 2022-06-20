@@ -316,23 +316,48 @@ begin
 end
 
 @[simps]
-def δ_desc_cocycle (z : cocycle F G n) {K : cochain_complex C ℤ} {m n' n''' : ℤ}
+def desc_cocycle (z : cocycle F G n) {K : cochain_complex C ℤ} {m n' n''' : ℤ}
   (γ : cocycle G K m) (φ : cochain F K n') (hn' : n'+1 = n+m) (m' : ℤ) (hm' : m+1=m') (hn''' : n''' = n'+1)
   (hφ : δ n' n''' φ = ε m • (z.1.comp γ.1 (show n'''=_, by linarith))) : cocycle (twist z) K m :=
 cocycle.mk (desc_cochain z γ.1 φ hn') m' hm'
 (by simp only [δ_desc_cochain z γ.1 φ hn' m' hm' (show n+(1-n)=1, by linarith) hn''', hφ, neg_smul, add_left_neg,
     cochain.comp_zero, zero_add, cocycle.δ_eq_zero, hε'])
 
+@[simp]
+lemma inr_comp_desc_cocycle (z : cocycle F G n) {K : cochain_complex C ℤ} {m n' n''' : ℤ}
+  (γ : cocycle G K m) (φ : cochain F K n') (hn' : n'+1 = n+m) (m' : ℤ) (hm' : m+1=m') (hn''' : n''' = n'+1)
+  (hφ : δ n' n''' φ = ε m • (z.1.comp γ.1 (show n'''=_, by linarith))) : 
+  cochain.comp (cochain.of_hom (inr z)) (desc_cocycle z γ φ hn' m' hm' hn''' hφ).1 (zero_add m).symm = γ.1 :=
+by simp only [desc_cocycle, cocycle.mk, inr_comp_desc_cochain]
+
+def desc_hom_as_cocycle (z : cocycle F G n) {K : cochain_complex C ℤ}
+  (γ : G ⟶ K) {n' : ℤ} (hn' : n'+1 = n) (φ : cochain F K n')
+  (hφγ : δ n' n φ = cochain.comp z.1 (cochain.of_hom γ) (add_zero n).symm) :
+  cocycle (twist z) K 0 :=
+begin
+  apply desc_cocycle z (cocycle.of_hom γ) φ (by linarith) 1 (zero_add 1) hn'.symm,
+  simpa only [hε₀, one_smul, hφγ],
+end
+
 @[simps]
 def desc (z : cocycle F G n) {K : cochain_complex C ℤ}
   (γ : G ⟶ K) {n' : ℤ} (hn' : n'+1 = n) (φ : cochain F K n')
   (hφγ : δ n' n φ = cochain.comp z.1 (cochain.of_hom γ) (add_zero n).symm) :
   twist z ⟶ K :=
-begin
-  equiv_rw (cocycle.equiv_hom (twist z) K).to_equiv,
-  apply δ_desc_cocycle z (cocycle.of_hom γ) φ (by linarith) 1 (zero_add 1) hn'.symm,
-  simpa only [hε₀, one_smul, hφγ],
-end
+(cocycle.equiv_hom (twist z) K).to_equiv.inv_fun (desc_hom_as_cocycle z γ hn' φ hφγ)
+
+@[simp]
+def desc_hom_as_cocycle_compatibility (z : cocycle F G n) {K : cochain_complex C ℤ}
+  (γ : G ⟶ K) {n' : ℤ} (hn' : n'+1 = n) (φ : cochain F K n')
+  (hφγ : δ n' n φ = cochain.comp z.1 (cochain.of_hom γ) (add_zero n).symm) :
+  (cocycle.equiv_hom _ _).to_equiv (desc z γ hn' φ hφγ) = desc_hom_as_cocycle z γ hn' φ hφγ :=
+by apply equiv.right_inv
+
+@[simp]
+def comp_equiv_hom {L : cochain_complex C ℤ} (f : L ⟶ F) (g : F ⟶ G) :
+  (cochain.of_hom f).comp ((cocycle.equiv_hom F G).to_equiv g).1 (zero_add 0).symm
+    = ((cocycle.equiv_hom L G).to_equiv (f ≫ g)).1 :=
+by apply cochain.cochain_of_hom_comp
 
 @[simp]
 def inr_comp_desc (z : cocycle F G n) {K : cochain_complex C ℤ}
@@ -340,20 +365,13 @@ def inr_comp_desc (z : cocycle F G n) {K : cochain_complex C ℤ}
   (hφγ : δ n' n φ = cochain.comp z.1 (cochain.of_hom γ) (add_zero n).symm) :
   inr z ≫ desc z γ hn' φ hφγ = γ :=
 begin
-  sorry
+  apply (cocycle.equiv_hom G K).to_equiv.injective,
+  ext1,
+  simpa only [← subtype.val_eq_coe, ← comp_equiv_hom, desc_hom_as_cocycle_compatibility, desc_hom_as_cocycle,
+    inr_comp_desc_cocycle],
 end
 
 #exit
-
-@[simp]
-def ι_desc (z : cocycle F G n) {K : cochain_complex C ℤ}
-  (γ : G ⟶ K) {n' : ℤ} (hn' : n'+1 = n) (φ : cochain F K n')
-  (hφγ : δ n' n φ = cochain.comp z.1 (cochain.of_hom γ) (add_zero n).symm) :
-  twist.ι z ≫ (twist.desc z γ hn' φ hφγ) = γ :=
-begin
-  ext q,
-  simp only [homological_complex.comp_f, ι_f, desc_f, biprod.inr_desc],
-end
 
 @[simps]
 def lift (z : cocycle F G n) {K : cochain_complex C ℤ} {n' : ℤ} (hn' : n'+n=1)
