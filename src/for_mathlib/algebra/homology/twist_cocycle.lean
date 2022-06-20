@@ -301,35 +301,19 @@ def δ_desc_cochain (z : cocycle F G n) {K : cochain_complex C ℤ} {m n' n'' n'
   (fst z hn'').1.comp (ε (m+1) • (z.1.comp γ (show n''' = _, by linarith)) + δ n' n''' φ) (show m'=_, by linarith) +
   (snd z).comp (δ m m' γ) (zero_add m').symm :=
 begin
-  let a : ℤ := -n'',
-  let b : ℤ := (n-1+m'),
-  have ha : a+1 =n := by { dsimp [a], linarith, },
-  have hb : b = a +m' := by { dsimp [a, b], linarith, },
-
-  rw cochain_ext z m' a b ha hb,
-  split,
-  { sorry, },
-  { simp only [desc_cochain_eq z γ φ hn' hn'', δ_add, cochain.comp_add, δ_comp (snd z) γ (zero_add m).symm 1 m' m' hm' (zero_add 1) hm', hε',
-      δ_comp (fst z hn'').1 φ (show m=_, by linarith) _ n''' m' hm' rfl hn'''.symm, cocycle.δ_eq_zero, cochain.zero_comp, zsmul_zero, cochain.comp_zero,
-      add_zero, cochain.comp_neg, δ_snd z hn'', cochain.neg_comp, zsmul_neg, neg_smul, cochain.zsmul_comp, cochain.comp_zsmul, cochain.comp_neg,
-          cochain.comp_assoc (fst z hn'').1 z.1 γ (show 1=n''+n, by linarith) (show n''' = n+m, by linarith) (show m'= _, by linarith)],
-    suffices : ∀ (a b c : cochain G K m'), a+b+c=b+c+a,
-    { apply this, },
-    intros a b c,
-    abel, },
+  simp only [cochain_ext z m' (n-1) (n-1+m') (by linarith) (by linarith),
+    desc_cochain_eq z γ φ hn' hn'', cochain.comp_add, δ_add, hε',
+    δ_comp (fst z hn'').1 φ (show m=_, by linarith) _ n''' m' hm' rfl hn'''.symm, cocycle.δ_eq_zero,
+    δ_comp (snd z) γ (zero_add m).symm 1 m' m' hm' (zero_add 1) hm',
+    cochain.zero_comp, cochain.comp_zero, zsmul_zero, add_zero, cochain.comp_add,
+    cochain.comp_neg, δ_snd z hn'', cochain.neg_comp, cochain.comp_neg, zsmul_neg, neg_smul,
+    cochain.zsmul_comp, cochain.comp_zsmul,
+    cochain.comp_assoc (fst z hn'').1 z.1 γ (show 1=n''+n, by linarith) (show n''' = n+m, by linarith) (show m'= _, by linarith)],
+  suffices : ∀ (X Y : cochain_complex C ℤ) (q : ℤ) (x y z : cochain X Y q), x+y+z = y+z+x,
+  { split; apply this, },
+  intros X Y q x y z,
+  abel,
 end
-
-/-  { rw [δ_add, cochain.comp_add],
-    rw δ_comp (snd z) γ (zero_add m).symm 1 (m+1) (m+1) rfl (zero_add 1) rfl,
-    rw [cochain.comp_add],
-    rw ← cochain.comp_assoc (inl z rfl) (snd z) (δ m (m+1) γ) (add_zero p).symm (zero_add (m+1)).symm
-      (show p+(m+1)=_, by linarith),
-    rw [inl_comp_snd, cochain.zero_comp, zero_add],
-    rw δ_snd z (show p+1-p=1, by linarith),
-    rw δ_comp _ φ (show m = 1-(p+1)+(p+m), by linarith) _ (p+(m+1)) (m+1) rfl rfl (by linarith),
-    rw cocycle.δ_eq_zero,
-    rw cochain.comp_add,
-    sorry, },-/
 
 @[simps]
 def δ_desc_cocycle (z : cocycle F G n) {K : cochain_complex C ℤ} {m n' n''' : ℤ}
