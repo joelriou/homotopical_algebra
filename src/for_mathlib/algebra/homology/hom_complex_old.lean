@@ -327,7 +327,7 @@ lemma comp₀' {K : cochain_complex C ℤ} {n : ℤ} (z₁ : cochain F G 0) (z�
 comp_eq z₁ z₂ (zero_add n).symm q q q' (add_zero q).symm hqq'
 
 /-- TODO generalise appropriately -/
-def lift_to_kernel {n : ℤ} {K L : cochain_complex C ℤ} (z : cochain F G n) {i : K ⟶ G} {p : G ⟶ L} [abelian C] 
+def lift_to_kernel {n : ℤ} {K L : cochain_complex C ℤ} (z : cochain F G n) {i : K ⟶ G} {p : G ⟶ L} [abelian C]
   (hz : z.comp (cochain.of_hom p) (add_zero n).symm = 0) (ex : ∀ n, short_exact (i.f n) (p.f n)) : cochain F K n := λ q q' hqq',
 begin
   sorry,
@@ -524,7 +524,7 @@ def equiv_hom : (F ⟶ G) ≃+ cocycle F G 0 :=
   end, }
 
 variables {F G}
-def lift_to_kernel {n : ℤ} {K L : cochain_complex C ℤ} (z : cocycle F G n) {i : K ⟶ G} {p : G ⟶ L} [abelian C] 
+def lift_to_kernel {n : ℤ} {K L : cochain_complex C ℤ} (z : cocycle F G n) {i : K ⟶ G} {p : G ⟶ L} [abelian C]
   (hz : z.1.comp (cochain.of_hom p) (add_zero n).symm = 0) (ex : ∀ n, short_exact (i.f n) (p.f n)) : cocycle F K n :=
 begin
   refine ⟨z.1.lift_to_kernel hz ex, _⟩,
@@ -546,7 +546,7 @@ begin
 end
 
 def lift_to_kernel_comp {n : ℤ} {K L : cochain_complex C ℤ} (z : cocycle F G n) {i : K ⟶ G} {p : G ⟶ L}
-  [abelian C] (ex : ∀ n, short_exact (i.f n) (p.f n)) 
+  [abelian C] (ex : ∀ n, short_exact (i.f n) (p.f n))
   (hz : z.1.comp (cochain.of_hom p) (add_zero n).symm = 0) :
   (lift_to_kernel z hz ex).1.comp (cochain.of_hom i) (add_zero n).symm = z.1 :=
 z.1.lift_to_kernel_comp hz ex
