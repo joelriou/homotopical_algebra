@@ -20,6 +20,9 @@ variables {C : Type u} [category.{v} C] [preadditive C]
 
 namespace cochain_complex
 
+def is_bounded_above (K : cochain_complex C ℤ) : Prop :=
+∃ (r : ℤ), ∀ (i : ℤ) (hi : r < i), is_zero (K.X i)
+
 variables {F G K L : cochain_complex C ℤ} (n m : ℤ)
 
 namespace hom_complex
@@ -71,9 +74,6 @@ def mk (v : Π (p q : ℤ) (hpq : q=p+n), F.X p ⟶ G.X q) : cochain F G n :=
 
 def v (c : cochain F G n) (p q : ℤ) (hpq : q=p+n) := c (triplet.mk p q hpq)
 
-@[simp]
-lemma zero_v {n : ℤ} (p q : ℤ) (hpq : q=p+n) : (0 : cochain F G n).v p q hpq = 0 := rfl
-
 lemma mk_v (v : Π (p q : ℤ) (hpq : q=p+n), F.X p ⟶ G.X q) (p q : ℤ) (hpq : q=p+n) :
   (mk v).v p q hpq = v p q hpq := rfl
 
@@ -98,6 +98,25 @@ begin
   subst eq,
   apply h,
 end
+
+@[simp]
+lemma zero_v {n : ℤ} (p q : ℤ) (hpq : q=p+n) : (0 : cochain F G n).v p q hpq = 0 := rfl
+
+@[simp]
+lemma add_v {n : ℤ} (z₁ z₂ : cochain F G n) (p q : ℤ) (hpq : q=p+n) :
+  (z₁+z₂).v p q hpq = z₁.v p q hpq + z₂.v p q hpq := rfl
+
+@[simp]
+lemma sub_v {n : ℤ} (z₁ z₂ : cochain F G n) (p q : ℤ) (hpq : q=p+n) :
+  (z₁-z₂).v p q hpq = z₁.v p q hpq - z₂.v p q hpq := rfl
+
+@[simp]
+lemma neg_v {n : ℤ} (z : cochain F G n) (p q : ℤ) (hpq : q=p+n) :
+  (-z).v p q hpq = - (z.v p q hpq) := rfl
+
+@[simp]
+lemma zsmul_v {n k : ℤ} (z : cochain F G n) (p q : ℤ) (hpq : q=p+n) :
+  (k • z).v p q hpq = k • (z.v p q hpq) := rfl
 
 def of_homs (ψ : Π (p : ℤ), F.X p ⟶ G.X p) : cochain F G 0 :=
 cochain.mk (λ p q hpq, ψ p ≫ eq_to_hom (by rw [hpq, add_zero]))
@@ -306,7 +325,7 @@ def δ (z : cochain F G n) : cochain F G m :=
 cochain.mk (λ (p q : ℤ) hpq, z.v p (p+n) rfl ≫ G.d (p+n) q +
   ε (n+1) • F.d p (p+m-n) ≫ z.v (p+m-n) q (by { dsimp [int.sub], linarith}))
 
-lemma δ_v (z : cochain F G n) (p q : ℤ) (hpq : q=p+m)  (hnm : n+1=m) (q₁ q₂ : ℤ)
+lemma δ_v (hnm : n+1=m) (z : cochain F G n) (p q : ℤ) (hpq : q=p+m) (q₁ q₂ : ℤ)
   (hq₁ : q₁=q-1) (hq₂ : q₂=p+1) : (δ n m z).v p q hpq =
   z.v p q₁ (by {rw [hq₁, hpq, ← hnm, ← add_assoc, add_tsub_cancel_right],}) ≫ G.d q₁ q
   + ε (n+1) • F.d p q₂ ≫ z.v q₂ q (by rw [hpq, hq₂, ← hnm, add_comm n, add_assoc]) :=
@@ -374,9 +393,9 @@ begin
   by_cases h₁₂ : n₁+1 = n₂, swap,
   { rw [δ_shape n₁ n₂ h₁₂], },
   ext,
-  rw δ_v n₁ n₂ _ p q hpq h₁₂ _ _ rfl rfl,
-  rw δ_v n₀ n₁ z p (q-1) (by linarith) h₀₁ (q-2) _ (by linarith) rfl,
-  rw δ_v n₀ n₁ z (p+1) q (by linarith) h₀₁ _ (p+2) rfl (by linarith),
+  rw δ_v n₁ n₂ h₁₂ _ p q hpq _ _ rfl rfl,
+  rw δ_v n₀ n₁ h₀₁ z p (q-1) (by linarith) (q-2) _ (by linarith) rfl,
+  rw δ_v n₀ n₁ h₀₁ z (p+1) q (by linarith) _ (p+2) rfl (by linarith),
   simp only [← h₀₁, ε_succ, add_comp, neg_neg, neg_zsmul, neg_comp, cochain.zero_v,
     zsmul_comp, comp_zsmul, comp_add, comp_neg, assoc, homological_complex.d_comp_d,
     homological_complex.d_comp_d_assoc, comp_zero, zero_comp, zsmul_zero, neg_zero, add_zero,
@@ -426,7 +445,7 @@ end
 def of_hom (φ : F ⟶ G) : cocycle F G 0 := mk (cochain.of_hom φ) 1 (zero_add 1)
 begin
   ext,
-  simp only [δ_v 0 1 _ p q hpq (zero_add 1) p q (by linarith) hpq,
+  simp only [δ_v 0 1 (zero_add 1) _ p q hpq p q (by linarith) hpq,
     cochain.of_hom_v, homological_complex.hom.comm, ε_1, neg_smul, one_zsmul,
     add_right_neg, cochain.zero_v, zero_add],
 end
@@ -442,7 +461,7 @@ def hom_of (z : cocycle F G 0) : F ⟶ G :=
     change i+1=j at hij,
     have hz₁ := z.2,
     rw mem_iff 0 1 (zero_add 1) at hz₁,
-    simpa only [δ_v 0 1 z.1 i j hij.symm (zero_add 1) i j (by linarith) hij.symm,
+    simpa only [δ_v 0 1 (zero_add 1) z.1 i j hij.symm i j (by linarith) hij.symm,
       zero_add, ε_1, neg_smul, one_zsmul, cochain.zero_v, add_neg_eq_zero]
       using cochain.congr_v hz₁ i j hij.symm,
   end, }
@@ -477,6 +496,60 @@ def equiv_hom : (F ⟶ G) ≃+ cocycle F G 0 :=
   end, }
 
 end cocycle
+
+variables {F G}
+def equiv_homotopy (φ₁ φ₂ : F ⟶ G) :
+  homotopy φ₁ φ₂ ≃
+    { z : cochain F G (-1) // cochain.of_hom φ₁ = δ (-1) 0 z + cochain.of_hom φ₂ } :=
+{ to_fun := λ ho, begin
+    refine ⟨cochain.of_homotopy ho, _⟩,
+    ext,
+    have comm := ho.comm p,
+    rw [d_next_eq ho.hom rfl, prev_d_eq ho.hom (sub_add_cancel p 1)] at comm,
+    rw [cochain.add_v, δ_v (-1) 0 (neg_add_self 1) _ p p (add_zero p).symm _ _ rfl rfl],
+    simp only [δ_v (-1) 0 (neg_add_self 1) _ p p (add_zero p).symm _ _ rfl rfl,
+      add_left_neg, ε_0, one_zsmul, cochain.mk, cochain.of_hom_v, cochain.v,
+      cochain.of_homotopy, cochain.of_hom_v],
+    dsimp only,
+    suffices : ∀ (a b c d : F.X p ⟶ G.X p) (h : a = b+c+d), a=c+b+d,
+    { exact this _ _ _ _ comm, },
+    { intros a b c d h, rw h, abel, },
+  end,
+  inv_fun := λ z,
+    { hom := λ i j, begin
+        by_cases j+1=i,
+        { exact (z : cochain F G (-1)).v i j (by linarith), },
+        { exact 0, },
+      end,
+      zero' := λ i j hij, begin
+        change ¬ j+1 = i at hij,
+        rw dif_neg hij,
+      end,
+      comm := λ p, begin
+        have h₁ : p+1 = p+1 := rfl,
+        have h₂ : p-1+1 = p := by linarith,
+        have h₁' : (complex_shape.up ℤ).rel p (p+1) := h₁,
+        have h₂' : (complex_shape.up ℤ).rel (p-1) p := h₂,
+        rw [d_next_eq _ h₁', prev_d_eq _ h₂', dif_pos h₁, dif_pos h₂],
+        have hz := cochain.congr_v z.2 p p (add_zero p).symm,
+        simp only [cochain.add_v, δ_v (-1) 0 (neg_add_self 1) _ p p (add_zero p).symm _ _ rfl rfl,
+          cochain.of_hom_v, add_left_neg, ε_0, one_zsmul] at hz,
+        suffices : ∀ (a b c d : F.X p ⟶ G.X p) (h : a = b+c+d), a=c+b+d,
+        { exact this _ _ _ _ hz, },
+        { intros a b c d h, rw h, abel, },
+      end, },
+  left_inv := λ ho, begin
+    ext i j,
+    dsimp,
+    split_ifs,
+    { refl, },
+    { rw ho.zero i j h, },
+  end,
+  right_inv := λ z, begin
+    ext,
+    dsimp [cochain.mk, cochain.v],
+    simpa only [dif_pos (show q+1=p, by linarith)],
+  end, }
 
 end hom_complex
 

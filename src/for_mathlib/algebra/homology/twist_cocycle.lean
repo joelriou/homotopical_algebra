@@ -10,9 +10,7 @@ noncomputable theory
 
 open category_theory category_theory.category category_theory.limits category_theory.preadditive
 
-namespace algebra
-
-namespace homology
+namespace cochain_complex
 
 namespace hom_complex
 
@@ -23,11 +21,12 @@ variables {F G : cochain_complex C ℤ} {n : ℤ} [∀ p, has_binary_biproduct (
 namespace twist
 
 @[protected, simp]
-def δ (z : cocycle F G n) (p q : ℤ) : biprod (F.X (p+1-n)) (G.X p) ⟶ biprod (F.X (q+1-n)) (G.X q) :=
+def δ (z : cocycle F G n) (p q : ℤ) :
+  biprod (F.X (p+1-n)) (G.X p) ⟶ biprod (F.X (q+1-n)) (G.X q) :=
 begin
   refine biprod.desc (biprod.lift (ε (n+1) • F.d (p+1-n) (q+1-n)) _) (biprod.lift 0 (G.d p q)),
   by_cases p+1 = q,
-  { exact z.1 (p+1-n) q (by linarith), },
+  { exact z.1.v (p+1-n) q (by { dsimp [int.sub], linarith }), },
   { exact 0, },
 end
 
@@ -69,9 +68,9 @@ def twist (z : cocycle F G n) : cochain_complex C ℤ :=
         add_comp, assoc, biprod.lift_snd, comp_zero, zero_comp],
       have hz₁ := z.2,
       rw cocycle.mem_iff n (n+1) rfl at hz₁,
-      have hz₂ := congr_fun₃ hz₁ (i+1-n) (i+2) (by linarith),
-      simp only [cochain.zero_apply,
-        δ_eq n (n+1) rfl (i+1-n) (i+2) (by linarith) (i+1) (i+1+1-n) (by linarith) (by linarith)] at hz₂,
+      have hz₂ := cochain.congr_v hz₁ (i+1-n) (i+2) (by linarith),
+      simp only [δ_v n (n+1) rfl _ (i+1-n) (i+2) (by linarith) (i+1) (i+1+1-n)
+        (by linarith) (by linarith), cochain.zero_v] at hz₂,
       rw ← hz₂,
       abel, },
     { simp only [zero_add, biprod.inr_desc_assoc, biprod.lift_desc, zero_comp, assoc, biprod.lift_fst, comp_zero], },
@@ -116,14 +115,65 @@ begin
     have h := lt_of_le_of_lt (le_max_left _ _) hi,
     linarith, },
   { apply hs,
-    exact lt_of_le_of_lt (le_max_right _ _) hi, }, 
+    exact lt_of_le_of_lt (le_max_right _ _) hi, },
 end
 
 @[simp]
-def inl (z : cocycle F G n) {n' : ℤ} (hn' : n'+1=n) : cochain F (twist z) n' :=
-λ q q' hqq', cochain.of_hom (𝟙 F) q (q'+1-n) (by linarith) ≫ biprod.inl
+def inl (z : cocycle F G n) {n₀ : ℤ} (hn₀ : n₀+1=n) : cochain F (twist z) n₀ :=
+cochain.mk (λ p q hpq, (cochain.of_hom (𝟙 F)).v p (q+1-n) (by linarith) ≫ biprod.inl)
+
 @[simps]
 def inr (z : cocycle F G n) : G ⟶ twist z := { f := λ p, biprod.inr, }
+
+@[simp]
+def fst (z : cocycle F G n) {n₁ : ℤ} (hn' : n+n₁=1) : cocycle (twist z) F n₁ :=
+cocycle.mk (cochain.mk (λ p q hpq, biprod.fst ≫
+  (cochain.of_hom (𝟙 F)).v (p+1-n) q (by { dsimp [int.sub], linarith, }))) (n₁+1) rfl
+begin
+  sorry
+end
+
+@[simp]
+def snd (z : cocycle F G n) : cochain (twist z) G 0 :=
+cochain.mk (λ p q hpq, biprod.snd ≫ (cochain.of_hom (𝟙 G)).v p q hpq)
+
+@[simp]
+lemma inl_comp_fst (z : cocycle F G n) {n₀ n₁ : ℤ} (hn₀ : n₀+1=n) (hn₁ : n+n₁=1) :
+  (inl z hn₀).comp ↑(fst z hn₁) (show 0=n₀+n₁, by linarith) = cochain.of_hom (𝟙 F) :=
+begin
+  ext,
+  dsimp [cochain.comp, cochain.mk, cochain.v, cochain.of_hom, cochain.of_homs],
+  simp only [id_comp, assoc, biprod.inl_fst_assoc, eq_to_hom_trans, eq_to_hom_refl],
+end
+
+@[simp]
+lemma inl_comp_snd (z : cocycle F G n) {n₀ : ℤ} (hn₀ : n₀+1=n) :
+  (inl z hn₀).comp (snd z) (add_zero n₀).symm = 0 :=
+begin
+  ext,
+  simp only [inl, snd, cochain.comp, cochain.mk, cochain.v, cochain.of_hom, cochain.of_homs,
+    assoc, biprod.inl_snd_assoc, zero_comp, comp_zero, cochain.zero_v],
+end
+
+@[simp]
+lemma inr_comp_fst (z : cocycle F G n) {n₁ : ℤ} (hn₁ : n+n₁=1) :
+  (cochain.of_hom (inr z)).comp (fst z hn₁ : cochain (twist z) F n₁) (zero_add n₁).symm = 0 :=
+begin
+  ext,
+  simp only [inr, fst, cochain.zero_cochain_comp, cochain.of_hom_v, cocycle.mk_coe,
+    cochain.mk_v, biprod.inr_fst_assoc, zero_comp, cochain.zero_v],
+end
+
+@[simp]
+lemma inr_comp_snd (z : cocycle F G n) :
+  (cochain.of_hom (inr z)).comp (snd z) (add_zero 0).symm = cochain.of_hom (𝟙 G) :=
+begin
+  ext,
+  simp only [inr_f, snd, cochain.comp_zero_cochain, cochain.of_hom_v, homological_complex.id_f,
+    cochain.mk_v, comp_id, biprod.inr_snd],
+end
+
+#exit
 @[simp]
 def fst (z : cocycle F G n) {n' : ℤ} (hn' : n+n'=1) : cocycle (twist z) F n' :=
 cocycle.mk (λ q q' hqq', biprod.fst ≫ (cochain.of_hom (𝟙 F) (q+1-n) q' (by linarith))) (n'+1) rfl
@@ -144,44 +194,7 @@ begin
   { simp only [comp_add, biprod.inr_fst_assoc, zero_comp, linear.comp_smul, biprod.inr_desc_assoc,
       biprod.lift_fst_assoc, smul_zero, add_zero, comp_zero], },
 end
-@[simp]
-def snd (z : cocycle F G n) : cochain (twist z) G 0 := λ q q' hqq', biprod.snd ≫ (cochain.of_hom (𝟙 G)) q q' hqq'
 
-@[simp]
-lemma inl_comp_fst (z : cocycle F G n) {n' n'': ℤ} (hn' : n'+1=n) (hn'' : n+n''=1) :
-  (inl z hn').comp (fst z hn'').1 (show 0=n'+n'', by linarith) = cochain.of_hom (𝟙 F) :=
-begin
-  ext q q' hqq',
-  have h : n'' = -n' := by linarith,
-  have hqq'' : q = q' := by linarith,
-  unfreezingI { substs hn' h hqq'', },
-  simp only [cochain.comp_eq _ _ (show 0 = n'+(-n'), by linarith) q (q+n') q rfl (by linarith),
-    inl, fst, cocycle.mk, assoc, biprod.inl_fst_assoc, cochain.of_hom_eq,
-    homological_complex.id_f, cochain.of_hom_eq, cochain.of_hom, id_comp, eq_to_hom_trans],
-end
-
-@[simp]
-lemma inl_comp_snd (z : cocycle F G n) {n' : ℤ} (hn' : n'+1=n) : (inl z hn').comp (snd z) (add_zero n').symm = 0 :=
-begin
-  ext q q' hqq',
-  simp only [inl, snd, cochain.comp₀, cochain.of_hom_eq, homological_complex.id_f, comp_id, assoc,
-    biprod.inl_snd, comp_zero, cochain.zero_apply],
-end
-
-@[simp]
-lemma inr_comp_fst (z : cocycle F G n) {n' : ℤ} (hn' : n+n'=1) :
-  (cochain.of_hom (inr z)).comp (fst z hn').1 (zero_add n').symm = 0 :=
-begin
-  ext q q' hqq',
-  simp only [cocycle.mk, fst, cochain.comp₀', cochain.of_hom_eq, inr_f, biprod.inr_fst_assoc, zero_comp, cochain.zero_apply],
-end
-
-@[simp]
-lemma inr_comp_snd (z : cocycle F G n) : (cochain.of_hom (inr z)).comp (snd z) (add_zero 0).symm = cochain.of_hom (𝟙 G) :=
-begin
-  ext q q' hqq',
-  simp only [snd, add_zero, cochain.comp₀', cochain.of_hom_eq, inr_f, biprod.inr_snd_assoc],
-end
 
 lemma δ_inl (z : cocycle F G n) {n' : ℤ} (hn' : n'+1=n) :
   δ n' n (inl z hn') = cochain.comp z.1 (cochain.of_hom (inr z)) (add_zero n).symm :=
@@ -221,37 +234,6 @@ begin
 end
 
 
-/-@[simp]
-def φ {z : cocycle F G n} {K : cochain_complex C ℤ} (f : twist z ⟶ K) {n' : ℤ} (hn' : n'+1 = n) :
-  cochain F K n' :=
-λ q q' hqq', eq_to_hom (by { congr, linarith, }) ≫ biprod.inl ≫ f.f q'
-
-@[simps]
-def γ {z : cocycle F G n} {K : cochain_complex C ℤ} (f : twist z ⟶ K) : G ⟶ K :=
-twist.inr z ≫ f
-
-
-def dφ {z : cocycle F G n} {K : cochain_complex C ℤ} (f : twist z ⟶ K) {n' : ℤ} (hn' : n'+1 = n) :
-  δ n' n (φ f hn') = cochain.comp z.1 (cochain.of_hom (γ f)) (add_zero n).symm :=
-begin
-  ext q q' hqq',
-  simp only [cochain.comp_eq z.1 (cochain.of_hom (γ f)) (add_zero n).symm q q' q' hqq' (add_zero q').symm,
-    cochain.of_hom_eq, δ_eq n' n hn' q q' hqq' (q'-1) (q+1) rfl rfl],
-  have hq : q = (q'-1)+1-n := by linarith,
-  subst hq, /- This substitution makes the eq_to_hom disappear when unfolding φ -/
-  have h₁ : q'-1+1-n+1 = q'+1-n := by linarith,
-  have h₂ : q'-1+1-n+1 = q'-1+1-n+1 := rfl,
-  have hf₁ := f.comm (q'-1) q',
-  have hf₂ := congr_arg (λ α, biprod.inl ≫ α) hf₁,
-  have h₃ : ε (n+1) = -ε (n'+1) := by { rw hn', apply hε', },
-  simp only [twist_d, twist.δ, biprod.inl_desc_assoc, biprod.lift_eq,
-    dif_pos (show q' - 1 + 1 = q', by linarith), h₃] at hf₂,
-  simp only [φ, γ, inr, homological_complex.comp_f, eq_to_hom_refl, id_comp,
-    homological_complex.d_comp_eq_to_hom_assoc F h₁ h₂,
-    assoc, hf₂, biprod.lift_eq,
-    zero_add, neg_smul, neg_comp, linear.smul_comp, add_comp,
-    neg_add_cancel_comm, zero_comp, id_comp],
-end-/
 
 attribute [reassoc] homological_complex.d_comp_eq_to_hom
 
@@ -328,7 +310,7 @@ cocycle.mk (desc_cochain z γ.1 φ hn') m' hm'
 @[simp]
 lemma inr_comp_desc_cocycle (z : cocycle F G n) {K : cochain_complex C ℤ} {m n' n''' : ℤ}
   (γ : cocycle G K m) (φ : cochain F K n') (hn' : n'+1 = n+m) (m' : ℤ) (hm' : m+1=m') (hn''' : n''' = n'+1)
-  (hφ : δ n' n''' φ = ε m • (z.1.comp γ.1 (show n'''=_, by linarith))) : 
+  (hφ : δ n' n''' φ = ε m • (z.1.comp γ.1 (show n'''=_, by linarith))) :
   cochain.comp (cochain.of_hom (inr z)) (desc_cocycle z γ φ hn' m' hm' hn''' hφ).1 (zero_add m).symm = γ.1 :=
 by simp only [desc_cocycle, cocycle.mk, inr_comp_desc_cochain]
 
@@ -394,7 +376,7 @@ begin
     δ_inl z hq, ← cochain.comp_assoc ψ z.1 (cochain.of_hom (inr z)) (show m'=_, by linarith) (add_zero n).symm (show m'=_, by linarith),
     δ_comp_cochain_of_hom, δ_add],
 end
-  
+
 def lift_cocycle (z : cocycle F G n) {K : cochain_complex C ℤ} {m p : ℤ}
   (ψ : cocycle K F p) (υ : cochain K G m) (m' : ℤ) (hm' : m+1=m') (hpn : m' = p+n)
   (hψυ : δ m m' υ = -cochain.comp ψ.1 z.1 hpn) :
@@ -418,6 +400,4 @@ end twist
 
 end hom_complex
 
-end homology
-
-end algebra
+end cochain_complex
