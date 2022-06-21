@@ -220,7 +220,8 @@ begin
       biprod.inr_fst_assoc, zero_comp], },
 end
 
-@[simp]
+
+/-@[simp]
 def φ {z : cocycle F G n} {K : cochain_complex C ℤ} (f : twist z ⟶ K) {n' : ℤ} (hn' : n'+1 = n) :
   cochain F K n' :=
 λ q q' hqq', eq_to_hom (by { congr, linarith, }) ≫ biprod.inl ≫ f.f q'
@@ -229,7 +230,6 @@ def φ {z : cocycle F G n} {K : cochain_complex C ℤ} (f : twist z ⟶ K) {n' :
 def γ {z : cocycle F G n} {K : cochain_complex C ℤ} (f : twist z ⟶ K) : G ⟶ K :=
 twist.inr z ≫ f
 
-attribute [reassoc] homological_complex.d_comp_eq_to_hom
 
 def dφ {z : cocycle F G n} {K : cochain_complex C ℤ} (f : twist z ⟶ K) {n' : ℤ} (hn' : n'+1 = n) :
   δ n' n (φ f hn') = cochain.comp z.1 (cochain.of_hom (γ f)) (add_zero n).symm :=
@@ -251,7 +251,9 @@ begin
     assoc, hf₂, biprod.lift_eq,
     zero_add, neg_smul, neg_comp, linear.smul_comp, add_comp,
     neg_add_cancel_comm, zero_comp, id_comp],
-end
+end-/
+
+attribute [reassoc] homological_complex.d_comp_eq_to_hom
 
 lemma cochain_ext (z : cocycle F G n) {K : cochain_complex C ℤ} (m n' n'' : ℤ) (hn' : n'+1=n) (hn'' : n'' = n'+m) (y₁ y₂ : cochain (twist z) K m) :
   y₁ = y₂ ↔ cochain.comp (inl z hn') y₁ hn'' = cochain.comp (inl z hn') y₂ hn'' ∧
@@ -371,43 +373,45 @@ begin
     inr_comp_desc_cocycle],
 end
 
-#exit
+def lift_cochain (z : cocycle F G n) {K : cochain_complex C ℤ} {m p : ℤ}
+  (ψ : cochain K F p) (υ : cochain K G m) (hp : m+1=p+n) : cochain K (twist z) m :=
+cochain.comp ψ (inl z (sub_add_cancel n 1)) (by linarith) + cochain.comp υ (cochain.of_hom (inr z)) (add_zero m).symm
 
-@[simps]
-def lift (z : cocycle F G n) {K : cochain_complex C ℤ} {n' : ℤ} (hn' : n'+n=1)
-  (ψ : cocycle K F n') (υ : cochain K G 0) (hψυ : δ 0 1 υ = -cochain.comp ψ.1 z.1 hn'.symm) :
-  K ⟶ twist z :=
-{ f := λ p, biprod.lift (ψ.1 p (p+1-n) (by linarith)) (υ p p (by linarith)),
-  comm' := λ i j hij, begin
-    have hn'' : n' = 1-n := by linarith,
-    change i+1 = j at hij,
-    substs hij hn'',
-    ext,
-    { simp only [twist_d, add_zero, twist.δ, biprod.lift_desc, add_comp, assoc, biprod.lift_fst,
-        linear.comp_smul, comp_zero],
-      have hψ₁ := ψ.2,
-      rw cocycle.mem_iff (1-n) (1+1-n) (by linarith) at hψ₁,
-      have hψ₂ := congr_fun₃ hψ₁ i (i+1+1-n) (by linarith),
-      simp only [δ_eq (1-n) (1+1-n) (by linarith) i (i+1+1-n) (by linarith) (i+1-n) (i+1) (by linarith) rfl ψ.1,
-        cochain.zero_apply, add_eq_zero_iff_eq_neg] at hψ₂,
-      rw [hψ₂],
-      have eq : -ε (n+1) * ε (1-n+1) = 1,
-      { rw [show 1-n+1=(-n)+1+1, by linarith],
-        simp only [hε, hε₁, mul_neg, mul_one, neg_neg],
-        rw [← hε n (-n), add_right_neg, hε₀], },
-      simp only [zsmul_neg', neg_smul, smul_smul, eq, one_smul], },
-    { have hψυ₂ := congr_fun₃ hψυ i (i+1) (by linarith),
-      simp only [cochain.neg_apply,
-        cochain.comp_eq ψ.1 z.1 (show 1=1-n+n, by linarith) i (i+1-n) (i+1) (by linarith) (by linarith),
-        δ_eq 0 1 rfl i (i+1) rfl i (i+1) (by linarith) rfl, zero_add, hε₁, neg_smul, one_smul] at hψυ₂,
-      simp only [twist_d, twist.δ, dif_pos, biprod.lift_desc, biprod.lift_snd, add_comp, assoc],
-      suffices : Π (a b c : K.X i ⟶ G.X (i + 1)), a + (-b) = -c → c+a=b,
-      { exact this _ _ _ hψυ₂, },
-      intros a b c h,
-      have h' := congr_arg (λ x, -x) h,
-      simp only [neg_add_rev, neg_neg] at h',
-      rw [← h', neg_add_cancel_right], },
-  end, }
+def lift_cochain_eq (z : cocycle F G n) {K : cochain_complex C ℤ} {m p q : ℤ}
+  (ψ : cochain K F p) (υ : cochain K G m)  (hq : q+1=n) (hp : m = p+q) :
+lift_cochain z ψ υ (show m+1=p+n, by rw [hp, add_assoc, hq]) =
+cochain.comp ψ (inl z hq) hp + cochain.comp υ (cochain.of_hom (inr z)) (add_zero m).symm := rfl
+
+lemma δ_lift_cochain (z : cocycle F G n) {K : cochain_complex C ℤ} {m p q : ℤ}
+  (ψ : cochain K F p) (υ : cochain K G m)  (hq : q+1=n) (hp : m =p+q) (m' p' : ℤ) (hm' : m+1=m') (hp' : p+1=p') :
+  δ m m' (lift_cochain z ψ υ (show m+1=p+n, by rw [hp, add_assoc, hq])) =
+  (cochain.comp ψ z.1 (show m' = p+n, by rw [← hm', hp, add_assoc, hq])).comp (cochain.of_hom (inr z)) (add_zero m').symm +
+    ε q • cochain.comp (δ p p' ψ) (inl z hq) (by { rw [← hp', ← hm', hp, add_assoc p 1, add_comm 1 q, add_assoc]}) +
+    cochain.comp (δ m m' υ) (cochain.of_hom (inr z)) (add_zero m').symm :=
+begin
+  simp only [lift_cochain_eq z ψ υ hq hp, δ_comp ψ (inl z hq) hp p' n m' hm' hp' hq,
+    δ_inl z hq, ← cochain.comp_assoc ψ z.1 (cochain.of_hom (inr z)) (show m'=_, by linarith) (add_zero n).symm (show m'=_, by linarith),
+    δ_comp_cochain_of_hom, δ_add],
+end
+  
+def lift_cocycle (z : cocycle F G n) {K : cochain_complex C ℤ} {m p : ℤ}
+  (ψ : cocycle K F p) (υ : cochain K G m) (m' : ℤ) (hm' : m+1=m') (hpn : m' = p+n)
+  (hψυ : δ m m' υ = -cochain.comp ψ.1 z.1 hpn) :
+cocycle K (twist z) m := cocycle.mk (lift_cochain z ψ.1 υ (by linarith)) m' hm'
+  (by rw [δ_lift_cochain z ψ.1 υ (sub_add_cancel n 1) (by linarith) m' (p+1) hm' rfl, cocycle.δ_eq_zero, cochain.zero_comp, smul_zero, add_zero,
+    ← cochain.add_comp, hψυ, add_right_neg, cochain.zero_comp])
+
+def lift (z : cocycle F G n) {K : cochain_complex C ℤ} {p : ℤ}
+  (ψ : cocycle K F p) (υ : cochain K G 0) (hpn : p+n=1)
+  (hψυ : δ 0 1 υ = -cochain.comp ψ.1 z.1 hpn.symm) : K ⟶ twist z :=
+(cocycle.equiv_hom K (twist z)).to_equiv.inv_fun (lift_cocycle z ψ υ 1 (zero_add 1) hpn.symm hψυ)
+
+@[simp]
+def lift_hom_as_cocycle_compatibility (z : cocycle F G n) {K : cochain_complex C ℤ} {p : ℤ}
+  (ψ : cocycle K F p) (υ : cochain K G 0) (hpn : p+n=1)
+  (hψυ : δ 0 1 υ = -cochain.comp ψ.1 z.1 hpn.symm) :
+(cocycle.equiv_hom _ _).to_equiv (lift z ψ υ hpn hψυ) = lift_cocycle z ψ υ 1 (zero_add 1) hpn.symm hψυ :=
+by apply equiv.right_inv
 
 end twist
 
