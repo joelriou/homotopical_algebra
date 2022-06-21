@@ -165,6 +165,13 @@ by { dsimp only [P_π], split_ifs; apply epi_comp, }
 def KP' (L : Cminus C) : Cminus C :=
 Cminus.mk (twist (cocycle.of_hom (𝟙 (KP L).1))) (twist.is_bounded_above _ (KP L).2 (KP L).2)
 
+def twistP (L : Cminus C) : Cminus C :=
+begin
+  refine ⟨twist (cocycle.of_hom (𝟙 (KP L).1)), _⟩,
+  apply twist.is_bounded_above,
+  
+end
+
 #exit
 Cminus.mk
 (twist (cochain.of_hom (𝟙 (KP L).1)))

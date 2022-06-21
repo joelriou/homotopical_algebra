@@ -332,6 +332,7 @@ lemma inr_comp_desc_cocycle (z : cocycle F G n) {K : cochain_complex C ℤ} {m n
   cochain.comp (cochain.of_hom (inr z)) (desc_cocycle z γ φ hn' m' hm' hn''' hφ).1 (zero_add m).symm = γ.1 :=
 by simp only [desc_cocycle, cocycle.mk, inr_comp_desc_cochain]
 
+@[simps]
 def desc_hom_as_cocycle (z : cocycle F G n) {K : cochain_complex C ℤ}
   (γ : G ⟶ K) {n' : ℤ} (hn' : n'+1 = n) (φ : cochain F K n')
   (hφγ : δ n' n φ = cochain.comp z.1 (cochain.of_hom γ) (add_zero n).symm) :
