@@ -251,37 +251,48 @@ end
 
 def desc_cochain (z : cocycle F G n) {m m₁ : ℤ} (y₁ : cochain F K m₁) (y₂ : cochain G K m)
   (hm₁ : m₁+1=n+m) : cochain (twist z) K m :=
-  cochain.comp (fst z (by linarith)).1 y₁ (eq_add_of_sub_eq rfl : m=(m-m₁)+m₁) +
+cochain.comp ↑(fst z (show n+(m-m₁) = 1, by linarith)) y₁ (eq_add_of_sub_eq rfl : m=(m-m₁)+m₁) +
   cochain.comp (snd z) y₂ (zero_add m).symm
 
-#exit
---attribute [reassoc] homological_complex.d_comp_eq_to_hom
-
-
-def desc_cochain (z : cocycle F G n) {K : cochain_complex C ℤ} {m n' : ℤ}
-  (γ : cochain G K m) (φ : cochain F K n') (hn' : n'+1 = n+m) : cochain (twist z) K m :=
-cochain.comp (snd z) γ (zero_add m).symm + cochain.comp (fst z (add_eq_of_eq_sub' rfl)).1 φ (by linarith)
-
-@[simp]
-def desc_cochain_eq (z : cocycle F G n) {K : cochain_complex C ℤ} {m n' n'': ℤ}
-  (γ : cochain G K m) (φ : cochain F K n') (hn' : n'+1 = n+m) (hn'' : n+n''=1):
-desc_cochain z γ φ hn' = cochain.comp (snd z) γ (zero_add m).symm + cochain.comp (fst z hn'').1 φ (by linarith) :=
+def desc_cochain_eq (z : cocycle F G n) {m m₁ n₁ : ℤ} (y₁ : cochain F K m₁) (y₂ : cochain G K m)
+  (hm₁ : m₁+1=n+m) (hn₁ : n+n₁=1) : desc_cochain z y₁ y₂ hm₁ =
+cochain.comp ↑(fst z hn₁) y₁ (show m = n₁+m₁, begin
+  suffices : m+1=n₁+m₁+1,
+  { simpa only [add_left_inj] using this, },
+  rw [add_assoc, hm₁, ← hn₁, add_comm n₁, add_comm n m, add_assoc],
+end) + cochain.comp (snd z) y₂ (zero_add m).symm :=
 begin
-  have h : n'' = 1-n := by linarith,
+  have h : n₁ = m-m₁ := by linarith,
   subst h,
   refl,
 end
 
-@[simp]
-lemma inr_comp_desc_cochain (z : cocycle F G n) {K : cochain_complex C ℤ} {m n' : ℤ}
-  (γ : cochain G K m) (φ : cochain F K n') (hn' : n'+1 = n+m) :
-  cochain.comp (cochain.of_hom (inr z)) (desc_cochain z γ φ hn') (zero_add m).symm = γ :=
+lemma inl_comp_desc_cochain (z : cocycle F G n) {m m₁ n₀ : ℤ} (y₁ : cochain F K m₁)
+  (y₂ : cochain G K m) (hm₁ : m₁+1=n+m) (hn₀ : n₀+1=n) :
+  cochain.comp (inl z hn₀) (desc_cochain z y₁ y₂ hm₁) begin
+    suffices : m₁+1 = n₀+m+1,
+    { simpa only [add_left_inj] using this, },
+    rw [add_assoc, hm₁, ← hn₀, add_assoc, add_comm 1 m],
+  end = y₁ :=
 begin
-  simp only [desc_cochain],
-  simp only [cochain.comp_add, inr_comp_fst, inr_comp_snd, cochain.id_comp, cochain.zero_comp, add_zero,
-    ← cochain.comp_assoc _ _ _ (zero_add 0).symm (zero_add m).symm (show m = _, by linarith),
-    ← cochain.comp_assoc _ _ _ (zero_add (1-n)).symm (show m=(1-n)+n', by linarith) (show m = _, by linarith)],
+  simp only [desc_cochain_eq z y₁ y₂ hm₁ (show n+(-n₀)=1, by linarith), cochain.comp_add,
+    ← cochain.comp_assoc (inl z hn₀) _ y₁ (show 0=n₀+(-n₀), by linarith)
+      (show m= _, by linarith) (show m₁=_, by linarith),
+    ← cochain.comp_assoc_of_second_is_zero_cochain, add_zero,
+    inl_comp_fst, inl_comp_snd, cochain.id_comp, cochain.zero_comp],
 end
+
+lemma inr_comp_desc_cochain (z : cocycle F G n) {m m₁ n₀: ℤ} (y₁ : cochain F K m₁)
+  (y₂ : cochain G K m) (hm₁ : m₁+1=n+m) :
+  cochain.comp (cochain.of_hom (inr z)) (desc_cochain z y₁ y₂ hm₁) (zero_add m).symm = y₂ :=
+begin
+  simp only [desc_cochain_eq z y₁ y₂ hm₁ (show n+(1-n)=1, by linarith), cochain.comp_add,
+    ← cochain.comp_assoc_of_second_is_zero_cochain, inr_comp_snd, cochain.id_comp,
+    ← cochain.comp_assoc_of_first_is_zero_cochain, inr_comp_fst, cochain.zero_comp, zero_add],
+end
+
+#exit
+--attribute [reassoc] homological_complex.d_comp_eq_to_hom
 
 def δ_desc_cochain (z : cocycle F G n) {K : cochain_complex C ℤ} {m n' n'' n''' : ℤ}
   (γ : cochain G K m) (φ : cochain F K n') (hn' : n'+1 = n+m) (m' : ℤ) (hm' : m+1=m') (hn'' : n+n'' = 1)
