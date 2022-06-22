@@ -442,7 +442,7 @@ begin
     zero_add, add_left_neg],
 end
 
-def δ_comp {n₁ n₂ n₁₂ : ℤ} (z₁ : cochain F G n₁) (z₂ : cochain G K n₂) (h : n₁₂ = n₁ + n₂)
+lemma δ_comp {n₁ n₂ n₁₂ : ℤ} (z₁ : cochain F G n₁) (z₂ : cochain G K n₂) (h : n₁₂ = n₁ + n₂)
   (m₁ m₂ m₁₂ : ℤ) (h₁₂ : n₁₂+1 = m₁₂) (h₁ : n₁+1 = m₁) (h₂ : n₂+1 = m₂) :
 δ n₁₂ m₁₂ (cochain.comp z₁ z₂ h) = cochain.comp z₁ (δ n₂ m₂ z₂) (by linarith) + ε n₂ • cochain.comp (δ n₁ m₁ z₁) z₂ (by linarith) :=
 begin
@@ -465,6 +465,19 @@ begin
   intros a b c,
   abel,
 end
+
+@[simp]
+lemma δ_comp_of_first_is_zero_cochain {n₂ : ℤ} (z₁ : cochain F G 0) (z₂ : cochain G K n₂)
+  (m₂ : ℤ) (h₂ : n₂+1 = m₂) :
+δ n₂ m₂ (cochain.comp z₁ z₂ (zero_add n₂).symm) =
+  cochain.comp z₁ (δ n₂ m₂ z₂) (by linarith) + ε n₂ • cochain.comp (δ 0 1 z₁) z₂ (by linarith) :=
+δ_comp z₁ z₂ (zero_add n₂).symm 1 m₂ m₂ h₂ (zero_add 1) h₂
+
+@[simp]
+lemma δ_comp_of_second_is_zero_cochain {n₁ : ℤ} (z₁ : cochain F G n₁) (z₂ : cochain G K 0)
+  (m₁ : ℤ) (h₁ : n₁+1 = m₁) : δ n₁ m₁ (cochain.comp z₁ z₂ (add_zero n₁).symm) =
+  cochain.comp z₁ (δ 0 1 z₂) h₁.symm + cochain.comp (δ n₁ m₁ z₁) z₂ (add_zero m₁).symm :=
+by simp only [δ_comp z₁ z₂ (add_zero n₁).symm m₁ 1 m₁ h₁ h₁ (zero_add 1), ε_0, one_zsmul]
 
 end hom_complex
 

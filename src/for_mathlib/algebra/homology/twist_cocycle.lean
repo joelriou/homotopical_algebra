@@ -301,10 +301,16 @@ lemma δ_desc_cochain (z : cocycle F G n) {m m₁ m₂ n₁ : ℤ} (y₁ : cocha
 begin
   simp only [desc_cochain_eq z y₁ y₂ hm₁ hn₁, δ_add],
   rw cochain_ext z _ _ (show (n-1)+1=n, by linarith),
---  rw inl_comp_desc_cochain,
+  split,
+  { sorry, },
+  { simp only [δ_comp _ _ (show m = n₁ + m₁, by linarith) (n₁+1) m₂ m' hm' rfl hm₂,
+      δ_comp_of_first_is_zero_cochain _ _ _ hm', cocycle.δ_eq_zero, δ_snd z hn₁,
+      add_zero, cochain.zero_comp, smul_zero, subtype.val_eq_coe,
+      cochain.neg_comp, zsmul_neg', neg_smul, cochain.comp_add,
+      cochain.comp_neg, cochain.comp_zsmul, ε_succ,
+      ← cochain.comp_assoc_of_first_is_zero_cochain,
+      inr_comp_fst, zero_add, neg_zero], },
 end
-
-
 
 #exit
 --attribute [reassoc] homological_complex.d_comp_eq_to_hom
