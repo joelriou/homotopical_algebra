@@ -101,7 +101,7 @@ begin
     { simpa only [comp_id, biprod.inr_snd, comp_zero, zero_comp] using h.right, } },
 end
 
-def is_bounded_above (z : cocycle F G n) (hF : F.is_bounded_above) (hG : G.is_bounded_above) :
+lemma is_bounded_above (z : cocycle F G n) (hF : F.is_bounded_above) (hG : G.is_bounded_above) :
   (twist z).is_bounded_above :=
 begin
   cases hF with r hr,
@@ -219,7 +219,7 @@ begin
       biprod.lift_snd, add_right_neg, biprod.inr_fst_assoc, zero_comp], },
 end
 
-def id_eq (z : cocycle F G n) {n₀ n₁ : ℤ} (hn₀ : n₀+1=n)  (hn₁ : n+n₁=1) : cochain.of_hom (𝟙 (twist z)) =
+lemma id_eq (z : cocycle F G n) {n₀ n₁ : ℤ} (hn₀ : n₀+1=n)  (hn₁ : n+n₁=1) : cochain.of_hom (𝟙 (twist z)) =
 cochain.comp ↑(fst z hn₁) (inl z hn₀) (show 0=n₁+n₀, by linarith) +
 cochain.comp (snd z) (cochain.of_hom (inr z)) (zero_add 0).symm :=
 begin
@@ -254,7 +254,7 @@ def desc_cochain (z : cocycle F G n) {m m₁ : ℤ} (y₁ : cochain F K m₁) (y
 cochain.comp ↑(fst z (show n+(m-m₁) = 1, by linarith)) y₁ (eq_add_of_sub_eq rfl : m=(m-m₁)+m₁) +
   cochain.comp (snd z) y₂ (zero_add m).symm
 
-def desc_cochain_eq (z : cocycle F G n) {m m₁ n₁ : ℤ} (y₁ : cochain F K m₁) (y₂ : cochain G K m)
+lemma desc_cochain_eq (z : cocycle F G n) {m m₁ n₁ : ℤ} (y₁ : cochain F K m₁) (y₂ : cochain G K m)
   (hm₁ : m₁+1=n+m) (hn₁ : n+n₁=1) : desc_cochain z y₁ y₂ hm₁ =
 cochain.comp ↑(fst z hn₁) y₁ (show m = n₁+m₁, begin
   suffices : m+1=n₁+m₁+1,
@@ -282,7 +282,7 @@ begin
     inl_comp_fst, inl_comp_snd, cochain.id_comp, cochain.zero_comp],
 end
 
-lemma inr_comp_desc_cochain (z : cocycle F G n) {m m₁ n₀: ℤ} (y₁ : cochain F K m₁)
+lemma inr_comp_desc_cochain (z : cocycle F G n) {m m₁ : ℤ} (y₁ : cochain F K m₁)
   (y₂ : cochain G K m) (hm₁ : m₁+1=n+m) :
   cochain.comp (cochain.of_hom (inr z)) (desc_cochain z y₁ y₂ hm₁) (zero_add m).symm = y₂ :=
 begin
@@ -299,8 +299,8 @@ lemma δ_desc_cochain (z : cocycle F G n) {m m₁ m₂ n₁ : ℤ} (y₁ : cocha
     ε (m+1) • cochain.comp ↑z y₂ (show m₂ = n+m, by linarith)) (show m' = n₁+m₂, by linarith) +
   cochain.comp (snd z) (δ m m' y₂) (zero_add m').symm :=
 begin
-  simp only [desc_cochain_eq z y₁ y₂ hm₁ hn₁, δ_add],
-  rw cochain_ext z _ _ (show (n-1)+1=n, by linarith),
+  simp only [desc_cochain_eq z y₁ y₂ hm₁ hn₁, δ_add,
+    cochain_ext z _ _ (show (n-1)+1=n, by linarith) rfl],
   split,
   { sorry, },
   { simp only [δ_comp _ _ (show m = n₁ + m₁, by linarith) (n₁+1) m₂ m' hm' rfl hm₂,
