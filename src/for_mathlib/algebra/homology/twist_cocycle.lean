@@ -16,7 +16,7 @@ namespace hom_complex
 
 variables {C : Type*} [category C] [preadditive C]
 
-variables {F G : cochain_complex C ℤ} {n : ℤ} [∀ p, has_binary_biproduct (F.X (p+1-n)) (G.X p)]
+variables {F G K : cochain_complex C ℤ} {n m : ℤ} [∀ p, has_binary_biproduct (F.X (p+1-n)) (G.X p)]
 
 namespace twist
 
@@ -123,12 +123,12 @@ cochain.mk (λ p q hpq, (cochain.of_hom (𝟙 F)).v p (q+1-n) (by linarith) ≫ 
 
 def inr (z : cocycle F G n) : G ⟶ twist z := { f := λ p, biprod.inr, }
 
-def fst (z : cocycle F G n) {n₁ : ℤ} (hn' : n+n₁=1) : cocycle (twist z) F n₁ :=
+def fst (z : cocycle F G n) {n₁ : ℤ} (hn₁ : n+n₁=1) : cocycle (twist z) F n₁ :=
 cocycle.mk (cochain.mk (λ p q hpq, biprod.fst ≫
   (cochain.of_hom (𝟙 F)).v (p+1-n) q (show q=p+1-n+0, by linarith))) (n₁+1) rfl
 begin
-  have hn₁ : n₁ = 1-n := by linarith,
-  subst hn₁,
+  have hn₁' : n₁ = 1-n := by linarith,
+  subst hn₁',
   ext1,
   simp only [δ_v (1-n) (1-n+1) rfl _ p q hpq (p+1-n) (p+1) (by linarith) rfl,
     cochain.mk_v, cochain.of_hom_v, homological_complex.id_f, comp_id, twist_d, twist.δ, dif_pos,
@@ -196,12 +196,11 @@ begin
       homological_complex.id_f, id_comp, neg_comp, zsmul_comp, biprod.inl_fst, comp_id,
       cochain.d_comp_of_hom_v, add_right_neg, cochain.comp_zero_cochain, cochain.of_hom_v,
       inr, biprod.inr_fst, comp_zero], },
-  { have hp : p = q-1+1-n := by linarith,
-    subst hp,
-    simp only [inl, add_zero, sub_add_cancel, cochain.mk_v, cochain.of_hom_v,
-      homological_complex.id_f, id_comp, dif_pos, biprod.inl_desc, add_comp, biprod.lift_snd,
-      linear.smul_comp, assoc, biprod.inl_snd, comp_zero, smul_zero,
-      cochain.comp_zero_cochain, inr, biprod.inr_snd, comp_id], },
+  { simp only [inl, inr, add_zero, sub_add_cancel, eq_self_iff_true, cochain.mk_v,
+      subtype.val_eq_coe, dif_pos, assoc, biprod.inl_desc, add_comp, biprod.lift_snd,
+      linear.smul_comp, biprod.inl_snd, comp_zero, smul_zero, cochain.comp_zero_cochain,
+      cochain.of_hom_v, biprod.inr_snd, comp_id, id_comp,
+      cochain.zero_cochain_comp' _ _ p (q-1+1-n) q, homological_complex.id_f], },
 end
 
 @[simp]
@@ -220,25 +219,39 @@ begin
       biprod.lift_snd, add_right_neg, biprod.inr_fst_assoc, zero_comp], },
 end
 
+def id_eq (z : cocycle F G n) {n₀ n₁ : ℤ} (hn₀ : n₀+1=n)  (hn₁ : n+n₁=1) : cochain.of_hom (𝟙 (twist z)) =
+cochain.comp ↑(fst z hn₁) (inl z hn₀) (show 0=n₁+n₀, by linarith) +
+cochain.comp (snd z) (cochain.of_hom (inr z)) (zero_add 0).symm :=
+begin
+  ext1,
+  simpa only [fst, inl, snd, inr, cochain.add_v,
+    cochain.comp_v _ _ (show 0 = n₁+n₀, by linarith) p (p+1-n) p (by linarith) (by linarith),
+    cochain.of_hom_v, homological_complex.id_f, cocycle.mk_coe, cochain.mk_v,
+    comp_id, id_comp, cochain.comp_zero_cochain, biprod.total],
+end
+
+lemma cochain_ext (z : cocycle F G n) (y₁ y₂ : cochain (twist z) K m) {n₀ n₁ : ℤ} (hn₀ : n₀+1=n)
+  (hn₁ : n₁ = n₀+m) :
+  y₁ = y₂ ↔ cochain.comp (inl z hn₀) y₁ hn₁ = cochain.comp (inl z hn₀) y₂ hn₁ ∧
+    cochain.comp (cochain.of_hom (inr z)) y₁ (zero_add m).symm =
+      cochain.comp (cochain.of_hom (inr z)) y₂ (zero_add m).symm :=
+begin
+  split,
+  { intro h, rw h, tauto, },
+  { rintro ⟨hl, hr⟩,
+    suffices : cochain.comp (cochain.of_hom (𝟙 _)) y₁ (zero_add m).symm =
+      cochain.comp (cochain.of_hom (𝟙 _)) y₂ (zero_add m).symm,
+    { ext1,
+      simpa only [cochain.id_comp] using cochain.congr_v this p q hpq, },
+    simp only [id_eq z hn₀ (show n+(-n₀)=1, by linarith), cochain.add_comp,
+      cochain.comp_assoc_of_second_is_zero_cochain,
+      cochain.comp_assoc _ _ _ (show 0=-n₀+n₀, by linarith) (show n₁=n₀+m, by linarith)
+      (show m=-n₀+n₀+m, by linarith), hl, hr], }
+end
 
 #exit
-attribute [reassoc] homological_complex.d_comp_eq_to_hom
+--attribute [reassoc] homological_complex.d_comp_eq_to_hom
 
-lemma cochain_ext (z : cocycle F G n) {K : cochain_complex C ℤ} (m n' n'' : ℤ) (hn' : n'+1=n) (hn'' : n'' = n'+m) (y₁ y₂ : cochain (twist z) K m) :
-  y₁ = y₂ ↔ cochain.comp (inl z hn') y₁ hn'' = cochain.comp (inl z hn') y₂ hn'' ∧
-    cochain.comp (cochain.of_hom (inr z)) y₁ (zero_add m).symm = cochain.comp (cochain.of_hom (inr z)) y₂ (zero_add m).symm :=
-begin
-  unfreezingI { substs hn' hn'', },
-  split,
-  { intro h,
-    subst h,
-    tauto, },
-  { intro h,
-    ext q q' hqq',
-    { simpa only [cochain.comp_eq _ _ (rfl : n'+m = _) (q+1-(n'+1)) q q' (by linarith) (by linarith), inl,
-        cochain.of_hom_eq, homological_complex.id_f, id_comp] using congr_fun₃ h.1 (q+1-(n'+1)) q' (by linarith), },
-    { simpa only [cochain.comp₀', cochain.of_hom_eq] using congr_fun₃ h.2 q q' hqq', }, }
-end
 
 def desc_cochain (z : cocycle F G n) {K : cochain_complex C ℤ} {m n' : ℤ}
   (γ : cochain G K m) (φ : cochain F K n') (hn' : n'+1 = n+m) : cochain (twist z) K m :=

@@ -228,7 +228,6 @@ lemma zero_cochain_comp {n : ℤ} (z₁ : cochain F G 0) (z₂ : cochain G K n)
     z₁.v p p (add_zero p).symm ≫ z₂.v p q hpq :=
 comp_v z₁ z₂ (zero_add n).symm p p q (add_zero p).symm hpq
 
-@[simp]
 lemma zero_cochain_comp' {n : ℤ} (z₁ : cochain F G 0) (z₂ : cochain G K n)
   (p₁ p₂ p₃ : ℤ) (h₁₂ : p₂=p₁+0) (h₂₃ : p₃=p₂+n) :
   (z₁.v p₁ p₂ h₁₂ ≫ z₂.v p₂ p₃ h₂₃ : F.X p₁ ⟶ K.X p₃) =
@@ -295,7 +294,6 @@ lemma comp_zero_cochain (z₁ : cochain F G n) (z₂ : cochain G K 0)
     z₁.v p q hpq ≫ z₂.v q q (add_zero q).symm :=
 comp_v z₁ z₂ (add_zero n).symm p q q hpq (add_zero q).symm
 
-@[simp]
 lemma comp_zero_cochain' (z₁ : cochain F G n) (z₂ : cochain G K 0)
   (p₁ p₂ p₃ : ℤ) (h₁₂ : p₂=p₁+n) (h₂₃ : p₃=p₂+0) :
   (z₁.v p₁ p₂ h₁₂ ≫ z₂.v p₂ p₃ h₂₃ : F.X p₁ ⟶ K.X p₃) =
