@@ -27,13 +27,12 @@ variables {F G K L : cochain_complex C ℤ} (n m : ℤ)
 
 namespace hom_complex
 
-@[simp]
 def ε (n : ℤ) : ℤ := ↑((-1 : units ℤ) ^ n)
 
 @[simp]
 
-lemma ε_add (n₁ n₂ : ℤ) : ε (n₁ + n₂) = ε n₁ • ε n₂ :=
-by { dsimp, rw [← units.coe_mul, ← units.ext_iff, zpow_add], }
+lemma ε_add (n₁ n₂ : ℤ) : ε (n₁ + n₂) = ε n₁ * ε n₂ :=
+by { dsimp [ε], rw [← units.coe_mul, ← units.ext_iff, zpow_add], }
 
 @[simp]
 lemma ε_0 : ε 0 = 1 := rfl
@@ -55,7 +54,7 @@ end
 lemma ε_odd (n : ℤ) (hn : odd n) : ε n = -1 :=
 begin
   cases hn with k hk,
-  rw [hk, ε_add, ε_1, ε_even (2*k) ⟨k, two_mul k⟩, one_zsmul],
+  rw [hk, ε_add, ε_1, ε_even (2*k) ⟨k, two_mul k⟩, one_mul],
 end
 
 structure triplet (n : ℤ) := (p : ℤ) (q : ℤ) (hpq : q=p+n)
@@ -74,6 +73,7 @@ def mk (v : Π (p q : ℤ) (hpq : q=p+n), F.X p ⟶ G.X q) : cochain F G n :=
 
 def v (c : cochain F G n) (p q : ℤ) (hpq : q=p+n) := c (triplet.mk p q hpq)
 
+@[simp]
 lemma mk_v (v : Π (p q : ℤ) (hpq : q=p+n), F.X p ⟶ G.X q) (p q : ℤ) (hpq : q=p+n) :
   (mk v).v p q hpq = v p q hpq := rfl
 
@@ -122,16 +122,44 @@ def of_homs (ψ : Π (p : ℤ), F.X p ⟶ G.X p) : cochain F G 0 :=
 cochain.mk (λ p q hpq, ψ p ≫ eq_to_hom (by rw [hpq, add_zero]))
 
 @[simp]
-lemma of_homs_eq (ψ : Π (p : ℤ), F.X p ⟶ G.X p) (p : ℤ) :
+lemma of_homs_v (ψ : Π (p : ℤ), F.X p ⟶ G.X p) (p : ℤ) :
   (of_homs ψ).v p p (add_zero p).symm = ψ p :=
 by simp only [of_homs, mk_v, eq_to_hom_refl, comp_id]
+
+@[simp]
+lemma of_homs_v_comp_d (ψ : Π (p : ℤ), F.X p ⟶ G.X p) (p q q' : ℤ) (hpq : q=p+0) :
+  (of_homs ψ).v p q hpq ≫ G.d q q' = ψ p ≫ G.d p q' :=
+begin
+  rw add_zero at hpq,
+  subst hpq,
+  rw of_homs_v,
+end
+
+@[simp]
+lemma d_comp_of_homs_v (ψ : Π (p : ℤ), F.X p ⟶ G.X p) (p' p q  : ℤ) (hpq : q=p+0) :
+  F.d p' p ≫ (of_homs ψ).v p q hpq = F.d p' q ≫ ψ q :=
+begin
+  rw add_zero at hpq,
+  subst hpq,
+  rw of_homs_v,
+end
 
 def of_hom (φ : F ⟶ G) : cochain F G 0 :=
 of_homs (λ p, φ.f p)
 
 @[simp]
 lemma of_hom_v (φ : F ⟶ G) (p : ℤ) : (of_hom φ).v p p (add_zero p).symm = φ.f p :=
-by simp only [of_hom, of_homs_eq]
+by simp only [of_hom, of_homs_v]
+
+@[simp]
+lemma of_hom_v_comp_d (φ : F ⟶ G) (p q q' : ℤ) (hpq : q=p+0) :
+  (of_hom φ).v p q hpq ≫ G.d q q' = φ.f p ≫ G.d p q' :=
+by simp only [of_hom, of_homs_v_comp_d]
+
+@[simp]
+lemma d_comp_of_hom_v (φ : F ⟶ G) (p' p q  : ℤ) (hpq : q=p+0) :
+  F.d p' p ≫ (of_hom φ).v p q hpq = F.d p' q ≫ φ.f q :=
+by simp only [of_hom, d_comp_of_homs_v]
 
 @[simp]
 def of_homotopy {φ₁ φ₂ : F ⟶ G} (ho : homotopy φ₁ φ₂) : cochain F G (-1) :=
@@ -201,6 +229,13 @@ lemma zero_cochain_comp {n : ℤ} (z₁ : cochain F G 0) (z₂ : cochain G K n)
 comp_v z₁ z₂ (zero_add n).symm p p q (add_zero p).symm hpq
 
 @[simp]
+lemma zero_cochain_comp' {n : ℤ} (z₁ : cochain F G 0) (z₂ : cochain G K n)
+  (p₁ p₂ p₃ : ℤ) (h₁₂ : p₂=p₁+0) (h₂₃ : p₃=p₂+n) :
+  (z₁.v p₁ p₂ h₁₂ ≫ z₂.v p₂ p₃ h₂₃ : F.X p₁ ⟶ K.X p₃) =
+  z₁.v p₁ p₁ (add_zero p₁).symm ≫ z₂.v p₁ p₃ (show p₃ = p₁+n, by rw [h₂₃, h₁₂, add_zero]) :=
+by { rw add_zero at h₁₂, subst h₁₂, }
+
+@[simp]
 lemma id_comp {n : ℤ} (z₂ : cochain F G n) :
   cochain.comp (cochain.of_hom (𝟙 F)) z₂ (zero_add n).symm = z₂ :=
 begin
@@ -254,11 +289,18 @@ begin
 end
 
 @[simp]
-lemma comp_zero_cochain {n : ℤ} (z₁ : cochain F G n) (z₂ : cochain G K 0)
+lemma comp_zero_cochain (z₁ : cochain F G n) (z₂ : cochain G K 0)
   (p q : ℤ) (hpq : q=p+n) :
   (cochain.comp z₁ z₂ (add_zero n).symm).v p q hpq =
     z₁.v p q hpq ≫ z₂.v q q (add_zero q).symm :=
 comp_v z₁ z₂ (add_zero n).symm p q q hpq (add_zero q).symm
+
+@[simp]
+lemma comp_zero_cochain' (z₁ : cochain F G n) (z₂ : cochain G K 0)
+  (p₁ p₂ p₃ : ℤ) (h₁₂ : p₂=p₁+n) (h₂₃ : p₃=p₂+0) :
+  (z₁.v p₁ p₂ h₁₂ ≫ z₂.v p₂ p₃ h₂₃ : F.X p₁ ⟶ K.X p₃) =
+  z₁.v p₁ p₃ (show p₃=p₁+n, by rw [h₂₃, h₁₂, add_zero]) ≫ z₂.v p₃ p₃ (add_zero p₃).symm :=
+by { rw add_zero at h₂₃, subst h₂₃, }
 
 @[simp]
 lemma comp_id {n : ℤ} (z₁ : cochain F G n) :
@@ -477,7 +519,6 @@ begin
   simp only [of_hom, mk_coe, cochain.of_hom_v, hom_of_f],
 end
 
-@[simp]
 lemma coe_of_hom_hom_of_eq_coe (z : cocycle F G 0) : (of_hom (hom_of z) : cochain F G 0) = z :=
 by rw of_hom_hom_of_eq_self z
 
