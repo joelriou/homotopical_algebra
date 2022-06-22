@@ -249,6 +249,11 @@ begin
       (show m=-n₀+n₀+m, by linarith), hl, hr], }
 end
 
+def desc_cochain (z : cocycle F G n) {m m₁ : ℤ} (y₁ : cochain F K m₁) (y₂ : cochain G K m)
+  (hm₁ : m₁+1=n+m) : cochain (twist z) K m :=
+  cochain.comp (fst z (by linarith)).1 y₁ (eq_add_of_sub_eq rfl : m=(m-m₁)+m₁) +
+  cochain.comp (snd z) y₂ (zero_add m).symm
+
 #exit
 --attribute [reassoc] homological_complex.d_comp_eq_to_hom
 
