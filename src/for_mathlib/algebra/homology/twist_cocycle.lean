@@ -291,6 +291,21 @@ begin
     ← cochain.comp_assoc_of_first_is_zero_cochain, inr_comp_fst, cochain.zero_comp, zero_add],
 end
 
+lemma δ_desc_cochain (z : cocycle F G n) {m m₁ m₂ n₁ : ℤ} (y₁ : cochain F K m₁) (y₂ : cochain G K m)
+  (hm₁ : m₁+1=n+m)  {n₁ n₂ : ℤ} (hn₁ : n+n₁=1) (hm₂ : m₁+1=m₂)
+  (m' : ℤ) (hm' : m+1=m') :
+  δ m m' (desc_cochain z y₁ y₂ hm₁) =
+  cochain.comp (fst z hn₁ : cochain (twist z) F n₁) (δ m₁ m₂ y₁ +
+    ε (m+1) • cochain.comp ↑z y₂ (show m₂ = n+m, by linarith)) (show m' = n₁+m₂, by linarith) +
+  cochain.comp (snd z) (δ m m' y₂) (zero_add m').symm :=
+begin
+  simp only [desc_cochain_eq z y₁ y₂ hm₁ hn₁, δ_add],
+  rw cochain_ext z _ _ (show (n-1)+1=n, by linarith),
+--  rw inl_comp_desc_cochain,
+end
+
+
+
 #exit
 --attribute [reassoc] homological_complex.d_comp_eq_to_hom
 

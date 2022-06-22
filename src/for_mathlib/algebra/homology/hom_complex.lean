@@ -442,6 +442,30 @@ begin
     zero_add, add_left_neg],
 end
 
+def δ_comp {n₁ n₂ n₁₂ : ℤ} (z₁ : cochain F G n₁) (z₂ : cochain G K n₂) (h : n₁₂ = n₁ + n₂)
+  (m₁ m₂ m₁₂ : ℤ) (h₁₂ : n₁₂+1 = m₁₂) (h₁ : n₁+1 = m₁) (h₂ : n₂+1 = m₂) :
+δ n₁₂ m₁₂ (cochain.comp z₁ z₂ h) = cochain.comp z₁ (δ n₂ m₂ z₂) (by linarith) + ε n₂ • cochain.comp (δ n₁ m₁ z₁) z₂ (by linarith) :=
+begin
+  substs h₁₂ h₁ h₂,
+  ext,
+  have eq : ε (n₁₂ + 1) = ε n₂ * ε (n₁+1),
+  { rw ← ε_add, congr' 1, linarith, },
+  simp only [cochain.add_v, cochain.zsmul_v,
+    cochain.comp_v z₁ (δ n₂ (n₂+1) z₂) (show n₁₂+1=n₁+(n₂+1), by linarith) p _ q rfl (by linarith),
+    cochain.comp_v (δ n₁ (n₁+1) z₁) z₂ (show n₁₂+1=_, by linarith) p (p+n₁+1) q (by linarith) (by linarith),
+    cochain.comp_v z₁ z₂ h p (p+n₁) (p+n₁₂) rfl (by linarith),
+    cochain.comp_v z₁ z₂ h (p+1) (p+n₁+1) q (by linarith) (by linarith),
+    δ_v n₁₂ _ rfl (cochain.comp z₁ z₂ h) p q hpq (p+n₁₂) _ (by linarith) rfl,
+    δ_v n₁ (n₁+1) rfl z₁ p (p+n₁+1) (by linarith) (p+n₁) (p+1) (by linarith) rfl,
+    δ_v n₂ (n₂+1) rfl z₂ (p+n₁) q (by linarith) (p+n₁₂) (p+n₁+1) (by linarith) rfl,
+    assoc, comp_add, comp_zsmul, zsmul_add, add_comp, zsmul_comp, smul_smul, eq,
+    ε_add n₂ 1, ε_1, mul_neg, mul_one, neg_zsmul, comp_neg, ← add_assoc],
+  suffices : ∀ (a b c : F.X p ⟶ K.X q), a+b=a+(-c)+c+b,
+  { apply this, },
+  intros a b c,
+  abel,
+end
+
 end hom_complex
 
 variables (F G)
