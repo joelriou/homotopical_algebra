@@ -309,7 +309,7 @@ begin
 end
 
 @[simp]
-lemma cochain_of_hom_comp (f : F ⟶ G) (g : G ⟶ K) :
+lemma of_hom_comp (f : F ⟶ G) (g : G ⟶ K) :
   cochain.comp (cochain.of_hom f) (cochain.of_hom g) (zero_add 0).symm =
   cochain.of_hom (f ≫ g) :=
 begin
@@ -554,8 +554,8 @@ begin
   simp only [of_hom, mk_coe, cochain.of_hom_v, hom_of_f],
 end
 
-lemma coe_of_hom_hom_of_eq_coe (z : cocycle F G 0) : (of_hom (hom_of z) : cochain F G 0) = z :=
-by rw of_hom_hom_of_eq_self z
+lemma cochain_of_hom_hom_of_eq_coe (z : cocycle F G 0) : (cochain.of_hom (hom_of z) : cochain F G 0) = (z : cochain F G 0) :=
+by simpa only [subtype.ext_iff] using of_hom_hom_of_eq_self z
 
 variables (F G)
 
