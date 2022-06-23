@@ -16,12 +16,13 @@ namespace hom_complex
 
 variables {C : Type*} [category C] [preadditive C]
 
-variables {F G K : cochain_complex C ℤ} {n m : ℤ} [∀ p, has_binary_biproduct (F.X (p+1-n)) (G.X p)]
+variables {F G K : cochain_complex C ℤ} {n : ℤ} (z : cocycle F G n) {m : ℤ} [∀ p, has_binary_biproduct (F.X (p+1-n)) (G.X p)]
+include z
 
 namespace twist
 
 @[protected, simp]
-def δ (z : cocycle F G n) (p q : ℤ) :
+def δ (p q : ℤ) :
   biprod (F.X (p+1-n)) (G.X p) ⟶ biprod (F.X (q+1-n)) (G.X q) :=
 begin
   refine biprod.desc (biprod.lift (ε (n+1) • F.d (p+1-n) (q+1-n)) _) (biprod.lift 0 (G.d p q)),
@@ -33,7 +34,7 @@ end
 end twist
 
 @[simps]
-def twist (z : cocycle F G n) : cochain_complex C ℤ :=
+def twist : cochain_complex C ℤ :=
 { X := λ p, biprod (F.X (p+1-n)) (G.X p),
   d := λ p q, twist.δ z p q,
   shape' := λ p q hpq, begin
@@ -80,6 +81,7 @@ def twist (z : cocycle F G n) : cochain_complex C ℤ :=
 
 namespace twist
 
+omit z
 lemma biprod_is_zero_iff {C : Type*} [category C] [preadditive C] (A B : C) [has_binary_biproduct A B] :
   is_zero (A ⊞ B) ↔ is_zero A ∧ is_zero B :=
 begin
@@ -118,12 +120,13 @@ begin
     exact lt_of_le_of_lt (le_max_right _ _) hi, },
 end
 
-def inl (z : cocycle F G n) {n₀ : ℤ} (hn₀ : n₀+1=n) : cochain F (twist z) n₀ :=
+include z
+def inl {n₀ : ℤ} (hn₀ : n₀+1=n) : cochain F (twist z) n₀ :=
 cochain.mk (λ p q hpq, (cochain.of_hom (𝟙 F)).v p (q+1-n) (by linarith) ≫ biprod.inl)
 
-def inr (z : cocycle F G n) : G ⟶ twist z := { f := λ p, biprod.inr, }
+def inr : G ⟶ twist z := { f := λ p, biprod.inr, }
 
-def fst (z : cocycle F G n) {n₁ : ℤ} (hn₁ : n+n₁=1) : cocycle (twist z) F n₁ :=
+def fst {n₁ : ℤ} (hn₁ : n+n₁=1) : cocycle (twist z) F n₁ :=
 cocycle.mk (cochain.mk (λ p q hpq, biprod.fst ≫
   (cochain.of_hom (𝟙 F)).v (p+1-n) q (show q=p+1-n+0, by linarith))) (n₁+1) rfl
 begin
@@ -145,11 +148,11 @@ begin
       linear.comp_smul, biprod.inr_desc_assoc, biprod.lift_fst_assoc, smul_zero, comp_zero], },
 end
 
-def snd (z : cocycle F G n) : cochain (twist z) G 0 :=
+def snd : cochain (twist z) G 0 :=
 cochain.mk (λ p q hpq, biprod.snd ≫ (cochain.of_hom (𝟙 G)).v p q hpq)
 
 @[simp]
-lemma inl_comp_fst (z : cocycle F G n) {n₀ n₁ : ℤ} (hn₀ : n₀+1=n) (hn₁ : n+n₁=1) :
+lemma inl_comp_fst {n₀ n₁ : ℤ} (hn₀ : n₀+1=n) (hn₁ : n+n₁=1) :
   (inl z hn₀).comp ↑(fst z hn₁) (show 0=n₀+n₁, by linarith) = cochain.of_hom (𝟙 F) :=
 begin
   ext,
@@ -158,7 +161,7 @@ begin
 end
 
 @[simp]
-lemma inl_comp_snd (z : cocycle F G n) {n₀ : ℤ} (hn₀ : n₀+1=n) :
+lemma inl_comp_snd {n₀ : ℤ} (hn₀ : n₀+1=n) :
   (inl z hn₀).comp (snd z) (add_zero n₀).symm = 0 :=
 begin
   ext,
@@ -167,7 +170,7 @@ begin
 end
 
 @[simp]
-lemma inr_comp_fst (z : cocycle F G n) {n₁ : ℤ} (hn₁ : n+n₁=1) :
+lemma inr_comp_fst {n₁ : ℤ} (hn₁ : n+n₁=1) :
   (cochain.of_hom (inr z)).comp (fst z hn₁ : cochain (twist z) F n₁) (zero_add n₁).symm = 0 :=
 begin
   ext,
@@ -176,7 +179,7 @@ begin
 end
 
 @[simp]
-lemma inr_comp_snd (z : cocycle F G n) :
+lemma inr_comp_snd :
   (cochain.of_hom (inr z)).comp (snd z) (add_zero 0).symm = cochain.of_hom (𝟙 G) :=
 begin
   ext,
@@ -185,7 +188,7 @@ begin
 end
 
 @[simp]
-lemma δ_inl (z : cocycle F G n) {n₀ : ℤ} (hn₀ : n₀+1=n) :
+lemma δ_inl {n₀ : ℤ} (hn₀ : n₀+1=n) :
   δ n₀ n (inl z hn₀) = cochain.comp z.1 (cochain.of_hom (inr z)) (add_zero n).symm :=
 begin
   ext1,
@@ -204,7 +207,7 @@ begin
 end
 
 @[simp]
-lemma δ_snd (z : cocycle F G n) {n₁ : ℤ} (hn₁ : n+n₁=1) :
+lemma δ_snd {n₁ : ℤ} (hn₁ : n+n₁=1) :
   δ 0 1 (snd z) = -cochain.comp (fst z hn₁).1 (↑z) (show 1 = n₁+n, by rw [← hn₁, add_comm]) :=
 begin
   ext1,
@@ -219,7 +222,7 @@ begin
       biprod.lift_snd, add_right_neg, biprod.inr_fst_assoc, zero_comp], },
 end
 
-lemma id_eq (z : cocycle F G n) {n₀ n₁ : ℤ} (hn₀ : n₀+1=n)  (hn₁ : n+n₁=1) : cochain.of_hom (𝟙 (twist z)) =
+lemma id_eq {n₀ n₁ : ℤ} (hn₀ : n₀+1=n)  (hn₁ : n+n₁=1) : cochain.of_hom (𝟙 (twist z)) =
 cochain.comp ↑(fst z hn₁) (inl z hn₀) (show 0=n₁+n₀, by linarith) +
 cochain.comp (snd z) (cochain.of_hom (inr z)) (zero_add 0).symm :=
 begin
@@ -230,7 +233,7 @@ begin
     comp_id, id_comp, cochain.comp_zero_cochain, biprod.total],
 end
 
-lemma cochain_ext (z : cocycle F G n) (y₁ y₂ : cochain (twist z) K m) {n₀ n₁ : ℤ} (hn₀ : n₀+1=n)
+lemma cochain_ext (y₁ y₂ : cochain (twist z) K m) {n₀ n₁ : ℤ} (hn₀ : n₀+1=n)
   (hn₁ : n₁ = n₀+m) :
   y₁ = y₂ ↔ cochain.comp (inl z hn₀) y₁ hn₁ = cochain.comp (inl z hn₀) y₂ hn₁ ∧
     cochain.comp (cochain.of_hom (inr z)) y₁ (zero_add m).symm =
@@ -249,12 +252,12 @@ begin
       (show m=-n₀+n₀+m, by linarith), hl, hr], }
 end
 
-def desc_cochain (z : cocycle F G n) {m m₁ : ℤ} (y₁ : cochain F K m₁) (y₂ : cochain G K m)
+def desc_cochain {m m₁ : ℤ} (y₁ : cochain F K m₁) (y₂ : cochain G K m)
   (hm₁ : m₁+1=n+m) : cochain (twist z) K m :=
 cochain.comp ↑(fst z (show n+(m-m₁) = 1, by linarith)) y₁ (eq_add_of_sub_eq rfl : m=(m-m₁)+m₁) +
   cochain.comp (snd z) y₂ (zero_add m).symm
 
-lemma desc_cochain_eq (z : cocycle F G n) {m m₁ n₁ : ℤ} (y₁ : cochain F K m₁) (y₂ : cochain G K m)
+lemma desc_cochain_eq {m m₁ n₁ : ℤ} (y₁ : cochain F K m₁) (y₂ : cochain G K m)
   (hm₁ : m₁+1=n+m) (hn₁ : n+n₁=1) : desc_cochain z y₁ y₂ hm₁ =
 cochain.comp ↑(fst z hn₁) y₁ (show m = n₁+m₁, begin
   suffices : m+1=n₁+m₁+1,
@@ -267,7 +270,7 @@ begin
   refl,
 end
 
-lemma inl_comp_desc_cochain (z : cocycle F G n) {m m₁ n₀ : ℤ} (y₁ : cochain F K m₁)
+lemma inl_comp_desc_cochain {m m₁ n₀ : ℤ} (y₁ : cochain F K m₁)
   (y₂ : cochain G K m) (hm₁ : m₁+1=n+m) (hn₀ : n₀+1=n) :
   cochain.comp (inl z hn₀) (desc_cochain z y₁ y₂ hm₁) begin
     suffices : m₁+1 = n₀+m+1,
@@ -282,7 +285,7 @@ begin
     inl_comp_fst, inl_comp_snd, cochain.id_comp, cochain.zero_comp],
 end
 
-lemma inr_comp_desc_cochain (z : cocycle F G n) {m m₁ : ℤ} (y₁ : cochain F K m₁)
+lemma inr_comp_desc_cochain {m m₁ : ℤ} (y₁ : cochain F K m₁)
   (y₂ : cochain G K m) (hm₁ : m₁+1=n+m) :
   cochain.comp (cochain.of_hom (inr z)) (desc_cochain z y₁ y₂ hm₁) (zero_add m).symm = y₂ :=
 begin
@@ -291,7 +294,7 @@ begin
     ← cochain.comp_assoc_of_first_is_zero_cochain, inr_comp_fst, cochain.zero_comp, zero_add],
 end
 
-lemma δ_desc_cochain (z : cocycle F G n) {m m₁ m₂ n₁ : ℤ} (y₁ : cochain F K m₁) (y₂ : cochain G K m)
+lemma δ_desc_cochain {m m₁ m₂ n₁ : ℤ} (y₁ : cochain F K m₁) (y₂ : cochain G K m)
   (hm₁ : m₁+1=n+m) (hn₁ : n+n₁=1) (hm₂ : m₁+1=m₂)
   (m' : ℤ) (hm' : m+1=m') :
   δ m m' (desc_cochain z y₁ y₂ hm₁) =
@@ -323,7 +326,7 @@ begin
 end
 
 @[simps]
-def desc_cocycle (z : cocycle F G n) {m m₁ m' n₂: ℤ} (y₁ : cochain F K m₁) (y₂ : cocycle G K m)
+def desc_cocycle {m m₁ m' n₂ : ℤ} (y₁ : cochain F K m₁) (y₂ : cocycle G K m)
   (hm₁ : m₁+1=n+m) (hm' : m+1=m') (hn₂ : n₂ = n+m)
   (hy : δ m₁ n₂ y₁ = ε m • cochain.comp (z : cochain F G n) (y₂ : cochain G K m) hn₂) :
   cocycle (twist z) K m :=
@@ -334,7 +337,7 @@ begin
     add_right_neg, cochain.comp_zero],
 end
 
-lemma inr_comp_desc_cocycle (z : cocycle F G n) {m m₁ m' n₂ : ℤ} (y₁ : cochain F K m₁) (y₂ : cocycle G K m)
+lemma inr_comp_desc_cocycle {m m₁ m' n₂ : ℤ} (y₁ : cochain F K m₁) (y₂ : cocycle G K m)
   (hm₁ : m₁+1=n+m) (hm' : m+1=m') (hn₂ : n₂ = n+m)
   (hy : δ m₁ n₂ y₁ = ε m • cochain.comp (z : cochain F G n) (y₂ : cochain G K m) hn₂) :
   cochain.comp (cochain.of_hom (inr z)) (desc_cocycle z y₁ y₂ hm₁ hm' hn₂ hy : cochain (twist z) K m)
@@ -342,7 +345,7 @@ lemma inr_comp_desc_cocycle (z : cocycle F G n) {m m₁ m' n₂ : ℤ} (y₁ : c
 by simp only [desc_cocycle, cocycle.mk_coe, inr_comp_desc_cochain]
 
 @[simps]
-def desc_hom_as_cocycle (z : cocycle F G n) {m₁ : ℤ} (y₁ : cochain F K m₁) (y₂ : G ⟶ K)
+def desc_hom_as_cocycle {m₁ : ℤ} (y₁ : cochain F K m₁) (y₂ : G ⟶ K)
   (hm₁ : m₁+1=n)
   (hy : δ m₁ n y₁ = cochain.comp (z : cochain F G n) (cochain.of_hom y₂) (add_zero n).symm) :
   cocycle (twist z) K 0 :=
@@ -352,14 +355,14 @@ begin
 end
 
 @[simps]
-def desc (z : cocycle F G n) {m₁ : ℤ} (y₁ : cochain F K m₁) (y₂ : G ⟶ K)
+def desc {m₁ : ℤ} (y₁ : cochain F K m₁) (y₂ : G ⟶ K)
   (hm₁ : m₁+1=n)
   (hy : δ m₁ n y₁ = cochain.comp (z : cochain F G n) (cochain.of_hom y₂) (add_zero n).symm) :
   twist z ⟶ K :=
 cocycle.hom_of (desc_hom_as_cocycle z y₁ y₂ hm₁ hy)
 
 @[simp]
-lemma inr_comp_desc (z : cocycle F G n) {m₁ : ℤ} (y₁ : cochain F K m₁) (y₂ : G ⟶ K)
+lemma inr_comp_desc {m₁ : ℤ} (y₁ : cochain F K m₁) (y₂ : G ⟶ K)
   (hm₁ : m₁+1=n)
   (hy : δ m₁ n y₁ = cochain.comp (z : cochain F G n) (cochain.of_hom y₂) (add_zero n).symm) :
   inr z ≫ desc z y₁ y₂ hm₁ hy = y₂ :=
@@ -370,6 +373,17 @@ begin
   simp only [cocycle.of_hom, cocycle.mk_coe, ← cochain.of_hom_comp, desc,
     cocycle.cochain_of_hom_hom_of_eq_coe, desc_hom_as_cocycle_coe, inr_comp_desc_cochain],
 end
+
+--def desc_cochain (z : cocycle F G n) {m m₁ : ℤ} (y₁ : cochain F K m₁) (y₂ : cochain G K m)
+--  (hm₁ : m₁+1=n+m) : cochain (twist z) K m :=
+--cochain.comp ↑(fst z (show n+(m-m₁) = 1, by linarith)) y₁ (eq_add_of_sub_eq rfl : m=(m-m₁)+m₁) +
+--  cochain.comp (snd z) y₂ (zero_add m).symm
+
+def lift_cochain {m₁ n₀ : ℤ} (y₁ : cochain K F m₁) (y₂ : cochain K G m)
+  (hn₀ : n₀+1=n) (hm : m=m₁+n₀) : cochain K (twist z) m :=
+cochain.comp y₁ (inl z hn₀) hm + cochain.comp y₂ (cochain.of_hom (inr z)) (add_zero m).symm
+
+--lemma δ_lift_cochain {m₁ n₀ : ℤ}
 
 #exit
 

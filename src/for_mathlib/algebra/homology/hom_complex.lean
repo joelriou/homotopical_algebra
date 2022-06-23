@@ -169,7 +169,7 @@ def comp {n₁ n₂ n₁₂ : ℤ} (z₁ : cochain F G n₁) (z₂ : cochain G K
   cochain F K n₁₂ :=
 cochain.mk (λ p q hpq, z₁.v p (p+n₁) rfl ≫ z₂.v (p+n₁) q (by linarith))
 
-notation a ` ≫[` b `] ` c := cochain.comp a c b
+notation a ` ≫[`:81 b `] ` c:80 := cochain.comp a c b
 
 lemma comp_v {n₁ n₂ n₁₂ : ℤ} (z₁ : cochain F G n₁) (z₂ : cochain G K n₂) (h : n₁₂ = n₁+n₂)
   (p₁ p₂ p₃ : ℤ) (h₁ : p₂=p₁+n₁) (h₂ : p₃=p₂+n₂) :
@@ -554,7 +554,8 @@ begin
   simp only [of_hom, mk_coe, cochain.of_hom_v, hom_of_f],
 end
 
-lemma cochain_of_hom_hom_of_eq_coe (z : cocycle F G 0) : (cochain.of_hom (hom_of z) : cochain F G 0) = (z : cochain F G 0) :=
+lemma cochain_of_hom_hom_of_eq_coe (z : cocycle F G 0) :
+  (cochain.of_hom (hom_of z) : cochain F G 0) = (z : cochain F G 0) :=
 by simpa only [subtype.ext_iff] using of_hom_hom_of_eq_self z
 
 variables (F G)
