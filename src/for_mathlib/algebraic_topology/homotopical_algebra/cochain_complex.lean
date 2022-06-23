@@ -16,7 +16,7 @@ import tactic.linarith
 noncomputable theory
 
 open category_theory category_theory.limits category_theory.category
-open algebraic_topology algebra.homology.hom_complex
+open algebraic_topology cochain_complex.hom_complex
 
 open_locale zero_object
 
@@ -75,19 +75,19 @@ def CM3 : (arrow_classes C).CM3 :=
   end⟩,
   cof := λ X₁ X₂ Y₁ Y₂ f g hfg hg n, begin
     split,
-    { exact arrow_class.is_stable_by_retract.for_monomorphisms _ _ 
+    { exact arrow_class.is_stable_by_retract.for_monomorphisms _ _
       (is_retract.imp_of_functor (eval n).map_arrow _ _ hfg) (hg n).1, },
     { exact projective.of_retract (is_retract.imp_of_functor
       ((eval n).map_arrow ⋙ limits.cokernel_functor C) _ _ hfg) (hg n).2, },
   end,
-  fib := λ X₁ X₂ Y₁ Y₂ f g hfg hg n, arrow_class.is_stable_by_retract.for_epimorphisms _ _ 
+  fib := λ X₁ X₂ Y₁ Y₂ f g hfg hg n, arrow_class.is_stable_by_retract.for_epimorphisms _ _
       (is_retract.imp_of_functor (eval n).map_arrow _ _ hfg) (hg n), }
 
 def CM4 : (arrow_classes C).CM4 := sorry
 
-namespace CM5a
-
 variable [enough_projectives C]
+
+namespace CM5a
 
 def P (L : Cminus C) (q : ℤ) : C :=
 begin
@@ -145,116 +145,91 @@ begin
   { exact eq_to_hom (P_eq L q h) ≫ projective.π (L.1.X q), },
 end
 
+lemma P_π_eq_to_hom (L : Cminus C) (q₁ q₂ : ℤ) (hq : q₁ = q₂) :
+  P_π L q₁ = eq_to_hom (by rw hq) ≫ P_π L q₂ ≫ eq_to_hom (by rw hq) :=
+by { subst hq, simp only [eq_to_hom_refl, comp_id, id_comp], }
+
+@[simps]
 def KP (L : Cminus C) : Cminus C := Cminus.mk
-{ X := λ q, P L q,
+{ X := λ q, P L (q-1),
   d := λ i j, 0,
   shape' := λ i j hij, rfl,
   d_comp_d' := λ i j k hij hjk, comp_zero, }
 begin
   cases L.2 with r hr,
-  use r,
+  use r+1,
   intros i hi,
   dsimp,
-  rw P_eq_zero L i (hr i hi),
-  apply is_zero_zero,
+  rw P_eq_zero L,
+  { apply is_zero_zero, },
+  { apply hr,
+    linarith, },
 end
 
 instance (L : Cminus C) (q : ℤ) : epi (P_π L q) :=
 by { dsimp only [P_π], split_ifs; apply epi_comp, }
 
-def KP' (L : Cminus C) : Cminus C :=
-Cminus.mk (twist (cocycle.of_hom (𝟙 (KP L).1))) (twist.is_bounded_above _ (KP L).2 (KP L).2)
-
 def twistP (L : Cminus C) : Cminus C :=
+⟨twist (cocycle.of_hom (𝟙 (KP L).1)), twist.is_bounded_above _ (KP L).2 (KP L).2⟩
+
+def π (L : Cminus C) : twistP L ⟶ L :=
 begin
-  refine ⟨twist (cocycle.of_hom (𝟙 (KP L).1)), _⟩,
-  apply twist.is_bounded_above,
-  
+  refine twist.desc (cocycle.of_hom (𝟙 (KP L).1)) (cochain.mk _) _ (neg_add_self 1) _ ,
+  { exact (λ p q hpq, P_π L _ ≫ eq_to_hom (by {congr' 1, linarith})), },
+  { exact
+    { f := λ i, P_π L (i-1) ≫ L.1.d (i-1) i,
+      comm' := λ i j hij, begin
+        change i+1=j at hij,
+        dsimp [KP],
+        simp only [assoc, homological_complex.d_comp_d, comp_zero, zero_comp],
+      end, }, },
+  { ext,
+    dsimp [KP],
+    simp only [δ_v (-1) 0 rfl _ p p (add_zero p).symm (p-1) (p+1) rfl rfl,
+      add_zero, zero_comp, cochain.mk_v, eq_to_hom_refl, comp_id,
+      smul_zero, cochain.id_comp, cochain.of_hom_v], },
 end
 
-#exit
-Cminus.mk
-(twist (cochain.of_hom (𝟙 (KP L).1)))
+example : 2+2=4 := rfl
+
+instance (L : Cminus C) (q : ℤ) : epi ((π L).f q) :=
 begin
-  sorry
+  haveI : epi (biprod.inl ≫ (π L).f q),
+  { have eq : biprod.inl ≫ (π L).f q = eq_to_hom (by { dsimp, congr, linarith }) ≫ P_π L q,
+    { dsimp [π, twist.desc_cochain, twist.fst, twist.snd, cochain.mk, cochain.v,
+        cochain.of_hom, cochain.of_homs, cochain.comp],
+      simp only [id_comp, assoc, add_zero, preadditive.comp_add, biprod.inl_fst_assoc, biprod.inl_snd_assoc, zero_comp,
+        P_π_eq_to_hom L (q+(0 - -1)-1) q (by linarith), eq_to_hom_trans, eq_to_hom_refl,
+        eq_to_hom_trans_assoc, comp_id], },
+    rw eq,
+    apply epi_comp, },
+  exact epi_of_epi biprod.inl ((π L).f q),
 end
-
-
-def KPX (L : Cminus C) (q : ℤ) := (P L (q-1)) ⊞ (P L q)
-@[simp]
-def KPd₁ (L : Cminus C) (n m : ℤ) (h : n+1=m) : KPX L n ⟶ KPX L m :=
-biprod.desc 0 (biprod.lift (eq_to_hom (by { congr, linarith, })) 0)
-
-def KPX_bound (L : Cminus C) : ∃ (r : ℤ), ∀ i, r<i → nonempty (is_initial (KPX L i)) :=
-begin
-  cases L.2 with r hr,
-  use r+1,
-  intros i hi,
-  exact nonempty.intro
-  { desc := λ s, 0,
-    fac' := λ s j, by { cases j, cases j, },
-    uniq' := λ s m j, begin
-      dsimp at m,
-      apply is_initial.hom_ext,
-      exact
-      { desc := λ s, 0,
-        fac' := λ s k, by { cases k, cases k, },
-        uniq' := λ s m hm, begin
-          ext1;
-          exact is_initial.hom_ext (P_is_initial L _ (nonempty.intro (hr _ (by linarith)).some)) _ _,
-        end, },
-    end, },
-end
-
-
-#exit
-
-@[simps]
-def KP (L : Cminus C) : Cminus C :=
-⟨{ X := λ q, (P L (q-1)) ⊞ (P L q),
-  d := λ n m, begin
-    by_cases n+1 = m,
-    { exact KPd₁ L n m h, },
-    { exact 0, }
-  end,
-  shape' := λ n m hnm, begin
-    split_ifs,
-    { exfalso, exact hnm h, },
-    { refl, },
-  end,
-  d_comp_d' := λ i j k hij hjk, begin
-    change i+1 = j at hij,
-    change j+1 = k at hjk,
-    substs hij hjk,
-    simp only [eq_self_iff_true, dif_pos],
-    dsimp only [KPd₁],
-    ext1,
-    { simp only [biprod.inl_desc_assoc, zero_comp, comp_zero], },
-    { simp only [biprod.inr_desc_assoc, biprod.lift_desc, comp_zero, zero_comp, add_zero], },
-  end }, KPX_bound L⟩
-
-def KPπ (L : Cminus C) : KP L ⟶ L :=
-{ f := λ q, biprod.desc (P_π L (q-1) ≫ L.1.d (q-1) q) (P_π L q),
-  comm' := λ q q' hqq', begin
-    change q+1=q' at hqq',
-    have h : q = q'-1 := by linarith,
-    subst h,
-    dsimp only [KP],
-    ext,
-    { simp only [KPd₁, biprod.inl_desc_assoc, assoc, homological_complex.d_comp_d, comp_zero, sub_add_cancel, eq_self_iff_true,
-        eq_to_hom_refl, dite_eq_ite, if_true, zero_comp], },
-    { simp only [KPd₁, biprod.inr_desc_assoc, sub_add_cancel, eq_self_iff_true, eq_to_hom_refl, dite_eq_ite, if_true,
-        biprod.lift_desc, id_comp, zero_comp, add_zero], },
-  end, }
 
 instance : preadditive (Cminus C) := sorry
 instance : has_binary_biproducts (Cminus C) := sorry
 
 end CM5a
 
-lemma CM5a : (arrow_classes C).CM5a := λ X Y f,
+lemma CM5a : (arrow_classes C).CM5a := λ X Z f,
 begin
-  sorry,
+  let Y := CM5a.twistP Z,
+  let i : X ⟶ X ⊞ Y := biprod.inl,
+  let p : X ⊞ Y ⟶ Z := biprod.desc f (CM5a.π Z),
+  let j : Y ⟶ X ⊞ Y := biprod.inr,
+  have hip : i ≫ p = f := biprod.inl_desc _ _,
+  refine ⟨X ⊞ Y, i, _, p, _, hip⟩,
+  { sorry, },
+  { intro,
+    dsimp,
+    have hjp : j ≫ p = CM5a.π Z := biprod.inr_desc _ _,
+    have hjp' : j.f n ≫ p.f n = (CM5a.π Z).f n,
+    { rw [← hjp, ← homological_complex.comp_f],
+      refl, },
+    haveI : epi (j.f n ≫ p.f n),
+    { rw hjp',
+      apply_instance, },
+    exact epi_of_epi (j.f n) (p.f n), },
 end
 
 def CM5 : (arrow_classes C).CM5 := ⟨CM5a, sorry⟩
