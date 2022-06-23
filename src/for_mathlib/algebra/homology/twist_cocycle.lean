@@ -434,8 +434,7 @@ def lift {m₁ n₀ : ℤ} (y₁ : cocycle K F m₁) (y₂ : cochain K G 0) (hm 
   K ⟶ twist z :=
 cocycle.hom_of (lift_hom_as_cocycle z y₁ y₂ hm hn₀ hy)
 
-lemma cochain_ext' (y₁ y₂ : cochain K (twist z) m) {n₁ m₁ : ℤ} (hn₁ : n+n₁=1) --{n₀ n₁ : ℤ} (hn₀ : n₀+1=n)
-  (hm₁ : m₁ = m+n₁) :
+lemma cochain_ext' (y₁ y₂ : cochain K (twist z) m) {n₁ m₁ : ℤ} (hn₁ : n+n₁=1) (hm₁ : m₁ = m+n₁) :
   y₁ = y₂ ↔ cochain.comp y₁ (fst z hn₁ : cochain (twist z) F n₁) hm₁
       = cochain.comp y₂ (fst z hn₁ : cochain (twist z) F n₁) hm₁ ∧
   cochain.comp y₁ (snd z) (add_zero m).symm =

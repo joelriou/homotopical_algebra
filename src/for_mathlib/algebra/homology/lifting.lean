@@ -11,9 +11,7 @@ noncomputable theory
 
 open category_theory category_theory.category category_theory.limits category_theory.preadditive
 
-namespace algebra
-
-namespace homology
+namespace cochain_complex
 
 namespace lifting
 
@@ -22,32 +20,37 @@ open hom_complex
 variables {C : Type*} [category C] [abelian C]
 
 variables {A B K X Y : cochain_complex C ℤ} {n : ℤ} {z : cocycle B A 1} {f : A ⟶ X} (g : twist z ⟶ Y) {p : X ⟶ Y} {j : K ⟶ X}
-  (sq : comm_sq f (twist.ι z) p g) (l : Π q, comm_sq.lifts (sq.apply (homological_complex.eval C _ q)))
+  (sq : comm_sq f (twist.inr z) p g) (l : Π q, comm_sq.lifts (sq.apply (homological_complex.eval C _ q)))
   (hpj : ∀ q, short_exact (j.f q) (p.f q))
 
-def φ : cochain B Y 0 := twist.φ g (zero_add 1)
-lemma dφ : δ 0 1 (φ g) = cochain.comp z.1 (cochain.of_hom (twist.γ g)) (add_zero 1).symm := twist.dφ g (zero_add 1)
+@[simp]
+def φ : cochain B Y 0 := cochain.comp (twist.inl z (zero_add 1)) (cochain.of_hom g) (zero_add 0).symm
+
+lemma dφ : δ 0 1 (φ g) = cochain.comp ↑z (cochain.of_hom (twist.inr z ≫ g)) (add_zero 1).symm :=
+by simp only [φ, add_left_eq_self, δ_comp_of_second_is_zero_cochain,
+  cocycle.δ_cochain_of_hom, cochain.comp_zero, twist.δ_inl,
+  cochain.comp_assoc_of_third_is_zero_cochain, cochain.of_hom_comp]
 
 variable {g}
 
-def L : cochain B X 0 := cochain.of_homs (λ q, eq_to_hom (by { congr, linarith, }) ≫ biprod.inl ≫ (l q).l)
+@[simp]
+def L : cochain B X 0 := cochain.comp (twist.inl z (zero_add 1))
+  (cochain.of_homs (λ q, (l q).l)) (zero_add 0).symm
 
 include sq l
 
 @[simps]
 def obs₀ : cocycle B X 1 :=
-begin
-  refine ⟨δ 0 1 (L sq l) - z.1.comp (cochain.of_hom f) (add_zero 1).symm, _⟩,
-  have hz := z.2,
-  rw cocycle.mem_iff 1 2 rfl at ⊢ hz,
-  simp only [δ_sub, δδ, zero_sub, neg_eq_zero, δ_comp_cochain_of_hom, hz, cochain.zero_comp],
-end
+cocycle.mk (δ 0 1 (L sq l) - cochain.comp ↑z (cochain.of_hom f) (add_zero 1).symm) 2 rfl
+(by simp only [δ_sub, δδ, zero_sub, δ_comp_of_second_is_zero_cochain _ _ 2 rfl, neg_zero,
+    cocycle.δ_eq_zero, cocycle.δ_cochain_of_hom, cochain.comp_zero, cochain.zero_comp, add_zero])
+
 
 include hpj
 
-@[simps]
-def obs : cocycle B K 1 :=
-begin
+--@[simps]
+def obs : cocycle B K 1 := sorry
+/-begin
   refine cocycle.lift_to_kernel (obs₀ sq l) _ hpj,
   dsimp only [obs₀],
   rw [cochain.sub_comp, ← δ_comp_cochain_of_hom _ _ _, sub_eq_zero, cochain.comp_assoc₀],
@@ -62,41 +65,50 @@ begin
   dsimp at hl,
   simp only [cochain.comp_eq _ _ (zero_add 0).symm q q q (by linarith) (by linarith),
     L, cochain.of_homs_eq, cochain.of_hom_eq, twist.φ, ← hl, assoc],
+end-/
+
+--@[simp]
+lemma obs_comp :
+  cochain.comp (obs sq l hpj : cochain B K 1) (cochain.of_hom j)
+    (add_zero 1).symm = ↑(obs₀ sq l) :=
+begin
+  sorry
 end
+--by apply cocycle.lift_to_kernel_comp
+
+variables (w : cochain B K 0) (hw : δ 0 1 w = ↑(obs sq l hpj))
 
 @[simp]
-lemma obs_comp : cochain.comp (obs sq l hpj).1 (cochain.of_hom j) (add_zero 1).symm = (obs₀ sq l).1 :=
-by apply cocycle.lift_to_kernel_comp
+def F : cochain B X 0 := L sq l - cochain.comp w (cochain.of_hom j) (add_zero 0).symm
 
-variables (w : cochain B K 0) (hw : δ 0 1 w = (obs sq l hpj).1)
-
-include w hw
-
-@[simp]
-def F : cochain B X 0 := L sq l - w.comp (cochain.of_hom j) (add_zero 0).symm
-
-lemma dF : δ 0 1 (F sq l hpj w hw) = z.1.comp (cochain.of_hom f) (add_zero 1).symm :=
-by simp only [F, δ_sub, δ_comp_cochain_of_hom, hw, obs_comp, obs₀, sub_sub_cancel]
+include hw
+lemma dF :
+  δ 0 1 (F sq l hpj w) =
+    (z : cochain B A 1).comp (cochain.of_hom f) (add_zero 1).symm :=
+by simp only [F, δ_sub, δ_comp_of_second_is_zero_cochain _ _ _ (zero_add 1),
+  cocycle.δ_cochain_of_hom, cochain.comp_zero, zero_add, hw, obs_comp, obs₀,
+  cocycle.mk_coe, sub_sub_cancel]
 
 lemma lift_of_coboundary : comm_sq.lifts sq :=
-{ l := twist.desc z f (zero_add 1) (F sq l hpj w hw) (dF sq l hpj w hw),
-  fac_left := by apply twist.ι_desc,
+{ l := twist.desc z (F sq l hpj w) f (zero_add 1) (dF sq l hpj w hw),
+  fac_left := by apply twist.inr_comp_desc,
   fac_right := begin
-    ext q,
-    { simp only [F, homological_complex.comp_f, twist.desc_f, cochain.sub_apply, cochain.comp₀, cochain.of_hom_eq,
-        biprod.inl_desc_assoc, sub_comp, assoc,
-        cochain.eval' 0 (q+1-1) q (by linarith) q q (by linarith) rfl w,
-        cochain.eval' 0 (q+1-1) q (by linarith) q q (by linarith) rfl (L sq l)],
-      have hl := (l q).fac_right,
-      dsimp at hl,
-      simp only [L, cochain.of_homs_eq, eq_to_hom_refl, id_comp, assoc, eq_to_hom_trans_assoc, hl,
-        sub_eq_self, is_iso.comp_left_eq_zero, (hpj q).exact.w, comp_zero], },
-    { simpa only [homological_complex.comp_f, twist.desc_f, biprod.inr_desc_assoc]
-        using homological_complex.congr_hom sq.w q, },
-  end, }
+    apply cochain.of_hom_injective,
+    simp only [twist.desc, cochain.of_hom_comp,cocycle.cochain_of_hom_hom_of_eq_coe,
+      twist.desc_hom_as_cocycle_coe,
+      twist.cochain_ext z _ _ (zero_add 1) (zero_add 0).symm,
+      ← cochain.comp_assoc_of_third_is_zero_cochain, twist.inl_comp_desc_cochain,
+      twist.inr_comp_desc_cochain],
+    split,
+    { ext i,
+      have hl := (l i).fac_right,
+      simp only [homological_complex.eval_map] at hl,
+      simp only [F, L, hl, cochain.sub_comp, cochain.comp_assoc_of_third_is_zero_cochain,
+        cochain.sub_v, cochain.comp_zero_cochain, cochain.of_homs_v, cochain.of_hom_v,
+        sub_eq_self, (hpj i).exact.w, comp_zero], },
+    { simp only [← cochain.of_hom_comp, sq.w], },
+  end }
 
 end lifting
 
-end homology
-
-end algebra
+end cochain_complex
