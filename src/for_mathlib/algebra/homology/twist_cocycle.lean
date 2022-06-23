@@ -438,7 +438,21 @@ lemma cochain_ext' (y₁ y₂ : cochain K (twist z) m) {n₁ m₁ : ℤ} (hn₁ 
   y₁ = y₂ ↔ cochain.comp y₁ (fst z hn₁ : cochain (twist z) F n₁) hm₁
       = cochain.comp y₂ (fst z hn₁ : cochain (twist z) F n₁) hm₁ ∧
   cochain.comp y₁ (snd z) (add_zero m).symm =
-  cochain.comp y₂ (snd z) (add_zero m).symm  := sorry
+  cochain.comp y₂ (snd z) (add_zero m).symm :=
+begin
+  split,
+  { intro h, rw h, tauto, },
+  { rintro ⟨hl, hr⟩,
+    suffices : cochain.comp y₁ (cochain.of_hom (𝟙 _)) (add_zero m).symm =
+      cochain.comp y₂ (cochain.of_hom (𝟙 _)) (add_zero m).symm,
+    { ext1,
+      simpa only [cochain.comp_id] using cochain.congr_v this p q hpq, },
+    simp only [id_eq z (show n-1+1=n, by linarith) hn₁, cochain.add_comp,
+      cochain.comp_add],
+    simp only [← cochain.comp_assoc_of_second_is_zero_cochain,
+      ← cochain.comp_assoc _ _ _ hm₁ (show 0=n₁+(n-1), by linarith)
+      (show m=m+n₁+(n-1), by linarith), hl, hr], },
+end
 
 end twist
 
