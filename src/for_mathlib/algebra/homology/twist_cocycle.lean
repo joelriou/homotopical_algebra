@@ -357,7 +357,7 @@ begin
   apply (cocycle.equiv_hom G K).to_equiv.injective,
   ext1,
   dsimp [cocycle.equiv_hom],
-  simp only [cocycle.of_hom, cocycle.mk_coe, ← cochain.of_hom_comp, desc,
+  simp only [cocycle.of_hom, cocycle.mk_coe, cochain.of_hom_comp, desc,
     cocycle.cochain_of_hom_hom_of_eq_coe, desc_hom_as_cocycle_coe, inr_comp_desc_cochain],
 end
 
@@ -378,6 +378,25 @@ begin
   subst eq,
   refl,
 end
+
+@[simp]
+lemma lift_cochain_comp_fst {m₁ n₁ : ℤ} (y₁ : cochain K F m₁) (y₂ : cochain K G m) (hm : m+1=m₁+n)
+  (hn₁ : n+n₁=1) : cochain.comp (lift_cochain z y₁ y₂ hm) ↑(fst z hn₁)
+    (show m₁=m+n₁, by { suffices : m₁+n = m+n₁+n,
+    { simpa only [add_left_inj] using this,},
+    rw [← hm, ← hn₁, add_comm n, add_assoc]}) = y₁ :=
+begin
+  simp only [lift_cochain, cochain.add_comp,
+    cochain.comp_assoc _ _ _ (show m=m₁+(n-1), by linarith) (show 0=n-1+n₁, by linarith)
+    (show m₁=_, by linarith), inl_comp_fst, cochain.comp_id, add_zero,
+    cochain.comp_assoc_of_second_is_zero_cochain, inr_comp_fst, cochain.comp_zero],
+end
+
+@[simp]
+lemma lift_cochain_comp_snd {m₁ : ℤ} (y₁ : cochain K F m₁) (y₂ : cochain K G m) (hm : m+1=m₁+n) :
+  cochain.comp (lift_cochain z y₁ y₂ hm) (snd z) (add_zero m).symm = y₂ :=
+by simp only [lift_cochain, cochain.add_comp, cochain.comp_assoc_of_third_is_zero_cochain,
+    inl_comp_snd, cochain.comp_zero, zero_add, inr_comp_snd, cochain.comp_id]
 
 lemma δ_lift_cochain {m₁ n₀ m₂ : ℤ} (y₁ : cochain K F m₁) (y₂ : cochain K G m) (hm : m+1=m₁+n)
   (hn₀ : n₀+1=n) (hm₂ : m₁+1=m₂) (m' : ℤ) (hm' : m+1=m') :
@@ -405,8 +424,8 @@ def lift_cocycle {m₁ n₀ : ℤ} (y₁ : cocycle K F m₁) (y₂ : cochain K G
 @[simps]
 def lift_hom_as_cocycle {m₁ n₀ : ℤ} (y₁ : cocycle K F m₁) (y₂ : cochain K G 0) (hm : m₁+n=1)
   (hn₀ : n₀+1=n)
-  (hy : δ 0 1 y₂ + cochain.comp (y₁ : cochain K F m₁) ↑z hm.symm = 0) :
-  cocycle K (twist z) 0 :=lift_cocycle z y₁ y₂ hm.symm hn₀ 1 (zero_add 1) hy
+  (hy : δ 0 1 y₂ + cochain.comp (y₁ : cochain K F m₁) ↑z hm.symm = 0) : cocycle K (twist z) 0 :=
+lift_cocycle z y₁ y₂ (show 0+1 = m₁+n, by linarith) hn₀ 1 (zero_add 1) hy
 
 @[simps]
 def lift {m₁ n₀ : ℤ} (y₁ : cocycle K F m₁) (y₂ : cochain K G 0) (hm : m₁+n=1)
@@ -414,6 +433,13 @@ def lift {m₁ n₀ : ℤ} (y₁ : cocycle K F m₁) (y₂ : cochain K G 0) (hm 
   (hy : δ 0 1 y₂ + cochain.comp (y₁ : cochain K F m₁) ↑z hm.symm = 0) :
   K ⟶ twist z :=
 cocycle.hom_of (lift_hom_as_cocycle z y₁ y₂ hm hn₀ hy)
+
+lemma cochain_ext' (y₁ y₂ : cochain K (twist z) m) {n₁ m₁ : ℤ} (hn₁ : n+n₁=1) --{n₀ n₁ : ℤ} (hn₀ : n₀+1=n)
+  (hm₁ : m₁ = m+n₁) :
+  y₁ = y₂ ↔ cochain.comp y₁ (fst z hn₁ : cochain (twist z) F n₁) hm₁
+      = cochain.comp y₂ (fst z hn₁ : cochain (twist z) F n₁) hm₁ ∧
+  cochain.comp y₁ (snd z) (add_zero m).symm =
+  cochain.comp y₂ (snd z) (add_zero m).symm  := sorry
 
 end twist
 

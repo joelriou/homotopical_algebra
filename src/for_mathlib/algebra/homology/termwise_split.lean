@@ -12,9 +12,7 @@ noncomputable theory
 
 open category_theory category_theory.category category_theory.limits category_theory.preadditive
 
-namespace algebra
-
-namespace homology
+namespace cochain_complex
 
 variables {C : Type*} [category C] [additive_category C] [has_binary_biproducts C] /- Fix this -/
 
@@ -31,45 +29,41 @@ namespace iso_of_termwise_split
 
 @[simps]
 def z : cocycle F₃ F₁ 1 :=
+cocycle.mk (cochain.mk (λ p q hpq, (spl p).section ≫ F₂.d p q ≫ (spl q).retraction)) 2 rfl
 begin
-  refine ⟨λ q q' hqq', (spl q).section ≫ F₂.d q q' ≫ (spl q').retraction, _⟩,
-  rw cocycle.mem_iff 1 2 (by linarith),
-  ext q q' hqq',
-  subst hqq',
-  have d₂ := congr_arg (λ φ, (spl q).section ≫ φ ≫ (spl (q+2)).retraction) (F₂.d_comp_d q (q+1) (q+2)),
-  rw [← id_comp (F₂.d (q+1) (q+2)), ← (spl (q+1)).split_add] at d₂,
-  simpa only [δ_eq 1 2 (by linarith) q (q+2) rfl (q+1) (q+1) (by linarith) (by linarith),
-    comp_zero, zero_comp, assoc, add_comp,comp_add, f₁₂.comm_assoc (q+1) (q+2), splitting.ι_retraction,
-    comp_id, ← f₂₃.comm_assoc q (q+1), splitting.section_π_assoc,
-    hε', hε₁, neg_neg, one_smul, cochain.zero_apply] using d₂,
+  ext,
+  subst hpq,
+  have d₂ := congr_arg (λ φ, (spl p).section ≫ φ ≫ (spl (p+2)).retraction) (F₂.d_comp_d p (p+1) (p+2)),
+  rw [← id_comp (F₂.d (p+1) (p+2)), ← (spl (p+1)).split_add] at d₂,
+  simpa only [δ_v 1 2 rfl _ p (p+2) rfl (p+1) (p+1) (by linarith) rfl,
+    cochain.mk_v, assoc, ε_succ, ε_1, neg_neg, one_zsmul, cochain.zero_v, comp_zero, zero_comp,
+    comp_add, add_comp, ← f₂₃.comm_assoc p (p+1), splitting.section_π_assoc,
+    f₁₂.comm_assoc (p+1) (p+2), splitting.ι_retraction, comp_id] using d₂,
 end
 
 @[simps]
 def α : twist (z spl) ⟶ F₂ :=
-twist.desc (z spl) f₁₂ (zero_add 1) (cochain.of_homs (λ q, (spl q).section))
+twist.desc (z spl) (cochain.of_homs (λ q, (spl q).section)) f₁₂ (zero_add 1)
 begin
-  ext q q' hqq',
-  subst hqq',
-  simp only [δ_eq 0 1 (zero_add 1).symm q (q+1) rfl q (q+1) (by linarith) rfl, zero_add, hε₁,
-    cochain.comp_eq _ _ (add_zero 1).symm q (q+1) (q+1) rfl (by linarith),
-    cochain.of_hom_eq, cochain.of_homs_eq, z, assoc],
-  have h := congr_arg (λ φ, (spl q).section ≫ F₂.d q (q+1) ≫ φ) ((spl (q+1)).split_add),
+  ext,
+  have h := congr_arg (λ φ, (spl p).section ≫ F₂.d p q ≫ φ) ((spl q).split_add),
   simp only [comp_id, splitting.section_π_assoc, comp_add, ← f₂₃.comm_assoc] at h,
-  rw ← h,
-  simp only [neg_smul, one_zsmul, add_neg_cancel_right],
+  simp only [δ_v 0 1 rfl _ p q hpq p q (by linarith) hpq,
+    zero_add, cochain.of_homs_v, ε_1, neg_smul, one_zsmul, z_coe,
+    cochain.comp_zero_cochain, cochain.mk_v, cochain.of_hom_v, assoc,
+    ← h, add_neg_cancel_right],
 end
 
-@[simps]
 def β : F₂ ⟶ twist (z spl) :=
-twist.lift (z spl) (cocycle.of_hom f₂₃) (cochain.of_homs (λ q, (spl q).retraction)) (zero_add 1)
+twist.lift (z spl) (cocycle.of_hom f₂₃) (cochain.of_homs (λ q, (spl q).retraction)) (zero_add 1) (zero_add 1)
 begin
-  ext q q' hqq',
-  subst hqq',
-  simp only [δ_eq 0 1 (zero_add 1).symm q (q+1) rfl q (q+1) (by linarith) rfl, zero_add, hε₁, cochain.neg_apply,
-    cochain.comp_eq (cocycle.of_hom f₂₃).1 (z spl).1 (zero_add 1).symm q q (q+1) (by linarith) rfl],
-  simp only [cochain.of_hom_eq, cocycle.of_hom, cochain.of_homs_eq, z, cocycle.mk],
-  have h := congr_arg (λ φ, φ ≫ F₂.d q (q+1) ≫ (spl (q+1)).retraction) ((spl q).split_add),
-  simp only [add_comp, assoc, f₁₂.comm_assoc q (q+1), splitting.ι_retraction, id_comp, comp_id] at h,
+  ext,
+  have h := congr_arg (λ φ, φ ≫ F₂.d p q ≫ (spl q).retraction) ((spl p).split_add),
+  simp only [assoc, id_comp, comp_id, add_comp, f₁₂.comm_assoc, splitting.ι_retraction] at h,
+  simp only [cochain.add_v, δ_v 0 1 rfl _ p q hpq p q (by linarith) hpq,
+    cochain.of_homs_v, zero_add, ε_1, neg_zsmul, one_zsmul,
+    z_coe, cochain.zero_cochain_comp, cochain.mk_v, cochain.zero_v,
+    cocycle.of_hom_coe, cochain.of_hom_v],
   nth_rewrite 0 h.symm,
   abel,
 end
@@ -79,36 +73,33 @@ end iso_of_termwise_split
 def iso_of_termwise_split : twist (iso_of_termwise_split.z spl) ≅ F₂ :=
 { hom := iso_of_termwise_split.α spl,
   inv := iso_of_termwise_split.β spl,
-  hom_inv_id' := begin
-    sorry,
- /-   ext q; dsimp,
-    { simp only [iso_of_termwise_split.β_f, biprod.inl_desc_assoc, assoc, biprod.lift_fst, comp_id, biprod.inl_fst,
-        cochain.comp_eq' 0 0 (q+1-1) q (q+1-1) (q+1-1) (by linarith) (by linarith) (by linarith),
-        cochain.of_homs_eq, cochain.of_hom_eq, splitting.section_π], },
-    { simp only [iso_of_termwise_split.β_f, biprod.inl_desc_assoc, assoc, biprod.lift_snd, comp_id, biprod.inl_snd,
-        cochain.eval' 0 (q+1-1) q (by linarith) q q (by linarith) rfl (cochain.of_homs (λ q, (spl q).section)),
-        cochain.of_homs_eq, eq_to_hom_refl, id_comp, splitting.section_retraction, comp_zero], },
-    { simp only [iso_of_termwise_split.β_f, biprod.inr_desc_assoc, comp_id],
-      ext,
-      { simp only [assoc, biprod.lift_fst, biprod.inr_fst,
-          cochain.eval' 0 q (q+1-1) (by linarith) q q rfl (by linarith) (cochain.of_hom f₂₃),
-          cochain.of_hom_eq, eq_to_hom_refl, id_comp, (spl q).comp_eq_zero_assoc, zero_comp], },
-      { simp only [assoc, biprod.lift_snd, splitting.ι_retraction, biprod.inr_snd], }, },-/
+  hom_inv_id' := cochain.of_hom_injective begin
+    simp [iso_of_termwise_split.α, iso_of_termwise_split.β, desc, lift,
+      cochain_ext _ _ _ (zero_add 1) (zero_add 0).symm,
+      ← cochain.comp_assoc_of_second_is_zero_cochain, inl_comp_desc_cochain,
+      inr_comp_desc_cochain],
+    simp only [cochain_ext' (iso_of_termwise_split.z spl) _ _ (add_zero 1) (zero_add 0).symm,
+      cochain.comp_assoc_of_second_is_zero_cochain, lift_cochain_comp_fst,
+      lift_cochain_comp_snd, inl_comp_fst, inl_comp_snd, inr_comp_fst, inr_comp_snd],
+    simp only [cochain.of_hom, cochain.of_homs_comp, splitting.section_π,
+      splitting.ι_retraction, splitting.section_retraction, cochain.of_homs_zero,
+      λ p, (spl p).comp_eq_zero],
+    tauto,
   end,
   inv_hom_id' := begin
-    sorry,
-   -- dsimp only [iso_of_termwise_split.α, iso_of_termwise_split.β],
-/-    ext q,
-    simp only [homological_complex.comp_f, iso_of_termwise_split.β_f, iso_of_termwise_split.α_f,
-      biprod.lift_desc, homological_complex.id_f, cochain.comp_eq' 0 0 q (q+1-1) q q (by linarith) (by linarith) (by linarith),
-      cochain.of_hom_eq, cochain.of_homs_eq],
-    rw [add_comm, (spl q).split_add],-/
+    apply cochain.of_hom_injective,
+    simp only [iso_of_termwise_split.α, iso_of_termwise_split.β, desc, lift,
+      lift_cochain_eq _ _ _ rfl (zero_add 1), inl_comp_desc_cochain, inr_comp_desc_cochain,
+      cochain.of_hom_comp, cocycle.cochain_of_hom_hom_of_eq_coe, lift_hom_as_cocycle_coe,
+      cocycle.of_hom_coe, desc_hom_as_cocycle_coe, cochain.add_comp,
+      cochain.comp_assoc_of_third_is_zero_cochain],
+    ext,
+    simp only [cochain.add_v, cochain.comp_zero_cochain, cochain.of_hom_v,
+      cochain.of_homs_v, homological_complex.id_f, ← (spl p).split_add, add_comm],
   end, }
 
 end twist
 
 end hom_complex
 
-end homology
-
-end algebra
+end cochain_complex

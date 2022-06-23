@@ -127,6 +127,10 @@ lemma of_homs_v (ψ : Π (p : ℤ), F.X p ⟶ G.X p) (p : ℤ) :
 by simp only [of_homs, mk_v, eq_to_hom_refl, comp_id]
 
 @[simp]
+lemma of_homs_zero : of_homs (λ p, (0 : F.X p ⟶ G.X p)) = 0 :=
+by { ext, simp only [of_homs_v, zero_v], }
+
+@[simp]
 lemma of_homs_v_comp_d (ψ : Π (p : ℤ), F.X p ⟶ G.X p) (p q q' : ℤ) (hpq : q=p+0) :
   (of_homs ψ).v p q hpq ≫ G.d q q' = ψ p ≫ G.d p q' :=
 begin
@@ -146,6 +150,10 @@ end
 
 def of_hom (φ : F ⟶ G) : cochain F G 0 :=
 of_homs (λ p, φ.f p)
+
+@[simp]
+lemma of_hom_zero : of_hom (0 : F ⟶ G) = 0 :=
+by simp only [of_hom, homological_complex.zero_f_apply, of_homs_zero]
 
 @[simp]
 lemma of_hom_v (φ : F ⟶ G) (p : ℤ) : (of_hom φ).v p p (add_zero p).symm = φ.f p :=
@@ -309,13 +317,17 @@ begin
 end
 
 @[simp]
-lemma of_hom_comp (f : F ⟶ G) (g : G ⟶ K) :
-  cochain.comp (cochain.of_hom f) (cochain.of_hom g) (zero_add 0).symm =
-  cochain.of_hom (f ≫ g) :=
+lemma of_homs_comp (φ : Π (p : ℤ), F.X p ⟶ G.X p) (ψ : Π (p : ℤ), G.X p ⟶ K.X p) :
+  cochain.comp (of_homs φ) (of_homs ψ) (zero_add 0).symm = of_homs (λ p, φ p ≫ ψ p) :=
 begin
   ext,
-  simp only [comp_zero_cochain, of_hom_v, homological_complex.comp_f],
+  simp only [comp_zero_cochain, of_homs_v],
 end
+
+@[simp]
+lemma of_hom_comp (f : F ⟶ G) (g : G ⟶ K) :
+  of_hom (f ≫ g) = cochain.comp (of_hom f) (of_hom g) (zero_add 0).symm :=
+by simpa only [of_hom, of_homs_comp]
 
 lemma comp_assoc {n₁ n₂ n₃ n₁₂ n₂₃ n₁₂₃ : ℤ}
   (z₁ : cochain F G n₁) (z₂ : cochain G K n₂) (z₃ : cochain K L n₃)
@@ -500,7 +512,7 @@ namespace cocycle
 
 variables {F G}
 
-def mem_iff (hnm : n+1=m) (z : cochain F G n) :
+lemma mem_iff (hnm : n+1=m) (z : cochain F G n) :
   z ∈ cocycle F G n ↔ δ n m z = 0 :=
 by { subst hnm, refl, }
 
@@ -519,6 +531,7 @@ begin
   { apply δ_shape n m h, }
 end
 
+@[simps]
 def of_hom (φ : F ⟶ G) : cocycle F G 0 := mk (cochain.of_hom φ) 1 (zero_add 1)
 begin
   ext,
@@ -554,6 +567,7 @@ begin
   simp only [of_hom, mk_coe, cochain.of_hom_v, hom_of_f],
 end
 
+@[simp]
 lemma cochain_of_hom_hom_of_eq_coe (z : cocycle F G 0) :
   (cochain.of_hom (hom_of z) : cochain F G 0) = (z : cochain F G 0) :=
 by simpa only [subtype.ext_iff] using of_hom_hom_of_eq_self z
@@ -573,6 +587,20 @@ def equiv_hom : (F ⟶ G) ≃+ cocycle F G 0 :=
   end, }
 
 end cocycle
+
+namespace cochain
+
+variables {F G}
+
+lemma of_hom_injective {f₁ f₂ : F ⟶ G} (h : of_hom f₁ = of_hom f₂) : f₁ = f₂ :=
+begin
+  rw [← cocycle.hom_of_of_hom_eq_self f₁, ← cocycle.hom_of_of_hom_eq_self f₂],
+  congr' 1,
+  ext1,
+  simpa only [cocycle.of_hom_coe] using h,
+end
+
+end cochain
 
 variables {F G}
 def equiv_homotopy (φ₁ φ₂ : F ⟶ G) :

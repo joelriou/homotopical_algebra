@@ -17,7 +17,7 @@ namespace homology
 
 namespace lifting
 
-open hom_complex 
+open hom_complex
 
 variables {C : Type*} [category C] [abelian C]
 
