@@ -14,7 +14,7 @@ namespace cochain_complex
 
 namespace projective_structure
 
-def CM2 : (arrow_classes C).CM2 :=
+def CM2 : (arrow_classes : category_with_fib_cof_weq (cochain_complex C ℤ)).CM2 :=
 { of_comp := λ X Y Z f g hf hg, begin
     dsimp at hf hg ⊢,
     rw quasi_isomorphisms.mem_iff at hf hg ⊢,
@@ -45,7 +45,7 @@ namespace bounded_above_cochain_complex
 
 namespace projective_model_structure
 
-def CM2 : (arrow_classes C).CM2 :=
+def CM2 : (arrow_classes : category_with_fib_cof_weq (bounded_above_cochain_complex C)).CM2 :=
 category_with_fib_cof_weq.CM2.inverse_image (cochain_complex.projective_structure.CM2) bounded_above_cochain_complex.ι
 
 end projective_model_structure

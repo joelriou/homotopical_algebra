@@ -361,6 +361,8 @@ begin
     cocycle.cochain_of_hom_hom_of_eq_coe, desc_hom_as_cocycle_coe, inr_comp_desc_cochain],
 end
 
+
+
 def lift_cochain {m₁ : ℤ} (y₁ : cochain K F m₁) (y₂ : cochain K G m)
   (hm : m+1=m₁+n) : cochain K (twist z) m :=
 cochain.comp y₁ (inl z (show (n-1)+1=n, by linarith)) (show m=m₁+(n-1), by linarith) +
