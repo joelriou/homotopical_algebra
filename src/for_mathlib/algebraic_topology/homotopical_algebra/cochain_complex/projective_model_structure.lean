@@ -18,7 +18,7 @@ namespace bounded_above_cochain_complex
 
 @[simps]
 def projective_model_structure : model_category (bounded_above_cochain_complex C) :=
-{ to_category_with_fib_cof_weq := projective_model_structure.arrow_classes C,
+{ to_category_with_fib_cof_weq := projective_model_structure.arrow_classes,
   CM1axiom := projective_model_structure.CM1,
   CM2axiom := projective_model_structure.CM2,
   CM3axiom := projective_model_structure.CM3,
