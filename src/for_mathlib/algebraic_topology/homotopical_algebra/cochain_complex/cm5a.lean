@@ -9,6 +9,7 @@ import algebra.homology.homological_complex
 import category_theory.abelian.basic
 import for_mathlib.algebra.homology.twist_cocycle
 import for_mathlib.algebraic_topology.homotopical_algebra.cochain_complex.basic
+import for_mathlib.algebra.homology.homological_complex_biprod
 --import category_theory.limits.shapes.zero_objects
 
 noncomputable theory
@@ -32,15 +33,16 @@ end limits
 
 namespace projective
 
-variables {C : Type*} [category C] [enough_projectives C] [has_initial C]
+variables {C : Type*} [category C] [enough_projectives C]
+  [has_zero_object C] [has_zero_morphisms C]
 
 def over' (X : C) : C :=
 begin
   by_cases is_zero X,
-  { exact ⊥_ C, },
+  { exact 0, },
   { exact (enough_projectives.presentation X).some.P, },
 end
-lemma over'_eq_bot (X : C) (hX : is_zero X) : over' X = ⊥_ C :=
+lemma over'_eq_zero (X : C) (hX : is_zero X) : over' X = 0 :=
 begin
   dsimp [over'],
   split_ifs,
@@ -57,14 +59,21 @@ end
 def π' (X : C) : over' X ⟶ X :=
 begin
   by_cases is_zero X,
-  { let e : ⊥_ C ≅ X := limits.is_initial.unique_up_to_iso limits.initial_is_initial
-      h.is_initial,
-    refine eq_to_hom (over'_eq_bot X h) ≫ e.hom, },
+  { let e : 0 ≅ X := limits.is_zero.unique_up_to_iso (is_zero_zero C) h,
+    refine eq_to_hom (over'_eq_zero X h) ≫ e.hom, },
   { exact eq_to_hom (over'_eq X h) ≫ projective.π X, },
 end
 
 instance (X : C) : epi (π' X) :=
 by { dsimp only [π'], split_ifs; apply epi_comp, }
+
+instance (X : C) : projective (over' X) :=
+begin
+  dsimp [over'],
+  split_ifs,
+  { apply projective.zero_projective, },
+  { exact projective.projective_over X,},
+end
 
 end projective
 
@@ -87,9 +96,16 @@ def P (L : cochain_complex C ℤ) : cochain_complex C ℤ :=
   shape' := λ i j hij, rfl,
   d_comp_d' := λ i j k hij hjk, comp_zero, }
 
+instance (L : cochain_complex C ℤ) (n : ℤ) : projective ((P L).X n) :=
+by { dsimp [P], apply_instance, }
+
 @[simps]
 def Q (L : cochain_complex C ℤ) : cochain_complex C ℤ :=
 twist (cocycle.of_hom (𝟙 (P L)))
+
+instance Q_is_degreewise_projective (L : cochain_complex C ℤ) (n : ℤ) :
+  projective ((Q L).X n) :=
+by { dsimp only [Q, twist], apply_instance, }
 
 @[simps]
 def π (L : cochain_complex C ℤ) : Q L ⟶ L :=
@@ -122,7 +138,53 @@ begin
   exact @epi_of_epi _ _ _ _ _ _ _ h,
 end
 
-/- TODO : Q is homotopic to zero -/
+@[simps]
+def id_Q_homotopy_to_zero (L : cochain_complex C ℤ) :
+  homotopy (𝟙 (Q L)) 0 :=
+begin
+  equiv_rw hom_complex.equiv_homotopy _ _,
+  refine ⟨cochain.comp (twist.snd _ ) (twist.inl _ (by linarith)) (zero_add (-1)).symm, _⟩,
+  dsimp only [Q],
+  simpa only [add_zero, add_left_neg, eq_self_iff_true, δ_comp_of_first_is_zero_cochain,
+    twist.δ_inl, cocycle.of_hom_coe, cochain.id_comp, cochain.of_hom_zero,
+    twist.δ_snd _ (zero_add 1), ε_odd _ odd_neg_one, zsmul_neg, cochain.neg_comp, neg_zsmul,
+    one_zsmul, neg_neg, twist.id_eq _ (show -(1 : ℤ)+1=0, by linarith) (zero_add 1),
+    cochain.comp_id] using add_comm _ _,
+end
+
+variables {K L : cochain_complex C ℤ} (f : K ⟶ L)
+
+include f
+@[simps, nolint unused_arguments]
+def obj := homological_complex.biprod K (Q L)
+@[simp]
+def i : K ⟶ obj f := homological_complex.biprod.lift (𝟙 K) 0
+@[simp]
+def p : obj f ⟶ L := homological_complex.biprod.desc f (π L)
+
+lemma fac : i f ≫ p f = f :=
+by simp only [i, p, homological_complex.biprod.lift_desc, id_comp, zero_comp, add_zero]
+
+lemma p_is_fib :
+  arrow.mk (p f) ∈ (projective_structure.arrow_classes.fib :
+    arrow_class (cochain_complex C ℤ)) :=
+begin
+  intro n,
+  have h : biprod.inr ≫ biprod.desc (f.f n) ((π L).f n) = (π L).f n := biprod.inr_desc _ _,
+  haveI : epi ((π L).f n) := π_is_degreewise_epi L n,
+  exact epi_of_epi_fac h,
+end
+
+lemma i_is_cof :
+  arrow.mk (i f) ∈ (projective_structure.arrow_classes.cof :
+    arrow_class (cochain_complex C ℤ)) :=
+begin
+  intro n,
+  haveI : is_iso ((𝟙 K : _ ⟶ _ ).f n),
+  { simp only [homological_complex.id_f],
+    apply_instance, },
+  apply preadditive.mono_with_projective_coker.of_biprod_lift_of_is_iso_to_fst,
+end
 
 end CM5a
 

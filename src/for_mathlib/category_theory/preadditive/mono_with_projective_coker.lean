@@ -107,6 +107,26 @@ begin
     exact (short_exact.of_mono φ).is_right_split_of_projective.split, }
 end
 
+lemma of_biprod_lift_of_is_iso_to_fst [preadditive C] {X Y Z : C} (f : X ⟶ Y) [is_iso f] (g : X ⟶ Z)
+  [hZ : projective Z] [has_binary_biproduct Y Z] :
+    arrow.mk (biprod.lift f g) ∈ mono_with_projective_coker C :=
+begin
+  refine ⟨Z, hZ, biprod.desc (-inv f ≫ g) (𝟙 Z),
+    ⟨⟨biprod.desc (inv f) 0, biprod.inr, _, _, _, _, _⟩⟩⟩,
+  all_goals { dsimp, },
+  { simp only [biprod.lift_desc, is_iso.hom_inv_id, comp_zero, add_zero], },
+  { simp only [biprod.inr_desc], },
+  { simp only [biprod.lift_desc, comp_neg, is_iso.hom_inv_id_assoc, comp_id, add_left_neg], },
+  { simp only [biprod.inr_desc], },
+  { ext,
+    { simp only [biprod.inl_desc_assoc, assoc, add_comp, biprod.lift_fst, is_iso.inv_hom_id, biprod.inr_fst, comp_zero, add_zero,
+  comp_id, biprod.inl_fst], },
+    { simp only [comp_add, biprod.inl_desc_assoc, assoc, add_comp, biprod.lift_snd, biprod.inr_snd, comp_id, add_right_neg,
+  biprod.inl_snd], },
+    { simp only [comp_add, biprod.inr_desc_assoc, zero_comp, id_comp, zero_add, comp_id], },
+    { simp only [comp_add, biprod.inr_desc_assoc, zero_comp, id_comp, zero_add, comp_id], }, },
+end
+
 lemma is_stable_by_composition [preadditive C] [has_binary_biproducts C]:
   (mono_with_projective_coker C).is_stable_by_composition :=
 begin
