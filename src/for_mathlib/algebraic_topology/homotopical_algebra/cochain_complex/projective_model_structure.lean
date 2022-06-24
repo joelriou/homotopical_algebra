@@ -4,9 +4,10 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Joël Riou
 -/
 
-
 import for_mathlib.algebraic_topology.homotopical_algebra.cochain_complex.cm2
 import for_mathlib.algebraic_topology.homotopical_algebra.cochain_complex.cm3
+
+noncomputable theory
 
 open category_theory category_theory.preadditive algebraic_topology
 
@@ -22,8 +23,5 @@ def projective_model_structure : model_category (bounded_above_cochain_complex C
   CM3axiom := projective_model_structure.CM3,
   CM4axiom := sorry,
   CM5axiom := sorry, }
-
-instance : model_category (bounded_above_cochain_complex C) := projective_model_structure
-
 
 end bounded_above_cochain_complex

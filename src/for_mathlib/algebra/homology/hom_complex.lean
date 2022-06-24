@@ -656,6 +656,35 @@ def equiv_homotopy (φ₁ φ₂ : F ⟶ G) :
     simpa only [dif_pos (show q+1=p, by linarith)],
   end, }
 
+namespace cochain
+
+variable {n}
+
+structure is_termwise_kernel (i : F ⟶ G) (f : G ⟶ K) :=
+(zero : ∀ n, i.f n ≫ f.f n = 0)
+(is_limit : ∀ n, is_limit (kernel_fork.of_ι (i.f n) (zero n)))
+
+def lift_to_kernel' (z : cochain L G n) {i : F ⟶ G} {f : G ⟶ K} (hip : is_termwise_kernel i f)
+  (hz : cochain.comp z (of_hom f) (add_zero n).symm = 0) (p q : ℤ) (hpq : q=p+n):=
+kernel_fork.is_limit.lift' (hip.is_limit q) (z.v p q hpq)
+(by simpa only [comp_zero_cochain, of_hom_v] using congr_v hz p q hpq)
+
+def lift_to_kernel (z : cochain L G n) {i : F ⟶ G} {f : G ⟶ K} (hip : is_termwise_kernel i f)
+  (hz : cochain.comp z (of_hom f) (add_zero n).symm = 0) : cochain L F n :=
+cochain.mk (λ p q hpq, (lift_to_kernel' z hip hz p q hpq).1)
+
+@[simp]
+lemma lift_to_kernel_comp (z : cochain L G n) {i : F ⟶ G} {f : G ⟶ K} (hip : is_termwise_kernel i f)
+  (hz : cochain.comp z (of_hom f) (add_zero n).symm = 0) :
+  cochain.comp (z.lift_to_kernel hip hz) (cochain.of_hom i) (add_zero n).symm = z :=
+begin
+  ext,
+  simpa only [comp_v _ _ (add_zero n).symm p q q hpq (add_zero q).symm,
+    of_hom_v] using (lift_to_kernel' z hip hz p q hpq).2,
+end
+
+end cochain
+
 end hom_complex
 
 end cochain_complex
