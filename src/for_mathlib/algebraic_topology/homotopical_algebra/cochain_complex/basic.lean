@@ -69,7 +69,7 @@ def ι [preadditive C] :
 variable (C)
 
 @[simps]
-def projective_structure.arrow_classes [abelian C] :
+def projective_model_structure.arrow_classes [abelian C] :
   category_with_fib_cof_weq (bounded_above_cochain_complex C) :=
 category_with_fib_cof_weq.inverse_image (cochain_complex.projective_structure.arrow_classes C)
   bounded_above_cochain_complex.ι

@@ -43,11 +43,11 @@ end cochain_complex
 
 namespace bounded_above_cochain_complex
 
-namespace projective_structure
+namespace projective_model_structure
 
 def CM2 : (arrow_classes C).CM2 :=
 category_with_fib_cof_weq.CM2.inverse_image (cochain_complex.projective_structure.CM2) bounded_above_cochain_complex.ι
 
-end projective_structure
+end projective_model_structure
 
 end bounded_above_cochain_complex
