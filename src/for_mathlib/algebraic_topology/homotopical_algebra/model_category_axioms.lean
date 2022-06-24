@@ -67,6 +67,12 @@ arrow_class.is_stable_by_retract.of_inter h.cof h.weq
 lemma triv_fib (h : data.CM3) : data.triv_fib.is_stable_by_retract :=
 arrow_class.is_stable_by_retract.of_inter h.fib h.weq
 
+lemma inverse_image {D : Type*} [category D] (h : data.CM3) (F : D ⥤ C) :
+  (category_with_fib_cof_weq.inverse_image data F).CM3 :=
+{ weq := arrow_class.is_stable_by_retract.for_inverse_image h.weq F,
+  fib := arrow_class.is_stable_by_retract.for_inverse_image h.fib F,
+  cof := arrow_class.is_stable_by_retract.for_inverse_image h.cof F, }
+
 end CM3
 
 lemma CM3a_iff_op : data.CM3a ↔ data.op.CM3a := arrow_class.is_stable_by_retract.iff_op _

@@ -105,6 +105,13 @@ end is_stable_by_composition
 def inverse_image (G : D ⥤ C) : arrow_class D :=
 λ w, G.map_arrow.obj w ∈ F
 
+namespace inverse_image
+
+lemma mem_iff (G : D ⥤ C) {X Y : D} (f : X ⟶ Y) :
+  arrow.mk f ∈ F.inverse_image G ↔ arrow.mk (G.map f) ∈ F := by refl
+
+end inverse_image
+
 def isomorphisms : arrow_class C := λ f, is_iso f.hom
 def monomorphisms : arrow_class C := λ f, mono f.hom
 def epimorphisms : arrow_class C := λ f, epi f.hom

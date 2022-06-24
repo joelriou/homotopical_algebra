@@ -73,7 +73,7 @@ end
 
 end is_retract
 
-def is_retract_hom {X₁ X₂ Y₁ Y₂ : C} (x : X₁ ⟶ X₂) (y : Y₁ ⟶ Y₂) := is_retract (arrow.mk x) (arrow.mk y) 
+def is_retract_hom {X₁ X₂ Y₁ Y₂ : C} (x : X₁ ⟶ X₂) (y : Y₁ ⟶ Y₂) := is_retract (arrow.mk x) (arrow.mk y)
 
 namespace is_retract_hom
 
@@ -98,6 +98,10 @@ lemma op {X₁ X₂ Y₁ Y₂ : C} {x : X₁ ⟶ X₂} {y : Y₁ ⟶ Y₂}
 lemma unop {X₁ X₂ Y₁ Y₂ : Cᵒᵖ} {x : X₁ ⟶ X₂} {y : Y₁ ⟶ Y₂}
   (hxy : is_retract_hom x y) : is_retract_hom x.unop y.unop :=
 (iff_op x.unop y.unop).mpr hxy
+
+lemma imp_of_functor {X₁ X₂ Y₁ Y₂ : C} {x : X₁ ⟶ X₂} {y : Y₁ ⟶ Y₂} (h : is_retract_hom x y) :
+  is_retract_hom (G.map x) (G.map y) :=
+is_retract.imp_of_functor G.map_arrow _ _ h
 
 end is_retract_hom
 
@@ -176,6 +180,10 @@ end⟩
 
 lemma for_epimorphisms : (epimorphisms : arrow_class C).is_stable_by_retract :=
 by simpa only [epimorphisms_eq_op] using for_monomorphisms.unop
+
+lemma for_inverse_image {W : arrow_class D} (h : W.is_stable_by_retract) (F : C ⥤ D) :
+  (W.inverse_image F).is_stable_by_retract := λ X₁ X₂ Y₁ Y₂ x y hxy hy,
+h _ _ (is_retract_hom.imp_of_functor F hxy) hy
 
 end is_stable_by_retract
 

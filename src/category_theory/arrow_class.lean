@@ -53,7 +53,7 @@ def is_retract_iff_unop (f : arrow Cᵒᵖ) (f' : arrow Cᵒᵖ) :
 begin
   have eq₁ := is_retract_iff_of_isos (eq_to_iso f.op_unop.symm) (eq_to_iso f'.op_unop.symm),
   have eq₂ := is_retract_iff_op f.unop f'.unop,
-  exact eq₁.trans eq₂.symm,    
+  exact eq₁.trans eq₂.symm,
 end
 
 lemma op_mk {T : Type*} [category T] {X Y : T} (f : X ⟶ Y) : (arrow.mk f).op = arrow.mk f.op := by refl
@@ -62,7 +62,7 @@ lemma unop_mk {T : Type*} [category T] {X Y : Tᵒᵖ} (f : X ⟶ Y) :
   (arrow.mk f).unop = arrow.mk f.unop := by refl
 
 @[simps]
-def op_prod {C : Type*} [category C] {X Y : C} [has_binary_product X Y] 
+def op_prod {C : Type*} [category C] {X Y : C} [has_binary_product X Y]
   [has_binary_coproduct (op X) (op Y)] :
   op (X ⨯ Y) ≅ op X ⨿ op Y :=
 begin
@@ -121,7 +121,7 @@ begin
     },
 end
 
-def iso_op_prod_lift {C : Type*} [category C] {A X Y : C} [has_binary_product X Y] 
+def iso_op_prod_lift {C : Type*} [category C] {A X Y : C} [has_binary_product X Y]
   [has_binary_coproduct (op X) (op Y)] (f : A ⟶ X) (g : A ⟶ Y) :
   arrow.mk (prod.lift f g).op ≅ arrow.mk (coprod.desc f.op g.op) :=
 begin
