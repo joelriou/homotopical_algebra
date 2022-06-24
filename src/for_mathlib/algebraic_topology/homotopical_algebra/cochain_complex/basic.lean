@@ -5,7 +5,7 @@ Authors: Joël Riou
 -/
 
 import for_mathlib.algebraic_topology.homotopical_algebra.model_category
-import for_mathlib.algebraic_topology.homotopical_algebra.cochain_complex.mono_with_projective_coker
+import for_mathlib.category_theory.preadditive.mono_with_projective_coker
 --import category_theory.abelian.basic
 --import category_theory.preadditive.projective
 --import algebra.homology.homological_complex
