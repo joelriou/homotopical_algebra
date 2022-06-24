@@ -49,6 +49,16 @@ def inverse_image {D : Type*} [category D] (F : D ⥤ C) : category_with_fib_cof
 def CM2 := data.weq.three_of_two
 lemma CM2_iff_op : data.CM2 ↔ data.op.CM2 := arrow_class.three_of_two.iff_op _
 
+namespace CM2
+
+variable {data}
+
+lemma inverse_image {D : Type*} [category D] (h : data.CM2) (F : D ⥤ C) :
+  (category_with_fib_cof_weq.inverse_image data F).CM2 :=
+arrow_class.three_of_two.for_inverse_image h F
+
+end CM2
+
 def CM3a := data.weq.is_stable_by_retract
 def CM3b := data.fib.is_stable_by_retract
 def CM3c := data.cof.is_stable_by_retract

@@ -26,10 +26,19 @@ variables (C : Type*) [category C]
 namespace cochain_complex
 
 variables (α : Type*) [add_right_cancel_semigroup α] [has_one α]
+
 def quasi_isomorphisms [has_zero_morphisms C] [has_cokernels C] [has_images C] [has_equalizers C]
-  [has_zero_object C] [has_image_maps C]:
+  [has_zero_object C] [has_image_maps C] :
   arrow_class (cochain_complex C α) :=
 λ w, quasi_iso w.hom
+
+namespace quasi_isomorphisms
+
+lemma mem_iff [has_zero_morphisms C] [has_cokernels C] [has_images C] [has_equalizers C]
+  [has_zero_object C] [has_image_maps C] {X Y : cochain_complex C α} (f : X ⟶ Y) :
+  arrow.mk f ∈ quasi_isomorphisms C α ↔ quasi_iso f := by refl
+
+end quasi_isomorphisms
 
 def degreewise_epi [preadditive C] : arrow_class (cochain_complex C α) :=
 λ w, ∀ n, epi (w.hom.f n)
@@ -38,6 +47,7 @@ def degreewise_mono_with_projective_coker [preadditive C] :
   arrow_class (cochain_complex C α) :=
 λ w, ∀ n, arrow.mk (w.hom.f n) ∈ mono_with_projective_coker C
 
+@[simps]
 def projective_structure.arrow_classes [abelian C] :
   category_with_fib_cof_weq (cochain_complex C ℤ) :=
 { weq := quasi_isomorphisms C ℤ,
@@ -58,6 +68,7 @@ def ι [preadditive C] :
 
 variable (C)
 
+@[simps]
 def projective_structure.arrow_classes [abelian C] :
   category_with_fib_cof_weq (bounded_above_cochain_complex C) :=
 category_with_fib_cof_weq.inverse_image (cochain_complex.projective_structure.arrow_classes C)

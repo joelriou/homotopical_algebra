@@ -5,7 +5,6 @@ Authors: Joël Riou
 -/
 
 import for_mathlib.algebraic_topology.homotopical_algebra.cochain_complex.basic
-import algebra.homology.homology
 
 open category_theory category_theory.preadditive algebraic_topology
 

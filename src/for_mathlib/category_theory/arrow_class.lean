@@ -68,6 +68,16 @@ begin
     simpa only [mem_unop_iff, mem_op_iff, arrow.op_unop] using h, },
 end
 
+def inverse_image (G : D ⥤ C) : arrow_class D :=
+λ w, G.map_arrow.obj w ∈ F
+
+namespace inverse_image
+
+lemma mem_iff (G : D ⥤ C) {X Y : D} (f : X ⟶ Y) :
+  arrow.mk f ∈ F.inverse_image G ↔ arrow.mk (G.map f) ∈ F := by refl
+
+end inverse_image
+
 def is_stable_by_composition : Prop :=
 ∀ ⦃X Y Z : C⦄ (f : X ⟶ Y) (g : Y ⟶ Z),
     arrow.mk f ∈ F → arrow.mk g ∈ F → arrow.mk (f ≫ g) ∈ F
@@ -100,17 +110,15 @@ lemma iff_unop :
   is_stable_by_composition F' ↔ is_stable_by_composition F'.unop :=
 by simpa only [F'.op_unop] using (iff_op F'.unop).symm
 
+lemma inverse_image {W : arrow_class D} (h : W.is_stable_by_composition) (F : C ⥤ D) :
+  (W.inverse_image F).is_stable_by_composition := λ X Y Z f g hf hg,
+begin
+  rw arrow_class.inverse_image.mem_iff at hf hg ⊢,
+  rw F.map_comp,
+  exact h _ _ hf hg,
+end
+
 end is_stable_by_composition
-
-def inverse_image (G : D ⥤ C) : arrow_class D :=
-λ w, G.map_arrow.obj w ∈ F
-
-namespace inverse_image
-
-lemma mem_iff (G : D ⥤ C) {X Y : D} (f : X ⟶ Y) :
-  arrow.mk f ∈ F.inverse_image G ↔ arrow.mk (G.map f) ∈ F := by refl
-
-end inverse_image
 
 def isomorphisms : arrow_class C := λ f, is_iso f.hom
 def monomorphisms : arrow_class C := λ f, mono f.hom
