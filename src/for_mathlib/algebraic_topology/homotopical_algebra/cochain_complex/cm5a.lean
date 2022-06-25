@@ -10,12 +10,12 @@ import category_theory.abelian.basic
 import for_mathlib.algebra.homology.twist_cocycle
 import for_mathlib.algebraic_topology.homotopical_algebra.cochain_complex.basic
 import for_mathlib.algebra.homology.homological_complex_biprod
---import category_theory.limits.shapes.zero_objects
+import for_mathlib.algebra.homology.quasi_iso_misc
 
 noncomputable theory
 
 open category_theory category_theory.category
-open category_theory.limits
+open category_theory.limits algebraic_topology
 
 open_locale zero_object
 
@@ -33,8 +33,7 @@ end limits
 
 namespace projective
 
-variables {C : Type*} [category C] [enough_projectives C]
-  [has_zero_object C] [has_zero_morphisms C]
+variables {C : Type*} [category C] [enough_projectives C] [has_zero_object C]
 
 def over' (X : C) : C :=
 begin
@@ -67,7 +66,7 @@ end
 instance (X : C) : epi (π' X) :=
 by { dsimp only [π'], split_ifs; apply epi_comp, }
 
-instance (X : C) : projective (over' X) :=
+instance (X : C) [has_zero_morphisms C] : projective (over' X) :=
 begin
   dsimp [over'],
   split_ifs,
@@ -157,13 +156,16 @@ variables {K L : cochain_complex C ℤ} (f : K ⟶ L)
 include f
 @[simps, nolint unused_arguments]
 def obj := homological_complex.biprod K (Q L)
-@[simp]
-def i : K ⟶ obj f := homological_complex.biprod.lift (𝟙 K) 0
-@[simp]
+
+@[simps]
+def i : K ⟶ obj f := homological_complex.biprod.inl
+
+@[simps]
 def p : obj f ⟶ L := homological_complex.biprod.desc f (π L)
 
+@[simp, reassoc]
 lemma fac : i f ≫ p f = f :=
-by simp only [i, p, homological_complex.biprod.lift_desc, id_comp, zero_comp, add_zero]
+by simp only [i, p, homological_complex.biprod.inl_desc]
 
 lemma p_is_fib :
   arrow.mk (p f) ∈ (projective_structure.arrow_classes.fib :
@@ -180,14 +182,86 @@ lemma i_is_cof :
     arrow_class (cochain_complex C ℤ)) :=
 begin
   intro n,
-  haveI : is_iso ((𝟙 K : _ ⟶ _ ).f n),
-  { simp only [homological_complex.id_f],
-    apply_instance, },
-  apply preadditive.mono_with_projective_coker.of_biprod_lift_of_is_iso_to_fst,
+  apply preadditive.mono_with_projective_coker.of_biprod_inl,
 end
+
+def homotopy_equiv_i : homotopy_equiv K (obj f) :=
+{ hom := i f,
+  inv := homological_complex.biprod.fst,
+  homotopy_hom_inv_id := by { simp only [i, homological_complex.biprod.inl_fst], },
+  homotopy_inv_hom_id := begin
+    symmetry,
+    equiv_rw homotopy.equiv_sub_zero,
+    dsimp only [obj, i],
+    simpa only [zero_comp, comp_zero, id_comp, ← homological_complex.biprod.total,
+      add_sub_cancel'] using ((id_Q_homotopy_to_zero L).comp_right
+        homological_complex.biprod.inr).comp_left homological_complex.biprod.snd,
+  end, }
+
+lemma i_is_weq :
+  arrow.mk (i f) ∈ (projective_structure.arrow_classes.weq :
+    arrow_class (cochain_complex C ℤ)) :=
+quasi_iso.of_homotopy_equiv (homotopy_equiv_i f)
+
+lemma i_is_triv_cof :
+  arrow.mk (i f) ∈ (projective_structure.arrow_classes.triv_cof :
+    arrow_class (cochain_complex C ℤ)) := ⟨i_is_cof f, i_is_weq f⟩
 
 end CM5a
 
 end projective_structure
 
 end cochain_complex
+
+namespace bounded_above_cochain_complex
+
+namespace projective_model_structure
+
+variables {C : Type*} [category C] [abelian C] [enough_projectives C]
+
+namespace CM5a
+
+variables {K L : bounded_above_cochain_complex C} (f : K ⟶ L)
+
+open cochain_complex.projective_structure
+include f
+
+@[simps, nolint unused_arguments]
+def obj : bounded_above_cochain_complex C := ⟨CM5a.obj f,
+begin
+  apply cochain_complex.is_bounded_above.of_biprod,
+  { exact K.2, },
+  { apply cochain_complex.hom_complex.twist.is_bounded_above,
+    all_goals {
+      cases L.2 with l hl,
+      use (l+1),
+      intros i hi,
+      dsimp,
+      rw category_theory.projective.over'_eq_zero, swap,
+      { apply hl,
+        linarith, },
+      apply is_zero_zero, }, },
+end⟩
+
+@[simps]
+def i : K ⟶ obj f := CM5a.i f
+
+@[simps]
+def p : obj f ⟶ L := CM5a.p f
+
+lemma fac : i f ≫ p f = f := CM5a.fac f
+
+lemma p_is_fib : arrow.mk (p f) ∈ (arrow_classes.fib :
+  arrow_class (bounded_above_cochain_complex C)) := CM5a.p_is_fib f
+
+lemma i_is_triv_cof : arrow.mk (i f) ∈ (arrow_classes.triv_cof :
+  arrow_class (bounded_above_cochain_complex C)) := CM5a.i_is_triv_cof f
+
+end CM5a
+
+lemma CM5a : (arrow_classes : category_with_fib_cof_weq (bounded_above_cochain_complex C)).CM5a :=
+λ X Z f, ⟨CM5a.obj f, CM5a.i f, CM5a.i_is_triv_cof f, CM5a.p f, CM5a.p_is_fib f, CM5a.fac f⟩
+
+end projective_model_structure
+
+end bounded_above_cochain_complex

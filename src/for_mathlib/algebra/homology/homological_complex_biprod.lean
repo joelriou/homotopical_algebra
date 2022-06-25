@@ -66,6 +66,12 @@ by { ext i, exacts [congr_hom h₁ i, congr_hom h₂ i], }
 @[simp, reassoc]
 lemma lift_desc : lift g₁ g₂ ≫ desc f₁ f₂ = g₁ ≫ f₁ + g₂ ≫ f₂ := by tidy
 
+lemma total : fst ≫ inl + snd ≫ inr = 𝟙 (biprod X Y) :=
+begin
+  ext1; ext1; simp only [preadditive.comp_add, inl_fst_assoc, inl_snd_assoc,
+    inr_fst_assoc, inr_snd_assoc, zero_comp, zero_add, add_zero, comp_id, biprod.total],
+end
+
 end biprod
 
 end homological_complex

@@ -20,9 +20,6 @@ variables {C : Type u} [category.{v} C] [preadditive C]
 
 namespace cochain_complex
 
-def is_bounded_above (K : cochain_complex C ℤ) : Prop :=
-∃ (r : ℤ), ∀ (i : ℤ) (hi : r < i), is_zero (K.X i)
-
 variables {F G K L : cochain_complex C ℤ} (n m : ℤ)
 
 namespace hom_complex

@@ -5,6 +5,7 @@ Authors: Joël Riou
 -/
 
 import for_mathlib.algebra.homology.hom_complex
+import for_mathlib.algebra.homology.bounded_above
 
 noncomputable theory
 
@@ -82,26 +83,6 @@ def twist : cochain_complex C ℤ :=
 namespace twist
 
 omit z
-lemma biprod_is_zero_iff {C : Type*} [category C] [preadditive C] (A B : C) [has_binary_biproduct A B] :
-  is_zero (A ⊞ B) ↔ is_zero A ∧ is_zero B :=
-begin
-  simp only [is_zero.iff_id_eq_zero],
-  split,
-  { intro h,
-    split,
-    { suffices : 𝟙 A = biprod.inl ≫ (𝟙 (A ⊞ B)) ≫ biprod.fst,
-      { rw [this, h, zero_comp, comp_zero], },
-      rw [id_comp, biprod.inl_fst], },
-    { suffices : 𝟙 B = biprod.inr ≫ (𝟙 (A ⊞ B)) ≫ biprod.snd,
-      { rw [this, h, zero_comp, comp_zero], },
-      rw [id_comp, biprod.inr_snd], }, },
-  { intro h,
-    ext,
-    { simpa only [comp_id, biprod.inl_fst, comp_zero, zero_comp] using h.left, },
-    { simp only [comp_id, biprod.inl_snd, comp_zero, zero_comp], },
-    { simp only [comp_id, biprod.inr_fst, comp_zero, zero_comp], },
-    { simpa only [comp_id, biprod.inr_snd, comp_zero, zero_comp] using h.right, } },
-end
 
 lemma is_bounded_above (z : cocycle F G n) (hF : F.is_bounded_above) (hG : G.is_bounded_above) :
   (twist z).is_bounded_above :=
@@ -111,7 +92,7 @@ begin
   use max (r+n-1) s,
   intros i hi,
   dsimp only [twist],
-  rw biprod_is_zero_iff,
+  rw is_zero.iff_of_biprod,
   split,
   { apply hr,
     have h := lt_of_le_of_lt (le_max_left _ _) hi,
