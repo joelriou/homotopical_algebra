@@ -9,7 +9,6 @@ import for_mathlib.category_theory.retracts
 import for_mathlib.category_theory.arrow_class
 import category_theory.limits.shapes.products
 
-
 noncomputable theory
 
 open category_theory.category category_theory.limits
@@ -18,7 +17,7 @@ universe v
 
 namespace category_theory
 
-variables {C : Type*} [category.{v} C]
+variables {C D : Type*} [category.{v} C] [category D]
 
 variables {A B B' X Y Y' : C} {f : A ⟶ X} {i : A ⟶ B} (i' : B ⟶ B') {p : X ⟶ Y} (p' : Y ⟶ Y') {g : B ⟶ Y}
 variables {W Z : C} {q : W ⟶ Z} {f' : X ⟶ W} {g' : Y ⟶ Z}
@@ -26,6 +25,14 @@ variables {W Z : C} {q : W ⟶ Z} {f' : X ⟶ W} {g' : Y ⟶ Z}
 namespace limits
 
 namespace comm_sq
+
+def preimage (F : C ⥤ D) [full F] [faithful F] {f : F.obj A ⟶ F.obj X} {i : F.obj A ⟶ F.obj B}
+  {p : F.obj X ⟶ F.obj Y} {g : F.obj B ⟶ F.obj Y} (sq : comm_sq f i p g) :
+  comm_sq (F.preimage f) (F.preimage i) (F.preimage p) (F.preimage g) :=
+⟨begin
+  apply F.map_injective,
+  simpa only [functor.map_comp, functor.image_preimage] using sq.w,
+end⟩
 
 @[ext, nolint has_inhabited_instance]
 structure lifts (sq : comm_sq f i p g) :=
@@ -45,36 +52,34 @@ def unop {A B X Y : Cᵒᵖ} {f : A ⟶ X} {i : A ⟶ B} {p : X ⟶ Y} {g : B �
   fac_right := by rw [← unop_comp, l.fac_left], }
 
 def op_equiv (sq : comm_sq f i p g) : lifts sq ≃ lifts sq.op :=
-{ to_fun := op, 
+{ to_fun := op,
   inv_fun := unop,
   left_inv := by tidy,
   right_inv := by tidy, }
 
 def unop_equiv {A B X Y : Cᵒᵖ} {f : A ⟶ X} {i : A ⟶ B} {p : X ⟶ Y} {g : B ⟶ Y} (sq : comm_sq f i p g) :
   lifts sq ≃ lifts sq.unop :=
-{ to_fun := unop, 
+{ to_fun := unop,
   inv_fun := op,
   left_inv := by tidy,
   right_inv := by tidy, }
 
+def equiv_of_fully_faithful (sq : comm_sq f i p g) (F : C ⥤ D) [full F] [faithful F] :
+  lifts sq ≃ lifts (sq.apply F) :=
+{ to_fun := λ l,
+    { l := F.map l.l,
+      fac_left := by rw [← F.map_comp, l.fac_left],
+      fac_right := by rw [← F.map_comp, l.fac_right], },
+  inv_fun := λ l,
+    { l := F.preimage l.l,
+      fac_left := F.map_injective
+        (by simpa only [functor.map_comp, functor.image_preimage] using l.fac_left),
+      fac_right := F.map_injective
+        (by simpa only [functor.map_comp, functor.image_preimage] using l.fac_right), },
+  left_inv := by tidy,
+  right_inv := by tidy, }
+
 end lifts
-
-/-lemma comp (sq₁ : comm_sq f i p g) (sq₂ : comm_sq f' p q g') :
-  comm_sq (f ≫ f') i q (g ≫ g') :=
-⟨by simp only [assoc, sq₂.w, sq₁.w_assoc]⟩
-
-namespace lifts
-
-def comp {sq₁ : comm_sq f i p g} {sq₂ : comm_sq f' p q g'}
-  (l₁ : lifts sq₁) (l₂ : lifts sq₂) : lifts (sq₁.comp sq₂) :=
-{ l := l₁.l ≫ p ≫ l₂.l,
-  fac_left := by rw [l₂.fac_left, ← assoc, l₁.fac_left],
-  fac_right := begin
-    simp only [assoc, l₂.fac_right],
-    simp only [← assoc, l₁.fac_right],
-  end }
-
-end lifts-/
 
 variable (sq : comm_sq f i p g)
 
@@ -103,6 +108,10 @@ begin
   rw [iff, iff],
   exact nonempty.congr (lifts.unop_equiv sq).to_fun (lifts.unop_equiv sq).inv_fun,
 end
+
+lemma equiv_of_fully_faithful (sq : comm_sq f i p g) (F : C ⥤ D) [full F] [faithful F] :
+  has_lift sq ↔ has_lift (sq.apply F) :=
+by simpa only [iff] using equiv.nonempty_congr (lifts.equiv_of_fully_faithful sq F)
 
 end has_lift
 
@@ -164,7 +173,7 @@ variables (i p)
 
 @[priority 100]
 instance of_left_iso [is_iso i] : has_lifting_property_new i p :=
-⟨λ f g sq, ⟨nonempty.intro 
+⟨λ f g sq, ⟨nonempty.intro
   { l := inv i ≫ f,
     fac_left := by simp only [is_iso.hom_inv_id_assoc],
     fac_right := by simp only [sq.w, assoc, is_iso.inv_hom_id_assoc], }⟩⟩
@@ -193,7 +202,7 @@ instance of_comp_right [has_lifting_property_new i p] [has_lifting_property_new 
   have fac := sq.w,
   rw ← assoc at fac,
   let sq₂ := (comm_sq.mk ((comm_sq.mk fac).fac_left.symm)).lift,
-  exact ⟨nonempty.intro 
+  exact ⟨nonempty.intro
   { l := (comm_sq.mk ((comm_sq.mk fac).fac_left.symm)).lift,
     fac_left := by simp only [comm_sq.fac_left],
     fac_right := by simp only [comm_sq.fac_right_assoc, comm_sq.fac_right], }⟩,
@@ -240,7 +249,7 @@ lemma of_direct_image {A' B' : C} {f : A ⟶ A'} {g : B ⟶ B'} {i' : A' ⟶ B'}
   has_lifting_property_new i' p :=
 ⟨λ f' g' sq, begin
   have fac : (f ≫ f') ≫ p = i ≫ (g ≫ g') := by rw [assoc, sq.w, ← assoc, h.w, assoc],
-  exact ⟨nonempty.intro 
+  exact ⟨nonempty.intro
   { l := h.desc f' (comm_sq.mk fac).lift (by simp only [comm_sq.fac_left]),
     fac_left := by simp only [is_pushout.inl_desc],
     fac_right := h.hom_ext _ _ (by simpa using sq.w)
@@ -267,6 +276,28 @@ instance ⦃I : Type v⦄ (A B : I → C) [hA : has_coproduct A] [hB : has_copro
       simp only [colimit.ι_desc_assoc, cofan.mk_ι_app, comm_sq.fac_right],
     end, }⟩,
 end⟩
+
+variable (i)
+
+lemma equiv_of_fully_faithful (F : C ⥤ D) [full F] [faithful F] :
+  has_lifting_property_new i p ↔ has_lifting_property_new (F.map i) (F.map p) :=
+begin
+  split,
+  { introI,
+    constructor,
+    intros f g sq,
+    let sq' := comm_sq.preimage F sq,
+    have hsq' : sq'.has_lift := by { simp only [preimage_map], apply_instance, },
+    rw comm_sq.has_lift.equiv_of_fully_faithful _ F at hsq',
+    convert hsq',
+    all_goals { simp only [functor.image_preimage, preimage_map], }, },
+  { introI,
+    constructor,
+    intros f g sq,
+    simpa only [← comm_sq.has_lift.equiv_of_fully_faithful _ F]
+      using (infer_instance : (sq.apply F).has_lift),
+    },
+end
 
 end has_lifting_property_new
 

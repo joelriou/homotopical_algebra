@@ -21,7 +21,7 @@ variables {C : Type*} [category C] [abelian C]
 
 variables {A B K X Y : cochain_complex C ℤ} {n : ℤ} {z : cocycle B A 1} {f : A ⟶ X} (g : twist z ⟶ Y) {p : X ⟶ Y} {j : K ⟶ X}
   (sq : comm_sq f (twist.inr z) p g) (l : Π q, comm_sq.lifts (sq.apply (homological_complex.eval C _ q)))
-  (hpj : ∀ q, short_exact (j.f q) (p.f q))
+  (hpj : is_termwise_kernel j p)
 
 @[simp]
 def φ : cochain B Y 0 := cochain.comp (twist.inl z (zero_add 1)) (cochain.of_hom g) (zero_add 0).symm
@@ -49,7 +49,11 @@ cocycle.mk (δ 0 1 (L sq l) - cochain.comp ↑z (cochain.of_hom f) (add_zero 1).
 include hpj
 
 --@[simps]
-def obs : cocycle B K 1 := sorry
+def obs : cocycle B K 1 :=
+cocycle.lift_to_kernel (obs₀ sq l) hpj
+begin
+  sorry
+end
 /-begin
   refine cocycle.lift_to_kernel (obs₀ sq l) _ hpj,
   dsimp only [obs₀],
@@ -67,14 +71,11 @@ def obs : cocycle B K 1 := sorry
     L, cochain.of_homs_eq, cochain.of_hom_eq, twist.φ, ← hl, assoc],
 end-/
 
---@[simp]
+@[simp]
 lemma obs_comp :
   cochain.comp (obs sq l hpj : cochain B K 1) (cochain.of_hom j)
     (add_zero 1).symm = ↑(obs₀ sq l) :=
-begin
-  sorry
-end
---by apply cocycle.lift_to_kernel_comp
+by apply cocycle.lift_to_kernel_comp
 
 variables (w : cochain B K 0) (hw : δ 0 1 w = ↑(obs sq l hpj))
 
@@ -105,7 +106,7 @@ lemma lift_of_coboundary : comm_sq.lifts sq :=
       simp only [homological_complex.eval_map] at hl,
       simp only [F, L, hl, cochain.sub_comp, cochain.comp_assoc_of_third_is_zero_cochain,
         cochain.sub_v, cochain.comp_zero_cochain, cochain.of_homs_v, cochain.of_hom_v,
-        sub_eq_self, (hpj i).exact.w, comp_zero], },
+        sub_eq_self, hpj.zero i, comp_zero], },
     { simp only [← cochain.of_hom_comp, sq.w], },
   end }
 

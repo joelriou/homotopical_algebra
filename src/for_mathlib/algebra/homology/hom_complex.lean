@@ -22,6 +22,28 @@ namespace cochain_complex
 
 variables {F G K L : cochain_complex C ℤ} (n m : ℤ)
 
+structure is_termwise_kernel (i : F ⟶ G) (f : G ⟶ K) :=
+(zero : ∀ n, i.f n ≫ f.f n = 0)
+(is_limit : ∀ n, is_limit (kernel_fork.of_ι (i.f n) (zero n)))
+
+lemma mono_of_is_limit_kernel_fork {D : Type*} [category D] [has_zero_morphisms D]
+  {Y Z : D} {f : Y ⟶ Z} {h : kernel_fork f} (l : is_limit h) : mono h.ι :=
+⟨λ X f₁ f₂ hf, begin
+  have eq := λ (φ : X ⟶ h.X), l.uniq (kernel_fork.of_ι _
+    (show (φ ≫ h.ι) ≫ f = 0, by {rw [assoc, h.condition, comp_zero]}))
+    φ (by { rintro (_|_), tidy, }),
+  rw [eq f₁, eq f₂],
+  congr',
+end⟩
+
+namespace is_termwise_kernel
+
+lemma termwise_mono {i : F ⟶ G} {f : G ⟶ K}
+  (h : is_termwise_kernel i f) (q : ℤ) : mono (i.f q) :=
+mono_of_is_limit_kernel_fork (h.is_limit q)
+
+end is_termwise_kernel
+
 namespace hom_complex
 
 def ε (n : ℤ) : ℤ := ↑((-1 : units ℤ) ^ n)
@@ -657,10 +679,6 @@ namespace cochain
 
 variable {n}
 
-structure is_termwise_kernel (i : F ⟶ G) (f : G ⟶ K) :=
-(zero : ∀ n, i.f n ≫ f.f n = 0)
-(is_limit : ∀ n, is_limit (kernel_fork.of_ι (i.f n) (zero n)))
-
 def lift_to_kernel' (z : cochain L G n) {i : F ⟶ G} {f : G ⟶ K} (hip : is_termwise_kernel i f)
   (hz : cochain.comp z (of_hom f) (add_zero n).symm = 0) (p q : ℤ) (hpq : q=p+n):=
 kernel_fork.is_limit.lift' (hip.is_limit q) (z.v p q hpq)
@@ -681,6 +699,33 @@ begin
 end
 
 end cochain
+
+namespace cocycle
+
+variable {n}
+
+def lift_to_kernel (z : cocycle L G n) {i : F ⟶ G} {f : G ⟶ K} (hip : is_termwise_kernel i f)
+  (hz : cochain.comp (z : cochain L G n) (cochain.of_hom f) (add_zero n).symm = 0) :
+  cocycle L F n :=
+cocycle.mk (cochain.lift_to_kernel (z : cochain L G n) hip hz) _ rfl
+begin
+  suffices : δ n (n + 1) (cochain.comp
+    ((z : cochain L G n).lift_to_kernel hip hz) (cochain.of_hom i) (add_zero n).symm) = 0,
+  { ext,
+    haveI : mono (i.f q) := hip.termwise_mono q,
+    simpa only [← cancel_mono (i.f q), cochain.zero_v, zero_comp,
+      δ_comp_of_second_is_zero_cochain, δ_cochain_of_hom,
+      cochain.comp_zero, zero_add, cochain.comp_zero_cochain,
+      cochain.of_hom_v, cochain.zero_v] using cochain.congr_v this p q hpq, },
+  simp only [cochain.lift_to_kernel_comp, δ_eq_zero],
+end
+
+def lift_to_kernel_comp (z : cocycle L G n) {i : F ⟶ G} {f : G ⟶ K} (hip : is_termwise_kernel i f)
+  (hz : cochain.comp (z : cochain L G n) (cochain.of_hom f) (add_zero n).symm = 0) :
+  cochain.comp (lift_to_kernel z hip hz : cochain L F n) (cochain.of_hom i) (add_zero n).symm =
+  (z : cochain L G n) := by apply cochain.lift_to_kernel_comp
+
+end cocycle
 
 end hom_complex
 
