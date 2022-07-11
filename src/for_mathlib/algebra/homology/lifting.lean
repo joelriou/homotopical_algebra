@@ -52,6 +52,14 @@ include hpj
 def obs : cocycle B K 1 :=
 cocycle.lift_to_kernel (obs₀ sq l) hpj
 begin
+  simp only [obs₀, cochain.sub_comp, cocycle.mk_coe, cochain.add_comp,
+    cochain.comp_assoc_of_third_is_zero_cochain, ← cochain.of_hom_comp, sq.w, L,
+    δ_comp_of_second_is_zero_cochain _ _ _ (zero_add 1)],
+  conv_lhs { congr, congr, skip, congr, skip,
+    dsimp only [cochain.of_hom], },
+  have hl : ∀ (q : ℤ), (l q).l ≫ p.f q = g.f q := λ q, (l q).fac_right,
+  have eq : cochain.of_homs g.f = cochain.of_hom g := rfl,
+  simp only [cochain.of_homs_comp, hl, eq],
   sorry
 end
 /-begin
