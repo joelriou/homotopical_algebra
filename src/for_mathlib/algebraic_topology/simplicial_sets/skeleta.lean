@@ -48,4 +48,10 @@ begin
   exact is_iso.of_iso ((e.app X).app (opposite.op Δ')),
 end
 
+def simplex_is_degenerate {X : sSet} {Δ : simplex_categoryᵒᵖ} (x : X.obj Δ) : Prop :=
+∃ (Δ' : simplex_categoryᵒᵖ) (θ : Δ' ⟶ Δ) (hθ : ¬epi θ.unop) (y : X.obj Δ'), x = X.map θ y
+
+def nondegenerate_simplices (X : sSet) (Δ : simplex_categoryᵒᵖ) : set (X.obj Δ) :=
+compl simplex_is_degenerate
+
 end sSet
