@@ -65,6 +65,10 @@ def simplex_is_degenerate {X : sSet} {Δ : simplex_categoryᵒᵖ} (x : X.obj Δ
 def nondegenerate_simplices (X : sSet) (Δ : simplex_categoryᵒᵖ) : set (X.obj Δ) :=
 compl simplex_is_degenerate
 
+@[simp]
+def ι_nondegenerate_simplices (X : sSet.{u}) (Δ : simplex_categoryᵒᵖ) :
+  (X.nondegenerate_simplices Δ : Type u) ⟶ X.obj Δ := subtype.val
+
 lemma zero_simplices_are_nondegenerate (X : sSet) : X.nondegenerate_simplices (op [0]) = ⊤ :=
 begin
   ext,
@@ -117,12 +121,10 @@ begin
       simp only [functor_to_types.map_comp_apply, hy, eq], }, },
 end
 
-@[simp]
-def splitting_N (X : sSet.{u}) (n : ℕ) : Type u := X.nondegenerate_simplices (op [n])
-
+@[simps]
 def splitting (X : sSet.{u}) : simplicial_object.splitting X :=
-{ N := X.splitting_N,
-  ι := λ n x, x.1,
+{ N := λ n, X.nondegenerate_simplices (op [n]),
+  ι := λ n, subtype.val,
   mono_ι := λ n, by { rw mono_iff_injective, apply subtype.coe_injective, },
   is_iso' := λ Δ, begin
     rw is_iso_iff_bijective,
@@ -132,12 +134,13 @@ def splitting (X : sSet.{u}) : simplicial_object.splitting X :=
       rcases X.is_epi_image_of_nondegenerate_simplex x with ⟨Δ', θ, hθ, y, hy, eq⟩,
       induction Δ' using opposite.rec,
       induction Δ' with m,
-      let y' : X.nondegenerate_simplices (op [m]) := ⟨y, hy⟩,
-      let A : simplex_category.splitting_index_set Δ.unop := ⟨_, ⟨_, hθ⟩⟩,
-      refine ⟨_, _⟩,
-      { apply (simplicial_object.splitting.ι_sum X.splitting_N A),
-        exact y', },
-      sorry, },
+      let F := (simplicial_object.splitting.ι_sum
+        (λ n, (X.nondegenerate_simplices (op [n]) : Type u)) ⟨[m], ⟨θ.unop, hθ⟩⟩),
+      use F ⟨y, hy⟩,
+      have h := comp_apply F (simplicial_object.splitting.map (λ n, subtype.val) Δ),
+      simp only [concrete_category.has_coe_to_fun_Type] at h,
+      erw [← h, limits.colimit.ι_desc, limits.cofan.mk_ι_app, eq],
+      refl, },
   end, }
 
 end sSet
