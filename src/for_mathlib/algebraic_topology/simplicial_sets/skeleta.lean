@@ -127,11 +127,28 @@ lemma splitting.sum.concrete_bijective (N : ℕ → Type u) (Δ : simplex_catego
     sigma (simplicial_object.splitting.summand N Δ) → simplicial_object.splitting.sum N Δ) :=
 limits.concrete.coproduct_map_bijective _
 
-lemma image_of_nondegenerate_simplex_uniqueness₁ (X : sSet) {Δ : simplex_categoryᵒᵖ}
+lemma image_of_nondegenerate_simplex_uniqueness₀ (X : sSet)
   {Δ Δ₁ Δ₂ : simplex_categoryᵒᵖ} (y₁ : X.obj Δ₁) (y₂ : X.obj Δ₂)
   (hy₁ : y₁ ∈ X.nondegenerate_simplices Δ₁) (hy₂ : y₂ ∈ X.nondegenerate_simplices Δ₂)
   (θ₁ : Δ₁ ⟶ Δ) (θ₂ : Δ₂ ⟶ Δ) (hθ₁ : epi θ₁.unop) (hθ₂ : epi θ₂.unop)
-  (eq : X.map θ₁ y₁ = X.map θ₂ y₂) : Δ₁ = Δ₂ := sorry
+  (eq : X.map θ₁ y₁ = X.map θ₂ y₂) : Δ₁.unop.len ≤ Δ₂.unop.len :=
+begin
+  sorry
+end
+
+lemma image_of_nondegenerate_simplex_uniqueness₁ (X : sSet)
+  {Δ Δ₁ Δ₂ : simplex_categoryᵒᵖ} (y₁ : X.obj Δ₁) (y₂ : X.obj Δ₂)
+  (hy₁ : y₁ ∈ X.nondegenerate_simplices Δ₁) (hy₂ : y₂ ∈ X.nondegenerate_simplices Δ₂)
+  (θ₁ : Δ₁ ⟶ Δ) (θ₂ : Δ₂ ⟶ Δ) (hθ₁ : epi θ₁.unop) (hθ₂ : epi θ₂.unop)
+  (eq : X.map θ₁ y₁ = X.map θ₂ y₂) : Δ₁ = Δ₂ :=
+begin
+  unfreezingI { induction Δ₁ using opposite.rec, induction Δ₂ using opposite.rec, },
+  congr,
+  ext,
+  apply le_antisymm,
+  { exact image_of_nondegenerate_simplex_uniqueness₀ X y₁ y₂ hy₁ hy₂ θ₁ θ₂ hθ₁ hθ₂ eq, },
+  { exact image_of_nondegenerate_simplex_uniqueness₀ X y₂ y₁ hy₂ hy₁ θ₂ θ₁ hθ₂ hθ₁ eq.symm, },
+end
 
 lemma image_of_nondegenerate_simplex_uniqueness₂ (X : sSet) {Δ : simplex_categoryᵒᵖ}
   {Δ Δ' : simplex_categoryᵒᵖ} (y₁ : X.obj Δ') (y₂ : X.obj Δ')
