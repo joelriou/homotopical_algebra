@@ -1,6 +1,7 @@
 import algebraic_topology.simplicial_set
 import category_theory.limits.kan_extension
 import for_mathlib.split_simplicial_object
+import for_mathlib.category_theory.limits.concrete
 
 noncomputable theory
 
@@ -121,6 +122,23 @@ begin
       simp only [functor_to_types.map_comp_apply, hy, eq], }, },
 end
 
+lemma splitting.sum.concrete_bijective (N : ℕ → Type u) (Δ : simplex_category) :
+  function.bijective (limits.concrete.coproduct_map (simplicial_object.splitting.summand N Δ) :
+    sigma (simplicial_object.splitting.summand N Δ) → simplicial_object.splitting.sum N Δ) :=
+limits.concrete.coproduct_map_bijective _
+
+lemma image_of_nondegenerate_simplex_uniqueness₁ (X : sSet) {Δ : simplex_categoryᵒᵖ}
+  {Δ Δ₁ Δ₂ : simplex_categoryᵒᵖ} (y₁ : X.obj Δ₁) (y₂ : X.obj Δ₂)
+  (hy₁ : y₁ ∈ X.nondegenerate_simplices Δ₁) (hy₂ : y₂ ∈ X.nondegenerate_simplices Δ₂)
+  (θ₁ : Δ₁ ⟶ Δ) (θ₂ : Δ₂ ⟶ Δ) (hθ₁ : epi θ₁.unop) (hθ₂ : epi θ₂.unop)
+  (eq : X.map θ₁ y₁ = X.map θ₂ y₂) : Δ₁ = Δ₂ := sorry
+
+lemma image_of_nondegenerate_simplex_uniqueness₂ (X : sSet) {Δ : simplex_categoryᵒᵖ}
+  {Δ Δ' : simplex_categoryᵒᵖ} (y₁ : X.obj Δ') (y₂ : X.obj Δ')
+  (hy₁ : y₁ ∈ X.nondegenerate_simplices Δ') (hy₂ : y₂ ∈ X.nondegenerate_simplices Δ')
+  (θ₁ : Δ' ⟶ Δ) (θ₂ : Δ' ⟶ Δ) (hθ₁ : epi θ₁.unop) (hθ₂ : epi θ₂.unop)
+  (eq : X.map θ₁ y₁ = X.map θ₂ y₂) : θ₁ = θ₂ ∧ y₁ = y₂ := sorry
+
 @[simps]
 def splitting (X : sSet.{u}) : simplicial_object.splitting X :=
 { N := λ n, X.nondegenerate_simplices (op [n]),
@@ -129,7 +147,11 @@ def splitting (X : sSet.{u}) : simplicial_object.splitting X :=
   is_iso' := λ Δ, begin
     rw is_iso_iff_bijective,
     split,
-    { sorry, },
+    { intros y₁ y₂ hy,
+      rcases (splitting.sum.concrete_bijective _ Δ.unop).2 y₁ with ⟨⟨θ₁, ⟨z₁, hz₁⟩⟩, eq₁⟩,
+      rcases (splitting.sum.concrete_bijective _ Δ.unop).2 y₂ with ⟨⟨θ₂, ⟨z₂, hz₂⟩⟩, eq₂⟩,
+      substs eq₁ eq₂,
+      sorry, },
     { intro x,
       rcases X.is_epi_image_of_nondegenerate_simplex x with ⟨Δ', θ, hθ, y, hy, eq⟩,
       induction Δ' using opposite.rec,
