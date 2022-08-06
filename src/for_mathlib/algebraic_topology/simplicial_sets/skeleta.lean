@@ -21,6 +21,20 @@ strong_epi_factor_thru_image_of_strong_epi_mono_factorisation
   (has_strong_epi_mono_factorisations.has_fac θ).some
 
 instance : epi (factor_thru_image θ) := strong_epi.epi
+
+lemma is_iso_of_epi_and_card [hθ : epi θ] (h : X.len = Y.len) : is_iso θ :=
+begin
+  apply is_iso_of_bijective,
+  split,
+  { by_contra h',
+    rw epi_iff_surjective at hθ,
+    simpa only [fintype.card_fin, add_lt_add_iff_right, h, lt_self_iff_false]
+      using fintype.card_lt_of_surjective_not_injective _ hθ h', },
+  { change function.surjective θ.to_order_hom,
+    rw ← epi_iff_surjective,
+    apply_instance, },
+end
+
 end
 
 protected def rec {F : Π (X : simplex_category), Sort u} (h : ∀ (n : ℕ), F [n]) :
@@ -83,7 +97,22 @@ compl simplex_is_degenerate
 
 lemma is_iso_of_nondegenerate_simplices {X : sSet} {Δ Δ' : simplex_categoryᵒᵖ}
   (x : X.nondegenerate_simplices Δ) (θ : Δ' ⟶ Δ) (hθ : epi θ.unop) (y : X.obj Δ')
-  (hy : x.1 = X.map θ y) : is_iso θ := sorry
+  (hy : x.1 = X.map θ y) : is_iso θ :=
+begin
+  suffices : is_iso θ.unop,
+  { haveI := this,
+    change is_iso θ.unop.op,
+    apply_instance, },
+  apply simplex_category.is_iso_of_bijective,
+  split,
+  { change function.injective θ.unop.to_order_hom,
+    rw ← simplex_category.mono_iff_injective,
+    by_contra,
+    exact x.2 ⟨Δ', θ, hθ, h, y, hy⟩, },
+  { change function.surjective θ.unop.to_order_hom,
+    rw ← simplex_category.epi_iff_surjective,
+    exact hθ, },
+end
 
 @[simp]
 def ι_nondegenerate_simplices (X : sSet.{u}) (Δ : simplex_categoryᵒᵖ) :
@@ -148,7 +177,7 @@ limits.concrete.coproduct_map_bijective _
 
 lemma image_of_nondegenerate_simplex_uniqueness₀ (X : sSet)
   {Δ Δ₁ Δ₂ : simplex_categoryᵒᵖ} (y₁ : X.obj Δ₁) (y₂ : X.obj Δ₂)
-  (hy₁ : y₁ ∈ X.nondegenerate_simplices Δ₁) (hy₂ : y₂ ∈ X.nondegenerate_simplices Δ₂)
+  (hy₁ : y₁ ∈ X.nondegenerate_simplices Δ₁)
   (θ₁ : Δ₁ ⟶ Δ) (θ₂ : Δ₂ ⟶ Δ) (hθ₁ : epi θ₁.unop) (hθ₂ : epi θ₂.unop)
   (eq : X.map θ₁ y₁ = X.map θ₂ y₂) : Δ₁.unop.len ≤ Δ₂.unop.len :=
 begin
@@ -182,15 +211,82 @@ begin
   congr,
   ext,
   apply le_antisymm,
-  { exact image_of_nondegenerate_simplex_uniqueness₀ X y₁ y₂ hy₁ hy₂ θ₁ θ₂ hθ₁ hθ₂ eq, },
-  { exact image_of_nondegenerate_simplex_uniqueness₀ X y₂ y₁ hy₂ hy₁ θ₂ θ₁ hθ₂ hθ₁ eq.symm, },
+  { exact image_of_nondegenerate_simplex_uniqueness₀ X y₁ y₂ hy₁ θ₁ θ₂ hθ₁ hθ₂ eq, },
+  { exact image_of_nondegenerate_simplex_uniqueness₀ X y₂ y₁ hy₂ θ₂ θ₁ hθ₂ hθ₁ eq.symm, },
 end
 
 lemma image_of_nondegenerate_simplex_uniqueness₂ (X : sSet) {Δ : simplex_categoryᵒᵖ}
   {Δ Δ' : simplex_categoryᵒᵖ} (y₁ : X.obj Δ') (y₂ : X.obj Δ')
   (hy₁ : y₁ ∈ X.nondegenerate_simplices Δ') (hy₂ : y₂ ∈ X.nondegenerate_simplices Δ')
   (θ₁ : Δ' ⟶ Δ) (θ₂ : Δ' ⟶ Δ) (hθ₁ : epi θ₁.unop) (hθ₂ : epi θ₂.unop)
-  (eq : X.map θ₁ y₁ = X.map θ₂ y₂) : θ₁ = θ₂ ∧ y₁ = y₂ := sorry
+  (eq : X.map θ₁ y₁ = X.map θ₂ y₂) : y₁ = y₂ :=
+begin
+  haveI := split_epi_of_epi θ₁.unop,
+  let f := section_ θ₁.unop ≫ θ₂.unop,
+  have eq₁ : y₁ = X.map f.op y₂,
+  { dsimp only [f],
+    rw [op_comp, X.map_comp', quiver.hom.op_unop, ← eq, ← X.map_comp'],
+    change _ = X.map (θ₁.unop.op ≫ _) _,
+    rw [← op_comp, split_epi.id θ₁.unop, op_id, X.map_id, types_id_apply], },
+  have eq₂ := eq₁,
+  let F := limits.image.mono_factorisation f,
+  rw [← F.fac, op_comp, X.map_comp'] at eq₂,
+  haveI : epi F.e := by { simp only [limits.as_factor_thru_image], apply_instance, },
+  haveI he := is_iso_of_nondegenerate_simplices ⟨y₁, hy₁⟩ F.e.op infer_instance _ eq₂,
+  haveI : is_iso F.e,
+  { change is_iso F.e.op.unop,
+    apply_instance, },
+  haveI : mono f,
+  { rw ← F.fac,
+    apply mono_comp, },
+  simpa only [simplex_category.eq_id_of_mono f, op_id, X.map_id, types_id_apply] using eq₁,
+end
+
+lemma ext_epi_of_sections {Δ₁ Δ₂ : simplex_category} (θ₁ θ₂ : Δ₁ ⟶ Δ₂)
+  (h : ∀ (s : split_epi θ₁), s.section_ ≫ θ₂ = 𝟙 _) : θ₁ = θ₂ :=
+begin
+  ext1, ext1, ext1 x,
+  have h₂ : ∃ (s : split_epi θ₁), s.section_.to_order_hom (θ₁.to_order_hom x) = x,
+  { sorry, },
+  rcases h₂ with ⟨s, hs⟩,
+  rw ← hs,
+  have eq := h s,
+  have h₃ := s.id',
+  simp only [auto_param_eq] at h₃,
+  rw ← h₃ at eq,
+  have h₄ : (θ₁ ≫ s.section_ ≫ θ₁).to_order_hom x =
+    (θ₁ ≫ s.section_ ≫ θ₂).to_order_hom x := by rw eq,
+  exact h₄,
+end
+
+lemma image_of_nondegenerate_simplex_uniqueness₃ (X : sSet) {Δ : simplex_categoryᵒᵖ}
+  {Δ Δ' : simplex_categoryᵒᵖ} (y : X.obj Δ')
+  (hy : y ∈ X.nondegenerate_simplices Δ')
+  (θ₁ : Δ' ⟶ Δ) (θ₂ : Δ' ⟶ Δ) (hθ₁ : epi θ₁.unop) (hθ₂ : epi θ₂.unop)
+  (eq : X.map θ₁ y = X.map θ₂ y) : θ₁ = θ₂ :=
+begin
+  apply quiver.hom.unop_inj,
+  apply ext_epi_of_sections,
+  introI s,
+  let f := section_ θ₁.unop ≫ θ₂.unop,
+  change f = 𝟙 _,
+  have eq₁ : y = X.map f.op y,
+  { dsimp only [f],
+    rw [op_comp, X.map_comp', quiver.hom.op_unop, ← eq, ← X.map_comp'],
+    change _ = X.map (θ₁.unop.op ≫ _) _,
+    rw [← op_comp, split_epi.id θ₁.unop, op_id, X.map_id, types_id_apply], },
+  let F := limits.image.mono_factorisation f,
+  rw [← F.fac, op_comp, X.map_comp'] at eq₁,
+  haveI : epi F.e := by { simp only [limits.as_factor_thru_image], apply_instance, },
+  haveI he := is_iso_of_nondegenerate_simplices ⟨y, hy⟩ F.e.op infer_instance _ eq₁,
+  haveI : is_iso F.e,
+  { change is_iso F.e.op.unop,
+    apply_instance, },
+  haveI : mono f,
+  { rw ← F.fac,
+    apply mono_comp, },
+  exact simplex_category.eq_id_of_mono f,
+end
 
 @[simps]
 def splitting (X : sSet.{u}) : simplicial_object.splitting X :=
