@@ -215,7 +215,7 @@ begin
   { exact image_of_nondegenerate_simplex_uniqueness₀ X y₂ y₁ hy₂ θ₂ θ₁ hθ₂ hθ₁ eq.symm, },
 end
 
-lemma image_of_nondegenerate_simplex_uniqueness₂ (X : sSet) {Δ : simplex_categoryᵒᵖ}
+lemma image_of_nondegenerate_simplex_uniqueness₂ (X : sSet)
   {Δ Δ' : simplex_categoryᵒᵖ} (y₁ : X.obj Δ') (y₂ : X.obj Δ')
   (hy₁ : y₁ ∈ X.nondegenerate_simplices Δ') (hy₂ : y₂ ∈ X.nondegenerate_simplices Δ')
   (θ₁ : Δ' ⟶ Δ) (θ₂ : Δ' ⟶ Δ) (hθ₁ : epi θ₁.unop) (hθ₂ : epi θ₂.unop)
@@ -285,7 +285,7 @@ begin
   exact h₄,
 end
 
-lemma image_of_nondegenerate_simplex_uniqueness₃ (X : sSet) {Δ : simplex_categoryᵒᵖ}
+lemma image_of_nondegenerate_simplex_uniqueness₃ (X : sSet)
   {Δ Δ' : simplex_categoryᵒᵖ} (y : X.obj Δ')
   (hy : y ∈ X.nondegenerate_simplices Δ')
   (θ₁ : Δ' ⟶ Δ) (θ₂ : Δ' ⟶ Δ) (hθ₁ : epi θ₁.unop) (hθ₂ : epi θ₂.unop)
@@ -314,30 +314,61 @@ begin
   exact simplex_category.eq_id_of_mono f,
 end
 
+@[simp]
+def splitting_map (X : sSet.{u}) (Δ : simplex_categoryᵒᵖ) :
+  sigma (simplicial_object.splitting.summand
+    (λ n, (X.nondegenerate_simplices (op [n]) : Type u)) Δ.unop) → X.obj Δ :=
+λ s, X.map s.1.e.op s.2.1
+
+lemma splitting_map_bijective (X : sSet.{u}) (Δ : simplex_categoryᵒᵖ) :
+  function.bijective (X.splitting_map Δ) :=
+begin
+  split,
+  { rintros ⟨⟨Δ₁, θ₁, hθ₁⟩, y₁, hy₁⟩ ⟨⟨Δ₂, θ₂, hθ₂⟩, y₂, hy₂⟩ eq,
+    have h₁ := X.image_of_nondegenerate_simplex_uniqueness₁ y₁ y₂ hy₁ hy₂ θ₁.op θ₂.op
+      hθ₁ hθ₂ eq,
+    simp only [simplex_category.mk_len, op_inj_iff] at h₁,
+    subst h₁,
+    have h₂ := X.image_of_nondegenerate_simplex_uniqueness₂ y₁ y₂ hy₁ hy₂ θ₁.op θ₂.op
+      hθ₁ hθ₂ eq,
+    subst h₂,
+    have h₃ := X.image_of_nondegenerate_simplex_uniqueness₃ y₁ hy₁ θ₁.op θ₂.op hθ₁ hθ₂ eq,
+    have h₃' : θ₁ = θ₂ := by { apply quiver.hom.op_inj, exact h₃, },
+    subst h₃', },
+  { intro y,
+    rcases X.is_epi_image_of_nondegenerate_simplex y with ⟨Δ', θ, hθ, y, hy, eq⟩,
+    exact ⟨⟨⟨Δ'.unop, ⟨θ.unop, hθ⟩⟩, ⟨y, hy⟩⟩, eq.symm⟩, },
+end
+
 @[simps]
 def splitting (X : sSet.{u}) : simplicial_object.splitting X :=
-{ N := λ n, X.nondegenerate_simplices (op [n]),
-  ι := λ n, subtype.val,
-  mono_ι := λ n, by { rw mono_iff_injective, apply subtype.coe_injective, },
-  is_iso' := λ Δ, begin
-    rw is_iso_iff_bijective,
-    split,
-    { intros y₁ y₂ hy,
-      rcases (splitting.sum.concrete_bijective _ Δ.unop).2 y₁ with ⟨⟨θ₁, ⟨z₁, hz₁⟩⟩, eq₁⟩,
-      rcases (splitting.sum.concrete_bijective _ Δ.unop).2 y₂ with ⟨⟨θ₂, ⟨z₂, hz₂⟩⟩, eq₂⟩,
-      substs eq₁ eq₂,
-      sorry, },
-    { intro x,
-      rcases X.is_epi_image_of_nondegenerate_simplex x with ⟨Δ', θ, hθ, y, hy, eq⟩,
-      induction Δ' using opposite.rec,
-      induction Δ' with m,
-      let F := (simplicial_object.splitting.ι_sum
-        (λ n, (X.nondegenerate_simplices (op [n]) : Type u)) ⟨[m], ⟨θ.unop, hθ⟩⟩),
-      use F ⟨y, hy⟩,
-      have h := comp_apply F (simplicial_object.splitting.map (λ n, subtype.val) Δ),
-      simp only [concrete_category.has_coe_to_fun_Type] at h,
-      erw [← h, limits.colimit.ι_desc, limits.cofan.mk_ι_app, eq],
-      refl, },
-  end, }
+begin
+  let N : ℕ → Type u := λ n, X.nondegenerate_simplices (op [n]),
+  let ι : Π (n : ℕ), N n → X.obj (op [n]) := λ n, subtype.val,
+  exact
+  { N := N,
+    ι := ι,
+    mono_ι := λ n, by { rw mono_iff_injective, apply subtype.coe_injective, },
+    is_iso' := λ Δ, begin
+      rw is_iso_iff_bijective,
+      let α := X.splitting_map Δ,
+      let β := simplicial_object.splitting.map N ι Δ,
+      let γ := concrete.coproduct_map (simplicial_object.splitting.summand N Δ.unop),
+      have hγ : function.bijective γ := concrete.coproduct_map_bijective _,
+      change function.bijective β,
+      have eq : β ∘ γ = α,
+      { ext s,
+        rcases s with ⟨A, x⟩,
+        dsimp [α, β, γ],
+        have h := comp_apply (simplicial_object.splitting.ι_sum N A)
+          (simplicial_object.splitting.map N ι Δ) x,
+        simp only [concrete_category.has_coe_to_fun_Type,
+          simplicial_object.splitting.ι_sum, simplicial_object.splitting.map] at h,
+        erw [colimit.ι_desc, cofan.mk_ι_app] at h,
+        exact h.symm, },
+      rw [← function.bijective.of_comp_iff β hγ, eq],
+      apply splitting_map_bijective,
+    end, },
+end
 
 end sSet
