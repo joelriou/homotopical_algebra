@@ -242,12 +242,38 @@ begin
   simpa only [simplex_category.eq_id_of_mono f, op_id, X.map_id, types_id_apply] using eq₁,
 end
 
-lemma ext_epi_of_sections {Δ₁ Δ₂ : simplex_category} (θ₁ θ₂ : Δ₁ ⟶ Δ₂)
+lemma ext_epi_of_sections {Δ₁ Δ₂ : simplex_category} (θ₁ θ₂ : Δ₁ ⟶ Δ₂) [epi θ₁]
   (h : ∀ (s : split_epi θ₁), s.section_ ≫ θ₂ = 𝟙 _) : θ₁ = θ₂ :=
 begin
   ext1, ext1, ext1 x,
   have h₂ : ∃ (s : split_epi θ₁), s.section_.to_order_hom (θ₁.to_order_hom x) = x,
-  { sorry, },
+  { let s₀ := split_epi_of_epi θ₁,
+    let α : fin (Δ₂.len+1) → fin (Δ₁.len+1) := λ y,
+      if (y = θ₁.to_order_hom x) then x else s₀.section_.to_order_hom y,
+    have hα : ∀ y, θ₁.to_order_hom (α y) = y,
+    { intro y,
+      dsimp [α],
+      split_ifs with h₁,
+      { rw ← h₁, },
+      { have h₃ := congr_arg order_hom.to_fun (congr_arg simplex_category.hom.to_order_hom s₀.id'),
+        exact congr_fun h₃ y, }, },
+    let β : Δ₂ ⟶ Δ₁ := simplex_category.hom.mk ⟨α, begin
+      intros x₁ x₂,
+      contrapose,
+      intro h,
+      simp only [not_le] at h ⊢,
+      suffices : x₂ ≤ x₁,
+      { cases this.lt_or_eq with h₁ h₂,
+        { assumption, },
+        { exfalso,
+          simpa only [h₂, lt_self_iff_false] using h, }, },
+      simpa only [hα, order_hom.to_fun_eq_coe] using θ₁.to_order_hom.monotone' h.le,
+    end⟩,
+    refine ⟨⟨β, _⟩, _⟩,
+    { ext1, ext1, ext1 y,
+      apply hα, },
+    { simp only [simplex_category.hom.to_order_hom_mk, order_hom.coe_fun_mk,
+        ite_eq_left_iff, eq_self_iff_true, not_true, is_empty.forall_iff], }, },
   rcases h₂ with ⟨s, hs⟩,
   rw ← hs,
   have eq := h s,
