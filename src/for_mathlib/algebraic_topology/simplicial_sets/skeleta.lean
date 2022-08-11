@@ -348,11 +348,10 @@ begin
   exact
   { N := N,
     ι := ι,
-    mono_ι := λ n, by { rw mono_iff_injective, apply subtype.coe_injective, },
     is_iso' := λ Δ, begin
       rw is_iso_iff_bijective,
       let α := X.splitting_map Δ,
-      let β := simplicial_object.splitting.map N ι Δ,
+      let β := @simplicial_object.splitting.map _ _ _ X ι _ Δ,
       let γ := concrete.coproduct_map (simplicial_object.splitting.summand N Δ.unop),
       have hγ : function.bijective γ := concrete.coproduct_map_bijective _,
       change function.bijective β,
@@ -361,7 +360,7 @@ begin
         rcases s with ⟨A, x⟩,
         dsimp [α, β, γ],
         have h := comp_apply (simplicial_object.splitting.ι_sum N A)
-          (simplicial_object.splitting.map N ι Δ) x,
+          (@simplicial_object.splitting.map _ _ _ X ι _ Δ) x,
         simp only [concrete_category.has_coe_to_fun_Type,
           simplicial_object.splitting.ι_sum, simplicial_object.splitting.map] at h,
         erw [colimit.ι_desc, cofan.mk_ι_app] at h,
