@@ -5,9 +5,10 @@ Authors: Joël Riou
 -/
 
 import category_theory.opposites
-import for_mathlib.category_theory.arrow_class
+import for_mathlib.category_theory.arrow
 import for_mathlib.category_theory.comma_op
 import category_theory.preadditive.projective
+import for_mathlib.category_theory.morphism_property_misc
 
 open category_theory
 open category_theory.category
@@ -105,49 +106,47 @@ is_retract.imp_of_functor G.map_arrow _ _ h
 
 end is_retract_hom
 
-namespace arrow_class
+namespace morphism_property
 
-variables (F : arrow_class C) {F' : arrow_class Cᵒᵖ}
+variables (P : morphism_property C) {P' : morphism_property Cᵒᵖ}
 
 def is_stable_by_retract : Prop :=
 ∀ ⦃X₁ X₂ Y₁ Y₂ : C⦄ (x : X₁ ⟶ X₂) (y : Y₁ ⟶ Y₂)
-  (hxy : is_retract_hom x y) (hx : arrow.mk y ∈ F), arrow.mk x ∈ F
+  (hxy : is_retract_hom x y) (hx : P y), P x
 
 namespace is_stable_by_retract
 
-variable {F}
+variable {P}
 
-lemma op (h : is_stable_by_retract F) :
-  is_stable_by_retract F.op :=
+lemma op (h : is_stable_by_retract P) :
+  is_stable_by_retract P.op :=
 λ X₁ X₂ Y₁ Y₂ x y hxy hy, h x.unop y.unop hxy.unop hy
 
-lemma unop (h : is_stable_by_retract F') :
-  is_stable_by_retract F'.unop :=
+lemma unop (h : is_stable_by_retract P') :
+  is_stable_by_retract P'.unop :=
 λ X₁ X₂ Y₁ Y₂ x y hxy hy, h x.op y.op hxy.op hy
 
-variables (F F')
+variables (P P')
 
-lemma iff_op (F : arrow_class C) :
-  is_stable_by_retract F ↔ is_stable_by_retract F.op :=
+lemma iff_op : is_stable_by_retract P ↔ is_stable_by_retract P.op :=
 begin
   split,
   { intro h,
     exact h.op, },
   { intro h,
-    simpa only [F.unop_op] using h.unop, },
+    simpa only [P.unop_op] using h.unop, },
 end
 
-lemma iff_unop :
-  is_stable_by_retract F' ↔ is_stable_by_retract F'.unop :=
-by simpa only [F'.op_unop] using (iff_op F'.unop).symm
+lemma iff_unop : is_stable_by_retract P' ↔ is_stable_by_retract P'.unop :=
+(iff_op P'.unop).symm
 
-variable {F}
+lemma of_inter {P₁ P₂ : morphism_property C} (h₁ : P₁.is_stable_by_retract)
+  (h₂ : P₂.is_stable_by_retract) : (P₁ ∩ P₂).is_stable_by_retract :=
+λ X₁ X₂ Y₁ Y₂ x y hxy hy, ⟨h₁ x y hxy hy.1, h₂ x y hxy hy.2⟩
 
-lemma of_inter {G : arrow_class C} (hF : F.is_stable_by_retract) (hG : G.is_stable_by_retract) :
-  (F ∩ G).is_stable_by_retract :=
-λ X₁ X₂ Y₁ Y₂ x y hxy hy, ⟨hF x y hxy hy.1, hG x y hxy hy.2⟩
+variable (C)
 
-lemma for_isomorphisms : (isomorphisms : arrow_class C).is_stable_by_retract :=
+lemma for_isomorphisms : (isomorphisms C).is_stable_by_retract :=
 λ X₁ X₂ Y₁ Y₂ x y hxy hy,
 begin
   haveI : is_iso y := hy,
@@ -167,27 +166,29 @@ begin
     rw [id_comp, fac₂], },
 end
 
-lemma for_monomorphisms : (monomorphisms : arrow_class C).is_stable_by_retract :=
+lemma for_monomorphisms : (monomorphisms C).is_stable_by_retract :=
 λ X₁ X₂ Y₁ Y₂ x y hxy hy, ⟨λ Z g g' hgg', begin
   haveI : mono y := hy,
   rcases hxy with ⟨s, r, fac⟩,
-  haveI : split_mono s.left := ⟨r.left, arrow.hom.congr_left fac⟩,
+  haveI : is_split_mono s.left := is_split_mono.mk' ⟨r.left, arrow.hom.congr_left fac⟩,
   have hs := s.w,
-  dsimp at hs hgg',
+  dsimp at hs,
   rw [← cancel_mono s.left, ← cancel_mono y,
     assoc, assoc, hs, ← assoc, ← assoc, hgg'],
 end⟩
 
-lemma for_epimorphisms : (epimorphisms : arrow_class C).is_stable_by_retract :=
-by simpa only [epimorphisms_eq_op] using for_monomorphisms.unop
+lemma for_epimorphisms : (epimorphisms C).is_stable_by_retract :=
+by simpa only [unop_monomorphisms] using (for_monomorphisms Cᵒᵖ).unop
 
-lemma for_inverse_image {W : arrow_class D} (h : W.is_stable_by_retract) (F : C ⥤ D) :
+variable {C}
+
+lemma inverse_image {W : morphism_property D} (h : W.is_stable_by_retract) (F : C ⥤ D) :
   (W.inverse_image F).is_stable_by_retract := λ X₁ X₂ Y₁ Y₂ x y hxy hy,
 h _ _ (is_retract_hom.imp_of_functor F hxy) hy
 
 end is_stable_by_retract
 
-end arrow_class
+end morphism_property
 
 namespace projective
 

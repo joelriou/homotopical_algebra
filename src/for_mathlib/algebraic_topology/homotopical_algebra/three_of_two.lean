@@ -6,19 +6,19 @@ Authors: Joël Riou
 
 import for_mathlib.algebraic_topology.homotopical_algebra.factorisation_axiom
 
-open category_theory category_theory.limits
+open category_theory
 
-variables {C : Type*} [category C] (F : arrow_class C) {F' : arrow_class Cᵒᵖ}
+variables {C : Type*} [category C] (F : morphism_property C) {F' : morphism_property Cᵒᵖ}
 
 namespace category_theory
 
-namespace arrow_class
+namespace morphism_property
 
 def three_of_two_of_comp_left : Prop :=
-∀ ⦃X Y Z : C⦄ (f : X ⟶ Y) (g : Y ⟶ Z), arrow.mk f ∈ F → arrow.mk (f ≫ g) ∈ F → arrow.mk g ∈ F
+∀ ⦃X Y Z : C⦄ (f : X ⟶ Y) (g : Y ⟶ Z) (hf : F f) (hfg : F (f ≫ g)), F g
 
 def three_of_two_of_comp_right : Prop :=
-∀ ⦃X Y Z : C⦄ (f : X ⟶ Y) (g : Y ⟶ Z), arrow.mk g ∈ F → arrow.mk (f ≫ g) ∈ F → arrow.mk f ∈ F
+∀ ⦃X Y Z : C⦄ (f : X ⟶ Y) (g : Y ⟶ Z) (hg : F g) (hfg : F (f ≫ g)), F f
 
 namespace three_of_two_of_comp_left
 
@@ -27,7 +27,7 @@ variable {F}
 lemma inverse_image {D : Type*} [category D] (h : F.three_of_two_of_comp_left) (G : D ⥤ C) :
   (F.inverse_image G).three_of_two_of_comp_left := λ X Y Z f g hf hfg,
 begin
-  rw arrow_class.inverse_image.mem_iff at hf hfg ⊢,
+  dsimp [morphism_property.inverse_image] at hf hfg ⊢,
   rw G.map_comp at hfg,
   exact h _ _ hf hfg,
 end
@@ -47,7 +47,7 @@ variable {F}
 lemma inverse_image {D : Type*} [category D] (h : F.three_of_two_of_comp_right) (G : D ⥤ C) :
   (F.inverse_image G).three_of_two_of_comp_right := λ X Y Z f g hg hfg,
 begin
-  rw arrow_class.inverse_image.mem_iff at hg hfg ⊢,
+  dsimp [morphism_property.inverse_image] at hg hfg ⊢,
   rw G.map_comp at hfg,
   exact h _ _ hg hfg,
 end
@@ -80,8 +80,8 @@ end three_of_two_of_comp_left
 
 variable (F)
 
-structure three_of_two (F : arrow_class C) : Prop :=
-(of_comp : F.is_stable_by_composition)
+structure three_of_two : Prop :=
+(of_comp : F.stable_under_composition)
 (of_comp_left : F.three_of_two_of_comp_left)
 (of_comp_right : F.three_of_two_of_comp_right)
 
@@ -115,8 +115,25 @@ lemma for_inverse_image {D : Type*} [category D] (h : three_of_two F) (G : D ⥤
   of_comp_left := h.of_comp_left.inverse_image G,
   of_comp_right := h.of_comp_right.inverse_image G, }
 
+variable (C)
+
+lemma for_isomorphisms : (isomorphisms C).three_of_two :=
+{ of_comp := stable_under_composition.for_isomorphisms C,
+  of_comp_left := λ X Y Z f g hf hfg, begin
+    dsimp [isomorphisms] at hf hfg ⊢,
+    haveI := hf,
+    haveI := hfg,
+    exact is_iso.of_is_iso_comp_left f g,
+  end,
+  of_comp_right :=λ X Y Z f g hg hfg, begin
+    dsimp [isomorphisms] at hg hfg ⊢,
+    haveI := hg,
+    haveI := hfg,
+    exact is_iso.of_is_iso_comp_right f g,
+  end, }
+
 end three_of_two
 
-end arrow_class
+end morphism_property
 
 end category_theory

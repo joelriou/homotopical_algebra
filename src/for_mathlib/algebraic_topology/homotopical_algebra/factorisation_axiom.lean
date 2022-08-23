@@ -4,19 +4,21 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Joël Riou
 -/
 
-import for_mathlib.category_theory.comm_sq_lift
+import for_mathlib.category_theory.morphism_property_misc
+import category_theory.lifting_properties.basic
+import for_mathlib.category_theory.retracts
+import for_mathlib.category_theory.lifting_properties.morphism_property
 
 noncomputable theory
 
-open category_theory category_theory.category category_theory.limits opposite
+open category_theory category_theory.category opposite
 
 namespace algebraic_topology
 
-variables {C : Type*} [category C] (F G : arrow_class C) {F' G' : arrow_class Cᵒᵖ}
+variables {C : Type*} [category C] (F G : morphism_property C) {F' G' : morphism_property Cᵒᵖ}
 
 def factorisation_axiom :=
-∀ ⦃X Z : C⦄ (f : X ⟶ Z), ∃ (Y : C) (i : X ⟶ Y) (hi : arrow.mk i ∈ F)
-  (p : Y ⟶ Z) (hp : arrow.mk p ∈ G), i ≫ p = f
+∀ ⦃X Z : C⦄ (f : X ⟶ Z), ∃ (Y : C) (i : X ⟶ Y) (hi : F i) (p : Y ⟶ Z) (hp : G p), i ≫ p = f
 
 namespace factorisation_axiom
 
@@ -26,12 +28,14 @@ variables {F G}
 
 def obj (h : factorisation_axiom F G) (f : X ⟶ Z) : C := (h f).some
 
-def i (h : factorisation_axiom F G) (f : X ⟶ Z) : X ⟶ h.obj f := (h f).some_spec.some
-def p (h : factorisation_axiom F G) (f : X ⟶ Z) : h.obj f ⟶ Z := (h f).some_spec.some_spec.some_spec.some
+def i (h : factorisation_axiom F G) (f : X ⟶ Z) : X ⟶ h.obj f :=
+(h f).some_spec.some
+def p (h : factorisation_axiom F G) (f : X ⟶ Z) : h.obj f ⟶ Z :=
+(h f).some_spec.some_spec.some_spec.some
 
-lemma i_mem (h : factorisation_axiom F G) (f : X ⟶ Z) : arrow.mk (h.i f) ∈ F :=
+lemma i_property (h : factorisation_axiom F G) (f : X ⟶ Z) : F (h.i f) :=
 (h f).some_spec.some_spec.some
-lemma p_mem (h : factorisation_axiom F G) (f : X ⟶ Z) : arrow.mk (h.p f) ∈ G :=
+lemma p_property (h : factorisation_axiom F G) (f : X ⟶ Z) : G (h.p f) :=
 (h f).some_spec.some_spec.some_spec.some_spec.some
 
 @[simp, reassoc]
@@ -60,7 +64,7 @@ lemma iff_op : factorisation_axiom F G ↔ factorisation_axiom G.op F.op := ⟨o
 lemma iff_unop : factorisation_axiom F' G' ↔ factorisation_axiom G'.unop F'.unop := ⟨unop, op⟩
 
 lemma is_retract_of_fac_and_llp (i : X ⟶ Z) {j : X ⟶ Y} {p : Y ⟶ Z} (fac : j ≫ p = i)
-  [has_lifting_property_new i p] : is_retract_hom i j :=
+  [has_lifting_property i p] : is_retract_hom i j :=
 begin
   have fac₂ : j ≫ p = i ≫ 𝟙 Z,
   { rw [comp_id, fac], },
@@ -85,20 +89,19 @@ lemma eq_llp_with
   (h₁ : factorisation_axiom F G) (h₂ : F.has_lifting_property G)
   (h₃ : F.is_stable_by_retract) : F = G.llp_with :=
 begin
-  ext i,
-  rcases i with ⟨X, Y, i⟩,
+  ext X Y i,
   split,
   { exact λ hi X Y, h₂ i hi, },
   { intro hi,
     rcases h₁ i with ⟨Z, j, hj, p, hp, fac⟩,
-    haveI : has_lifting_property_new i p := hi p hp,
+    haveI : has_lifting_property i p := hi p hp,
     exact h₃ i j (is_retract_of_fac_and_llp i fac) hj, },
 end
 
 lemma eq_rlp_with
   (h₁ : factorisation_axiom F G) (h₂ : F.has_lifting_property G)
   (h₃ : G.is_stable_by_retract) : G = F.rlp_with :=
-by rw [← G.unop_op, eq_llp_with h₁.op h₂.op h₃.op, F.llp_with_op, arrow_class.unop_op]
+by rw [← G.unop_op, eq_llp_with h₁.op h₂.op h₃.op, F.llp_with_op, morphism_property.unop_op]
 
 end factorisation_axiom
 

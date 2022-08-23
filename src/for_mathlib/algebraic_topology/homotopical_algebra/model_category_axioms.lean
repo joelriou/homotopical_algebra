@@ -6,6 +6,7 @@ Authors: Joël Riou
 
 import for_mathlib.algebraic_topology.homotopical_algebra.factorisation_axiom
 import for_mathlib.algebraic_topology.homotopical_algebra.three_of_two
+import for_mathlib.category_theory.retracts
 
 open category_theory category_theory.limits
 
@@ -14,7 +15,7 @@ namespace algebraic_topology
 variables (C : Type*) [category C]
 
 @[ext]
-class category_with_fib_cof_weq := (fib cof weq : arrow_class C)
+class category_with_fib_cof_weq := (fib cof weq : morphism_property C)
 
 namespace category_with_fib_cof_weq
 
@@ -33,10 +34,10 @@ def unop : category_with_fib_cof_weq C :=
   weq := data'.weq.unop }
 
 lemma unop_op : data.op.unop = data :=
-by ext1; apply arrow_class.unop_op
+by ext1; refl
 
 lemma op_unop : data'.unop.op = data' :=
-by ext1; apply arrow_class.op_unop
+by ext1; refl
 
 def triv_fib := data.fib ∩ data.weq
 def triv_cof := data.cof ∩ data.weq
@@ -47,7 +48,7 @@ def inverse_image {D : Type*} [category D] (F : D ⥤ C) : category_with_fib_cof
   weq := data.weq.inverse_image F }
 
 def CM2 := data.weq.three_of_two
-lemma CM2_iff_op : data.CM2 ↔ data.op.CM2 := arrow_class.three_of_two.iff_op _
+lemma CM2_iff_op : data.CM2 ↔ data.op.CM2 := morphism_property.three_of_two.iff_op _
 
 namespace CM2
 
@@ -55,7 +56,7 @@ variable {data}
 
 lemma inverse_image {D : Type*} [category D] (h : data.CM2) (F : D ⥤ C) :
   (category_with_fib_cof_weq.inverse_image data F).CM2 :=
-arrow_class.three_of_two.for_inverse_image h F
+morphism_property.three_of_two.for_inverse_image h F
 
 end CM2
 
@@ -73,21 +74,21 @@ namespace CM3
 variable {data}
 
 lemma triv_cof (h : data.CM3) : data.triv_cof.is_stable_by_retract :=
-arrow_class.is_stable_by_retract.of_inter h.cof h.weq
+morphism_property.is_stable_by_retract.of_inter h.cof h.weq
 lemma triv_fib (h : data.CM3) : data.triv_fib.is_stable_by_retract :=
-arrow_class.is_stable_by_retract.of_inter h.fib h.weq
+morphism_property.is_stable_by_retract.of_inter h.fib h.weq
 
 lemma inverse_image {D : Type*} [category D] (h : data.CM3) (F : D ⥤ C) :
   (category_with_fib_cof_weq.inverse_image data F).CM3 :=
-{ weq := arrow_class.is_stable_by_retract.for_inverse_image h.weq F,
-  fib := arrow_class.is_stable_by_retract.for_inverse_image h.fib F,
-  cof := arrow_class.is_stable_by_retract.for_inverse_image h.cof F, }
+{ weq := h.weq.inverse_image F,
+  fib := h.fib.inverse_image F,
+  cof := h.cof.inverse_image F, }
 
 end CM3
 
-lemma CM3a_iff_op : data.CM3a ↔ data.op.CM3a := arrow_class.is_stable_by_retract.iff_op _
-lemma CM3b_iff_op : data.CM3b ↔ data.op.CM3c := arrow_class.is_stable_by_retract.iff_op _
-lemma CM3c_iff_op : data.CM3c ↔ data.op.CM3b := arrow_class.is_stable_by_retract.iff_op _
+lemma CM3a_iff_op : data.CM3a ↔ data.op.CM3a := morphism_property.is_stable_by_retract.iff_op _
+lemma CM3b_iff_op : data.CM3b ↔ data.op.CM3c := morphism_property.is_stable_by_retract.iff_op _
+lemma CM3c_iff_op : data.CM3c ↔ data.op.CM3b := morphism_property.is_stable_by_retract.iff_op _
 lemma CM3_iff : data.CM3 ↔ data.CM3a ∧ data.CM3b ∧ data.CM3c :=
 by { split; rintro ⟨a, b, c⟩; exact ⟨a, b, c⟩, }
 lemma CM3_iff_op : data.CM3 ↔ data.op.CM3 :=
@@ -96,8 +97,8 @@ by { simp only [CM3_iff, ← CM3a_iff_op, ← CM3b_iff_op, ← CM3c_iff_op], tau
 def CM4a := data.triv_cof.has_lifting_property data.fib
 def CM4b := data.cof.has_lifting_property data.triv_fib
 def CM4 := data.CM4a ∧ data.CM4b
-lemma CM4a_iff_op : data.CM4a ↔ data.op.CM4b := arrow_class.has_lifting_property.iff_op _ _
-lemma CM4b_iff_op : data.CM4b ↔ data.op.CM4a := arrow_class.has_lifting_property.iff_op _ _
+lemma CM4a_iff_op : data.CM4a ↔ data.op.CM4b := morphism_property.has_lifting_property.iff_op _ _
+lemma CM4b_iff_op : data.CM4b ↔ data.op.CM4a := morphism_property.has_lifting_property.iff_op _ _
 lemma CM4_iff_op : data.CM4 ↔ data.op.CM4 :=
 by { dsimp only [CM4], rw [← CM4a_iff_op, ← CM4b_iff_op], tauto, }
 

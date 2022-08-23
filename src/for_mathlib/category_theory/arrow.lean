@@ -29,8 +29,8 @@ end is_inverted_by
 lemma congr_left {f g : arrow C} (h : f = g) : f.left = g.left := by rw h
 lemma congr_right {f g : arrow C} (h : f = g) : f.right = g.right := by rw h
 
-lemma mk_eq (f : arrow C) : arrow.mk f.hom = f :=
-by { cases f, dsimp [arrow.mk], refl, }
+--lemma mk_eq (f : arrow C) : arrow.mk f.hom = f :=
+--by { cases f, dsimp [arrow.mk], refl, }
 
 namespace hom
 
@@ -67,7 +67,7 @@ def mk_iso {f g : arrow C} (e₁ : f.left ≅ g.left) (e₂ : f.right ≅ g.righ
   end, }
 
 @[simps]
-def op_prod {C : Type*} [category C] (X Y : C) [has_binary_product X Y] 
+def op_prod {C : Type*} [category C] (X Y : C) [has_binary_product X Y]
   [has_binary_coproduct (op X) (op Y)] :
   op (X ⨯ Y) ≅ op X ⨿ op Y :=
 begin

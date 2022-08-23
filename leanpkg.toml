@@ -1,9 +1,9 @@
 [package]
 name = "model-categories"
 version = "0.1"
-lean_version = "leanprover-community/lean:3.45.0"
+lean_version = "leanprover-community/lean:3.46.0"
 path = "src"
 
 [dependencies]
-mathlib = {git = "https://github.com/leanprover-community/mathlib", rev = "3c8a2bcee824695184b0f325692cd64db63f7375"}
-dold-kan = {git = "https://github.com/joelriou/dold-kan", rev = "cadabbbbe2c985db8cf27696dd59097666609eef"}
+mathlib = {git = "https://github.com/leanprover-community/mathlib", rev = "0c0c4363287c7e33492a4a81c84692ece81b6783"}
+dold-kan = {git = "https://github.com/joelriou/dold-kan", rev = "2cd272fdb923bd0a7efc0a22d72644770ad53b2e"}
