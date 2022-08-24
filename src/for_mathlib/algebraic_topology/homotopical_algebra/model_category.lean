@@ -143,14 +143,15 @@ instance CM5b_cofibration : cofibration (CM5b.i f) := ⟨CM5b.i_property f⟩
 instance CM5b_fibration : fibration (CM5b.p f) := ⟨(CM5b.p_property f).1⟩
 instance CM5b_weak_eq : weak_eq (CM5b.p f) := ⟨(CM5b.p_property f).2⟩
 
---lemma cof_is_stable_by_direct_image : (cof : arrow_class C).is_stable_by_direct_image :=
---by { rw cof_eq_llp_with_triv_fib, apply arrow_class.is_stable_by_direct_image.for_llp_with, }
---lemma triv_cof_is_stable_by_direct_image : (triv_cof : arrow_class C).is_stable_by_direct_image :=
---by { rw triv_cof_eq_llp_with_fib, apply arrow_class.is_stable_by_direct_image.for_llp_with, }
+lemma cof_is_stable_under_cobase_change : (cof : morphism_property C).stable_under_cobase_change :=
+by { rw cof_eq_llp_with_triv_fib, apply morphism_property.llp_with.stable_under_cobase_change, }
+lemma triv_cof_is_stable_under_cobase_change :
+  (triv_cof : morphism_property C).stable_under_cobase_change :=
+by { rw triv_cof_eq_llp_with_fib, apply morphism_property.llp_with.stable_under_cobase_change, }
 
-lemma cof_stable_under_coproducts : (cof : morphism_property C).stable_under_coproducts :=
+lemma cof_is_stable_under_coproducts : (cof : morphism_property C).stable_under_coproducts :=
 by { rw cof_eq_llp_with_triv_fib, apply morphism_property.llp_with.stable_under_coproducts, }
-lemma triv_cof_stable_under_coproducts : (triv_cof : morphism_property C).stable_under_coproducts :=
+lemma triv_cof_is_stable_under_coproducts : (triv_cof : morphism_property C).stable_under_coproducts :=
 by { rw triv_cof_eq_llp_with_fib, apply morphism_property.llp_with.stable_under_coproducts, }
 
 lemma fib_is_stable_under_base_change :
@@ -160,11 +161,10 @@ lemma triv_fib_is_stable_under_base_change :
   (triv_fib : morphism_property C).stable_under_base_change :=
 by { rw triv_fib_eq_rlp_with_cof, apply morphism_property.rlp_with.stable_under_base_change, }
 
-lemma fib_stable_under_products : (fib : morphism_property C).stable_under_products :=
+lemma fib_is_stable_under_products : (fib : morphism_property C).stable_under_products :=
 by { rw fib_eq_rlp_with_triv_cof, apply morphism_property.rlp_with.stable_under_products, }
-lemma triv_fib_stable_under_products : (triv_fib : morphism_property C).stable_under_products :=
+lemma triv_fib_is_stable_under_products : (triv_fib : morphism_property C).stable_under_products :=
 by { rw triv_fib_eq_rlp_with_cof, apply morphism_property.rlp_with.stable_under_products, }
-
 
 lemma cof_respects_iso : (cof : morphism_property C).respects_iso :=
 morphism_property.respects_iso.of_stable_under_composition_and_contains_iso
@@ -182,30 +182,31 @@ lemma op (hi : cofibration i) : fibration i.op := ⟨hi.property⟩
 lemma unop {A B : Cᵒᵖ} {i : A ⟶ B} (hi : cofibration i) : fibration i.unop := ⟨hi.property⟩
 lemma iff_cof : cofibration i ↔ cof i := ⟨λ h, h.property, λ h, ⟨h⟩⟩
 
-/-lemma direct_image ⦃f : A ⟶ X⦄ ⦃i : A ⟶ B⦄ ⦃i' : X ⟶ Y⦄ ⦃g : B ⟶ Y⦄
+lemma direct_image ⦃f : A ⟶ X⦄ ⦃i : A ⟶ B⦄ ⦃i' : X ⟶ Y⦄ ⦃g : B ⟶ Y⦄
   (h : is_pushout f i i' g) [hi : cofibration i] : cofibration i' :=
-⟨cof_is_stable_by_direct_image h hi.mem⟩
+⟨cof_is_stable_under_cobase_change h hi.property⟩
 
 lemma direct_image_is_weak_eq ⦃f : A ⟶ X⦄ ⦃i : A ⟶ B⦄ ⦃i' : X ⟶ Y⦄ ⦃g : B ⟶ Y⦄
   (h : is_pushout f i i' g) [hi₁ : cofibration i] [hi₂ : weak_eq i] : weak_eq i' :=
-⟨(triv_cof_is_stable_by_direct_image h ⟨hi₁.mem, hi₂.mem⟩).2⟩
+⟨(triv_cof_is_stable_under_cobase_change h ⟨hi₁.property, hi₂.property⟩).2⟩
 
 instance {A X₁ X₂ : C} (f : A ⟶ X₁) (g : A ⟶ X₂) [hg : cofibration g] :
   cofibration (pushout.inl : X₁ ⟶ pushout f g) :=
-⟨cof_is_stable_by_direct_image.for_pushout_inl f g hg.mem⟩
+⟨cof_is_stable_under_cobase_change.inl f g hg.property⟩
 
 instance {A X₁ X₂ : C} (f : A ⟶ X₁) (g : A ⟶ X₂) [hf : cofibration f] :
   cofibration (pushout.inr : X₂ ⟶ pushout f g) :=
-⟨cof_is_stable_by_direct_image.for_pushout_inr f g hf.mem⟩
+⟨cof_is_stable_under_cobase_change.inr f g hf.property⟩
 
 instance {X₁ X₂ Y₁ Y₂ : C} (f₁ : X₁ ⟶ Y₁) (f₂ : X₂ ⟶ Y₂) [h₁ : cofibration f₁] [h₂ : cofibration f₂] :
   cofibration (coprod.map f₁ f₂) :=
-⟨cof_is_stable_by_coproduct.binary f₁ f₂ h₁.mem h₂.mem⟩
+⟨cof_is_stable_under_coproducts.binary f₁ h₁.property f₂ h₂.property⟩
 
 instance {X₁ X₂ Y₁ Y₂ : C} (f₁ : X₁ ⟶ Y₁) (f₂ : X₂ ⟶ Y₂) [h₁ : cofibration f₁] [h₂ : cofibration f₂]
   [h₁' : weak_eq f₁] [h₂' : weak_eq f₂] :
   weak_eq (coprod.map f₁ f₂) :=
-⟨(triv_cof_is_stable_by_coproduct.binary f₁ f₂ ⟨h₁.mem, h₁'.mem⟩ ⟨h₂.mem, h₂'.mem⟩).2⟩-/
+⟨(triv_cof_is_stable_under_coproducts.binary f₁ ⟨h₁.property, h₁'.property⟩
+  f₂ ⟨h₂.property, h₂'.property⟩).2⟩
 
 lemma respects_iso {X₁ X₂ Y₁ Y₂ : C} (f₁ : X₁ ⟶ Y₁) (f₂ : X₂ ⟶ Y₂) (e : arrow.mk f₁ ≅ arrow.mk f₂) :
   cofibration f₁ ↔ cofibration f₂ :=
@@ -244,13 +245,13 @@ lemma op (hp : weak_eq p) : weak_eq p.op := ⟨hp.property⟩
 lemma unop {X Y : Cᵒᵖ} {p : X ⟶ Y} (hp : weak_eq p) : weak_eq p.unop := ⟨hp.property⟩
 lemma iff_weq : weak_eq i ↔ weq i := ⟨λ h, h.property, λ h, ⟨h⟩⟩
 
---instance {A X₁ X₂ : C} (f : A ⟶ X₁) (g : A ⟶ X₂) [hg₁ : cofibration g] [hg₂ : weak_eq g] :
---  weak_eq (pushout.inl : X₁ ⟶ pushout f g) :=
---⟨(triv_cof_is_stable_by_direct_image.for_pushout_inl f g ⟨hg₁.mem, hg₂.mem⟩).2⟩
+instance {A X₁ X₂ : C} (f : A ⟶ X₁) (g : A ⟶ X₂) [hg₁ : cofibration g] [hg₂ : weak_eq g] :
+  weak_eq (pushout.inl : X₁ ⟶ pushout f g) :=
+⟨(triv_cof_is_stable_under_cobase_change.inl f g ⟨hg₁.property, hg₂.property⟩).2⟩
 
---instance {A X₁ X₂ : C} (f : A ⟶ X₁) (g : A ⟶ X₂) [hf₁ : cofibration f] [hf₂ : weak_eq f] :
---  weak_eq (pushout.inr : X₂ ⟶ pushout f g) :=
---⟨(triv_cof_is_stable_by_direct_image.for_pushout_inr f g ⟨hf₁.mem, hf₂.mem⟩).2⟩
+instance {A X₁ X₂ : C} (f : A ⟶ X₁) (g : A ⟶ X₂) [hf₁ : cofibration f] [hf₂ : weak_eq f] :
+  weak_eq (pushout.inr : X₂ ⟶ pushout f g) :=
+⟨(triv_cof_is_stable_under_cobase_change.inr f g ⟨hf₁.property, hf₂.property⟩).2⟩
 
 lemma respects_iso {X₁ X₂ Y₁ Y₂ : C} (f₁ : X₁ ⟶ Y₁) (f₂ : X₂ ⟶ Y₂) (e : arrow.mk f₁ ≅ arrow.mk f₂) :
   weak_eq f₁ ↔ weak_eq f₂ :=

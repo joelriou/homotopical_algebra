@@ -1,5 +1,6 @@
 import category_theory.lifting_properties.basic
 import category_theory.limits.shapes.comm_sq
+import for_mathlib.category_theory.morphism_property_misc
 
 noncomputable theory
 
@@ -99,5 +100,15 @@ lemma has_lifting_property_imp {A B X Y X' Y' : C} {p : X ⟶ Y} {p' : X' ⟶ Y'
 end⟩
 
 end is_pullback
+
+
+namespace is_pushout
+
+lemma has_lifting_property_imp {A B A' B' X Y : C} {f : A ⟶ A'} {i : A ⟶ B}
+  {f' : B ⟶ B'} {i' : A' ⟶ B'} (sq₁ : is_pushout f i i' f') (p : X ⟶ Y)
+  (hip : has_lifting_property i p) : has_lifting_property i' p :=
+sorry
+
+end is_pushout
 
 end category_theory

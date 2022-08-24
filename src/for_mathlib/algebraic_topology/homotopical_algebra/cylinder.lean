@@ -42,7 +42,7 @@ def change_I {I' : C} {f : P.I ⟶ I'} {g : I' ⟶ A} (fac : f ≫ g = P.σ) [we
   precylinder A :=
 begin
   haveI := weak_eq.of_comp_left f g infer_instance (by {rw fac, apply_instance, }),
-  exact 
+  exact
   { I := I',
     d₀ := P.d₀ ≫ f,
     d₁ := P.d₁ ≫ f,
@@ -304,7 +304,7 @@ end
 
 end cylinder
 
-namespace path_object 
+namespace path_object
 
 variable {B}
 

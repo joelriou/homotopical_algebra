@@ -99,6 +99,9 @@ lemma respects_iso : G.llp_with.respects_iso :=
 respects_iso.of_stable_under_composition_and_contains_iso
     (llp_with.stable_under_composition G) (llp_with.contains_iso G)
 
+lemma stable_under_cobase_change : G.llp_with.stable_under_cobase_change :=
+λ A A' B B' f g f' g' h hf X Y p hp, h.has_lifting_property_imp p (hf p hp)
+
 lemma stable_under_coproducts : G.llp_with.stable_under_coproducts :=
 ⟨llp_with.respects_iso G,
   λ J A B hA hB i hi X Y p hp, by { haveI := λ j, hi j p hp, apply_instance, }⟩
