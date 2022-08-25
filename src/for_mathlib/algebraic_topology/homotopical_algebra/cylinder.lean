@@ -250,12 +250,12 @@ def π := prod.lift P.d₀ P.d₁
 lemma fibration_π_iff_cofibration_op_ι (P : pre_path_object B) :
   fibration P.π ↔ cofibration P.op.ι :=
 by simpa only [fibration.iff_op]
-  using cofibration.iso_invariance _ _ (arrow.iso_op_prod_lift P.d₀ P.d₁)
+  using cofibration.respects_iso _ _ (arrow.iso_op_prod_lift P.d₀ P.d₁)
 
 lemma fibration_π_iff_cofibration_unop_ι {B : Cᵒᵖ} (P : pre_path_object B) :
   fibration P.π ↔ cofibration P.unop.ι :=
 by simpa only [fibration.iff_unop]
-  using cofibration.iso_invariance _ _ (arrow.iso_unop_prod_lift P.d₀ P.d₁)
+  using cofibration.respects_iso _ _ (arrow.iso_unop_prod_lift P.d₀ P.d₁)
 
 @[simps]
 def symm : pre_path_object B :=

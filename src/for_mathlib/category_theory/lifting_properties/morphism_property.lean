@@ -3,6 +3,8 @@ import category_theory.lifting_properties.basic
 import for_mathlib.category_theory.lifting_properties.pullbacks
 import for_mathlib.category_theory.lifting_properties.products
 
+open category_theory.limits
+
 namespace category_theory
 
 variables {C : Type*} [category C]
@@ -128,6 +130,38 @@ lemma stable_under_products : F.rlp_with.stable_under_products :=
 λ J X Y hX hY p hp A B i hi, by { haveI := λ j, hp j i hi, apply_instance, }⟩
 
 end rlp_with
+
+namespace stable_under_cobase_change
+
+lemma coprod_inl {P : morphism_property C}
+  (h : P.stable_under_cobase_change) (A B : C) [has_binary_coproduct A B]
+  [has_initial C] (hB : P (initial.to B)) :
+  P (coprod.inl : A ⟶ A ⨿ B) :=
+h (is_pushout.of_has_binary_coproduct' A B) hB
+
+lemma coprod_inr {P : morphism_property C}
+  (h : P.stable_under_cobase_change) (A B : C) [has_binary_coproduct A B]
+  [has_initial C] (hA : P (initial.to A)) :
+  P (coprod.inr : B ⟶ A ⨿ B) :=
+h (is_pushout.of_has_binary_coproduct' A B).flip hA
+
+end stable_under_cobase_change
+
+namespace stable_under_base_change
+
+lemma prod_fst {P : morphism_property C}
+  (h : P.stable_under_base_change) (X Y : C) [has_binary_product X Y]
+  [has_terminal C] (hY : P (terminal.from Y)) :
+  P (limits.prod.fst : X ⨯ Y ⟶ X) :=
+h (is_pullback.of_has_binary_product' X Y).flip hY
+
+lemma prod_snd {P : morphism_property C}
+  (h : P.stable_under_base_change) (X Y : C) [has_binary_product X Y]
+  [has_terminal C] (hX : P (terminal.from X)) :
+  P (limits.prod.snd : X ⨯ Y ⟶ Y) :=
+h (is_pullback.of_has_binary_product' X Y) hX
+
+end stable_under_base_change
 
 end morphism_property
 

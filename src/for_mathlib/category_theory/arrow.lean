@@ -32,13 +32,6 @@ lemma congr_right {f g : arrow C} (h : f = g) : f.right = g.right := by rw h
 --lemma mk_eq (f : arrow C) : arrow.mk f.hom = f :=
 --by { cases f, dsimp [arrow.mk], refl, }
 
-namespace hom
-
-lemma congr_left {f g : arrow C} {φ₁ φ₂ : f ⟶ g} (h : φ₁ = φ₂) : φ₁.left = φ₂.left := by rw h
-lemma congr_right {f g : arrow C} {φ₁ φ₂ : f ⟶ g} (h : φ₁ = φ₂) : φ₁.right = φ₂.right := by rw h
-
-end hom
-
 def mk_iso {f g : arrow C} (e₁ : f.left ≅ g.left) (e₂ : f.right ≅ g.right)
   (fac : e₁.hom ≫ g.hom = f.hom ≫ e₂.hom) :
   f ≅ g :=

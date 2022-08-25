@@ -114,12 +114,17 @@ end
 
 end is_cofibrant
 
-instance cof_coprod_inl [hB : is_cofibrant B] : cofibration (coprod.inl : A ⟶ A ⨿ B) :=
-sorry
---⟨cof_is_stable_by_direct_image.for_coprod_inl _ _ hB.mem⟩
-instance for_coprod_inr [hA : is_cofibrant A] : cofibration (coprod.inr : B ⟶ A ⨿ B) :=
-sorry
---⟨cof_is_stable_by_direct_image.for_coprod_inr _ _ hA.mem⟩
+instance cofibration_coprod_inl [hB : is_cofibrant B] : cofibration (coprod.inl : A ⟶ A ⨿ B) :=
+⟨cof_is_stable_under_cobase_change.coprod_inl A B hB.property⟩
+
+instance cofibration_coprod_inr [hA : is_cofibrant A] : cofibration (coprod.inr : B ⟶ A ⨿ B) :=
+⟨cof_is_stable_under_cobase_change.coprod_inr A B hA.property⟩
+
+instance fibration_prod_fst [hY : is_fibrant Y] : fibration (limits.prod.fst : X ⨯ Y ⟶ X) :=
+⟨fib_is_stable_under_base_change.prod_fst X Y hY.property⟩
+
+instance fibration_prod_snd [hX : is_fibrant X] : fibration (limits.prod.snd : X ⨯ Y ⟶ Y) :=
+⟨fib_is_stable_under_base_change.prod_snd X Y hX.property⟩
 
 end model_category
 

@@ -20,6 +20,21 @@ end
 lemma of_vert_is_iso [is_iso g] [is_iso inl] (sq : comm_sq f g inl inr) :
   is_pushout f g inl inr := (of_horiz_is_iso sq.flip).flip
 
+lemma of_coprod_inl_with_id {A B : C} (f : A ⟶ B) (X : C) [has_binary_coproduct A X]
+  [has_binary_coproduct B X] :
+  is_pushout coprod.inl f (coprod.map f (𝟙 X)) coprod.inl :=
+is_pushout.of_is_colimit' (comm_sq.mk (coprod.inl_map _ _))
+(pushout_cocone.is_colimit_aux _ (λ s, coprod.desc s.inr (coprod.inr ≫ s.inl))
+(λ s, begin
+  sorry,
+end)
+(λ s, begin
+  sorry
+end)
+begin
+  sorry
+end)
+
 end is_pushout
 
 end category_theory
