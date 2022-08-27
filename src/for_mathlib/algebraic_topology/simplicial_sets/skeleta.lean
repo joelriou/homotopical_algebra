@@ -2,6 +2,7 @@ import algebraic_topology.simplicial_set
 import category_theory.limits.kan_extension
 import for_mathlib.split_simplicial_object
 import for_mathlib.category_theory.limits.concrete
+import data.fintype.basic
 
 noncomputable theory
 
@@ -37,8 +38,8 @@ end
 
 end
 
-protected def rec {F : Π (X : simplex_category), Sort u} (h : ∀ (n : ℕ), F [n]) :
-  Π X, F X := λ n, h n.len
+--protected def rec {F : Π (X : simplex_category), Sort u} (h : ∀ (n : ℕ), F [n]) :
+--  Π X, F X := λ n, h n.len
 
 end simplex_category
 
@@ -160,8 +161,8 @@ begin
           apply hπ₂,
           rw simplex_category.mono_iff_injective,
           rw simplex_category.epi_iff_surjective at hπ₁,
-          rw fintype.injective_iff_bijective at ⊢,
-          rw fintype.surjective_iff_bijective at hπ₁,
+          rw finite.injective_iff_bijective at ⊢,
+          rw finite.surjective_iff_bijective at hπ₁,
           assumption, }, },
       rcases hn m hm y with ⟨Δ'', θ, hθ, z, hz, eq⟩,
       haveI := hπ₁,
@@ -170,10 +171,10 @@ begin
       simp only [functor_to_types.map_comp_apply, hy, eq], }, },
 end
 
-lemma splitting.sum.concrete_bijective (N : ℕ → Type u) (Δ : simplex_category) :
-  function.bijective (limits.concrete.coproduct_map (simplicial_object.splitting.summand N Δ) :
-    sigma (simplicial_object.splitting.summand N Δ) → simplicial_object.splitting.sum N Δ) :=
-limits.concrete.coproduct_map_bijective _
+--lemma splitting.sum.concrete_bijective (N : ℕ → Type u) (Δ : simplex_categoryᵒᵖ) :
+--  function.bijective (limits.concrete.coproduct_map (simplicial_object.splitting.summand N Δ) :
+--    sigma (simplicial_object.splitting.summand N Δ) → simplicial_object.splitting.sum N Δ) :=
+--limits.concrete.coproduct_map_bijective _
 
 lemma image_of_nondegenerate_simplex_uniqueness₀ (X : sSet)
   {Δ Δ₁ Δ₂ : simplex_categoryᵒᵖ} (y₁ : X.obj Δ₁) (y₂ : X.obj Δ₂)
@@ -181,13 +182,13 @@ lemma image_of_nondegenerate_simplex_uniqueness₀ (X : sSet)
   (θ₁ : Δ₁ ⟶ Δ) (θ₂ : Δ₂ ⟶ Δ) (hθ₁ : epi θ₁.unop) (hθ₂ : epi θ₂.unop)
   (eq : X.map θ₁ y₁ = X.map θ₂ y₂) : Δ₁.unop.len ≤ Δ₂.unop.len :=
 begin
-  haveI := split_epi_of_epi θ₁.unop,
+  haveI := is_split_epi_of_epi θ₁.unop,
   let f := section_ θ₁.unop ≫ θ₂.unop,
   have eq₁ : y₁ = X.map f.op y₂,
   { dsimp only [f],
     rw [op_comp, X.map_comp', quiver.hom.op_unop, ← eq, ← X.map_comp'],
     change _ = X.map (θ₁.unop.op ≫ _) _,
-    rw [← op_comp, split_epi.id θ₁.unop, op_id, X.map_id, types_id_apply], },
+    rw [← op_comp, is_split_epi.id θ₁.unop, op_id, X.map_id, types_id_apply], },
   let F := limits.image.mono_factorisation f,
   rw [← F.fac, op_comp, X.map_comp'] at eq₁,
   haveI : epi F.e := by { simp only [limits.as_factor_thru_image], apply_instance, },
@@ -221,13 +222,13 @@ lemma image_of_nondegenerate_simplex_uniqueness₂ (X : sSet)
   (θ₁ : Δ' ⟶ Δ) (θ₂ : Δ' ⟶ Δ) (hθ₁ : epi θ₁.unop) (hθ₂ : epi θ₂.unop)
   (eq : X.map θ₁ y₁ = X.map θ₂ y₂) : y₁ = y₂ :=
 begin
-  haveI := split_epi_of_epi θ₁.unop,
+  haveI := is_split_epi_of_epi θ₁.unop,
   let f := section_ θ₁.unop ≫ θ₂.unop,
   have eq₁ : y₁ = X.map f.op y₂,
   { dsimp only [f],
     rw [op_comp, X.map_comp', quiver.hom.op_unop, ← eq, ← X.map_comp'],
     change _ = X.map (θ₁.unop.op ≫ _) _,
-    rw [← op_comp, split_epi.id θ₁.unop, op_id, X.map_id, types_id_apply], },
+    rw [← op_comp, is_split_epi.id θ₁.unop, op_id, X.map_id, types_id_apply], },
   have eq₂ := eq₁,
   let F := limits.image.mono_factorisation f,
   rw [← F.fac, op_comp, X.map_comp'] at eq₂,
@@ -247,15 +248,15 @@ lemma ext_epi_of_sections {Δ₁ Δ₂ : simplex_category} (θ₁ θ₂ : Δ₁ 
 begin
   ext1, ext1, ext1 x,
   have h₂ : ∃ (s : split_epi θ₁), s.section_.to_order_hom (θ₁.to_order_hom x) = x,
-  { let s₀ := split_epi_of_epi θ₁,
+  { haveI := is_split_epi_of_epi θ₁,
     let α : fin (Δ₂.len+1) → fin (Δ₁.len+1) := λ y,
-      if (y = θ₁.to_order_hom x) then x else s₀.section_.to_order_hom y,
+      if (y = θ₁.to_order_hom x) then x else (section_ θ₁).to_order_hom y,
     have hα : ∀ y, θ₁.to_order_hom (α y) = y,
     { intro y,
       dsimp [α],
       split_ifs with h₁,
       { rw ← h₁, },
-      { have h₃ := congr_arg order_hom.to_fun (congr_arg simplex_category.hom.to_order_hom s₀.id'),
+      { have h₃ := congr_arg order_hom.to_fun (congr_arg simplex_category.hom.to_order_hom (is_split_epi.id θ₁)),
         exact congr_fun h₃ y, }, },
     let β : Δ₂ ⟶ Δ₁ := simplex_category.hom.mk ⟨α, begin
       intros x₁ x₂,
@@ -294,13 +295,13 @@ begin
   apply quiver.hom.unop_inj,
   apply ext_epi_of_sections,
   introI s,
-  let f := section_ θ₁.unop ≫ θ₂.unop,
+  let f := s.section_ ≫ θ₂.unop,
   change f = 𝟙 _,
   have eq₁ : y = X.map f.op y,
   { dsimp only [f],
     rw [op_comp, X.map_comp', quiver.hom.op_unop, ← eq, ← X.map_comp'],
     change _ = X.map (θ₁.unop.op ≫ _) _,
-    rw [← op_comp, split_epi.id θ₁.unop, op_id, X.map_id, types_id_apply], },
+    rw [← op_comp, s.id, op_id, X.map_id, types_id_apply], },
   let F := limits.image.mono_factorisation f,
   rw [← F.fac, op_comp, X.map_comp'] at eq₁,
   haveI : epi F.e := by { simp only [limits.as_factor_thru_image], apply_instance, },
@@ -317,7 +318,7 @@ end
 @[simp]
 def splitting_map (X : sSet.{u}) (Δ : simplex_categoryᵒᵖ) :
   sigma (simplicial_object.splitting.summand
-    (λ n, (X.nondegenerate_simplices (op [n]) : Type u)) Δ.unop) → X.obj Δ :=
+    (λ n, (X.nondegenerate_simplices (op [n]) : Type u)) Δ) → X.obj Δ :=
 λ s, X.map s.1.e.op s.2.1
 
 lemma splitting_map_bijective (X : sSet.{u}) (Δ : simplex_categoryᵒᵖ) :
@@ -325,9 +326,11 @@ lemma splitting_map_bijective (X : sSet.{u}) (Δ : simplex_categoryᵒᵖ) :
 begin
   split,
   { rintros ⟨⟨Δ₁, θ₁, hθ₁⟩, y₁, hy₁⟩ ⟨⟨Δ₂, θ₂, hθ₂⟩, y₂, hy₂⟩ eq,
+    induction Δ₁ using opposite.rec,
+    induction Δ₂ using opposite.rec,
     have h₁ := X.image_of_nondegenerate_simplex_uniqueness₁ y₁ y₂ hy₁ hy₂ θ₁.op θ₂.op
       hθ₁ hθ₂ eq,
-    simp only [simplex_category.mk_len, op_inj_iff] at h₁,
+    simp only [simplex_category.mk_len, op_inj_iff, unop_op] at h₁,
     subst h₁,
     have h₂ := X.image_of_nondegenerate_simplex_uniqueness₂ y₁ y₂ hy₁ hy₂ θ₁.op θ₂.op
       hθ₁ hθ₂ eq,
@@ -337,7 +340,7 @@ begin
     subst h₃', },
   { intro y,
     rcases X.is_epi_image_of_nondegenerate_simplex y with ⟨Δ', θ, hθ, y, hy, eq⟩,
-    exact ⟨⟨⟨Δ'.unop, ⟨θ.unop, hθ⟩⟩, ⟨y, hy⟩⟩, eq.symm⟩, },
+    exact ⟨⟨⟨Δ', ⟨θ.unop, hθ⟩⟩, ⟨y, hy⟩⟩, eq.symm⟩, },
 end
 
 @[simps]
@@ -348,21 +351,21 @@ begin
   exact
   { N := N,
     ι := ι,
-    is_iso' := λ Δ, begin
+    map_is_iso' := λ Δ, begin
       rw is_iso_iff_bijective,
       let α := X.splitting_map Δ,
       let β := simplicial_object.splitting.map X ι Δ,
-      let γ := concrete.coproduct_map (simplicial_object.splitting.summand N Δ.unop),
+      let γ := concrete.coproduct_map (simplicial_object.splitting.summand N Δ),
       have hγ : function.bijective γ := concrete.coproduct_map_bijective _,
       change function.bijective β,
       have eq : β ∘ γ = α,
       { ext s,
         rcases s with ⟨A, x⟩,
         dsimp [α, β, γ],
-        have h := comp_apply (simplicial_object.splitting.ι_sum N A)
+        have h := comp_apply (simplicial_object.splitting.ι_coprod N A)
           (simplicial_object.splitting.map X ι Δ) x,
         simp only [concrete_category.has_coe_to_fun_Type,
-          simplicial_object.splitting.ι_sum, simplicial_object.splitting.map] at h,
+          simplicial_object.splitting.ι_coprod, simplicial_object.splitting.map] at h,
         erw [colimit.ι_desc, cofan.mk_ι_app] at h,
         exact h.symm, },
       rw [← function.bijective.of_comp_iff β hγ, eq],
