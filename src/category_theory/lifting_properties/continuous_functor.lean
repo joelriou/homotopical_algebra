@@ -3,16 +3,18 @@ import set_theory.ordinal.basic
 import order.category.Preorder
 import category_theory.morphism_property
 import for_mathlib.category_theory.lifting_properties.morphism_property
+import category_theory.limits.shapes.functor_category
+import category_theory.limits.types
 
 import order.initial_seg
 
-universe u
+universes u v
 
 namespace category_theory
 
 open limits
 
-variables {C : Type*} [category C] (P : morphism_property C)
+variables {C : Type*} [category.{v} C] (P : morphism_property C)
   {α : Type u} [linear_order α] [is_well_order α (<)] (F : α ⥤ C)
   {β : Type*} [linear_order β] (h : principal_seg ((<) : β → β → Prop) ((<) : α → α → Prop))
 
@@ -74,37 +76,98 @@ def is_stable_under_transfinite_composition (P : morphism_property C) : Prop :=
     (hF₂ : ∀ (a : α), P (F.map (hom_of_le (le_succ a))))
     (c : cocone F) (hc : is_colimit c), P (c.ι.app ⊥)
 
-structure initial_seg' := (β : Type u) [lo : linear_order β]
-(h : initial_seg ((<) : β → β → Prop) ((<) : α → α → Prop))
+section
 
-instance (B : initial_seg' α) : linear_order B.β := B.lo
+variables {α} (X : αᵒᵖ ⥤ Type v)
+
+@[simps]
+def inclusion (b : α) : { a : α // a < b} ⥤ α :=
+begin
+  let φ : { a : α // a < b} → α := subtype.val,
+  have hφ : monotone φ := λ x y h, h,
+  exact monotone.functor hφ,
+end
+
+def solutions := (functor.const αᵒᵖ).obj (terminal (Type v)) ⟶ X
+
+def compatible_system (b : α) := (functor.const { a : α // a < b}ᵒᵖ).obj (terminal (Type v)) ⟶
+  (inclusion b).op ⋙ X
+
+lemma X_map_comp {a b c : αᵒᵖ} (φ : a ⟶ b) (ψ : b ⟶ c) (φψ : a ⟶ c)
+  (x : X.obj a) : X.map ψ (X.map φ x) = X.map (φψ) x :=
+begin
+  rw subsingleton.elim φψ (φ ≫ ψ),
+  simp only [functor_to_types.map_comp_apply],
+end
+
+def restriction (b : α) (x : X.obj (opposite.op b)) : compatible_system X b :=
+{ app := λ z n, X.map (hom_of_le (le_of_lt z.unop.2)).op x,
+  naturality' := λ z₁ z₂ θ, begin
+    ext n,
+    dsimp [inclusion, monotone.functor],
+    rw X_map_comp,
+  end, }
+
+lemma induction_principle (x₀ : X.obj (opposite.op ⊥))
+  (hX : ∀ (b : α), function.surjective (restriction X b)) :
+  ∃ (S : solutions X), S.app (opposite.op ⊥) = λ n, x₀ := sorry
+
+end
+
+@[simp]
+lemma hom_of_le_self_eq_id (a : α) : hom_of_le (show a ≤ a, by refl) = 𝟙 a := subsingleton.elim _ _
+
+noncomputable
+instance : inhabited (⊤_ (Type v)) :=
+by { let φ := terminal.from (ulift.{v} (fin 1)), exact ⟨φ (ulift.up 0)⟩ }
+
 
 lemma llp_is_stable_under_transfinite_composition (P : morphism_property C) :
   P.llp_with.is_stable_under_transfinite_composition α :=
 λ F hF₁ hF₂ c hc X Y p hp, ⟨λ f g, begin
   dsimp at g,
   intro sq,
-  suffices : ∀ (B : initial_seg' α),
-    ∃ (L : functor.well_order_inclusion_functor' B.h ⋙ F ⟶ (functor.const B.β).obj X)
-    (hL₁ : ∀ (b : B.β), f = F.map (hom_of_le bot_le) ≫ nat_trans.app L b),
-    ∀ (b : B.β), nat_trans.app L b ≫ p = c.ι.app (B.h b) ≫ g,
-  { rcases this (initial_seg'.mk α (by refl)) with ⟨L, hL₁, hL₂⟩,
-    dsimp [initial_seg.refl, functor.well_order_inclusion_functor'] at L hL₁ hL₂,
-    exact ⟨nonempty.intro
+  have sqs : Π (a : α), comm_sq f (F.map (hom_of_le (bot_le : ⊥ ≤ a))) p (c.ι.app a ≫ g) :=
+    λ a, comm_sq.mk (by rw [sq.w, cocone.w_assoc]),
+  let τ : Π (a b : α) (h : a ≤ b), (sqs b).lift_struct → (sqs a).lift_struct := λ a b h l,
+  { l := F.map (hom_of_le h) ≫ l.l,
+    fac_left' := by simpa only [← l.fac_left, ← F.map_comp_assoc],
+    fac_right' := by simp only [category.assoc, l.fac_right, cocone.w_assoc], },
+  let X : αᵒᵖ ⥤ Type v :=
+  { obj := λ b, (sqs b.unop).lift_struct,
+    map := λ a b h, τ b.unop a.unop (le_of_hom h.unop),
+    map_id' := λ a, begin
+      ext,
+      dsimp [τ],
+      simp only [hom_of_le_self_eq_id, functor.map_id, category.id_comp],
+    end,
+    map_comp' := λ a b c φ₁ φ₂, begin
+      ext,
+      dsimp [τ],
+      rw [← F.map_comp_assoc],
+      congr,
+    end, },
+  let x₀ : X.obj (opposite.op ⊥) :=
+  { l := f,
+    fac_left' := by { dsimp, rw [hom_of_le_self_eq_id, F.map_id, category.id_comp], },
+    fac_right' := sq.w, },
+  let n : ⊤_ (Type v) := arbitrary _,
+  cases induction_principle X x₀ _ with L hL,
+  { exact ⟨nonempty.intro
     { l := begin
         refine hc.desc (cocone.mk _ _),
         exact
-        { app := L.app,
-          naturality' := λ a₁ a₂ r, by convert L.naturality r, },
+        { app := λ b, (L.app (opposite.op b) n).l,
+          naturality' := λ a b h, begin
+            sorry,
+          end },
       end,
-      fac_left' := begin
-        have eq : (hom_of_le bot_le : (⊥ : α) ⟶ _) = 𝟙 ⊥ := subsingleton.elim _ _,
-        simp only [is_colimit.fac, hL₁ ⊥, eq, F.map_id, category.id_comp],
-      end,
-      fac_right' := hc.hom_ext (λ a, by simp only [is_colimit.fac_assoc, hL₂]), }⟩, },
-  sorry,
+      fac_left' := by simp only [is_colimit.fac, hL],
+      fac_right' := hc.hom_ext (λ b, by simpa only [is_colimit.fac_assoc]
+        using (L.app (opposite.op b) n).fac_right), }⟩, },
+  { intros b s,
+    sorry, },
 end⟩
-
 
 end morphism_property
 
