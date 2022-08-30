@@ -117,10 +117,12 @@ end
 @[simp]
 lemma hom_of_le_self_eq_id (a : α) : hom_of_le (show a ≤ a, by refl) = 𝟙 a := subsingleton.elim _ _
 
+@[simp]
+lemma hom_of_le_le_of_hom {a b : α} (f : a ⟶ b) : hom_of_le (le_of_hom f) = f := subsingleton.elim _ _
+
 noncomputable
 instance : inhabited (⊤_ (Type v)) :=
 by { let φ := terminal.from (ulift.{v} (fin 1)), exact ⟨φ (ulift.up 0)⟩ }
-
 
 lemma llp_is_stable_under_transfinite_composition (P : morphism_property C) :
   P.llp_with.is_stable_under_transfinite_composition α :=
@@ -159,13 +161,36 @@ lemma llp_is_stable_under_transfinite_composition (P : morphism_property C) :
         exact
         { app := λ b, (L.app (opposite.op b) n).l,
           naturality' := λ a b h, begin
-            sorry,
+            dsimp,
+            simpa only [types_comp_apply, functor.const_obj_map, types_id_apply,
+              category.comp_id, comm_sq.lift_struct.ext_iff, hom_of_le_le_of_hom]
+              using congr_fun (L.naturality h.op).symm n,
           end },
       end,
       fac_left' := by simp only [is_colimit.fac, hL],
       fac_right' := hc.hom_ext (λ b, by simpa only [is_colimit.fac_assoc]
         using (L.app (opposite.op b) n).fac_right), }⟩, },
   { intros b s,
+    by_cases ∃ (b₀ : α) (h₀ : b₀ < b), ∀ (a : α), a < b → a ≤ b₀,
+    { rcases h with ⟨b₀, h₀, h₁⟩,
+      let L := (s.app (opposite.op ⟨b₀, h₀⟩) n),
+      have H := hF₂ b₀ p hp,
+      let e : arrow.mk (F.map (hom_of_le (le_succ b₀))) ≅ arrow.mk (F.map (hom_of_le (le_of_lt h₀))) :=
+        arrow.iso_mk' (F.map (hom_of_le (le_succ b₀))) (F.map (hom_of_le (le_of_lt h₀))) (iso.refl _)
+          (F.map_iso (eq_to_iso begin
+            dsimp [well_founded.succ],
+            rw dif_pos,
+            { apply le_antisymm,
+              { exact well_founded.min_le _ h₀, },
+              { sorry, }, },
+          end)) begin
+            simp only [iso.refl_hom, category.id_comp, functor.map_iso_hom, eq_to_iso.hom, ← F.map_comp],
+            congr,
+          end,
+      rw has_lifting_property.iff_of_arrow_iso_left e at H,
+      haveI := H,
+      let s' : X.obj (opposite.op b) := sorry,
+      sorry, },
     sorry, },
 end⟩
 
