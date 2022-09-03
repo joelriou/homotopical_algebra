@@ -80,16 +80,25 @@ def monomorphisms : morphism_property C := λ X Y f, mono f
 def epimorphisms : morphism_property C := λ X Y f, epi f
 
 variable {C}
-lemma isomorphisms.infer_property {X Y : C} (f : X ⟶ Y) [hf : is_iso f] : (isomorphisms C) f := hf
-lemma monomorphisms.infer_property {X Y : C} (f : X ⟶ Y) [hf : mono f] : (monomorphisms C) f := hf
-lemma epimorphisms.infer_property {X Y : C} (f : X ⟶ Y) [hf : epi f] : (epimorphisms C) f := hf
+
+section
+variables {X Y : C} (f : X ⟶ Y)
+@[simp] lemma isomorphisms.iff : (isomorphisms C) f ↔ is_iso f := by refl
+@[simp] lemma monomorphisms.iff : (monomorphisms C) f ↔ mono f := by refl
+@[simp] lemma epimorphisms.iff : (epimorphisms C) f ↔ epi f := by refl
+
+lemma isomorphisms.infer_property [hf : is_iso f] : (isomorphisms C) f := hf
+lemma monomorphisms.infer_property [hf : mono f] : (monomorphisms C) f := hf
+lemma epimorphisms.infer_property [hf : epi f] : (epimorphisms C) f := hf
+
+end
 
 variable (C)
 @[simp]
 lemma op_epimorphisms : (epimorphisms C).op = monomorphisms Cᵒᵖ :=
 begin
   ext X Y f,
-  dsimp [epimorphisms, monomorphisms],
+  simp only [morphism_property.op, epimorphisms.iff, monomorphisms.iff],
   split,
   { introI,
     exact category_theory.op_mono_of_epi f.unop, },
@@ -101,7 +110,7 @@ end
 lemma op_monomorphisms : (monomorphisms C).op = epimorphisms Cᵒᵖ :=
 begin
   ext X Y f,
-  dsimp [epimorphisms, monomorphisms],
+  simp only [morphism_property.op, epimorphisms.iff, monomorphisms.iff],
   split,
   { introI,
     exact category_theory.op_epi_of_mono f.unop, },
@@ -161,6 +170,27 @@ end
 
 end stable_under_composition
 
+namespace respects_iso
+
+lemma op {P : morphism_property C} (h : P.respects_iso) :
+  P.op.respects_iso :=
+⟨λ X Y Z e f, h.2 e.unop f.unop, λ X Y Z e f, h.1 e.unop f.unop⟩
+
+lemma unop {P : morphism_property Cᵒᵖ} (h : P.respects_iso) :
+  P.unop.respects_iso :=
+⟨λ X Y Z e f, h.2 e.op f.op, λ X Y Z e f, h.1 e.op f.op⟩
+
+lemma for_monomorphisms : (monomorphisms C).respects_iso :=
+by { split; { intros X Y Z e f, simp only [monomorphisms.iff], introI, apply mono_comp, }, }
+
+lemma for_epimorphisms : (epimorphisms C).respects_iso :=
+by { split; { intros X Y Z e f, simp only [epimorphisms.iff], introI, apply epi_comp, }, }
+
+lemma for_isomorphisms : (isomorphisms C).respects_iso :=
+by { split; { intros X Y Z e f, simp only [isomorphisms.iff], introI, apply_instance, }, }
+
+end respects_iso
+
 variable {C}
 
 lemma respects_iso.of_stable_under_composition_and_contains_iso
@@ -182,7 +212,7 @@ P.respects_iso ∧
 namespace stable_under_products
 
 lemma property {P : morphism_property C} (h : morphism_property.stable_under_products.{w} P)
-  (I : Type w) (X : I → C) (Y : I → C) [hX : has_product X] [hY : has_product Y]
+  {I : Type w} (X : I → C) (Y : I → C) [hX : has_product X] [hY : has_product Y]
 (f : Π (i : I), X i ⟶ Y i) (hf : ∀ (i : I), P (f i)) :
   P (@limits.pi.map _ _ _ X Y hX hY f) :=
 h.2 I X Y f hf
@@ -194,7 +224,7 @@ lemma binary {P : morphism_property C} (h : morphism_property.stable_under_produ
 begin
   haveI : has_product (pair_function X₁ X₂) := hX,
   haveI : has_product (pair_function Y₁ Y₂) := hY,
-  convert h.property _ (pair_function X₁ X₂) (pair_function Y₁ Y₂)
+  convert h.property (pair_function X₁ X₂) (pair_function Y₁ Y₂)
     (λ i, by { cases i, exacts [f₁, f₂], })
     (λ i, by { cases i, exacts [h₁, h₂], }),
   ext,

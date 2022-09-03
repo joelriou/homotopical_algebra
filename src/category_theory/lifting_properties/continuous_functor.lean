@@ -51,6 +51,7 @@ def functor.well_order_cocone : limits.cocone (functor.well_order_inclusion_func
 
 omit h
 
+/-- add the assumption that β has no maximum and is not empty... -/
 def functor.well_order_continuous₀ (F : α ⥤ C) (β : Type u) [linear_order β] :=
   Π (h : principal_seg ((<): β → β → Prop) ((<) : α → α → Prop)),
     limits.is_colimit (F.well_order_cocone h)
@@ -124,6 +125,14 @@ noncomputable
 instance : inhabited (⊤_ (Type v)) :=
 by { let φ := terminal.from (ulift.{v} (fin 1)), exact ⟨φ (ulift.up 0)⟩ }
 
+instance : subsingleton (⊤_ (Type v)) :=
+⟨λ x₁ x₂, begin
+  let φ₁ : ulift (fin 1) ⟶ ⊤_ (Type v) := λ z, x₁,
+  let φ₂ : ulift (fin 1) ⟶ ⊤_ (Type v) := λ z, x₂,
+  have eq := subsingleton.elim φ₁ φ₂,
+  exact congr_fun eq (ulift.up 0),
+end⟩
+
 lemma llp_is_stable_under_transfinite_composition (P : morphism_property C) :
   P.llp_with.is_stable_under_transfinite_composition α :=
 λ F hF₁ hF₂ c hc X Y p hp, ⟨λ f g, begin
@@ -189,9 +198,54 @@ lemma llp_is_stable_under_transfinite_composition (P : morphism_property C) :
           end,
       rw has_lifting_property.iff_of_arrow_iso_left e at H,
       haveI := H,
-      let s' : X.obj (opposite.op b) := sorry,
-      sorry, },
-    sorry, },
+      have S : comm_sq L.l (F.map (hom_of_le (le_of_lt h₀))) p (c.ι.app b ≫ g),
+      { apply comm_sq.mk,
+        simp only [L.fac_right, cocone.w_assoc], },
+      let t : X.obj (opposite.op b) :=
+      { l := S.lift,
+        fac_left' := begin
+          conv_rhs { rw [← L.fac_left, ← S.fac_left, ← F.map_comp_assoc], },
+          congr,
+        end,
+        fac_right' := S.fac_right, },
+      refine ⟨t, _⟩,
+      ext d m,
+      dsimp at m,
+      have hm := subsingleton.elim n m,
+      subst hm,
+      dsimp [restriction],
+      have pif := S.fac_left,
+      dsimp [L] at pif,
+      have foo := (s.app d n).fac_left,
+      let φ : d.unop ⟶ ⟨b₀, h₀⟩ := hom_of_le (h₁ d.unop.1 d.unop.2),
+      have eq := congr_fun (s.naturality φ.op) n,
+      rw comm_sq.lift_struct.ext_iff at eq,
+      dsimp at eq,
+      conv_rhs { rw [eq, ← S.fac_left, ← F.map_comp_assoc], },
+      congr, },
+    { let t : X.obj (opposite.op b) :=
+      { l := begin
+          let β := {a : α // a < b},
+          let B := @principal_seg.mk _ _ ((<) : β → β → Prop) ((<) : α → α → Prop)
+            (subtype.rel_embedding _ _) b begin
+            intro c,
+            split,
+            { intro hc,
+              exact ⟨⟨c, hc⟩, rfl⟩, },
+            { intro hc,
+              cases hc with d hd,
+              rw ← hd,
+              exact d.2, },
+          end,
+          refine (hF₁ β B).desc (cocone.mk _ _),
+          exact
+          { app := λ d, (s.app (opposite.op d) n).l,
+            naturality' := sorry, },
+        end,
+        fac_left' := sorry,
+        fac_right' := sorry, },
+      refine ⟨t, _⟩,
+      sorry, }, },
 end⟩
 
 end morphism_property
