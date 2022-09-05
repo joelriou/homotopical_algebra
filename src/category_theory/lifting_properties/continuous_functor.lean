@@ -43,6 +43,7 @@ begin
   { subst h₂, },
 end
 
+@[simps]
 def functor.well_order_cocone : limits.cocone (functor.well_order_inclusion_functor h ⋙ F) :=
 { X := F.obj h.top,
   ι :=
@@ -109,18 +110,6 @@ def restriction (b : α) (x : X.obj (opposite.op b)) : compatible_system X b :=
     rw X_map_comp,
   end, }
 
-lemma induction_principle (x₀ : X.obj (opposite.op ⊥))
-  (hX : ∀ (b : α), function.surjective (restriction X b)) :
-  ∃ (S : solutions X), S.app (opposite.op ⊥) = λ n, x₀ := sorry
-
-end
-
-@[simp]
-lemma hom_of_le_self_eq_id (a : α) : hom_of_le (show a ≤ a, by refl) = 𝟙 a := subsingleton.elim _ _
-
-@[simp]
-lemma hom_of_le_le_of_hom {a b : α} (f : a ⟶ b) : hom_of_le (le_of_hom f) = f := subsingleton.elim _ _
-
 noncomputable
 instance : inhabited (⊤_ (Type v)) :=
 by { let φ := terminal.from (ulift.{v} (fin 1)), exact ⟨φ (ulift.up 0)⟩ }
@@ -133,6 +122,61 @@ instance : subsingleton (⊤_ (Type v)) :=
   exact congr_fun eq (ulift.up 0),
 end⟩
 
+lemma induction_principle (x₀ : X.obj (opposite.op ⊥))
+  (hX : ∀ (b : α) (hb : b ≠ ⊥), function.surjective (restriction X b)) :
+  ∃ (S : solutions X), S.app (opposite.op ⊥) = λ n, x₀ :=
+begin
+  let A := { o : set α // ⊥ ∈ o },
+  let incl : Π (o : A), o.1 → α := λ o x, x.1,
+  have hincl : ∀ (o : A), monotone (incl o) := λ o a b h, h,
+  let ι : Π (o : A), o.1 ⥤ α := λ o, monotone.functor (hincl o),
+  let n : ⊤_ (Type v) := arbitrary _,
+  let B := sigma (λ (o : A), (functor.const o.1ᵒᵖ).obj (terminal (Type v)) ⟶ (ι o).op ⋙ X),
+  let ρ : B → B → Prop := λ t₁ t₂, Π (h₁ : t₁.1.1 ⊆ t₂.1.1),
+    ∀ (a : t₁.1.1), t₁.2.app (opposite.op a) n = t₂.2.app (opposite.op ⟨a.1, h₁ a.2⟩) n,
+  let b : B,
+  { refine ⟨⟨{⊥}, set.mem_singleton _⟩, _⟩,
+    exact
+    { app := λ a z, begin
+        refine X.map _ x₀,
+        suffices : (opposite.unop a).1 ≤ ⊥,
+        { exact (hom_of_le this).op, },
+        rw set.eq_of_mem_singleton (a.unop.2),
+      end,
+      naturality' := λ a₁ a₂ φ, begin
+        induction a₁ using opposite.rec,
+        induction a₂ using opposite.rec,
+        have eq₁ : a₁ = a₂,
+        { ext,
+          have h₁ := set.eq_of_mem_singleton (a₁.2),
+          have h₂ := set.eq_of_mem_singleton (a₂.2),
+          simp only [subtype.val_eq_coe] at h₁ h₂,
+          rw [h₁, h₂], },
+        subst eq₁,
+        have eq₂ := subsingleton.elim φ (𝟙 _),
+        subst eq₂,
+        dsimp,
+        erw [category.id_comp, X.map_id, category.comp_id],
+      end, }, },
+  have hb : is_chain ρ {b} := set.subsingleton.is_chain set.subsingleton_singleton,
+  rcases hb.exists_max_chain with ⟨M, ⟨hM₁, hM₂⟩⟩,
+  sorry,
+end
+
+end
+
+@[simp]
+lemma hom_of_le_self_eq_id (a : α) : hom_of_le (show a ≤ a, by refl) = 𝟙 a := subsingleton.elim _ _
+
+@[simp]
+lemma hom_of_le_le_of_hom {a b : α} (f : a ⟶ b) : hom_of_le (le_of_hom f) = f := subsingleton.elim _ _
+
+
+lemma min_eq {α : Type*} [linear_order α] [H : is_well_order α (<)]
+  (s : set α) (hs : s.nonempty) (m : α) (hm₁ : m ∈ s) (hm₂ : ∀ (b : α), b ∈ s → m ≤ b) :
+  H.wf.min s hs = m :=
+le_antisymm (H.wf.min_le hm₁) (hm₂ _ (H.wf.min_mem s hs))
+
 lemma llp_is_stable_under_transfinite_composition (P : morphism_property C) :
   P.llp_with.is_stable_under_transfinite_composition α :=
 λ F hF₁ hF₂ c hc X Y p hp, ⟨λ f g, begin
@@ -144,7 +188,7 @@ lemma llp_is_stable_under_transfinite_composition (P : morphism_property C) :
   { l := F.map (hom_of_le h) ≫ l.l,
     fac_left' := by simpa only [← l.fac_left, ← F.map_comp_assoc],
     fac_right' := by simp only [category.assoc, l.fac_right, cocone.w_assoc], },
-  let X : αᵒᵖ ⥤ Type v :=
+  let U : αᵒᵖ ⥤ Type v :=
   { obj := λ b, (sqs b.unop).lift_struct,
     map := λ a b h, τ b.unop a.unop (le_of_hom h.unop),
     map_id' := λ a, begin
@@ -158,12 +202,12 @@ lemma llp_is_stable_under_transfinite_composition (P : morphism_property C) :
       rw [← F.map_comp_assoc],
       congr,
     end, },
-  let x₀ : X.obj (opposite.op ⊥) :=
+  let x₀ : U.obj (opposite.op ⊥) :=
   { l := f,
     fac_left' := by { dsimp, rw [hom_of_le_self_eq_id, F.map_id, category.id_comp], },
     fac_right' := sq.w, },
   let n : ⊤_ (Type v) := arbitrary _,
-  cases induction_principle X x₀ _ with L hL,
+  cases induction_principle U x₀ _ with L hL,
   { exact ⟨nonempty.intro
     { l := begin
         refine hc.desc (cocone.mk _ _),
@@ -179,7 +223,7 @@ lemma llp_is_stable_under_transfinite_composition (P : morphism_property C) :
       fac_left' := by simp only [is_colimit.fac, hL],
       fac_right' := hc.hom_ext (λ b, by simpa only [is_colimit.fac_assoc]
         using (L.app (opposite.op b) n).fac_right), }⟩, },
-  { intros b s,
+  { intros b hb s,
     by_cases ∃ (b₀ : α) (h₀ : b₀ < b), ∀ (a : α), a < b → a ≤ b₀,
     { rcases h with ⟨b₀, h₀, h₁⟩,
       let L := (s.app (opposite.op ⟨b₀, h₀⟩) n),
@@ -189,9 +233,10 @@ lemma llp_is_stable_under_transfinite_composition (P : morphism_property C) :
           (F.map_iso (eq_to_iso begin
             dsimp [well_founded.succ],
             rw dif_pos,
-            { apply le_antisymm,
-              { exact well_founded.min_le _ h₀, },
-              { sorry, }, },
+            { refine min_eq _ ⟨b, h₀⟩ _ h₀ _,
+              intros b₁ hb₁,
+              by_contra',
+              exact not_lt.mpr (h₁ _ this) hb₁, },
           end)) begin
             simp only [iso.refl_hom, category.id_comp, functor.map_iso_hom, eq_to_iso.hom, ← F.map_comp],
             congr,
@@ -201,7 +246,7 @@ lemma llp_is_stable_under_transfinite_composition (P : morphism_property C) :
       have S : comm_sq L.l (F.map (hom_of_le (le_of_lt h₀))) p (c.ι.app b ≫ g),
       { apply comm_sq.mk,
         simp only [L.fac_right, cocone.w_assoc], },
-      let t : X.obj (opposite.op b) :=
+      let t : U.obj (opposite.op b) :=
       { l := S.lift,
         fac_left' := begin
           conv_rhs { rw [← L.fac_left, ← S.fac_left, ← F.map_comp_assoc], },
@@ -223,29 +268,54 @@ lemma llp_is_stable_under_transfinite_composition (P : morphism_property C) :
       dsimp at eq,
       conv_rhs { rw [eq, ← S.fac_left, ← F.map_comp_assoc], },
       congr, },
-    { let t : X.obj (opposite.op b) :=
-      { l := begin
-          let β := {a : α // a < b},
-          let B := @principal_seg.mk _ _ ((<) : β → β → Prop) ((<) : α → α → Prop)
-            (subtype.rel_embedding _ _) b begin
-            intro c,
-            split,
-            { intro hc,
-              exact ⟨⟨c, hc⟩, rfl⟩, },
-            { intro hc,
-              cases hc with d hd,
-              rw ← hd,
-              exact d.2, },
-          end,
-          refine (hF₁ β B).desc (cocone.mk _ _),
-          exact
-          { app := λ d, (s.app (opposite.op d) n).l,
-            naturality' := sorry, },
+    { let β := {a : α // a < b},
+      let B := @principal_seg.mk _ _ ((<) : β → β → Prop) ((<) : α → α → Prop)
+        (subtype.rel_embedding _ _) b begin
+        intro c,
+        split,
+        { intro hc,
+          exact ⟨⟨c, hc⟩, rfl⟩, },
+        { intro hc,
+          cases hc with d hd,
+          rw ← hd,
+          exact d.2, },
+      end,
+      let d₀ : β := ⟨⊥, begin
+        rcases (bot_le : ⊥ ≤ b).eq_or_lt with (h₁|h₂),
+        { exfalso,
+          exact hb h₁.symm, },
+        { exact h₂, },
+      end⟩,
+      let Co : cocone (functor.well_order_inclusion_functor B ⋙ F) := cocone.mk X
+        { app := λ d, (s.app (opposite.op d) n).l,
+          naturality' := λ b₁ b₂ φ, begin
+            dsimp [functor.well_order_inclusion_functor],
+            have hφ := congr_fun (s.naturality φ.op) n,
+            dsimp at hφ,
+            simpa only [category.comp_id, hφ],
+          end, },
+      let t : U.obj (opposite.op b) :=
+      { l := (hF₁ β B).desc Co,
+        fac_left' := begin
+          dsimp,
+          conv_rhs { rw ← (s.app (opposite.op d₀) n).fac_left, },
+          have h₀ := (hF₁ β B).fac Co d₀,
+          dsimp [functor.well_order_cocone] at h₀,
+          rw [← h₀, ← F.map_comp_assoc],
+          congr,
         end,
-        fac_left' := sorry,
-        fac_right' := sorry, },
-      refine ⟨t, _⟩,
-      sorry, }, },
+        fac_right' := begin
+          apply (hF₁ β B).hom_ext,
+          intro d,
+          rw [is_colimit.fac_assoc, (s.app (opposite.op d) n).fac_right,
+            functor.well_order_cocone_ι_app],
+          dsimp,
+          simpa only [cocone.w_assoc],
+        end, },
+      use t,
+      ext a m,
+      rw ← subsingleton.elim n m,
+      exact (hF₁ β B).fac Co a.unop, }, },
 end⟩
 
 end morphism_property
