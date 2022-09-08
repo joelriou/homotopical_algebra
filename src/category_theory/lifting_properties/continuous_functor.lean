@@ -267,9 +267,10 @@ begin
       { intro h₁,
         have compat' : ∀ (a : b'.1.1) (ha : a.1 < μ), b'.2.app (opposite.op a) n =
           b.2.app (opposite.op ⟨a.1, h₁ a.2⟩) n,
-        { sorry,
-        --have pif := s.app (opposite.op begin sorry, end),
-        },
+        { rintro ⟨a, ha⟩ ha',
+          have eq := congr_fun (nat_trans.congr_app hx (opposite.op ⟨a, ha'⟩)) n,
+          have eq' := compat ⟨a, ha'⟩ ⟨b', hb'₁⟩ ha,
+          exact eq'.trans eq.symm, },
         intro a,
         dsimp,
         cases eq_or_lt_of_le (h₁ a.2),
