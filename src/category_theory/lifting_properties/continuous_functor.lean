@@ -178,8 +178,6 @@ begin
   have hb : is_chain ρ {b} := set.subsingleton.is_chain set.subsingleton_singleton,
   rcases hb.exists_max_chain with ⟨M, ⟨hM₁, hM₂⟩⟩,
   have h : ∀ (x : α), ∃ (m : M), x ∈ m.1.1.1,
-  { sorry, },
-  /-
   { by_contra',
     let Z := { x : α | ∀ (m : M), ¬ x ∈ m.1.1.1 },
     have hZ : Z.nonempty := ⟨this.some, this.some_spec⟩,
@@ -300,7 +298,7 @@ begin
       apply hμ'',
       refl,
     end,
-    exact hM₁.not_super_chain hb', },-/
+    exact hM₁.not_super_chain hb', },
   have H : ∃ (φ : α → M), ∀ (a : α), a ∈ (φ a).1.1.1,
   { refine ⟨λ a, (h a).some, λ a, (h a).some_spec⟩, },
   rcases H with ⟨φ, hφ⟩,
@@ -345,7 +343,10 @@ begin
     have hm := subsingleton.elim n m,
     subst hm,
     dsimp,
-    sorry, },
+    rw ← compat'' ⊥ ⟨b, hM₂ (set.mem_singleton b)⟩ rfl,
+    dsimp,
+    have eq : 𝟙 (⊥ : α) = hom_of_le rfl.le := subsingleton.elim _ _,
+    simpa only [← eq, op_id, X.map_id], },
 end
 
 end
