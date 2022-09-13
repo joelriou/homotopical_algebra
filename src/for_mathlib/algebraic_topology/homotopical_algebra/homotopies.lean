@@ -109,6 +109,44 @@ def comp_left {P : pre_path_object B} {f f' : A ⟶ B}
   (H : right_homotopy P f f') (g : A' ⟶ A) : right_homotopy P (g ≫ f) (g ≫ f') :=
 { h := g ≫ H.h, }
 
+lemma with_cof_σ_of_right_homotopy {A B : C} [hA : is_cofibrant A] {f f' : A ⟶ B}
+  {P : path_object B} (H : right_homotopy P.pre f f') : ∃ (P' : path_object B)
+  (H' : right_homotopy P'.pre f f'), cofibration P'.σ :=
+begin
+  let P' := P.change_I (CM5b.fac (P.σ)),
+  have sq : comm_sq (initial.to _) (initial.to _) (CM5b.p (P.σ)) H.h :=
+    comm_sq.mk (is_initial.hom_ext initial_is_initial _ _),
+  refine ⟨P.change_I (CM5b.fac (P.σ)), _, by { dsimp, apply_instance, }⟩,
+  exact
+  { h := sq.lift,
+    h₀' := by { dsimp [path_object.change_I], rw [sq.fac_right_assoc, H.h₀], },
+    h₁' := by { dsimp [path_object.change_I], rw [sq.fac_right_assoc, H.h₁], }, },
+end
+
+lemma extension_exists {X X' Y : C} {P : path_object Y} {f₀ f₁ : X' ⟶ Y} (i : X ⟶ X')
+  [cofibration i] [weak_eq i] (H : right_homotopy P.pre (i ≫ f₀) (i ≫ f₁)) :
+  ∃ (H' : right_homotopy P.pre f₀ f₁), i ≫ H'.h = H.h :=
+begin
+  have sq : comm_sq H.h i P.pre.π (prod.lift f₀ f₁) := by tidy,
+  have eq₀ := congr_arg (λ f, f ≫ limits.prod.fst) sq.fac_right,
+  have eq₁ := congr_arg (λ f, f ≫ limits.prod.snd) sq.fac_right,
+  simp only [pre_path_object.π, prod.comp_lift, prod.lift_snd, prod.lift_fst] at eq₀ eq₁,
+  use
+  { h := sq.lift,
+    h₀' := eq₀,
+    h₁' := eq₁, },
+  exact sq.fac_left,
+end
+
+def extension {X X' Y : C} {P : path_object Y} {f₀ f₁ : X' ⟶ Y} (i : X ⟶ X')
+  [cofibration i] [weak_eq i] (H : right_homotopy P.pre (i ≫ f₀) (i ≫ f₁)) :
+  right_homotopy P.pre f₀ f₁ := (H.extension_exists i).some
+
+lemma extension_fac {X X' Y : C} {P : path_object Y} {f₀ f₁ : X' ⟶ Y}
+  (i : X ⟶ X') [cofibration i] [weak_eq i] (H : right_homotopy P.pre (i ≫ f₀) (i ≫ f₁)) :
+  i ≫ (H.extension i).h = H.h :=
+(H.extension_exists i).some_spec
+
 end right_homotopy
 
 end model_category

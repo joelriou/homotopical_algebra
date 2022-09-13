@@ -38,6 +38,7 @@ instance weq_d₀ : weak_eq P.d₀ := weak_eq.of_comp_right P.d₀ P.σ infer_in
 instance weq_d₁ : weak_eq P.d₁ := weak_eq.of_comp_right P.d₁ P.σ infer_instance
   (by { rw σd₁, apply_instance, })
 
+@[simps]
 def change_I {I' : C} {f : P.I ⟶ I'} {g : I' ⟶ A} (fac : f ≫ g = P.σ) [weak_eq f] :
   precylinder A :=
 begin
@@ -167,6 +168,7 @@ variables {B} (P : pre_path_object B)
 
 instance : weak_eq P.σ := P.weq_σ
 
+@[simps]
 def op (P : pre_path_object B) : precylinder (op B) :=
 begin
   haveI : weak_eq P.σ.op := weak_eq.op infer_instance,
@@ -179,6 +181,7 @@ begin
     σd₁' := by simp only [← op_comp, d₁σ, op_id], }
 end
 
+@[simps]
 def unop {B : Cᵒᵖ} (P : pre_path_object B) : precylinder B.unop :=
 begin
   haveI : weak_eq P.σ.unop := weak_eq.unop infer_instance,
@@ -197,6 +200,7 @@ namespace precylinder
 
 variable {A}
 
+@[simps]
 def op (P : precylinder A) : pre_path_object (op A) :=
 begin
   haveI : weak_eq P.σ.op := weak_eq.op infer_instance,
@@ -209,6 +213,7 @@ begin
     d₁σ' := by simp only [← op_comp, σd₁, op_id], }
 end
 
+@[simps]
 def unop {A : Cᵒᵖ} (P : precylinder A) : pre_path_object (unop A) :=
 begin
   haveI : weak_eq P.σ.unop := weak_eq.unop infer_instance,
@@ -236,6 +241,7 @@ lemma op_unop {B : Cᵒᵖ} (P : precylinder B) : P.unop.op = P := by { cases P,
 instance weq_d₀ : weak_eq P.d₀ := weak_eq.unop (infer_instance : weak_eq P.op.d₀)
 instance weq_d₁ : weak_eq P.d₁ := weak_eq.unop (infer_instance : weak_eq P.op.d₁)
 
+@[simps]
 def change_I {I' : C} {f : I' ⟶ P.I} {g : B ⟶ I'} (fac : g ≫ f = P.σ) [weak_eq f] :
   pre_path_object B :=
 begin
@@ -279,6 +285,17 @@ by { haveI := h, exact mk P, }
 abbreviation pre (Q : path_object B) := Q.to_pre_path_object
 
 instance (Q : path_object B) : fibration Q.pre.π := Q.fib_π
+
+@[simps]
+def change_I {B : C} (P : path_object B) {Z : C} {f : B ⟶ Z} {g : Z ⟶ P.I}
+  (fac : f ≫ g = P.σ) [fibration g] [weak_eq g] : path_object B :=
+begin
+  haveI : fibration (P.pre.change_I fac).π,
+  { convert (infer_instance : fibration (g ≫ P.π)),
+    simp only [pre_path_object.π, pre_path_object.change_I_d₀,
+      pre_path_object.change_I_d₁, prod.comp_lift], },
+  exact path_object.mk (P.pre.change_I fac),
+end
 
 end path_object
 
