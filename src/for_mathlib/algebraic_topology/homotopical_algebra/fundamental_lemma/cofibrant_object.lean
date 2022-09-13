@@ -7,7 +7,7 @@ Authors: Joël Riou
 import for_mathlib.algebraic_topology.homotopical_algebra.homotopies
 import for_mathlib.algebraic_topology.homotopical_algebra.fibrant
 import category_theory.full_subcategory
-import category_theory.quotient
+import for_mathlib.category_theory.quotient_misc
 
 noncomputable theory
 
@@ -137,6 +137,10 @@ namespace homotopy_category
 @[simp]
 lemma Q_map {X Y : cofibrant_object C} (f : X ⟶ Y) :
   Q.map f = (quotient.functor _).map f := rfl
+
+lemma Q_map_surjective (X Y : cofibrant_object C) :
+  function.surjective (λ (f : X ⟶ Y), Q.map f) :=
+by apply quotient.functor_map_surjective
 
 lemma Q_map_eq_iff {X Y : cofibrant_object C} [hY : is_fibrant Y.obj]
   (Cyl : cylinder X.obj) (f₁ f₂ : X ⟶ Y) :

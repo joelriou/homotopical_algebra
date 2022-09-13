@@ -74,6 +74,10 @@ def Q : bifibrant_object C ⥤ homotopy_category C := quotient.functor _
 lemma Q_map {X Y : bifibrant_object C} (f : X ⟶ Y) :
   homotopy_category.Q.map f = (quotient.functor _).map f := rfl
 
+lemma Q_map_surjective (X Y : bifibrant_object C) :
+  function.surjective (λ (f : X ⟶ Y), Q.map f) :=
+by apply quotient.functor_map_surjective
+
 lemma Q_map_eq_iff' {X Y : bifibrant_object C}
   (P : path_object Y.obj) (f₁ f₂ : X ⟶ Y) :
   (homotopy_category.Q.map f₁ = homotopy_category.Q.map f₂) ↔
