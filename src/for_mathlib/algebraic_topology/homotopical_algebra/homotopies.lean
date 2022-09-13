@@ -149,6 +149,51 @@ lemma extension_fac {X X' Y : C} {P : path_object Y} {f₀ f₁ : X' ⟶ Y}
 
 end right_homotopy
 
+
+namespace left_homotopy
+
+def to_right_homotopy {A B : C} [is_cofibrant A] {Cyl : cylinder A} {f₁ f₂ : A ⟶ B}
+  (H : left_homotopy Cyl.pre f₁ f₂) (P : path_object B) : right_homotopy P.pre f₁ f₂ :=
+begin
+  have sq : comm_sq (f₁ ≫ P.σ) Cyl.d₀ P.π (prod.lift (Cyl.σ ≫ f₁) H.h) := by tidy,
+  have hr₀ := congr_arg (λ f, f ≫ limits.prod.fst) sq.fac_right,
+  have hr₁ := congr_arg (λ f, f ≫ limits.prod.snd) sq.fac_right,
+  simp only [pre_path_object.π, prod.comp_lift, prod.lift_snd, prod.lift_fst] at hr₀ hr₁,
+  exact
+  { h := Cyl.d₁ ≫ sq.lift,
+    h₀' := by { simp only [hr₀, pre_path_object.π, assoc, precylinder.σd₁_assoc], },
+    h₁' := by { simp only [pre_path_object.π, assoc, hr₁, H.h₁], }, },
+end
+
+end left_homotopy
+
+namespace right_homotopy
+
+def to_left_homotopy {A B : C} [hB : is_fibrant B] {P : path_object B} {f₁ f₂ : A ⟶ B}
+  (H : right_homotopy P.pre f₁ f₂) (Cyl : cylinder A) : left_homotopy Cyl.pre f₁ f₂ :=
+begin
+  haveI : is_cofibrant (opposite.op B) := hB.op,
+  let H₁ : left_homotopy P.op.pre _ _ := H.op,
+  let H₂ : right_homotopy Cyl.pre.op _ _ := H₁.to_right_homotopy Cyl.op,
+  simpa only [Cyl.pre.unop_op] using H₂.unop,
+end
+
+def change_path_object {A B : C} [hA : is_cofibrant A] [hB : is_fibrant B]
+  {P : path_object B} {f₁ f₂ : A ⟶ B} (H : right_homotopy P.pre f₁ f₂) (P' : path_object B) :
+  right_homotopy P'.pre f₁ f₂ :=
+(H.to_left_homotopy (cylinder.some A)).to_right_homotopy P'
+
+end right_homotopy
+
+namespace left_homotopy
+
+def change_cylinder {A B : C} [hA : is_cofibrant A] [hB : is_fibrant B]
+  {Cyl : cylinder A} {f₁ f₂ : A ⟶ B} (H : left_homotopy Cyl.pre f₁ f₂) (Cyl' : cylinder A) :
+  left_homotopy Cyl'.pre f₁ f₂ :=
+(H.to_right_homotopy (path_object.some B)).to_left_homotopy Cyl'
+
+end left_homotopy
+
 end model_category
 
 end algebraic_topology
