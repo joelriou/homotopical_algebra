@@ -79,8 +79,8 @@ namespace trans_closure
 
 lemma is_equiv (A X : cofibrant_object C) :
   is_equiv (A ⟶ X) (λ f₁ f₂, trans_closure f₁ f₂) :=
-{ refl := λ f, trans_closure.mk
-    ⟨path_object.some X.1, nonempty.intro (right_homotopy.refl _ f)⟩,
+{ refl := λ f, trans_closure.mk (right_homotopy.mk
+    (path_object.some X.1) (right_homotopy.refl _ f)),
   trans := λ f₁ f₂ f₃ H₁₂ H₂₃, trans_closure.trans H₁₂ H₂₃,
   symm := λ f₁ f₂ H, begin
     induction H with f₁ f₂ H₁₂ f₁ f₂ f₃ H₁₂ H₂₃ H₂₁ H₃₂,
@@ -132,18 +132,19 @@ variable {C}
 
 def homotopy_category.Q : cofibrant_object C ⥤ homotopy_category C := quotient.functor _
 
-@[simp]
-lemma homotopy_category.Q_map {X Y : cofibrant_object C} (f : X ⟶ Y) :
-  homotopy_category.Q.map f = (quotient.functor _).map f := rfl
+namespace homotopy_category
 
-lemma homotopy_category.Q_map_eq_iff {X Y : cofibrant_object C} [hY : is_fibrant Y.obj]
+@[simp]
+lemma Q_map {X Y : cofibrant_object C} (f : X ⟶ Y) :
+  Q.map f = (quotient.functor _).map f := rfl
+
+lemma Q_map_eq_iff {X Y : cofibrant_object C} [hY : is_fibrant Y.obj]
   (Cyl : cylinder X.obj) (f₁ f₂ : X ⟶ Y) :
-  (homotopy_category.Q.map f₁ = homotopy_category.Q.map f₂) ↔
-    nonempty (left_homotopy Cyl.pre f₁ f₂) :=
+  (Q.map f₁ = Q.map f₂) ↔ nonempty (left_homotopy Cyl.pre f₁ f₂) :=
 begin
   split,
   { intro h,
-    simp only [homotopy_category.Q_map, quotient.functor_map_eq_iff] at h,
+    simp only [Q_map, quotient.functor_map_eq_iff] at h,
     induction h with f₁ f₂ H f₁ f₂ f₃ H₁₂ H₂₃ H H',
     { exact nonempty.intro (H.some_spec.some.to_left_homotopy Cyl), },
     { exact nonempty.intro ((H.some.trans H'.some).change_cylinder Cyl), }, },
@@ -152,6 +153,18 @@ begin
     refine right_homotopy.trans_closure.mk
       (right_homotopy.mk (path_object.some Y.obj) (h.some.to_right_homotopy _)), },
 end
+
+lemma Q_map_eq_iff' {X Y : cofibrant_object C} [is_fibrant Y.obj]
+  (P : path_object Y.obj) (f₁ f₂ : X ⟶ Y) :
+  (Q.map f₁ = Q.map f₂) ↔ nonempty (model_category.right_homotopy P.pre f₁ f₂) :=
+begin
+  rw Q_map_eq_iff (cylinder.some X.obj) f₁ f₂,
+  split,
+  { exact λ h, nonempty.intro (h.some.to_right_homotopy _), },
+  { exact λ h, nonempty.intro (h.some.to_left_homotopy _), },
+end
+
+end homotopy_category
 
 @[simp]
 def W : morphism_property (cofibrant_object C) := λ X Y f, M.cof f
