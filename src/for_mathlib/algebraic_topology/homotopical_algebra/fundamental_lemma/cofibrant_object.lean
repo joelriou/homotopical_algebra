@@ -171,7 +171,7 @@ end
 end homotopy_category
 
 @[simp]
-def W : morphism_property (cofibrant_object C) := λ X Y f, M.cof f
+def weq : morphism_property (cofibrant_object C) := λ X Y f, M.weq f
 
 end cofibrant_object
 
