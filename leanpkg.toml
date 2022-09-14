@@ -5,5 +5,5 @@ lean_version = "leanprover-community/lean:3.48.0"
 path = "src"
 
 [dependencies]
-mathlib = {git = "https://github.com/leanprover-community/mathlib", rev = "06ae0493a9b4e22f58a7b4cf5c8846cd0e683bd3"}
-dold-kan = {git = "https://github.com/joelriou/dold-kan", rev = "3255201924119aa33ac5223915191010a76cac60"}
+mathlib = {git = "https://github.com/leanprover-community/mathlib", rev = "11878a45b2e160498dfbf8488959290576411640"}
+dold-kan = {git = "https://github.com/joelriou/dold-kan", rev = "d611e144fdc3bfef9e7032ee2c7e611646e911a2"}
