@@ -262,6 +262,11 @@ end
 
 end stable_under_coproducts
 
+lemma is_inverted_by.of_comp {C₁ C₂ C₃ : Type*} [category C₁] [category C₂] [category C₃]
+  (W : morphism_property C₁) (F : C₁ ⥤ C₂) (hF : W.is_inverted_by F) (G : C₂ ⥤ C₃) :
+  W.is_inverted_by (F ⋙ G) :=
+λ X Y f hf, by { haveI := hF f hf, dsimp, apply_instance, }
+
 end morphism_property
 
 end category_theory
