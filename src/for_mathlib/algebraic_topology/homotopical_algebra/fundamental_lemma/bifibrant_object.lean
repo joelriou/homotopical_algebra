@@ -117,7 +117,7 @@ category_theory.quotient.lift _
 end homotopy_category
 
 @[simp]
-def W : morphism_property (bifibrant_object C) := λ X Y f, M.cof f
+def weq : morphism_property (bifibrant_object C) := λ X Y f, M.cof f
 
 end bifibrant_object
 
