@@ -267,6 +267,18 @@ lemma is_inverted_by.of_comp {C₁ C₂ C₃ : Type*} [category C₁] [category 
   W.is_inverted_by (F ⋙ G) :=
 λ X Y f hf, by { haveI := hF f hf, dsimp, apply_instance, }
 
+lemma is_inverted_by.iff_of_iso (W : morphism_property C) {F₁ F₂ : C ⥤ D} (e : F₁ ≅ F₂) :
+  W.is_inverted_by F₁ ↔ W.is_inverted_by F₂ :=
+begin
+  suffices : ∀ (X Y : C) (f : X ⟶ Y), is_iso (F₁.map f) ↔ is_iso (F₂.map f),
+  { split,
+    exact λ h X Y f hf, by { rw ← this, exact h f hf, },
+    exact λ h X Y f hf, by { rw this, exact h f hf, }, },
+  intros X Y f,
+  apply (respects_iso.for_isomorphisms D).arrow_mk_iso_iff,
+  exact arrow.iso_mk (e.app X) (e.app Y) (by simp),
+end
+
 end morphism_property
 
 end category_theory

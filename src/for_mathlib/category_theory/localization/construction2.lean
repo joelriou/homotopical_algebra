@@ -21,6 +21,12 @@ variables (D)
 @[derive category]
 def morphism_property.functors_inverting := full_subcategory (λ (F : C ⥤ D), W.is_inverted_by F)
 
+variables {D W}
+
+def morphism_property.functors_inverting.mk (F : C ⥤ D) (hF : W.is_inverted_by F) :
+  W.functors_inverting D := ⟨F, hF⟩
+
+variables (D W)
 namespace morphism_property
 
 lemma Q_inverts : W.is_inverted_by W.Q :=
