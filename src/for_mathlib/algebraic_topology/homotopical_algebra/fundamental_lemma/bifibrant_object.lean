@@ -22,6 +22,29 @@ begin
   simp only [eq_to_hom_refl, comp_id, id_comp],
 end
 
+lemma map_eq_iff_of_nat_iso {C D : Type*} [category C] [category D]
+  {F₁ F₂ : C ⥤ D} (e : F₁ ≅ F₂) {X Y : C} (f₁ f₂ : X ⟶ Y) :
+  F₁.map f₁ = F₁.map f₂ ↔ F₂.map f₁ = F₂.map f₂ :=
+begin
+  revert F₁ F₂ e,
+  suffices : ∀ {F₁ F₂ : C ⥤ D} (e : F₁ ≅ F₂) (h : F₁.map f₁ = F₁.map f₂),
+    F₂.map f₁ = F₂.map f₂,
+  { exact λ F₁ F₂ e, ⟨this e, this e.symm⟩, },
+  intros F₁ F₂ e h,
+  rw [← cancel_epi (e.hom.app X), ← e.hom.naturality f₁, ← e.hom.naturality f₂, h],
+end
+
+@[simp]
+lemma map_eq_iff {C D : Type*} [category C] [category D]
+  (F : C ⥤ D) [faithful F] {X Y : C} (f₁ f₂ : X ⟶ Y) :
+  F.map f₁ = F.map f₂ ↔ f₁ = f₂ :=
+begin
+  split,
+  { apply F.map_injective, },
+  { intro h,
+    rw h, }
+end
+
 end category_theory.functor
 
 namespace category_theory.quotient
@@ -102,15 +125,12 @@ variable {C}
 
 namespace homotopy_category
 
+@[derive full]
 def Q : bifibrant_object C ⥤ homotopy_category C := quotient.functor _
 
 @[simp]
 lemma Q_map {X Y : bifibrant_object C} (f : X ⟶ Y) :
   homotopy_category.Q.map f = (quotient.functor _).map f := rfl
-
-lemma Q_map_surjective (X Y : bifibrant_object C) :
-  function.surjective (@category_theory.functor.map _ _ _ _ Q X Y) :=
-by apply quotient.functor_map_surjective
 
 lemma Q_map_eq_iff' {X Y : bifibrant_object C}
   (P : path_object Y.obj) (f₁ f₂ : X ⟶ Y) :
@@ -180,9 +200,8 @@ begin
   { rintro ⟨X⟩,
     convert functor.congr_obj h₁₂ X, },
   { rintros ⟨X⟩ ⟨Y⟩ f,
-    rcases Q_map_surjective _ _ f with ⟨g, hg⟩,
-    subst hg,
-    convert category_theory.functor.congr_map_conjugate h₁₂ g, },
+    rw ← Q.image_preimage f,
+    convert category_theory.functor.congr_map_conjugate h₁₂ (Q.preimage f), },
 end
 
 lemma Q_inverts_triv_cof {X Y : bifibrant_object C} (f : X ⟶ Y)
@@ -244,11 +263,17 @@ section
 
 variables {D : Type*} [category D] (L : bifibrant_object C ⥤ D) [L.is_localization weq]
 
-lemma L_map_surjective (X Y : bifibrant_object C) :
-  function.surjective (@category_theory.functor.map _ _ _ _ L X Y) := sorry
+lemma L_full : full L :=
+full.of_iso (localization.comp_uniq_equivalence_functor_iso weq homotopy_category.Q L)
 
 lemma L_map_eq_iff_Q_map_eq {X Y : bifibrant_object C} (f₁ f₂ : X ⟶ Y) :
-  L.map f₁ = L.map f₂ ↔ homotopy_category.Q.map f₁ = homotopy_category.Q.map f₂ := sorry
+  L.map f₁ = L.map f₂ ↔ homotopy_category.Q.map f₁ = homotopy_category.Q.map f₂ :=
+begin
+  rw ← category_theory.functor.map_eq_iff_of_nat_iso
+    (localization.comp_uniq_equivalence_functor_iso weq homotopy_category.Q L),
+  dsimp only [functor.comp_map],
+  simp only [category_theory.functor.map_eq_iff],
+end
 
 lemma L_map_eq_iff {X Y : bifibrant_object C} (Cyl : cylinder X.obj) (f₁ f₂ : X ⟶ Y) :
   L.map f₁ = L.map f₂ ↔ nonempty (left_homotopy Cyl.pre f₁ f₂) :=
