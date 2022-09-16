@@ -126,6 +126,52 @@ instance fibration_prod_fst [hY : is_fibrant Y] : fibration (limits.prod.fst : X
 instance fibration_prod_snd [hX : is_fibrant X] : fibration (limits.prod.snd : X ⨯ Y ⟶ Y) :=
 ⟨fib_is_stable_under_base_change.prod_snd X Y hX.property⟩
 
+instance : is_fibrant (terminal C) :=
+by { haveI : is_iso (terminal.from (terminal C)) := by convert is_iso.id _, apply_instance, }
+
+instance : is_cofibrant (initial C) :=
+by { haveI : is_iso (initial.to (initial C)) := by convert is_iso.id _, apply_instance, }
+
+instance is_fibrant_CM5a_obj {X Y : C} (f : X ⟶ Y) [is_fibrant Y] :
+  is_fibrant (CM5a.obj f) :=
+begin
+  change fibration _,
+  have eq : terminal.from (factorisation_axiom.obj CM5a f) = (CM5a.p f) ≫ terminal.from _ :=
+    subsingleton.elim _ _,
+  rw eq,
+  apply_instance,
+end
+
+instance is_fibrant_CM5b_obj {X Y : C} (f : X ⟶ Y) [is_fibrant Y] :
+  is_fibrant (CM5b.obj f) :=
+begin
+  change fibration _,
+  have eq : terminal.from (factorisation_axiom.obj CM5b f) = (CM5b.p f) ≫ terminal.from _ :=
+    subsingleton.elim _ _,
+  rw eq,
+  apply_instance,
+end
+
+instance is_cofibrant_CM5a_obj {X Y : C} (f : X ⟶ Y) [is_cofibrant X] :
+  is_cofibrant (CM5a.obj f) :=
+begin
+  change cofibration _,
+  have eq : initial.to (factorisation_axiom.obj CM5a f) = initial.to _ ≫ (CM5a.i f) :=
+    subsingleton.elim _ _,
+  rw eq,
+  apply_instance,
+end
+
+instance is_cofibrant_CM5b_obj {X Y : C} (f : X ⟶ Y) [is_cofibrant X] :
+  is_cofibrant (CM5b.obj f) :=
+begin
+  change cofibration _,
+  have eq : initial.to (factorisation_axiom.obj CM5b f) = initial.to _ ≫ (CM5b.i f) :=
+    subsingleton.elim _ _,
+  rw eq,
+  apply_instance,
+end
+
 end model_category
 
 end algebraic_topology

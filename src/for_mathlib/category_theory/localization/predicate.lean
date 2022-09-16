@@ -84,6 +84,13 @@ def as_localization : L.is_localization W := infer_instance
 
 lemma inverts_W : W.is_inverted_by L := (as_localization _ _).inverts_W
 
+@[simps]
+def iso_of_W {X Y : C} (f : X ⟶ Y) (hf : W f) : L.obj X ≅ L.obj Y :=
+begin
+  haveI : is_iso (L.map f) := inverts_W L W f hf,
+  exact as_iso (L.map f),
+end
+
 instance is_equivalence_from_model := (as_localization L W).is_equivalence
 
 def equivalence_from_model : W.localization ≌ D :=

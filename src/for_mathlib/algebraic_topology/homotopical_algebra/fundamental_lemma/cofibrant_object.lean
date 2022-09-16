@@ -34,10 +34,13 @@ instance (X : cofibrant_object C) : is_cofibrant X.obj := X.cof
 
 instance : category (cofibrant_object C) := induced_category.category (λ X, X.obj)
 
-@[simps]
+@[simps, derive full, derive faithful]
 def forget : cofibrant_object C ⥤ C := induced_functor _
 
 variable {C}
+
+@[simp]
+def weq : morphism_property (cofibrant_object C) := λ X Y f, M.weq f
 
 def right_homotopy : hom_rel (cofibrant_object C) := λ A X f₁ f₂,
 ∃ (P : path_object X.obj), nonempty (right_homotopy P.pre f₁ f₂)
@@ -168,10 +171,30 @@ begin
   { exact λ h, nonempty.intro (h.some.to_left_homotopy _), },
 end
 
-end homotopy_category
+def weq : morphism_property (cofibrant_object.homotopy_category C) :=
+λ X Y f, ∃ (g : X.as.obj ⟶ Y.as.obj) (hg : model_category.weq g), f = Q.map g
 
-@[simp]
-def weq : morphism_property (cofibrant_object C) := λ X Y f, M.weq f
+lemma weq_Q_map_iff {X Y : cofibrant_object C} (f : X ⟶ Y) :
+  weq (Q.map f) ↔ cofibrant_object.weq f :=
+begin
+  refine ⟨λ hf, _, λ hf, ⟨f, hf, rfl⟩⟩,
+  rcases hf with ⟨g : X ⟶ Y, hg, H⟩,
+  dsimp only [Q] at H,
+  rw quotient.functor_map_eq_iff at H,
+  induction H with f₁ f₂ H f₁ f₂ f₃ H₁₂ H₂₃ h₁ h₂,
+  { rcases H with ⟨P, H⟩,
+    let f'₁ : X.obj ⟶ Y.obj := f₁,
+    let f'₂ : X.obj ⟶ Y.obj := f₂,
+    change model_category.weq f'₁,
+    change model_category.weq f'₂ at hg,
+    let h : model_category.right_homotopy P.pre f'₁ f'₂ := H.some,
+    rw ← h.h₀,
+    rw ← h.h₁ at hg,
+    exact CM2.of_comp _ _ (CM2.of_comp_right _ _ weak_eq.property hg) weak_eq.property, },
+  { exact h₁ (h₂ hg), },
+end
+
+end homotopy_category
 
 end cofibrant_object
 

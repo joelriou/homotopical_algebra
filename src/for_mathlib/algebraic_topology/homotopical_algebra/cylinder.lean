@@ -110,6 +110,13 @@ begin
   apply_instance,
 end
 
+instance is_cofibrant_I [is_cofibrant A] : is_cofibrant Q.I :=
+begin
+  change cofibration _,
+  rw subsingleton.elim (initial.to Q.I) (initial.to A ≫ Q.d₀),
+  apply_instance,
+end
+
 @[simps]
 def symm : cylinder A := mk' Q.pre.symm
 begin
