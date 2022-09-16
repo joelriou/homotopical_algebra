@@ -6,6 +6,7 @@ Authors: Joël Riou
 
 import for_mathlib.algebraic_topology.homotopical_algebra.fundamental_lemma.cofibrant_object
 import for_mathlib.category_theory.localization.predicate
+import for_mathlib.algebraic_topology.homotopical_algebra.ks_brown_lemma
 
 noncomputable theory
 
@@ -59,6 +60,11 @@ def forget_fib : bifibrant_object C ⥤ cofibrant_object C := induced_functor _
 @[simps]
 def forget : bifibrant_object C ⥤ C := forget_fib C ⋙ cofibrant_object.forget C
 
+instance is_cofibrant_forget_obj (X : bifibrant_object C) :
+  is_cofibrant ((forget C).obj X) := X.cof
+instance is_fibrant_forget_obj (X : bifibrant_object C) :
+  is_fibrant ((forget C).obj X) := X.fib
+
 variable {C}
 
 @[simp]
@@ -103,7 +109,7 @@ lemma Q_map {X Y : bifibrant_object C} (f : X ⟶ Y) :
   homotopy_category.Q.map f = (quotient.functor _).map f := rfl
 
 lemma Q_map_surjective (X Y : bifibrant_object C) :
-  function.surjective (λ (f : X ⟶ Y), Q.map f) :=
+  function.surjective (@category_theory.functor.map _ _ _ _ Q X Y) :=
 by apply quotient.functor_map_surjective
 
 lemma Q_map_eq_iff' {X Y : bifibrant_object C}
@@ -175,16 +181,55 @@ begin
     convert functor.congr_obj h₁₂ X, },
   { rintros ⟨X⟩ ⟨Y⟩ f,
     rcases Q_map_surjective _ _ f with ⟨g, hg⟩,
-    dsimp only at hg,
     subst hg,
     convert category_theory.functor.congr_map_conjugate h₁₂ g, },
+end
+
+lemma Q_inverts_triv_cof {X Y : bifibrant_object C} (f : X ⟶ Y)
+  [cofibration ((forget C).map f)] [weak_eq ((forget C).map f)] :
+  is_iso (Q.map f) :=
+begin
+  have sq : comm_sq (𝟙 X.obj) ((forget C).map f) (terminal.from _) (terminal.from _) := by tidy,
+  let r : Y.obj ⟶ X.obj := sq.lift,
+  refine is_iso.mk ⟨Q.map r, ⟨congr_arg (λ f, Q.map f) sq.fac_left, _⟩⟩,
+  rw [← Q.map_comp, ← Q.map_id Y],
+  let P := path_object.some Y.obj,
+  symmetry,
+  rw Q_map_eq_iff' P,
+  let H := right_homotopy.of_hom ((forget C).map f ≫ P.σ),
+  have eq : (forget C).map f ≫ P.σ ≫ P.d₁ =
+    (forget C).map f ≫ (sq.lift) ≫ (forget C).map f,
+  { erw [P.d₁σ, sq.fac_left_assoc, comp_id, id_comp], },
+  erw [assoc, P.d₀σ, assoc, eq] at H,
+  exact nonempty.intro (right_homotopy.extension ((forget C).map f) H),
+end
+
+lemma Q_inverts_weq : weq.is_inverted_by (Q : bifibrant_object C ⥤ _) := λ X Y f hf,
+begin
+  let Z := bifibrant_object.mk (brown_factorisation.cofibrant.obj ((forget C).map f)),
+  let i : X ⟶ Z := brown_factorisation.cofibrant.i ((forget C).map f),
+  let p : Z ⟶ Y := brown_factorisation.cofibrant.p ((forget C).map f),
+  let s : Y ⟶ Z := brown_factorisation.cofibrant.s ((forget C).map f),
+  have fac₁ : i ≫ p = f := brown_factorisation.cofibrant.fac₁ ((forget C).map f),
+  have fac₂ : s ≫ p = 𝟙 Y := brown_factorisation.cofibrant.fac₂ ((forget C).map f),
+  haveI : weak_eq ((forget C).map f) := ⟨hf⟩,
+  haveI : cofibration ((forget C).map i) := brown_factorisation.cofibrant.cof_i _,
+  haveI : weak_eq ((forget C).map i) := brown_factorisation.cofibrant.weak_eq_i _,
+  haveI : cofibration ((forget C).map s) := brown_factorisation.cofibrant.cof_s _,
+  haveI : weak_eq ((forget C).map s) := brown_factorisation.cofibrant.weak_eq_s _,
+  haveI := Q_inverts_triv_cof i,
+  haveI := Q_inverts_triv_cof s,
+  haveI : is_iso (Q.map s ≫ Q.map p) := by { rw [← Q.map_comp, fac₂], apply_instance, },
+  haveI : is_iso (Q.map p) := is_iso.of_is_iso_comp_left (Q.map s) (Q.map p),
+  rw [← fac₁, Q.map_comp],
+  apply_instance,
 end
 
 variable (C)
 
 def strict_universal_property_fixed_target (D : Type*) [category D] :
   localization.strict_universal_property_fixed_target (Q : bifibrant_object C ⥤ _) weq D :=
-{ inverts_W := sorry,
+{ inverts_W := Q_inverts_weq,
   lift := lift,
   fac := fac,
   uniq := uniq, }
@@ -194,6 +239,26 @@ functor.is_localization.mk' _ _ (strict_universal_property_fixed_target C _)
   (strict_universal_property_fixed_target C _)
 
 end homotopy_category
+
+section
+
+variables {D : Type*} [category D] (L : bifibrant_object C ⥤ D) [L.is_localization weq]
+
+lemma L_map_surjective (X Y : bifibrant_object C) :
+  function.surjective (@category_theory.functor.map _ _ _ _ L X Y) := sorry
+
+lemma L_map_eq_iff_Q_map_eq {X Y : bifibrant_object C} (f₁ f₂ : X ⟶ Y) :
+  L.map f₁ = L.map f₂ ↔ homotopy_category.Q.map f₁ = homotopy_category.Q.map f₂ := sorry
+
+lemma L_map_eq_iff {X Y : bifibrant_object C} (Cyl : cylinder X.obj) (f₁ f₂ : X ⟶ Y) :
+  L.map f₁ = L.map f₂ ↔ nonempty (left_homotopy Cyl.pre f₁ f₂) :=
+by rw [← homotopy_category.Q_map_eq_iff, L_map_eq_iff_Q_map_eq]
+
+lemma L_map_eq_iff' {X Y : bifibrant_object C} (P : path_object Y.obj) (f₁ f₂ : X ⟶ Y) :
+  L.map f₁ = L.map f₂ ↔ nonempty (model_category.right_homotopy P.pre f₁ f₂) :=
+by rw [← homotopy_category.Q_map_eq_iff', L_map_eq_iff_Q_map_eq]
+
+end
 
 end bifibrant_object
 

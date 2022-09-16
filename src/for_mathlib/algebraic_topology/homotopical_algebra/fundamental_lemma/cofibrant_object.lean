@@ -142,7 +142,7 @@ lemma Q_map {X Y : cofibrant_object C} (f : X ⟶ Y) :
   Q.map f = (quotient.functor _).map f := rfl
 
 lemma Q_map_surjective (X Y : cofibrant_object C) :
-  function.surjective (λ (f : X ⟶ Y), Q.map f) :=
+  function.surjective (@category_theory.functor.map _ _ _ _ Q X Y) :=
 by apply quotient.functor_map_surjective
 
 lemma Q_map_eq_iff {X Y : cofibrant_object C} [hY : is_fibrant Y.obj]

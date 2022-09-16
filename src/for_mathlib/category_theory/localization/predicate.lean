@@ -136,6 +136,21 @@ instance is_equivalence_from_model := (as_localization L W).is_equivalence
 def equivalence_from_model : W.localization ≌ D :=
 (localization.construction.lift L (inverts_W L W)).as_equivalence
 
+
+def Q_comp_equivalence_from_model_functor_iso :
+  W.Q ⋙ (equivalence_from_model L W).functor ≅ L := eq_to_iso (construction.fac _ _)
+
+def comp_equivalence_from_model_inverse_iso :
+  L ⋙ (equivalence_from_model L W).inverse ≅ W.Q :=
+begin
+  let α := Q_comp_equivalence_from_model_functor_iso L W,
+  calc L ⋙ (equivalence_from_model L W).inverse ≅ _ : iso_whisker_right α.symm _
+  ... ≅ W.Q ⋙ ((equivalence_from_model L W).functor ⋙ (equivalence_from_model L W).inverse) :
+    functor.associator _ _ _
+  ... ≅ W.Q ⋙ 𝟭 _ : iso_whisker_left _ ((equivalence_from_model L W).unit_iso.symm)
+  ... ≅ W.Q : functor.right_unitor _,
+end
+
 def whiskering_left_functor : (D ⥤ E) ⥤ W.functors_inverting E :=
 full_subcategory.lift _ ((whiskering_left _ _ E).obj L)
   (morphism_property.is_inverted_by.of_comp W L (as_localization L W).inverts_W)
@@ -203,6 +218,8 @@ end is_localization
 end functor
 
 namespace localization
+
+section
 
 variables [L.is_localization W] {E}
 include L W
@@ -305,6 +322,28 @@ instance lift_is_lifting (F : C ⥤ E) (hF : W.is_inverted_by F) (L : C ⥤ D)
 def fac (F : C ⥤ E) (hF : W.is_inverted_by F) (L : C ⥤ D) [hL : L.is_localization W] :
   L ⋙ lift F hF L ≅ F :=
 lifting.fac _ W _ _
+
+end
+
+section
+
+variables {D₁ D₂ : Type*} [category D₁] [category D₂] (L₁ : C ⥤ D₁) (L₂ : C ⥤ D₂)
+  [h₁ : L₁.is_localization W] [h₂ : L₂.is_localization W]
+
+include h₁ h₂
+
+def uniq_equivalence : D₁ ≌ D₂ :=
+(equivalence_from_model L₁ W).symm.trans (equivalence_from_model L₂ W)
+
+def comp_uniq_equivalence_functor_iso :
+  L₁ ⋙ (uniq_equivalence W L₁ L₂).functor ≅ L₂ :=
+calc L₁ ⋙ (uniq_equivalence W L₁ L₂).functor ≅ (L₁ ⋙
+  (equivalence_from_model L₁ W).inverse) ⋙ (equivalence_from_model L₂ W).functor : by refl
+... ≅ W.Q ⋙ (equivalence_from_model L₂ W).functor :
+  iso_whisker_right (comp_equivalence_from_model_inverse_iso L₁ W) _
+... ≅ L₂ : Q_comp_equivalence_from_model_functor_iso L₂ W
+
+end
 
 end localization
 

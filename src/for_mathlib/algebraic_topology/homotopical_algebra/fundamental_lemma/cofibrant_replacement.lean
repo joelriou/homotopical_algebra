@@ -157,7 +157,6 @@ end)
 lemma π_inverts_weq : cofibrant_object.homotopy_category.weq.is_inverted_by (π Lcof) := λ X Y f hf,
 begin
   rcases cofibrant_object.homotopy_category.Q_map_surjective _ _ f with ⟨g, hg⟩,
-  dsimp only at hg,
   subst hg,
   simp only [cofibrant_object.homotopy_category.Q_map, quotient.functor_map,
     π_map, quot.lift_on_mk],

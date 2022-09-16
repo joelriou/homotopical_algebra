@@ -66,6 +66,11 @@ def unop {A B : Cᵒᵖ} {P : pre_path_object B} {f g : A ⟶ B} (H : right_homo
   h₀' := by { dsimp [pre_path_object.unop], rw [← unop_comp, H.h₀], },
   h₁' := by { dsimp [pre_path_object.unop], rw [← unop_comp, H.h₁], }, }
 
+@[simps]
+def of_hom {P : pre_path_object B} (h : A ⟶ P.I) : right_homotopy P (h ≫ P.d₀) (h ≫ P.d₁) :=
+{ h := h,
+  h₀' := rfl,
+  h₁' := rfl, }
 end right_homotopy
 
 namespace left_homotopy
@@ -81,6 +86,12 @@ def unop {A B : Cᵒᵖ} {P : precylinder A} {f g : A ⟶ B} (H : left_homotopy 
 { h := H.h.unop,
   h₀' := by { dsimp [precylinder.unop], rw [← unop_comp, H.h₀], },
   h₁' := by { dsimp [precylinder.unop], rw [← unop_comp, H.h₁], }, }
+
+@[simps]
+def of_hom {P : precylinder A} (h : P.I ⟶ B) : left_homotopy P (P.d₀ ≫ h) (P.d₁ ≫ h) :=
+{ h := h,
+  h₀' := rfl,
+  h₁' := rfl, }
 
 end left_homotopy
 
