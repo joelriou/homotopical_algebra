@@ -8,12 +8,15 @@ import for_mathlib.category_theory.localization.construction2
 
 noncomputable theory
 
-open category_theory.category
+open category_theory.category category_theory
 
 namespace category_theory
 
-
 namespace functor
+
+lemma assoc {C₁ C₂ C₃ C₄ : Type*} [category C₁] [category C₂] [category C₃] [category C₄]
+  (F₁ : C₁ ⥤ C₂) (F₂ : C₂ ⥤ C₃) (F₃ : C₃ ⥤ C₄) :
+  (F₁ ⋙ F₂) ⋙ F₃ = F₁ ⋙ F₂ ⋙ F₃ := by refl
 
 section
 
@@ -72,6 +75,43 @@ instance Q_is_localization : W.Q.is_localization W :=
     apply localization.construction.uniq,
     simpa only [localization.construction.fac],
   end, }
+
+end functor
+
+namespace localization
+
+structure strict_universal_property_fixed_target :=
+(inverts_W : W.is_inverted_by L)
+(lift : Π (F : C ⥤ E) (hF : W.is_inverted_by F), D ⥤ E)
+(fac : Π (F : C ⥤ E) (hF : W.is_inverted_by F), L ⋙ lift F hF = F)
+(uniq : Π (F₁ F₂ : D ⥤ E) (h : L ⋙ F₁ = L ⋙ F₂), F₁ = F₂)
+
+def strict_universal_property_fixed_target.for_Q : strict_universal_property_fixed_target W.Q W E :=
+{ inverts_W := W.Q_inverts,
+  lift := construction.lift,
+  fac := construction.fac,
+  uniq := construction.uniq, }
+
+end localization
+
+namespace functor
+
+def is_localization.mk' (h₁ : localization.strict_universal_property_fixed_target L W D)
+  (h₂ : localization.strict_universal_property_fixed_target L W W.localization) :
+  is_localization L W :=
+{ inverts_W := h₁.inverts_W,
+  is_equivalence :=
+  { inverse := h₂.lift W.Q W.Q_inverts,
+    unit_iso := eq_to_iso begin
+      apply localization.construction.uniq,
+      rw [← functor.assoc, localization.construction.fac, h₂.fac, functor.comp_id],
+    end,
+    counit_iso := eq_to_iso begin
+      apply h₁.uniq,
+      rw [← functor.assoc, h₂.fac, localization.construction.fac, functor.comp_id],
+    end,
+    functor_unit_iso_comp' := λ X, by simpa only [eq_to_iso.hom, eq_to_hom_app, eq_to_hom_map,
+      eq_to_hom_trans, eq_to_hom_refl], }, }
 
 end functor
 

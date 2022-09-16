@@ -5,6 +5,7 @@ Authors: Joël Riou
 -/
 
 import for_mathlib.algebraic_topology.homotopical_algebra.fundamental_lemma.cofibrant_object
+import for_mathlib.category_theory.localization.predicate
 
 noncomputable theory
 
@@ -178,6 +179,19 @@ begin
     subst hg,
     convert category_theory.functor.congr_map_conjugate h₁₂ g, },
 end
+
+variable (C)
+
+def strict_universal_property_fixed_target (D : Type*) [category D] :
+  localization.strict_universal_property_fixed_target (Q : bifibrant_object C ⥤ _) weq D :=
+{ inverts_W := sorry,
+  lift := lift,
+  fac := fac,
+  uniq := uniq, }
+
+instance Q_is_localization : (Q : bifibrant_object C ⥤ _).is_localization weq :=
+functor.is_localization.mk' _ _ (strict_universal_property_fixed_target C _)
+  (strict_universal_property_fixed_target C _)
 
 end homotopy_category
 
