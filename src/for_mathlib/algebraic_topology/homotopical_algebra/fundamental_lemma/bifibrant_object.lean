@@ -10,6 +10,27 @@ noncomputable theory
 
 open algebraic_topology category_theory category_theory.limits category_theory.category
 
+namespace category_theory.functor
+
+lemma congr_map_conjugate {C D : Type*} [category C] [category D]
+  {F₁ F₂ : C ⥤ D} (h : F₁ = F₂) {X Y : C} (f : X ⟶ Y) :
+  F₁.map f = eq_to_hom (by rw h) ≫ F₂.map f ≫ eq_to_hom (by rw h) :=
+begin
+  subst h,
+  simp only [eq_to_hom_refl, comp_id, id_comp],
+end
+
+end category_theory.functor
+
+namespace category_theory.quotient
+
+def lift.is_lift' {C D : Type*} [category C] [category D]
+  (r : hom_rel C) (F : C ⥤ D)   (H : ∀ (x y : C) (f₁ f₂ : x ⟶ y), r f₁ f₂ → F.map f₁ = F.map f₂) :
+  (functor r) ⋙ lift r F H = F :=
+category_theory.functor.ext (λ X, rfl) (by tidy)
+
+end category_theory.quotient
+
 namespace algebraic_topology
 
 namespace model_category
@@ -34,7 +55,13 @@ induced_category.category (λ X, cofibrant_object.mk X.obj)
 @[simps]
 def forget_fib : bifibrant_object C ⥤ cofibrant_object C := induced_functor _
 
+@[simps]
+def forget : bifibrant_object C ⥤ C := forget_fib C ⋙ cofibrant_object.forget C
+
 variable {C}
+
+@[simp]
+def weq : morphism_property (bifibrant_object C) := λ X Y f, M.weq f
 
 def right_homotopy : hom_rel (bifibrant_object C) :=
 λ A X f₁ f₂, cofibrant_object.right_homotopy f₁ f₂
@@ -114,10 +141,45 @@ category_theory.quotient.lift _
     exact nonempty.intro H.some_spec.some,
   end)
 
-end homotopy_category
+def lift {D : Type*} [category D] (F : bifibrant_object C ⥤ D) (hF : weq.is_inverted_by F) :
+  bifibrant_object.homotopy_category C ⥤ D :=
+category_theory.quotient.lift _ F (λ X Y f₁ f₂ h, begin
+  rcases h with ⟨P, h'⟩,
+  let Cyl := cylinder.some X.obj,
+  let H := h'.some.to_left_homotopy Cyl,
+  let I := bifibrant_object.mk (Cyl.I),
+  let s : I ⟶ X := Cyl.σ,
+  let η : I ⟶ Y := H.h,
+  let d₀ : X ⟶ I := Cyl.d₀,
+  let d₁ : X ⟶ I := Cyl.d₁,
+  have eq₁ : f₁ = d₀ ≫ η := H.h₀.symm,
+  have eq₂ : f₂ = d₁ ≫ η := H.h₁.symm,
+  simp only [eq₁, eq₂, F.map_comp],
+  congr' 1,
+  haveI : is_iso (F.map s) := hF s weak_eq.property,
+  simp only [← cancel_mono (F.map s), ← F.map_comp],
+  congr' 1,
+  exact Cyl.σd₀.trans Cyl.σd₁.symm,
+end)
 
-@[simp]
-def weq : morphism_property (bifibrant_object C) := λ X Y f, M.cof f
+lemma fac {D : Type*} [category D] (F : bifibrant_object C ⥤ D) (hF : weq.is_inverted_by F) :
+  Q ⋙ lift F hF = F :=
+by apply category_theory.quotient.lift.is_lift'
+
+lemma uniq {D : Type*} [category D] (G₁ G₂ : bifibrant_object.homotopy_category C ⥤ D)
+  (h₁₂ : Q ⋙ G₁ = Q ⋙ G₂) : G₁ = G₂ :=
+begin
+  refine category_theory.functor.ext _ _,
+  { rintro ⟨X⟩,
+    convert functor.congr_obj h₁₂ X, },
+  { rintros ⟨X⟩ ⟨Y⟩ f,
+    rcases Q_map_surjective _ _ f with ⟨g, hg⟩,
+    dsimp only at hg,
+    subst hg,
+    convert category_theory.functor.congr_map_conjugate h₁₂ g, },
+end
+
+end homotopy_category
 
 end bifibrant_object
 

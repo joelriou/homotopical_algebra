@@ -54,7 +54,7 @@ begin
   suffices : left_homotopy Cyl.pre (map' f) f',
   { exact cofibrant_object.right_homotopy.mk (path_object.some (obj Y).obj)
       (this.to_right_homotopy _), },
-  have sq : comm_sq (coprod.desc ((cofibrant_object.forget C).map (map' f)) f') Cyl.ι
+  have sq' : comm_sq (coprod.desc ((cofibrant_object.forget C).map (map' f)) f') Cyl.ι
     (app Y) (Cyl.σ ≫ app X ≫ f),
   { refine comm_sq.mk _,
     ext,
@@ -63,9 +63,9 @@ begin
     { simpa only [precylinder.ι, coprod.desc_comp, coprod.inr_desc, coprod.desc_comp_assoc,
         precylinder.σd₁, id_comp] using sq.w.symm, }, },
   exact
-  { h := sq.lift,
-    h₀' := by simpa using congr_arg (λ f, limits.coprod.inl ≫ f) sq.fac_left,
-    h₁' := by simpa using congr_arg (λ f, limits.coprod.inr ≫ f) sq.fac_left, },
+  { h := sq'.lift,
+    h₀' := by simpa using congr_arg (λ f, limits.coprod.inl ≫ f) sq'.fac_left,
+    h₁' := by simpa using congr_arg (λ f, limits.coprod.inr ≫ f) sq'.fac_left, },
 end
 
 end cofibrant_replacement
@@ -166,8 +166,6 @@ begin
 end
 
 omit Lcof
-
---def I : cofibrant_object C ⥤ C := cofibrant_object.forget C
 
 variables {Ho : Type*} [category Ho] (L : C ⥤ Ho) [L.is_localization weq]
 

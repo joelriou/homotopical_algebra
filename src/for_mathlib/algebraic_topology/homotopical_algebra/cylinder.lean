@@ -93,6 +93,9 @@ begin
   apply_instance,
 end
 
+instance : fibration (some A).σ := by { dsimp [some, mk'], apply_instance, }
+instance [is_fibrant A] : is_fibrant (some A).I := by { dsimp [some, mk'], apply_instance, }
+
 instance : inhabited (cylinder A) := ⟨some A⟩
 instance : inhabited (precylinder A) := ⟨(some A).pre⟩
 
@@ -351,6 +354,14 @@ end
 variable (B)
 
 def some : path_object B := (cylinder.some (opposite.op B)).unop
+
+instance : cofibration (some B).σ := by { dsimp [some], apply fibration.unop, apply_instance, }
+instance [is_cofibrant B] : is_cofibrant (some B).I :=
+begin
+  change cofibration _,
+  rw subsingleton.elim (initial.to ((some B).I)) (initial.to _ ≫ (some B).σ),
+  apply_instance,
+end
 
 instance : inhabited (path_object B) := ⟨some B⟩
 instance : inhabited (pre_path_object B) := ⟨(some B).pre⟩
