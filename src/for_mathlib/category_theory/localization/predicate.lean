@@ -45,6 +45,10 @@ begin
   simp only [preimage_iso_hom, iso.trans_hom, map_comp, image_preimage],
 end
 
+@[simp]
+lemma image_preimage_iso {X Y : C} (e : F.obj X ≅ F.obj Y) : F.map_iso (F.preimage_iso e) = e :=
+by tidy
+
 end
 
 end functor
@@ -198,6 +202,45 @@ begin
   congr' 1,
   simp only [iso.trans_assoc, iso.symm_self_id_assoc],
 end
+
+lemma uniq_whiskering (F : C ⥤ E) (F'₁ F'₂ : D ⥤ E) [h₁ : lifting L W F F'₁]
+  [h₂ : lifting L W F F'₂] :
+  iso_whisker_left L (uniq L W F F'₁ F'₂) = h₁.iso.trans h₂.iso.symm :=
+functor.image_preimage_iso _ _
+
+lemma uniq_app (F : C ⥤ E) (F'₁ F'₂ : D ⥤ E) [h₁ : lifting L W F F'₁] [h₂ : lifting L W F F'₂]
+  (X : C) : (uniq L W F F'₁ F'₂).app (L.obj X) = h₁.iso.app X ≪≫ h₂.iso.symm.app X :=
+congr_arg (λ (e : ((_ : C ⥤ E) ≅ _)), e.app X) (uniq_whiskering L W F F'₁ F'₂)
+
+@[simp]
+lemma uniq_hom_app (F : C ⥤ E) (F'₁ F'₂ : D ⥤ E) [h₁ : lifting L W F F'₁] [h₂ : lifting L W F F'₂]
+  (X : C) : (uniq L W F F'₁ F'₂).hom.app (L.obj X) = h₁.iso.hom.app X ≫ h₂.iso.inv.app X :=
+begin
+  change ((uniq L W F F'₁ F'₂).app (L.obj X)).hom = _,
+  simpa only [uniq_app],
+end
+
+@[simp]
+lemma uniq_inv_app (F : C ⥤ E) (F'₁ F'₂ : D ⥤ E) [h₁ : lifting L W F F'₁] [h₂ : lifting L W F F'₂]
+  (X : C) : (uniq L W F F'₁ F'₂).inv.app (L.obj X) = h₂.iso.hom.app X ≫ h₁.iso.inv.app X :=
+begin
+  change ((uniq L W F F'₁ F'₂).app (L.obj X)).inv = _,
+  simpa only [uniq_app],
+end
+
+@[simps]
+instance comp_right {E' : Type*} [category E'] (F : C ⥤ E) (F' : D ⥤ E) [h : lifting L W F F']
+  (G : E ⥤ E') : lifting L W (F ⋙ G) (F' ⋙ G) :=
+⟨iso_whisker_right h.iso G⟩
+
+@[simps]
+instance id : lifting L W L (𝟭 D) :=
+⟨functor.right_unitor L⟩
+
+@[simps]
+def of_isos {F₁ F₂ : C ⥤ E} {F'₁ F'₂ : D ⥤ E} (e : F₁ ≅ F₂) (e' : F'₁ ≅ F'₂)
+  [h : lifting L W F₁ F'₁] : lifting L W F₂ F'₂ :=
+⟨iso_whisker_left L e'.symm ≪≫ h.iso ≪≫ e⟩
 
 end lifting
 
