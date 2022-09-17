@@ -15,7 +15,7 @@ include M
 namespace cofibrant_object
 
 variables {Hcof : Type*} [category Hcof] (Lcof : cofibrant_object C ⥤ Hcof)
-  [Lcof.is_localization weq]
+  [Lcof.is_localization cofibrant_object.weq]
 
 def Hobif_to_Hocof : bifibrant_object.homotopy_category C ⥤ Hcof :=
 localization.lift ((bifibrant_object.forget_fib C) ⋙ Lcof)
@@ -126,14 +126,57 @@ end
 
 end cofibrant_object
 
-/-def Hcof_to_H : Hcof ⥤ M.weq.localization :=
-localization.lift ((cofibrant_object.forget C) ⋙ M.weq.Q)
-    (by convert cofibrant_replacement.forget_comp_L_inverts_weq C model_category.weq.Q) Lcof
+namespace fundamental_lemma
 
-instance : is_equivalence (Hcof_to_H Lcof) :=
-cofibrant_replacement.is_equivalence Lcof model_category.weq.Q (Hcof_to_H Lcof)
-  ⟨localization.fac _ _ _⟩-/
+variables {Ho : Type*} [category Ho] (L : C ⥤ Ho) [L.is_localization weq] (C)
 
+@[derive category]
+def Hocof := (cofibrant_object.weq : morphism_property (cofibrant_object C)).localization
+
+def Lcof : cofibrant_object C ⥤ Hocof C := morphism_property.Q _
+
+instance L_cof_is_localization : (Lcof C).is_localization cofibrant_object.weq :=
+by { dsimp [Lcof], apply_instance, }
+
+variables {C}
+
+def Hocof_to_Ho : Hocof C ⥤ Ho :=
+localization.lift ((cofibrant_object.forget C) ⋙ L)
+  (cofibrant_replacement.forget_comp_L_inverts_weq L) (Lcof C)
+
+def Lcof_comp_Hocof_to_Ho_iso : Lcof C ⋙ Hocof_to_Ho L ≅ cofibrant_object.forget C ⋙ L :=
+localization.fac _ _ _
+
+instance : is_equivalence (Hocof_to_Ho L) :=
+cofibrant_replacement.is_equivalence (Lcof C) L (Hocof_to_Ho L)
+    ⟨Lcof_comp_Hocof_to_Ho_iso L⟩
+
+lemma map_surjective (X Y : C) [is_cofibrant X] [is_fibrant Y] :
+  function.surjective (@category_theory.functor.map _ _ _ _ L X Y) :=
+begin
+  let Y' := CM5b.obj (initial.to Y),
+  suffices : function.surjective (@category_theory.functor.map _ _ _ _ L X Y'),
+  { intro g,
+    let p : Y' ⟶ Y := CM5b.p (initial.to Y),
+    haveI := localization.inverts_W L weq p weak_eq.property,
+    rcases this (g ≫ inv (L.map p)) with ⟨φ, hφ⟩,
+    exact ⟨φ ≫ p, by rw [L.map_comp, hφ, assoc, is_iso.inv_hom_id, comp_id]⟩, },
+  suffices : ∀ (A B : cofibrant_object C) [is_fibrant B.obj], function.surjective
+    (@category_theory.functor.map _ _ _ _ (cofibrant_object.forget C ⋙ L) A B),
+  { exact this (cofibrant_object.mk X) (cofibrant_object.mk Y'), },
+  simp only [← functor.function_surjective_map_iff_of_iso (Lcof_comp_Hocof_to_Ho_iso L)],
+  introsI A B hB,
+  exact function.surjective.comp (Hocof_to_Ho L).map_surjective
+    (cofibrant_object.L_map_surjective (Lcof C) A B),
+end
+
+lemma map_eq_iff {X Y : C} [is_cofibrant X] [is_fibrant Y] (Cyl : cylinder X) (f₁ f₂ : X ⟶ Y) :
+  L.map f₁ = L.map f₂ ↔ nonempty (left_homotopy Cyl.pre f₁ f₂) := sorry
+
+lemma map_eq_iff' {X Y : C} [is_cofibrant X] [is_fibrant Y] (P : path_object Y) (f₁ f₂ : X ⟶ Y) :
+  L.map f₁ = L.map f₂ ↔ nonempty (right_homotopy P.pre f₁ f₂) := sorry
+
+end fundamental_lemma
 
 end model_category
 

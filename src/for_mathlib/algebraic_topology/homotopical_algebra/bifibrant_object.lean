@@ -45,6 +45,21 @@ begin
     rw h, }
 end
 
+lemma function_surjective_map_iff_of_iso {C D : Type*} [category C] [category D]
+  {F G : C ⥤ D} (e : F ≅ G) (X Y : C) :
+  function.surjective (@map _ _ _ _ F X Y) ↔ function.surjective (@map _ _ _ _ G X Y) :=
+begin
+  revert X Y e F G,
+  suffices : ∀ {F G : C ⥤ D} (e : F ≅ G) (X Y : C) (hF : function.surjective F.map),
+    function.surjective G.map,
+  { exact λ F G e X Y, ⟨this e X Y, this e.symm X Y⟩, },
+  intros F G e X Y hF g,
+  rcases hF (e.hom.app X ≫ g ≫ e.inv.app Y) with ⟨φ, hφ⟩,
+  refine ⟨φ, _⟩,
+  simp only [← cancel_epi (e.hom.app X), ← e.hom.naturality φ, hφ,
+    category.assoc, iso.inv_hom_id_app, comp_id],
+end
+
 end category_theory.functor
 
 namespace category_theory.quotient
