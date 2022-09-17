@@ -170,11 +170,44 @@ begin
     (cofibrant_object.L_map_surjective (Lcof C) A B),
 end
 
+lemma map_eq_of_left_homotopy {X Y : C} {f₁ f₂ : X ⟶ Y} {P : precylinder X}
+  (h : left_homotopy P f₁ f₂) : L.map f₁ = L.map f₂ := sorry
+
 lemma map_eq_iff {X Y : C} [is_cofibrant X] [is_fibrant Y] (Cyl : cylinder X) (f₁ f₂ : X ⟶ Y) :
-  L.map f₁ = L.map f₂ ↔ nonempty (left_homotopy Cyl.pre f₁ f₂) := sorry
+  L.map f₁ = L.map f₂ ↔ nonempty (left_homotopy Cyl.pre f₁ f₂) :=
+begin
+  split,
+  { intro h,
+    let Y' := CM5b.obj (initial.to Y),
+    let i : Y' ⟶ Y := CM5b.p (initial.to Y),
+    have sq₁ : comm_sq (initial.to Y') (initial.to X) i f₁ := by tidy,
+    have sq₂ : comm_sq (initial.to Y') (initial.to X) i f₂ := by tidy,
+    let g₁ : cofibrant_object.mk X ⟶ cofibrant_object.mk Y' := sq₁.lift,
+    let g₂ : cofibrant_object.mk X ⟶ cofibrant_object.mk Y' := sq₂.lift,
+    haveI := localization.inverts_W L weq i weak_eq.property,
+    rw [← sq₁.fac_right, ← sq₂.fac_right, L.map_comp, L.map_comp,
+      cancel_mono] at h,
+    change (cofibrant_object.forget C ⋙ L).map g₁ =
+      (cofibrant_object.forget C ⋙ L).map g₂ at h,
+    rw ← functor.map_eq_iff_of_nat_iso (Lcof_comp_Hocof_to_Ho_iso L) at h,
+    have h' := (Hocof_to_Ho L).map_injective h,
+    let Cyl' : cylinder (cofibrant_object.mk X).obj := Cyl,
+    rw cofibrant_object.L_map_eq_iff (Lcof C) Cyl' g₁ g₂ at h',
+    rw [← sq₁.fac_right, ← sq₂.fac_right],
+    exact nonempty.intro (h'.some.comp_right i), },
+  { intro h,
+    exact map_eq_of_left_homotopy L h.some, },
+end
 
 lemma map_eq_iff' {X Y : C} [is_cofibrant X] [is_fibrant Y] (P : path_object Y) (f₁ f₂ : X ⟶ Y) :
-  L.map f₁ = L.map f₂ ↔ nonempty (right_homotopy P.pre f₁ f₂) := sorry
+  L.map f₁ = L.map f₂ ↔ nonempty (right_homotopy P.pre f₁ f₂) :=
+begin
+  let Cyl := cylinder.some X,
+  rw map_eq_iff L Cyl f₁ f₂,
+  split,
+  { exact λ h, nonempty.intro (h.some.to_right_homotopy P), },
+  { exact λ h, nonempty.intro (h.some.to_left_homotopy Cyl), },
+end
 
 end fundamental_lemma
 
