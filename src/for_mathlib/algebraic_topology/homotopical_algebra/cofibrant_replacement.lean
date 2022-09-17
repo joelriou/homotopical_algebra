@@ -1,4 +1,4 @@
-import for_mathlib.algebraic_topology.homotopical_algebra.fundamental_lemma.cofibrant_object
+import for_mathlib.algebraic_topology.homotopical_algebra.cofibrant_object
 import for_mathlib.category_theory.localization.equivalence
 
 noncomputable theory
@@ -168,9 +168,12 @@ omit Lcof
 
 variables {Ho : Type*} [category Ho] (L : C ⥤ Ho) [L.is_localization weq]
 
+variable (C)
 lemma forget_comp_L_inverts_weq :
   cofibrant_object.weq.is_inverted_by (cofibrant_object.forget C ⋙ L) :=
 λ X Y f hf, by convert localization.inverts_W L weq ((cofibrant_object.forget C).map f) hf
+
+variable {C}
 
 def R : C ⥤ Hocof := cofibrant_replacement C ⋙ π Lcof
 

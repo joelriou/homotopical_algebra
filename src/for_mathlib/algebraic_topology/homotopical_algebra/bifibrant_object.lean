@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Joël Riou
 -/
 
-import for_mathlib.algebraic_topology.homotopical_algebra.fundamental_lemma.cofibrant_object
+import for_mathlib.algebraic_topology.homotopical_algebra.cofibrant_object
 import for_mathlib.category_theory.localization.predicate
 import for_mathlib.algebraic_topology.homotopical_algebra.ks_brown_lemma
 

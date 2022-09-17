@@ -37,7 +37,7 @@ def right_homotopy : hom_rel (cofibrant_objects C) := λ A X f₁ f₂,
 namespace right_homotopy
 
 def symm {A X : cofibrant_objects C} {f₁ f₂ : A ⟶ X} (H : right_homotopy f₁ f₂) :
-  right_homotopy f₂ f₁ := 
+  right_homotopy f₂ f₁ :=
 by { cases H with P hP, use P.symm, exact nonempty.intro hP.some.symm, }
 
 lemma comp_left {A B X : cofibrant_objects C}
@@ -291,7 +291,7 @@ begin
       subtype.coe_eta, inclusion_obj], }
 end
 
-lemma uniq {E : Type*} [category E] 
+lemma uniq {E : Type*} [category E]
   (G₁ G₂ : fibrant_and_cofibrant_objects.π C ⥤ E)
   (h₁₂ : L ⋙ G₁ = L ⋙ G₂) : G₁ = G₂ :=
 begin
@@ -551,7 +551,7 @@ begin
     refl, },
 end
 
-lemma uniq' {E : Type*} [category E] 
+lemma uniq' {E : Type*} [category E]
   (G : localization C ⥤ E) :
   G = lift (L ⋙ G) ((W : arrow_class _).is_inverted_by_of_comp L G inverts_W) :=
 begin
@@ -569,7 +569,7 @@ begin
     refl, },
 end
 
-lemma uniq {E : Type*} [category E] 
+lemma uniq {E : Type*} [category E]
   (G₁ G₂ : localization C ⥤ E)
   (h₁₂ : L ⋙ G₁ = L ⋙ G₂) : G₁ = G₂ :=
 by { rw [uniq' G₁, uniq' G₂], congr', }
@@ -631,7 +631,7 @@ instance is_iso_πι_fib_object (X : cofibrant_objects C) [hX : is_fibrant X.1] 
 fibrant_and_cofibrant_objects.universal_property.inverts_W ⟨arrow.mk (ι_fib_object X), (triv_cof_ι X).2⟩
 
 lemma compatibility_ι_L_π {X Y : cofibrant_objects C} [hX : is_fibrant X.1] [hY : is_fibrant Y.1] (f : X ⟶ Y) :
-  R.map (L_π.map (cofibrant_objects.L.map f)) = 
+  R.map (L_π.map (cofibrant_objects.L.map f)) =
   inv (@πι_fib_object _ _ _ X hX) ≫ (fibrant_and_cofibrant_objects.L.map (by exact f)) ≫ (@πι_fib_object _ _ _ Y hY) :=
 begin
   rw [← cancel_epi (πι_fib_object X), ← assoc, ← assoc, is_iso.hom_inv_id, id_comp],
@@ -978,7 +978,7 @@ begin
   congr' 1,
 end
 
-lemma uniq' {E : Type*} [category E] 
+lemma uniq' {E : Type*} [category E]
   (G : localization C ⥤ E) :
   G = lift (L ⋙ G) (M.W.is_inverted_by_of_comp L G inverts_W) :=
 begin
@@ -1007,7 +1007,7 @@ begin
     refl, },
 end
 
-lemma uniq {E : Type*} [category E] 
+lemma uniq {E : Type*} [category E]
   (G₁ G₂ : localization C ⥤ E)
   (h₁₂ : L ⋙ G₁ = L ⋙ G₂) : G₁ = G₂ :=
 by { rw [uniq' G₁, uniq' G₂], congr', }

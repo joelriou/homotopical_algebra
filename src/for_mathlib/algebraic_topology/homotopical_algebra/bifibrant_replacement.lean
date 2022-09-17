@@ -1,4 +1,4 @@
-import for_mathlib.algebraic_topology.homotopical_algebra.fundamental_lemma.bifibrant_object
+import for_mathlib.algebraic_topology.homotopical_algebra.bifibrant_object
 import for_mathlib.category_theory.localization.equivalence
 
 noncomputable theory
@@ -106,8 +106,6 @@ variables {C} {Hocof : Type*} [category Hocof] (Lcof : cofibrant_object C ⥤ Ho
   [Lcof.is_localization cofibrant_object.weq]
   {Hobif : Type*} [category Hobif] (Lbif : bifibrant_object C ⥤ Hobif)
   [Lbif.is_localization bifibrant_object.weq]
-
-include Lbif
 
 @[simps]
 def π : bifibrant_object.homotopy_category C ⥤ Hobif :=
