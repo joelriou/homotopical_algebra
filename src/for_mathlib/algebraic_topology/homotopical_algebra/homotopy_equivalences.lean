@@ -12,6 +12,10 @@ noncomputable theory
 open algebraic_topology
 open category_theory category_theory.category
 
+--lemma category_theory.is_iso_iff_of_nat_iso {C D : Type*} [category C] [category D]
+--  {F₁ F₂ : C ⥤ D} (e : F₁ ≅ F₂) {X Y : C} (f : X ⟶ Y) :
+--  is_iso (F₁.map f) ↔ is_iso (F₂.map f) := sorry
+
 namespace algebraic_topology
 
 namespace model_category
@@ -20,15 +24,33 @@ variables {C : Type*} [category C] [M : model_category C]
   {Ho : Type*} [category Ho] (L : C ⥤ Ho) [L.is_localization weq]
 include M
 
-lemma fundamental_lemma.is_iso_map_iff {X Y : C} (f : X ⟶ Y) :
+lemma bifibrant_object.homotopy_category.is_iso_L_map_iff
+  {X Y : bifibrant_object C} (f : X ⟶ Y) :
+  is_iso ((bifibrant_object.forget C ⋙ L).map f) ↔
+  weq ((bifibrant_object.forget C).map f) := sorry
+
+
+namespace fundamental_lemma
+
+lemma is_iso_map_iff {X Y : C} (f : X ⟶ Y) :
   is_iso (L.map f) ↔ weq f :=
 begin
   split,
-  { sorry, },
+  { intro hf,
+    let f' := cofibrant_replacement.map' f,
+    have comm : (cofibrant_object.forget C).map f' ≫ _ = _ :=
+      cofibrant_replacement.fac f,
+    let f'' := bifibrant_replacement.map' f',
+    have h'' : is_iso ((bifibrant_object.forget C ⋙ L).map f'') := sorry,
+    rw bifibrant_object.homotopy_category.is_iso_L_map_iff L f'' at h'',
+    have h' : weq ((cofibrant_object.forget C).map f') := sorry,
+    sorry, },
   { intro h,
     haveI : weak_eq f := ⟨h⟩,
     apply_instance, },
 end
+
+end fundamental_lemma
 
 /-namespace fibrant_and_cofibrant_objects
 
