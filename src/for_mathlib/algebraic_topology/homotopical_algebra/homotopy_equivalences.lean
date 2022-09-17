@@ -12,9 +12,40 @@ noncomputable theory
 open algebraic_topology
 open category_theory category_theory.category
 
---lemma category_theory.is_iso_iff_of_nat_iso {C D : Type*} [category C] [category D]
---  {F₁ F₂ : C ⥤ D} (e : F₁ ≅ F₂) {X Y : C} (f : X ⟶ Y) :
---  is_iso (F₁.map f) ↔ is_iso (F₂.map f) := sorry
+namespace category_theory.morphism_property.three_of_two
+
+variables {C : Type*} [category C] {X Y X' Y' : C}
+  {f : X ⟶ Y} {f' : X' ⟶ Y'} {g : X ⟶ X'} {g' : Y ⟶ Y'}
+
+lemma left_iff_right_of_sq {P : morphism_property C}
+  (h : P.three_of_two) (sq : comm_sq g f f' g') (hg : P g) (hg' : P g'):
+  P f ↔ P f' :=
+begin
+  split,
+  { intro hf,
+    refine h.of_comp_left g f' hg _,
+    rw sq.w,
+    exact h.of_comp _ _ hf hg', },
+  { intro hf',
+    refine h.of_comp_right f g' hg' _,
+    rw ← sq.w,
+    exact h.of_comp _ _ hg hf', },
+end
+
+end category_theory.morphism_property.three_of_two
+
+lemma category_theory.is_iso_iff_of_nat_iso {C D : Type*} [category C] [category D]
+  {F₁ F₂ : C ⥤ D} (e : F₁ ≅ F₂) {X Y : C} (f : X ⟶ Y) :
+  is_iso (F₁.map f) ↔ is_iso (F₂.map f) :=
+begin
+  revert F₁ F₂,
+  suffices : ∀ {F₁ F₂ : C ⥤ D} (e : F₁ ≅ F₂) (hf : is_iso (F₁.map f)), is_iso (F₂.map f),
+  { exact λ F₁ F₂ e, ⟨this e, this e.symm⟩, },
+  introsI F₁ F₂ e hf,
+  refine is_iso.mk ⟨e.inv.app Y ≫ inv (F₁.map f) ≫ e.hom.app X, _, _⟩,
+  { simp only [nat_trans.naturality_assoc, is_iso.hom_inv_id_assoc, iso.inv_hom_id_app], },
+  { simp only [assoc, ← e.hom.naturality, is_iso.inv_hom_id_assoc, iso.inv_hom_id_app], },
+end
 
 namespace algebraic_topology
 
@@ -22,35 +53,75 @@ namespace model_category
 
 variables {C : Type*} [category C] [M : model_category C]
   {Ho : Type*} [category Ho] (L : C ⥤ Ho) [L.is_localization weq]
+  {Hocof : Type*} [category Hocof] (Lcof : cofibrant_object C ⥤ Hocof)
+    [Lcof.is_localization cofibrant_object.weq]
+  {Hobif : Type*} [category Hobif] (Lbif : bifibrant_object C ⥤ Hobif)
+    [Lbif.is_localization bifibrant_object.weq]
+
 include M
 
-lemma bifibrant_object.homotopy_category.is_iso_L_map_iff
+instance bifibrant_object.is_iso_L_map {X Y : bifibrant_object C} (f : X ⟶ Y) [hf : weak_eq ((bifibrant_object.forget C).map f)] :
+  is_iso (Lbif.map f) := localization.inverts_W Lbif bifibrant_object.weq f hf.property
+
+lemma bifibrant_object.is_iso_Lbif_map_cofibration_iff
+  {X Y : bifibrant_object C} (f : X ⟶ Y) [cofibration ((bifibrant_object.forget C).map f)] :
+  is_iso (Lbif.map f) ↔ bifibrant_object.weq f :=
+sorry
+
+lemma bifibrant_object.is_iso_Lbif_map_iff
   {X Y : bifibrant_object C} (f : X ⟶ Y) :
-  is_iso ((bifibrant_object.forget C ⋙ L).map f) ↔
-  weq ((bifibrant_object.forget C).map f) := sorry
+  is_iso (Lbif.map f) ↔ bifibrant_object.weq f :=
+begin
+  split,
+  { intro hf,
+    let f' := (bifibrant_object.forget C).map f,
+    let Z := CM5b.obj f',
+    let i : X ⟶ bifibrant_object.mk Z := CM5b.i f',
+    let p : bifibrant_object.mk Z ⟶ Y := CM5b.p f',
+    have h : i ≫ p = f := CM5b.fac f',
+    rw ← h,
+    rw [← h, Lbif.map_comp] at hf,
+    haveI := hf,
+    haveI : weak_eq ((bifibrant_object.forget C).map p) := (infer_instance : weak_eq (CM5b.p f')),
+    haveI : cofibration ((bifibrant_object.forget C).map i) := (infer_instance : cofibration (CM5b.i f')),
+    haveI : is_iso (Lbif.map i) := is_iso.of_is_iso_comp_right _ (Lbif.map p),
+    refine CM2.of_comp _ _ _ weak_eq.property,
+    exact (bifibrant_object.is_iso_Lbif_map_cofibration_iff Lbif i).mp infer_instance, },
+  { exact localization.inverts_W Lbif bifibrant_object.weq f, },
+end
 
+lemma bifibrant_object.is_iso_Lbif_map_iff_is_iso_Lcof_map
+  {X Y : bifibrant_object C} (f : X ⟶ Y) :
+  is_iso (Lbif.map f) ↔ is_iso (Lcof.map ((bifibrant_object.forget_fib C).map f)) := sorry
 
-namespace fundamental_lemma
+lemma cofibrant_object.is_iso_Lcof_map_iff
+  {X Y : cofibrant_object C} (f : X ⟶ Y) :
+  is_iso (Lcof.map f) ↔ cofibrant_object.weq f :=
+begin
+  split,
+  { sorry, },
+  { exact localization.inverts_W Lcof cofibrant_object.weq f, },
+end
 
-lemma is_iso_map_iff {X Y : C} (f : X ⟶ Y) :
+lemma cofibrant_object.is_iso_Lcof_map_iff_is_iso_L_map
+  {X Y : cofibrant_object C} (f : X ⟶ Y) :
+  is_iso (Lcof.map f) ↔ is_iso (L.map ((cofibrant_object.forget C).map f)) := sorry
+
+lemma is_iso_L_map_iff {X Y : C} (f : X ⟶ Y) :
   is_iso (L.map f) ↔ weq f :=
 begin
   split,
   { intro hf,
-    let f' := cofibrant_replacement.map' f,
-    have comm : (cofibrant_object.forget C).map f' ≫ _ = _ :=
-      cofibrant_replacement.fac f,
-    let f'' := bifibrant_replacement.map' f',
-    have h'' : is_iso ((bifibrant_object.forget C ⋙ L).map f'') := sorry,
-    rw bifibrant_object.homotopy_category.is_iso_L_map_iff L f'' at h'',
-    have h' : weq ((cofibrant_object.forget C).map f') := sorry,
-    sorry, },
-  { intro h,
-    haveI : weak_eq f := ⟨h⟩,
-    apply_instance, },
+    have sq := comm_sq.mk (cofibrant_replacement.fac f),
+    change (morphism_property.isomorphisms _).inverse_image L f at hf,
+    have eq := ((morphism_property.three_of_two.for_isomorphisms _).for_inverse_image L).left_iff_right_of_sq sq.flip (by { change is_iso _, apply_instance, }) (by { change is_iso _, apply_instance, }),
+    rw ← eq at hf,
+    change is_iso _ at hf,
+    rw ← cofibrant_object.is_iso_Lcof_map_iff_is_iso_L_map L (fundamental_lemma.Lcof C) at hf,
+    rw cofibrant_object.is_iso_Lcof_map_iff at hf,
+    exact (CM2.left_iff_right_of_sq sq.flip weak_eq.property weak_eq.property).mp hf, },
+  { exact localization.inverts_W L weq f, },
 end
-
-end fundamental_lemma
 
 /-namespace fibrant_and_cofibrant_objects
 
@@ -88,7 +159,7 @@ begin
       { convert cof_comp_stable _ _ _ _ _ w.left.1.2.some.cof hi, },
       { convert fib_comp_stable _ _ _ _ _ hp.1 w.right.2.some.fib, },
       let i' : w.left ⟶ Z' := i,
-      let p' : Z' ⟶ w.right := p,
+      let p' : Z' ⟶ w.right := p,o
       apply (cofibration_is_inverted_by_L_iff (arrow.mk i') hi).mp,
       have fac : L.map i' ≫ L.map p' = L.map w.hom,
       { rw ← L.map_comp,
