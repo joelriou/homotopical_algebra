@@ -131,7 +131,7 @@ category_theory.quotient.lift _ Lcof (λ (X Y : cofibrant_object C), begin
   let φ : Y ⟶ Y' := CM5a.i (terminal.from Y.obj),
   intros f₁ f₂ h,
   haveI : is_iso (Lcof.map φ) := localization.inverts_W Lcof cofibrant_object.weq φ
-    weak_eq.property,
+    (by { change weq (CM5a.i (terminal.from Y.obj)), exact weak_eq.property, }),
   simp only [← cancel_mono (Lcof.map φ), ← Lcof.map_comp],
   induction h with g₁ g₂ h g₁ g₂ g₃ H₁₂ H₂₃ h₁₂ h₂₃,
   { rcases h.comp_right φ with ⟨P, H⟩,
@@ -139,7 +139,7 @@ category_theory.quotient.lift _ Lcof (λ (X Y : cofibrant_object C), begin
     let I' := cofibrant_object.mk Cyl.I,
     let s : I' ⟶ X := Cyl.σ,
     haveI : is_iso (Lcof.map s) := localization.inverts_W Lcof cofibrant_object.weq s
-      weak_eq.property,
+      (by { change weq Cyl.σ, exact weak_eq.property, }),
     let h' := H.some.to_left_homotopy Cyl,
     let ψ : I' ⟶ Y' := h'.h,
     let d₀ : X ⟶ I' := Cyl.d₀,

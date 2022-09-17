@@ -40,7 +40,7 @@ def forget : cofibrant_object C ⥤ C := induced_functor _
 variable {C}
 
 @[simp]
-def weq : morphism_property (cofibrant_object C) := λ X Y f, M.weq f
+def weq : morphism_property (cofibrant_object C) := λ X Y f, M.weq ((forget C).map f)
 
 def right_homotopy : hom_rel (cofibrant_object C) := λ A X f₁ f₂,
 ∃ (P : path_object X.obj), nonempty (right_homotopy P.pre f₁ f₂)

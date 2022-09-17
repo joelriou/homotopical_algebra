@@ -20,9 +20,9 @@ bifibrant_object.mk (CM5a.obj (terminal.from X.obj))
 def app (X : cofibrant_object C) : X ⟶ cofibrant_object.mk (obj X).obj :=
 CM5a.i (terminal.from X.obj)
 
-instance (X : cofibrant_object C): cofibration ((cofibrant_object.forget C).map (app X)) :=
+instance (X : cofibrant_object C) : cofibration ((cofibrant_object.forget C).map (app X)) :=
 by { dsimp [app], apply_instance, }
-instance (X : cofibrant_object C): weak_eq ((cofibrant_object.forget C).map (app X)) :=
+instance weak_eq_forget_map_app (X : cofibrant_object C) : weak_eq ((cofibrant_object.forget C).map (app X)) :=
 by { dsimp [app], apply_instance, }
 
 def app' (X : bifibrant_object C) : X ⟶ obj (cofibrant_object.mk X.obj) :=
@@ -34,6 +34,12 @@ begin
     ((cofibrant_object.forget C).map (app X))
       (terminal.from (obj Y).obj) (terminal.from (obj X).obj) := by tidy,
   exact sq.lift,
+end
+
+instance (X : bifibrant_object C) : weak_eq ((bifibrant_object.forget C).map (app' X)) :=
+begin
+  change weak_eq ((cofibrant_object.forget C).map (app ((bifibrant_object.forget_fib C).obj X))),
+  apply_instance,
 end
 
 @[reassoc]
@@ -129,10 +135,31 @@ begin
   apply_instance,
 end
 
-lemma forget_comp_R_iso : bifibrant_object.forget_fib C ⋙ R Lbif ≅ Lbif := sorry
+lemma forget_comp_R_iso : bifibrant_object.forget_fib C ⋙ R Lbif ≅ Lbif :=
+begin
+  symmetry,
+  refine nat_iso.of_components (λ X, localization.iso_of_W Lbif bifibrant_object.weq
+    ((bifibrant_object.forget C).map (app' X)) weak_eq.property) (λ X Y f, begin
+    simp only [bifibrant_object.forget_map, localization.iso_of_W_hom,
+      bifibrant_object.forget_fib_map],
+    rw [← Lbif.map_comp, ← fac', Lbif.map_comp],
+    refl,
+  end),
+end
 
 def R_comp_I'_iso {I' : Hobif ⥤ Hocof} (sq : Comm_sq (bifibrant_object.forget_fib C) Lbif Lcof I') :
-  R Lbif ⋙ I' ≅ Lcof := sorry
+  R Lbif ⋙ I' ≅ Lcof :=
+begin
+  symmetry,
+  exact nat_iso.of_components (λ X, localization.iso_of_W Lcof cofibrant_object.weq
+    (app X) weak_eq.property ≪≫ sq.iso.symm.app _) (λ X Y f, begin
+    simp only [iso.trans_hom, localization.iso_of_W_hom, iso.app_hom, iso.symm_hom,
+      functor.comp_map, assoc, ← Lcof.map_comp_assoc],
+    simp only [← fac, functor.map_comp, assoc],
+    congr' 1,
+    apply sq.iso.inv.naturality,
+  end),
+end
 
 def is_equivalence (I' : Hobif ⥤ Hocof)
   (sq : Comm_sq (bifibrant_object.forget_fib C) Lbif Lcof I') : is_equivalence I' :=
