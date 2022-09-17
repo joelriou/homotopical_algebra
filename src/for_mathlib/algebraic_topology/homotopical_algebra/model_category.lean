@@ -53,7 +53,7 @@ lemma CM5b : M.to_category_with_fib_cof_weq.CM5b := CM5.2
 
 instance : model_category Cᵒᵖ :=
 { to_category_with_fib_cof_weq := M.to_category_with_fib_cof_weq.op,
-  CM1axiom := ⟨has_finite_limits_opposite, has_finite_colimits_opposite⟩,
+  CM1axiom := ⟨infer_instance, infer_instance⟩,
   CM2axiom := by simpa only [← M.to_category_with_fib_cof_weq.CM2_iff_op] using CM2axiom,
   CM3axiom := by simpa only [← M.to_category_with_fib_cof_weq.CM3_iff_op] using CM3axiom,
   CM4axiom := by simpa only [← M.to_category_with_fib_cof_weq.CM4_iff_op] using CM4axiom,
