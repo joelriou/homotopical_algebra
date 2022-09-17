@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Joël Riou
 -/
 
+#exit
 import algebraic_topology.homotopical_algebra.model_category
 import category_theory.limits.comma
 
