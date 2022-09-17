@@ -170,8 +170,16 @@ begin
     (cofibrant_object.L_map_surjective (Lcof C) A B),
 end
 
+instance {X Y : C} (f : X ⟶ Y) [weak_eq f] : is_iso (L.map f) :=
+localization.inverts_W L weq f weak_eq.property
+
 lemma map_eq_of_left_homotopy {X Y : C} {f₁ f₂ : X ⟶ Y} {P : precylinder X}
-  (h : left_homotopy P f₁ f₂) : L.map f₁ = L.map f₂ := sorry
+  (h : left_homotopy P f₁ f₂) : L.map f₁ = L.map f₂ :=
+begin
+  simp only [← h.h₀, ← h.h₁, L.map_comp],
+  congr' 1,
+  simp only [← cancel_mono (L.map P.σ), ← L.map_comp, P.σd₀, P.σd₁],
+end
 
 lemma map_eq_iff {X Y : C} [is_cofibrant X] [is_fibrant Y] (Cyl : cylinder X) (f₁ f₂ : X ⟶ Y) :
   L.map f₁ = L.map f₂ ↔ nonempty (left_homotopy Cyl.pre f₁ f₂) :=
