@@ -94,20 +94,53 @@ def bifibrant_replacement : cofibrant_object C ⥤ bifibrant_object.homotopy_cat
         bifibrant_replacement.fac g], },
   end, }
 
-variables {C}
+namespace bifibrant_replacement
 
-variables {Hocof : Type*} [category Hocof] (Lcof : cofibrant_object C ⥤ Hocof)
+variables {C} {Hocof : Type*} [category Hocof] (Lcof : cofibrant_object C ⥤ Hocof)
   [Lcof.is_localization cofibrant_object.weq]
   {Hobif : Type*} [category Hobif] (Lbif : bifibrant_object C ⥤ Hobif)
   [Lbif.is_localization bifibrant_object.weq]
 
 include Lbif
 
---@[simps]
---def π : bifibrant_object.homotopy_category C ⥤ Hobif :=
---category_theory.quotient.lift _ Lbif (λ (X Y : bifibrant_object C), begin
---  sorry,
---end)
+@[simps]
+def π : bifibrant_object.homotopy_category C ⥤ Hobif :=
+bifibrant_object.homotopy_category.lift Lbif (localization.inverts_W Lbif bifibrant_object.weq)
+
+lemma forget_comp_Lcof_inverts_weq :
+  bifibrant_object.weq.is_inverted_by (bifibrant_object.forget_fib C ⋙ Lcof) :=
+λ X Y f hf, by convert localization.inverts_W Lcof cofibrant_object.weq f hf
+
+def R : cofibrant_object C ⥤ Hobif := bifibrant_replacement C ⋙ π Lbif
+
+lemma R_inverts_weq : cofibrant_object.weq.is_inverted_by (R Lbif) := λ X Y f hf,
+begin
+  dsimp only [R, functor.comp_map],
+  haveI : is_iso ((bifibrant_replacement C).map f),
+  { dsimp only [bifibrant_replacement],
+    apply bifibrant_object.homotopy_category.Q_inverts_weq,
+    change model_category.weq ((bifibrant_object.forget C).map (map' f)),
+    have h : weq ((cofibrant_object.forget C).map f ≫ (cofibrant_object.forget C).map (app Y)) :=
+      CM2.of_comp _ _ hf weak_eq.property,
+    have eq := (cofibrant_object.forget C).congr_map (fac f),
+    simp only [functor.map_comp] at eq,
+    rw ← eq at h,
+    exact CM2.of_comp_left _ _ weak_eq.property h, },
+  apply_instance,
+end
+
+lemma forget_comp_R_iso : bifibrant_object.forget_fib C ⋙ R Lbif ≅ Lbif := sorry
+
+def R_comp_I'_iso {I' : Hobif ⥤ Hocof} (sq : Comm_sq (bifibrant_object.forget_fib C) Lbif Lcof I') :
+  R Lbif ⋙ I' ≅ Lcof := sorry
+
+def is_equivalence (I' : Hobif ⥤ Hocof)
+  (sq : Comm_sq (bifibrant_object.forget_fib C) Lbif Lcof I') : is_equivalence I' :=
+localization.lifting_is_equivalence sq bifibrant_object.weq cofibrant_object.weq
+  (R Lbif) (localization.lift (R Lbif) (R_inverts_weq Lbif) Lcof)
+  (R_comp_I'_iso Lcof Lbif sq) (forget_comp_R_iso Lbif)
+
+end bifibrant_replacement
 
 end model_category
 

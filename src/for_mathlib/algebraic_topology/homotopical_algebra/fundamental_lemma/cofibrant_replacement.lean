@@ -170,10 +170,7 @@ variables {Ho : Type*} [category Ho] (L : C ⥤ Ho) [L.is_localization weq]
 
 lemma forget_comp_L_inverts_weq :
   cofibrant_object.weq.is_inverted_by (cofibrant_object.forget C ⋙ L) :=
-λ X Y f hf, begin
-  dsimp only [functor.comp_map],
-  exact localization.inverts_W L weq ((cofibrant_object.forget C).map f) hf,
-end
+λ X Y f hf, by convert localization.inverts_W L weq ((cofibrant_object.forget C).map f) hf
 
 def R : C ⥤ Hocof := cofibrant_replacement C ⋙ π Lcof
 
