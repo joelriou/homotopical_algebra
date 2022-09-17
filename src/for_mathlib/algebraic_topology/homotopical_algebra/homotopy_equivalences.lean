@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Joël Riou
 -/
 
-import algebraic_topology.homotopical_algebra.fundamental_lemma
+import for_mathlib.algebraic_topology.homotopical_algebra.fundamental_lemma
 
 
 noncomputable theory
@@ -17,9 +17,20 @@ namespace algebraic_topology
 namespace model_category
 
 variables {C : Type*} [category C] [M : model_category C]
+  {Ho : Type*} [category Ho] (L : C ⥤ Ho) [L.is_localization weq]
 include M
 
-namespace fibrant_and_cofibrant_objects
+lemma fundamental_lemma.is_iso_map_iff {X Y : C} (f : X ⟶ Y) :
+  is_iso (L.map f) ↔ weq f :=
+begin
+  split,
+  { sorry, },
+  { intro h,
+    haveI : weak_eq f := ⟨h⟩,
+    apply_instance, },
+end
+
+/-namespace fibrant_and_cofibrant_objects
 
 /-- Hirschhorn 7.8.2 -/
 lemma cofibration_is_deformation_retract {X Y : fibrant_and_cofibrant_objects C}
@@ -134,7 +145,7 @@ begin
   { intro hw,
     exact is_iso.of_iso (arrow_class.localization.Wiso ⟨w, hw⟩), },
 end
-
+-/
 end model_category
 
 end algebraic_topology
