@@ -278,7 +278,7 @@ section
 
 variables {D : Type*} [category D] (L : bifibrant_object C ⥤ D) [L.is_localization weq]
 
-lemma L_full : full L :=
+instance L_full : full L :=
 full.of_iso (localization.comp_uniq_equivalence_functor_iso weq homotopy_category.Q L)
 
 lemma L_map_eq_iff_Q_map_eq {X Y : bifibrant_object C} (f₁ f₂ : X ⟶ Y) :

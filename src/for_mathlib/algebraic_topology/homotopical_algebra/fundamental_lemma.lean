@@ -17,6 +17,7 @@ namespace cofibrant_object
 variables {Hcof : Type*} [category Hcof] (Lcof : cofibrant_object C ⥤ Hcof)
   [Lcof.is_localization cofibrant_object.weq]
 
+/- this should be generalized to any Hobif -/
 def Hobif_to_Hocof : bifibrant_object.homotopy_category C ⥤ Hcof :=
 localization.lift ((bifibrant_object.forget_fib C) ⋙ Lcof)
   (bifibrant_replacement.forget_comp_Lcof_inverts_weq Lcof)
@@ -140,6 +141,7 @@ by { dsimp [Lcof], apply_instance, }
 
 variables {C}
 
+/- this should be generalized to any Hocof -/
 def Hocof_to_Ho : Hocof C ⥤ Ho :=
 localization.lift ((cofibrant_object.forget C) ⋙ L)
   (cofibrant_replacement.forget_comp_L_inverts_weq L) (Lcof C)

@@ -159,6 +159,7 @@ begin
   end),
 end
 
+/- make sq an instance parameter -/
 def is_equivalence (I' : Hobif ⥤ Hocof)
   (sq : Comm_sq (bifibrant_object.forget_fib C) Lbif Lcof I') : is_equivalence I' :=
 localization.lifting_is_equivalence sq bifibrant_object.weq cofibrant_object.weq

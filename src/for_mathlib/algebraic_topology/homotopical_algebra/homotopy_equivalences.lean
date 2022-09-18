@@ -12,6 +12,16 @@ noncomputable theory
 open algebraic_topology
 open category_theory category_theory.category
 
+lemma category_theory.functor.is_iso_map_iff {C D : Type*} [category C] [category D]
+  (F : C ⥤ D) [reflects_isomorphisms F] {X Y : C} (f : X ⟶ Y) : is_iso (F.map f) ↔ is_iso f :=
+begin
+  split,
+  { introI,
+    exact is_iso_of_reflects_iso f F, },
+  { introI,
+    apply_instance, },
+end
+
 namespace category_theory.morphism_property.three_of_two
 
 variables {C : Type*} [category C] {X Y X' Y' : C}
@@ -47,6 +57,8 @@ begin
   { simp only [assoc, ← e.hom.naturality, is_iso.inv_hom_id_assoc, iso.inv_hom_id_app], },
 end
 
+open category_theory
+
 namespace algebraic_topology
 
 namespace model_category
@@ -58,15 +70,59 @@ variables {C : Type*} [category C] [M : model_category C]
   {Hobif : Type*} [category Hobif] (Lbif : bifibrant_object C ⥤ Hobif)
     [Lbif.is_localization bifibrant_object.weq]
 
-include M
+include M Lbif Lcof
+def Hobif_to_Hocof : Hobif ⥤ Hocof :=
+localization.lift ((bifibrant_object.forget_fib C) ⋙ Lcof)
+    (bifibrant_replacement.forget_comp_Lcof_inverts_weq Lcof) Lbif
+
+def Lbif_comp_Hobif_to_Hocof_iso : Lbif ⋙ Hobif_to_Hocof Lcof Lbif ≅
+  bifibrant_object.forget_fib C ⋙ Lcof := localization.fac _ _ _
+
+instance : Comm_sq (bifibrant_object.forget_fib C) Lbif Lcof (Hobif_to_Hocof Lcof Lbif) :=
+⟨Lbif_comp_Hobif_to_Hocof_iso Lcof Lbif⟩
+
+instance : is_equivalence (Hobif_to_Hocof Lcof Lbif) :=
+bifibrant_replacement.is_equivalence Lcof Lbif (Hobif_to_Hocof Lcof Lbif) infer_instance
+
+omit Lbif Lcof
 
 instance bifibrant_object.is_iso_L_map {X Y : bifibrant_object C} (f : X ⟶ Y) [hf : weak_eq ((bifibrant_object.forget C).map f)] :
   is_iso (Lbif.map f) := localization.inverts_W Lbif bifibrant_object.weq f hf.property
 
+lemma strong_deformation_retract_of_cofibration_and_homotopy_equivalence
+  {X Y : bifibrant_object C} (f : X ⟶ Y) [is_iso (Lbif.map f)] :
+  ∃ (g : Y ⟶ X) (hg₁ : f ≫ g = 𝟙 X) (P : path_object Y.obj)
+    (H : right_homotopy P.pre ((bifibrant_object.forget C).map (g ≫ f)) (𝟙 Y.obj)),
+    (bifibrant_object.forget C).map f ≫ H.h = (bifibrant_object.forget C).map f ≫ P.σ :=
+begin
+  sorry,
+end
+
 lemma bifibrant_object.is_iso_Lbif_map_cofibration_iff
   {X Y : bifibrant_object C} (f : X ⟶ Y) [cofibration ((bifibrant_object.forget C).map f)] :
   is_iso (Lbif.map f) ↔ bifibrant_object.weq f :=
-sorry
+begin
+  refine ⟨_, localization.inverts_W Lbif bifibrant_object.weq f⟩,
+  introI,
+  rcases strong_deformation_retract_of_cofibration_and_homotopy_equivalence Lbif f
+    with ⟨g, hg₁, P, H, property⟩,
+  let f' := (bifibrant_object.forget C).map f,
+  let W := CM5a.obj f',
+  let i : X.obj ⟶ W := CM5a.i f',
+  let p : W ⟶ Y.obj := CM5a.p f',
+  have sq : comm_sq i f' p (𝟙 Y.obj) :=
+    comm_sq.mk (by simpa only [CM5a.fac f'] using (comp_id f').symm),
+  suffices : sq.has_lift,
+  { haveI := this,
+    refine CM3a f' i _ weak_eq.property,
+    have fac₁ : 𝟙 X.obj ≫ i = f' ≫ sq.lift := by rw [id_comp, sq.fac_left],
+    have fac₂ : 𝟙 X.obj ≫ f' = i ≫ p := by rw [id_comp, CM5a.fac f'],
+    refine is_retract.mk (arrow.hom_mk fac₁) (arrow.hom_mk fac₂) _,
+    ext,
+    { apply comp_id, },
+    { exact sq.fac_right, }, },
+  sorry,
+end
 
 lemma bifibrant_object.is_iso_Lbif_map_iff
   {X Y : bifibrant_object C} (f : X ⟶ Y) :
@@ -92,28 +148,58 @@ end
 
 lemma bifibrant_object.is_iso_Lbif_map_iff_is_iso_Lcof_map
   {X Y : bifibrant_object C} (f : X ⟶ Y) :
-  is_iso (Lbif.map f) ↔ is_iso (Lcof.map ((bifibrant_object.forget_fib C).map f)) := sorry
+  is_iso (Lbif.map f) ↔ is_iso (Lcof.map ((bifibrant_object.forget_fib C).map f)) :=
+by rw [← (Hobif_to_Hocof Lcof Lbif).is_iso_map_iff, ← functor.comp_map,
+  is_iso_iff_of_nat_iso (Lbif_comp_Hobif_to_Hocof_iso Lcof Lbif), functor.comp_map]
+
+/-- loop ?-/
+instance {X Y : cofibrant_object C} (f : X ⟶ Y) [weak_eq ((cofibrant_object.forget C).map f)] :
+  is_iso (Lcof.map f) := localization.inverts_W Lcof cofibrant_object.weq f weak_eq.property
 
 lemma cofibrant_object.is_iso_Lcof_map_iff
   {X Y : cofibrant_object C} (f : X ⟶ Y) :
   is_iso (Lcof.map f) ↔ cofibrant_object.weq f :=
 begin
   split,
-  { sorry, },
+  { intro hf,
+    change (morphism_property.isomorphisms _).inverse_image Lcof f at hf,
+    have sq := comm_sq.mk (bifibrant_replacement.fac f),
+    rw ((morphism_property.three_of_two.for_isomorphisms _).for_inverse_image Lcof).left_iff_right_of_sq sq
+      (by { change is_iso _, apply_instance, }) (by { change is_iso _, apply_instance, }) at hf,
+    change is_iso _ at hf,
+    rw ← bifibrant_object.is_iso_Lbif_map_iff_is_iso_Lcof_map Lcof
+      bifibrant_object.homotopy_category.Q at hf,
+    rw bifibrant_object.is_iso_Lbif_map_iff at hf,
+    exact (CM2.left_iff_right_of_sq ((cofibrant_object.forget C).map_comm_sq sq) weak_eq.property weak_eq.property).mpr hf, },
   { exact localization.inverts_W Lcof cofibrant_object.weq f, },
 end
 
+def Hocof_to_Ho : Hocof ⥤ Ho :=
+localization.lift ((cofibrant_object.forget C) ⋙ L)
+  (cofibrant_replacement.forget_comp_L_inverts_weq L) Lcof
+
+def Lcof_comp_Hocof_to_Ho_iso : Lcof ⋙ Hocof_to_Ho L Lcof ≅ cofibrant_object.forget C ⋙ L :=
+localization.fac _ _ _
+
+instance : Comm_sq (cofibrant_object.forget C) Lcof L (Hocof_to_Ho L Lcof) :=
+⟨Lcof_comp_Hocof_to_Ho_iso L Lcof⟩
+
+instance : is_equivalence (Hocof_to_Ho L Lcof) :=
+cofibrant_replacement.is_equivalence Lcof L (Hocof_to_Ho L Lcof) infer_instance
+
 lemma cofibrant_object.is_iso_Lcof_map_iff_is_iso_L_map
   {X Y : cofibrant_object C} (f : X ⟶ Y) :
-  is_iso (Lcof.map f) ↔ is_iso (L.map ((cofibrant_object.forget C).map f)) := sorry
+  is_iso (Lcof.map f) ↔ is_iso (L.map ((cofibrant_object.forget C).map f)) :=
+by rw [← (Hocof_to_Ho L Lcof).is_iso_map_iff, ← functor.comp_map,
+  is_iso_iff_of_nat_iso (Lcof_comp_Hocof_to_Ho_iso L Lcof), functor.comp_map]
 
 lemma is_iso_L_map_iff {X Y : C} (f : X ⟶ Y) :
   is_iso (L.map f) ↔ weq f :=
 begin
   split,
   { intro hf,
-    have sq := comm_sq.mk (cofibrant_replacement.fac f),
     change (morphism_property.isomorphisms _).inverse_image L f at hf,
+    have sq := comm_sq.mk (cofibrant_replacement.fac f),
     have eq := ((morphism_property.three_of_two.for_isomorphisms _).for_inverse_image L).left_iff_right_of_sq sq.flip (by { change is_iso _, apply_instance, }) (by { change is_iso _, apply_instance, }),
     rw ← eq at hf,
     change is_iso _ at hf,
@@ -123,122 +209,6 @@ begin
   { exact localization.inverts_W L weq f, },
 end
 
-/-namespace fibrant_and_cofibrant_objects
-
-/-- Hirschhorn 7.8.2 -/
-lemma cofibration_is_deformation_retract {X Y : fibrant_and_cofibrant_objects C}
-  (i : X ⟶ Y) (hi₁ : (arrow.mk i : arrow C) ∈ (cof : arrow_class C)) (hi₂ : (arrow.mk i).is_inverted_by L) (P : path_object Y.1.1) :
-  ∃ (g : Y ⟶ X) (hg₁ : i ≫ g = 𝟙 X) (H : P.pre.right_homotopy (g ≫ i) (𝟙 Y.1.1)),
-    forget.map i ≫ H.h = forget.map i ≫ P.pre.σ' :=
-begin
-  sorry
-end
-
-lemma cofibration_is_inverted_by_L_iff (w : arrow (fibrant_and_cofibrant_objects C))
-  (hw : (arrow.mk w.hom : arrow C) ∈ M.cof) :
-  w.is_inverted_by L ↔ w ∈ (W : arrow_class (fibrant_and_cofibrant_objects C)) :=
-begin
-  split,
-  { intro hw,
-    rcases @CM5a C _ _(arrow.mk w.hom) with ⟨Z, i, p, fac, hi, hp⟩,
-    sorry, },
-  { intro hw,
-    exact universal_property.inverts_W ⟨w, hw⟩, },
-end
-
-lemma is_inverted_by_L_iff (w : arrow (fibrant_and_cofibrant_objects C)) :
-  w.is_inverted_by L ↔ w ∈ (W : arrow_class (fibrant_and_cofibrant_objects C)) :=
-begin
-  split,
-  { intro hw,
-    rcases @CM5b C _ _ (arrow.mk w.hom) with ⟨Z, i, p, fac, hi, hp⟩,
-    have hip := CM2.of_comp _ _ _ i p _ hp.2,
-    { rw ← fac at hip,
-      exact hip, },
-    { let Z' : fibrant_and_cofibrant_objects C := ⟨⟨Z, nonempty.intro ⟨_⟩⟩, nonempty.intro ⟨_⟩⟩, rotate,
-      { convert cof_comp_stable _ _ _ _ _ w.left.1.2.some.cof hi, },
-      { convert fib_comp_stable _ _ _ _ _ hp.1 w.right.2.some.fib, },
-      let i' : w.left ⟶ Z' := i,
-      let p' : Z' ⟶ w.right := p,o
-      apply (cofibration_is_inverted_by_L_iff (arrow.mk i') hi).mp,
-      have fac : L.map i' ≫ L.map p' = L.map w.hom,
-      { rw ← L.map_comp,
-        congr' 1,
-        exact fac.symm, },
-      haveI : is_iso (L.map w.hom) := hw,
-      haveI : is_iso (L.map p') := universal_property.inverts_W ⟨arrow.mk p', hp.2⟩,
-      exact is_iso.of_is_iso_fac_right fac, }, },
-  { intro hw,
-    exact universal_property.inverts_W ⟨w, hw⟩, },
-end
-
-end fibrant_and_cofibrant_objects
-
-namespace cofibrant_objects
-
-namespace fibrant_replacement
-
-lemma is_inverted_by_L_iff (w : arrow (cofibrant_objects C)) :
-  w.is_inverted_by L ↔ w ∈ (W : arrow_class (cofibrant_objects C)) :=
-begin
-  split,
-  { intro hw,
-    let φ : (_ : C) ⟶ _ := w.hom,
-    suffices hw' : arrow.mk (map.Sq_lift φ) ∈ @fibrant_and_cofibrant_objects.W C _ _,
-    { apply CM2.of_comp_right φ _ (triv_cof_ι w.right).2,
-      erw ← map.Sq_lift_comm φ,
-      exact (@CM2 C _ _).of_comp _ _ _ _ _ (triv_cof_ι w.left).2 hw', },
-    rw ← fibrant_and_cofibrant_objects.is_inverted_by_L_iff,
-    haveI : is_iso (L.map w.hom) := hw,
-    exact (infer_instance : is_iso (R.map (L.map w.hom))), },
-  { intro hw,
-    exact universal_property.inverts_W ⟨w, hw⟩, },
-end
-
-end fibrant_replacement
-
-end cofibrant_objects
-
-namespace cofibrant_replacement
-
-lemma is_inverted_by_L_iff (w : arrow C) :
-  w.is_inverted_by L ↔ w ∈ (W : arrow_class C) :=
-begin
-  split,
-  { intro hw,
-    suffices hw' : arrow.mk (map.Sq_lift w.hom) ∈ @cofibrant_objects.W C _ _,
-    { rw ← arrow.mk_eq w,
-      apply CM2.of_comp_left _ w.hom (triv_fib_p w.left).2,
-      erw ← map.Sq_lift_comm w.hom,
-      exact CM2.of_comp _ _ _ _ _ hw' (triv_fib_p w.right).2, },
-    rw ← cofibrant_objects.fibrant_replacement.is_inverted_by_L_iff,
-    haveI : is_iso (L.map w.hom) := hw,
-    exact (infer_instance : is_iso (R.map (L.map w.hom))), },
-  { intro hw,
-    have h := universal_property.inverts_W ⟨w, hw⟩,
-    exact h, },
-end
-
-end cofibrant_replacement
-
-lemma is_inverted_by_Q_iff (w : arrow C) :
-  w.is_inverted_by Q ↔ w ∈ (W : arrow_class C) :=
-begin
-  split,
-  { intro hw,
-    apply (cofibrant_replacement.is_inverted_by_L_iff w).mp,
-    haveI : is_iso (Q.map w.hom) := hw,
-    have hw' : is_iso (cofibrant_replacement.is_strict_localization.lift_functor.map
-      (Q.map w.hom)) := infer_instance,
-    have eq := functor.congr_hom
-      cofibrant_replacement.is_strict_localization.lift_functor_fac w.hom,
-    erw [id_comp, comp_id] at eq,
-    erw eq at hw',
-    exact hw', },
-  { intro hw,
-    exact is_iso.of_iso (arrow_class.localization.Wiso ⟨w, hw⟩), },
-end
--/
 end model_category
 
 end algebraic_topology

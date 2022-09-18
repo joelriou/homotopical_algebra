@@ -22,6 +22,8 @@ def is_retract (X Y : C) : Prop := ∃ (s : X ⟶ Y) (r : Y ⟶ X), s ≫ r = �
 
 namespace is_retract
 
+def mk {X Y : C} (s : X ⟶ Y) (r : Y ⟶ X) (h : s ≫ r = 𝟙 X) : is_retract X Y := ⟨s, r, h⟩
+
 lemma iff_op (X Y : C) : is_retract X Y ↔ is_retract (opposite.op X) (opposite.op Y) :=
 begin
   split,
