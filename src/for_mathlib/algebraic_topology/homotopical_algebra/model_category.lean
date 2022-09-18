@@ -37,17 +37,17 @@ def triv_fib := M.to_category_with_fib_cof_weq.triv_fib
 def triv_cof := M.to_category_with_fib_cof_weq.triv_cof
 
 lemma CM1 : has_finite_limits C ∧ has_finite_colimits C := M.CM1axiom
-lemma CM2 : M.to_category_with_fib_cof_weq.CM2 := M.CM2axiom
+lemma CM2 : (weq : morphism_property C).three_of_two := M.CM2axiom
 lemma CM3 : M.to_category_with_fib_cof_weq.CM3 := M.CM3axiom
-lemma CM3a : M.to_category_with_fib_cof_weq.CM3a := CM3.weq
-lemma CM3b : M.to_category_with_fib_cof_weq.CM3b := CM3.fib
-lemma CM3c : M.to_category_with_fib_cof_weq.CM3c := CM3.cof
+lemma CM3a : (weq : morphism_property C).is_stable_by_retract := CM3.weq
+lemma CM3b : (fib : morphism_property C).is_stable_by_retract := CM3.fib
+lemma CM3c : (cof : morphism_property C).is_stable_by_retract := CM3.cof
 lemma CM4 : M.to_category_with_fib_cof_weq.CM4 := M.CM4axiom
-lemma CM4a : M.to_category_with_fib_cof_weq.CM4a := CM4.1
-lemma CM4b : M.to_category_with_fib_cof_weq.CM4b := CM4.2
+lemma CM4a : (triv_cof : morphism_property C).has_lifting_property fib := CM4.1
+lemma CM4b : (cof : morphism_property C).has_lifting_property triv_fib := CM4.2
 lemma CM5 : M.to_category_with_fib_cof_weq.CM5 := M.CM5axiom
-lemma CM5a : M.to_category_with_fib_cof_weq.CM5a := CM5.1
-lemma CM5b : M.to_category_with_fib_cof_weq.CM5b := CM5.2
+lemma CM5a : factorisation_axiom (triv_cof : morphism_property C) fib := CM5.1
+lemma CM5b : factorisation_axiom (cof : morphism_property C) triv_fib := CM5.2
 
 @[priority 100] instance : has_finite_limits C := CM1.1
 @[priority 100] instance : has_finite_colimits C := CM1.2
