@@ -8,6 +8,7 @@ import for_mathlib.algebraic_topology.homotopical_algebra.homotopies
 import for_mathlib.algebraic_topology.homotopical_algebra.fibrant
 import category_theory.full_subcategory
 import for_mathlib.category_theory.quotient_misc
+import for_mathlib.category_theory.localization.predicate
 
 noncomputable theory
 
@@ -197,6 +198,20 @@ end
 end homotopy_category
 
 end cofibrant_object
+
+variable (C)
+
+@[derive category]
+def Hocof' := (cofibrant_object.weq : morphism_property (cofibrant_object C)).localization
+
+variable {C}
+
+def Lcof' : cofibrant_object C ⥤ Hocof' C :=
+(cofibrant_object.weq : morphism_property (cofibrant_object C)).Q
+
+instance Lcof'_is_localization :
+(Lcof' : cofibrant_object C ⥤ Hocof' C).is_localization cofibrant_object.weq :=
+by { dsimp [Lcof'], apply_instance, }
 
 end model_category
 

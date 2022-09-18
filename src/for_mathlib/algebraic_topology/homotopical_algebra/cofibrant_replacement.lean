@@ -89,6 +89,10 @@ def cofibrant_replacement : C ⥤ cofibrant_object.homotopy_category C :=
         cofibrant_replacement.fac_assoc f], },
   end, }
 
+variables {Hocof : Type*} [category Hocof] (Lcof : cofibrant_object C ⥤ Hocof)
+  [Lcof.is_localization cofibrant_object.weq]
+  {Ho : Type*} [category Ho] (L : C ⥤ Ho) [L.is_localization weq]
+
 namespace cofibrant_replacement
 
 variable {C}
@@ -118,9 +122,6 @@ begin
   rw cofibrant_object.homotopy_category.weq_Q_map_iff,
   exact weq_iff _ _ (comm_sq.mk (fac f).symm),
 end
-
-variables {Hocof : Type*} [category Hocof] (Lcof : cofibrant_object C ⥤ Hocof)
-  [Lcof.is_localization cofibrant_object.weq]
 
 include Lcof
 
@@ -166,8 +167,6 @@ end
 
 omit Lcof
 
-variables {Ho : Type*} [category Ho] (L : C ⥤ Ho) [L.is_localization weq]
-
 lemma forget_comp_L_inverts_weq :
   cofibrant_object.weq.is_inverted_by (cofibrant_object.forget C ⋙ L) :=
 λ X Y f hf, by convert localization.inverts_W L weq ((cofibrant_object.forget C).map f) hf
@@ -181,7 +180,7 @@ begin
     (by simpa only [weq_eq_inverse_image_homotopy_category_weq] using hf),
 end
 
-lemma forget_comp_R_iso : cofibrant_object.forget C ⋙ R Lcof ≅ Lcof :=
+def forget_comp_R_iso : cofibrant_object.forget C ⋙ R Lcof ≅ Lcof :=
 nat_iso.of_components (λ X, localization.iso_of_W Lcof cofibrant_object.weq (app' X)
   (by { dsimp [app'], exact weak_eq.property, }))
 (λ X Y f, begin
@@ -209,6 +208,26 @@ localization.lifting_is_equivalence sq cofibrant_object.weq model_category.weq
   (R_comp_I'_iso Lcof L sq) (forget_comp_R_iso Lcof)
 
 end cofibrant_replacement
+
+variable {C}
+
+def Hocof_to_Ho : Hocof ⥤ Ho :=
+localization.lift ((cofibrant_object.forget C) ⋙ L)
+  (cofibrant_replacement.forget_comp_L_inverts_weq L) Lcof
+
+def Lcof_comp_Hocof_to_Ho_iso : Lcof ⋙ Hocof_to_Ho Lcof L ≅ cofibrant_object.forget C ⋙ L :=
+localization.fac _ _ _
+
+instance : is_equivalence (Hocof_to_Ho Lcof L) :=
+cofibrant_replacement.is_equivalence Lcof L (Hocof_to_Ho Lcof L)
+    ⟨Lcof_comp_Hocof_to_Ho_iso Lcof L⟩
+
+lemma is_iso_Lcof_map' {X Y : cofibrant_object C} (f : X ⟶ Y) (hf : cofibrant_object.weq f) :
+  is_iso (Lcof.map f) := localization.inverts_W Lcof cofibrant_object.weq f hf
+
+lemma is_iso_Lcof_map {X Y : cofibrant_object C} (f : X ⟶ Y)
+  [weak_eq ((cofibrant_object.forget C).map f)] : is_iso (Lcof.map f) :=
+is_iso_Lcof_map' Lcof f weak_eq.property
 
 end model_category
 

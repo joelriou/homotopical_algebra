@@ -7,6 +7,7 @@ Authors: Joël Riou
 import for_mathlib.algebraic_topology.homotopical_algebra.model_category_axioms
 import category_theory.limits.opposites
 import category_theory.limits.shapes.comm_sq
+import for_mathlib.category_theory.localization.predicate
 
 noncomputable theory
 
@@ -258,6 +259,26 @@ lemma respects_iso {X₁ X₂ Y₁ Y₂ : C} (f₁ : X₁ ⟶ Y₁) (f₂ : X₂
 by simpa only [iff_weq] using weq_respects_iso.arrow_mk_iso_iff e
 
 end weak_eq
+
+variable (C)
+
+@[derive category]
+def Ho' := (weq : morphism_property C).localization
+
+variable {C}
+
+def L' : C ⥤ Ho' C := weq.Q
+
+instance L'_is_localization : L'.is_localization (weq : morphism_property C) :=
+by { dsimp [L'], apply_instance, }
+
+variables {Ho : Type*} [category Ho] (L : C ⥤ Ho) [L.is_localization weq]
+
+lemma is_iso_L_map' {X Y : C} (f : X ⟶ Y) (hf : weq f) : is_iso (L.map f) :=
+localization.inverts_W L weq f hf
+
+lemma is_iso_L_map {X Y : C} (f : X ⟶ Y) [weak_eq f] : is_iso (L.map f) :=
+is_iso_L_map' L f weak_eq.property
 
 end model_category
 

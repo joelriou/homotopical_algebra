@@ -274,33 +274,43 @@ functor.is_localization.mk' _ _ (strict_universal_property_fixed_target C _)
 
 end homotopy_category
 
+end bifibrant_object
+
 section
 
-variables {D : Type*} [category D] (L : bifibrant_object C ⥤ D) [L.is_localization weq]
+variables {C} {D : Type*} [category D] (Lbif : bifibrant_object C ⥤ D)
+  [Lbif.is_localization bifibrant_object.weq]
 
-instance L_full : full L :=
-full.of_iso (localization.comp_uniq_equivalence_functor_iso weq homotopy_category.Q L)
+instance : full Lbif :=
+full.of_iso (localization.comp_uniq_equivalence_functor_iso bifibrant_object.weq bifibrant_object.homotopy_category.Q Lbif)
 
-lemma L_map_eq_iff_Q_map_eq {X Y : bifibrant_object C} (f₁ f₂ : X ⟶ Y) :
-  L.map f₁ = L.map f₂ ↔ homotopy_category.Q.map f₁ = homotopy_category.Q.map f₂ :=
+lemma Lbif_map_eq_iff_Q_map_eq {X Y : bifibrant_object C} (f₁ f₂ : X ⟶ Y) :
+  Lbif.map f₁ = Lbif.map f₂ ↔
+  bifibrant_object.homotopy_category.Q.map f₁ = bifibrant_object.homotopy_category.Q.map f₂ :=
 begin
   rw ← category_theory.functor.map_eq_iff_of_nat_iso
-    (localization.comp_uniq_equivalence_functor_iso weq homotopy_category.Q L),
+    (localization.comp_uniq_equivalence_functor_iso bifibrant_object.weq
+      bifibrant_object.homotopy_category.Q Lbif),
   dsimp only [functor.comp_map],
   simp only [category_theory.functor.map_eq_iff],
 end
 
-lemma L_map_eq_iff {X Y : bifibrant_object C} (Cyl : cylinder X.obj) (f₁ f₂ : X ⟶ Y) :
-  L.map f₁ = L.map f₂ ↔ nonempty (left_homotopy Cyl.pre f₁ f₂) :=
-by rw [← homotopy_category.Q_map_eq_iff, L_map_eq_iff_Q_map_eq]
+lemma Lbif_map_eq_iff {X Y : bifibrant_object C} (Cyl : cylinder X.obj) (f₁ f₂ : X ⟶ Y) :
+  Lbif.map f₁ = Lbif.map f₂ ↔ nonempty (left_homotopy Cyl.pre f₁ f₂) :=
+by rw [← bifibrant_object.homotopy_category.Q_map_eq_iff, Lbif_map_eq_iff_Q_map_eq]
 
-lemma L_map_eq_iff' {X Y : bifibrant_object C} (P : path_object Y.obj) (f₁ f₂ : X ⟶ Y) :
-  L.map f₁ = L.map f₂ ↔ nonempty (model_category.right_homotopy P.pre f₁ f₂) :=
-by rw [← homotopy_category.Q_map_eq_iff', L_map_eq_iff_Q_map_eq]
+lemma Lbif_map_eq_iff' {X Y : bifibrant_object C} (P : path_object Y.obj) (f₁ f₂ : X ⟶ Y) :
+  Lbif.map f₁ = Lbif.map f₂ ↔ nonempty (model_category.right_homotopy P.pre f₁ f₂) :=
+by rw [← bifibrant_object.homotopy_category.Q_map_eq_iff', Lbif_map_eq_iff_Q_map_eq]
+
+lemma is_iso_Lbif_map' {X Y : bifibrant_object C} (f : X ⟶ Y) (hf : bifibrant_object.weq f):
+  is_iso (Lbif.map f) := localization.inverts_W Lbif bifibrant_object.weq f hf
+
+lemma is_iso_Lbif_map {X Y : bifibrant_object C} (f : X ⟶ Y) [hf : weak_eq ((bifibrant_object.forget C).map f)] :
+  is_iso (Lbif.map f) := is_iso_Lbif_map' Lbif f hf.property
 
 end
 
-end bifibrant_object
 
 end model_category
 

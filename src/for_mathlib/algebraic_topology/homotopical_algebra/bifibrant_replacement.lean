@@ -100,12 +100,13 @@ def bifibrant_replacement : cofibrant_object C ⥤ bifibrant_object.homotopy_cat
         bifibrant_replacement.fac g], },
   end, }
 
-namespace bifibrant_replacement
 
 variables {C} {Hocof : Type*} [category Hocof] (Lcof : cofibrant_object C ⥤ Hocof)
   [Lcof.is_localization cofibrant_object.weq]
   {Hobif : Type*} [category Hobif] (Lbif : bifibrant_object C ⥤ Hobif)
   [Lbif.is_localization bifibrant_object.weq]
+
+namespace bifibrant_replacement
 
 @[simps]
 def π : bifibrant_object.homotopy_category C ⥤ Hobif :=
@@ -133,7 +134,7 @@ begin
   apply_instance,
 end
 
-lemma forget_comp_R_iso : bifibrant_object.forget_fib C ⋙ R Lbif ≅ Lbif :=
+def forget_comp_R_iso : bifibrant_object.forget_fib C ⋙ R Lbif ≅ Lbif :=
 begin
   symmetry,
   refine nat_iso.of_components (λ X, localization.iso_of_W Lbif bifibrant_object.weq
@@ -159,14 +160,29 @@ begin
   end),
 end
 
-/- make sq an instance parameter -/
 def is_equivalence (I' : Hobif ⥤ Hocof)
-  (sq : Comm_sq (bifibrant_object.forget_fib C) Lbif Lcof I') : is_equivalence I' :=
+  [sq : Comm_sq (bifibrant_object.forget_fib C) Lbif Lcof I'] : is_equivalence I' :=
 localization.lifting_is_equivalence sq bifibrant_object.weq cofibrant_object.weq
   (R Lbif) (localization.lift (R Lbif) (R_inverts_weq Lbif) Lcof)
   (R_comp_I'_iso Lcof Lbif sq) (forget_comp_R_iso Lbif)
 
 end bifibrant_replacement
+
+def Hobif_to_Hocof : Hobif ⥤ Hocof :=
+localization.lift ((bifibrant_object.forget_fib C) ⋙ Lcof)
+  (bifibrant_replacement.forget_comp_Lcof_inverts_weq Lcof) Lbif
+
+def Lbif_comp_Hobif_to_Hocof_iso : Lbif ⋙ Hobif_to_Hocof Lcof Lbif ≅
+  bifibrant_object.forget_fib C ⋙ Lcof := localization.fac _ _ _
+
+instance : Comm_sq (bifibrant_object.forget_fib C) Lbif Lcof (Hobif_to_Hocof Lcof Lbif) :=
+⟨Lbif_comp_Hobif_to_Hocof_iso Lcof Lbif⟩
+
+instance : is_equivalence (Hobif_to_Hocof Lcof Lbif) :=
+bifibrant_replacement.is_equivalence Lcof Lbif (Hobif_to_Hocof Lcof Lbif)
+
+instance : full (bifibrant_object.forget_fib C ⋙ Lcof) :=
+full.of_iso (Lbif_comp_Hobif_to_Hocof_iso Lcof bifibrant_object.homotopy_category.Q)
 
 end model_category
 

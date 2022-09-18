@@ -6,7 +6,6 @@ Authors: Joël Riou
 
 import for_mathlib.algebraic_topology.homotopical_algebra.fundamental_lemma
 
-
 noncomputable theory
 
 open algebraic_topology
@@ -71,23 +70,8 @@ variables {C : Type*} [category C] [M : model_category C]
     [Lbif.is_localization bifibrant_object.weq]
 
 include M Lbif Lcof
-def Hobif_to_Hocof : Hobif ⥤ Hocof :=
-localization.lift ((bifibrant_object.forget_fib C) ⋙ Lcof)
-    (bifibrant_replacement.forget_comp_Lcof_inverts_weq Lcof) Lbif
-
-def Lbif_comp_Hobif_to_Hocof_iso : Lbif ⋙ Hobif_to_Hocof Lcof Lbif ≅
-  bifibrant_object.forget_fib C ⋙ Lcof := localization.fac _ _ _
-
-instance : Comm_sq (bifibrant_object.forget_fib C) Lbif Lcof (Hobif_to_Hocof Lcof Lbif) :=
-⟨Lbif_comp_Hobif_to_Hocof_iso Lcof Lbif⟩
-
-instance : is_equivalence (Hobif_to_Hocof Lcof Lbif) :=
-bifibrant_replacement.is_equivalence Lcof Lbif (Hobif_to_Hocof Lcof Lbif) infer_instance
 
 omit Lbif Lcof
-
-instance bifibrant_object.is_iso_L_map {X Y : bifibrant_object C} (f : X ⟶ Y) [hf : weak_eq ((bifibrant_object.forget C).map f)] :
-  is_iso (Lbif.map f) := localization.inverts_W Lbif bifibrant_object.weq f hf.property
 
 lemma strong_deformation_retract_of_cofibration_and_homotopy_equivalence
   {X Y : bifibrant_object C} (f : X ⟶ Y) [is_iso (Lbif.map f)] :
@@ -140,6 +124,7 @@ begin
     haveI := hf,
     haveI : weak_eq ((bifibrant_object.forget C).map p) := (infer_instance : weak_eq (CM5b.p f')),
     haveI : cofibration ((bifibrant_object.forget C).map i) := (infer_instance : cofibration (CM5b.i f')),
+    haveI := is_iso_Lbif_map Lbif p,
     haveI : is_iso (Lbif.map i) := is_iso.of_is_iso_comp_right _ (Lbif.map p),
     refine CM2.of_comp _ _ _ weak_eq.property,
     exact (bifibrant_object.is_iso_Lbif_map_cofibration_iff Lbif i).mp infer_instance, },
@@ -152,9 +137,6 @@ lemma bifibrant_object.is_iso_Lbif_map_iff_is_iso_Lcof_map
 by rw [← (Hobif_to_Hocof Lcof Lbif).is_iso_map_iff, ← functor.comp_map,
   is_iso_iff_of_nat_iso (Lbif_comp_Hobif_to_Hocof_iso Lcof Lbif), functor.comp_map]
 
-/-- loop ?-/
-instance {X Y : cofibrant_object C} (f : X ⟶ Y) [weak_eq ((cofibrant_object.forget C).map f)] :
-  is_iso (Lcof.map f) := localization.inverts_W Lcof cofibrant_object.weq f weak_eq.property
 
 lemma cofibrant_object.is_iso_Lcof_map_iff
   {X Y : cofibrant_object C} (f : X ⟶ Y) :
@@ -165,7 +147,7 @@ begin
     change (morphism_property.isomorphisms _).inverse_image Lcof f at hf,
     have sq := comm_sq.mk (bifibrant_replacement.fac f),
     rw ((morphism_property.three_of_two.for_isomorphisms _).for_inverse_image Lcof).left_iff_right_of_sq sq
-      (by { change is_iso _, apply_instance, }) (by { change is_iso _, apply_instance, }) at hf,
+      (is_iso_Lcof_map' Lcof _ weak_eq.property) (is_iso_Lcof_map' Lcof _ weak_eq.property) at hf,
     change is_iso _ at hf,
     rw ← bifibrant_object.is_iso_Lbif_map_iff_is_iso_Lcof_map Lcof
       bifibrant_object.homotopy_category.Q at hf,
@@ -174,24 +156,11 @@ begin
   { exact localization.inverts_W Lcof cofibrant_object.weq f, },
 end
 
-def Hocof_to_Ho : Hocof ⥤ Ho :=
-localization.lift ((cofibrant_object.forget C) ⋙ L)
-  (cofibrant_replacement.forget_comp_L_inverts_weq L) Lcof
-
-def Lcof_comp_Hocof_to_Ho_iso : Lcof ⋙ Hocof_to_Ho L Lcof ≅ cofibrant_object.forget C ⋙ L :=
-localization.fac _ _ _
-
-instance : Comm_sq (cofibrant_object.forget C) Lcof L (Hocof_to_Ho L Lcof) :=
-⟨Lcof_comp_Hocof_to_Ho_iso L Lcof⟩
-
-instance : is_equivalence (Hocof_to_Ho L Lcof) :=
-cofibrant_replacement.is_equivalence Lcof L (Hocof_to_Ho L Lcof) infer_instance
-
-lemma cofibrant_object.is_iso_Lcof_map_iff_is_iso_L_map
+lemma is_iso_Lcof_map_iff_is_iso_L_map
   {X Y : cofibrant_object C} (f : X ⟶ Y) :
   is_iso (Lcof.map f) ↔ is_iso (L.map ((cofibrant_object.forget C).map f)) :=
-by rw [← (Hocof_to_Ho L Lcof).is_iso_map_iff, ← functor.comp_map,
-  is_iso_iff_of_nat_iso (Lcof_comp_Hocof_to_Ho_iso L Lcof), functor.comp_map]
+by rw [← (Hocof_to_Ho Lcof L).is_iso_map_iff, ← functor.comp_map,
+  is_iso_iff_of_nat_iso (Lcof_comp_Hocof_to_Ho_iso Lcof L), functor.comp_map]
 
 lemma is_iso_L_map_iff {X Y : C} (f : X ⟶ Y) :
   is_iso (L.map f) ↔ weq f :=
@@ -203,7 +172,7 @@ begin
     have eq := ((morphism_property.three_of_two.for_isomorphisms _).for_inverse_image L).left_iff_right_of_sq sq.flip (by { change is_iso _, apply_instance, }) (by { change is_iso _, apply_instance, }),
     rw ← eq at hf,
     change is_iso _ at hf,
-    rw ← cofibrant_object.is_iso_Lcof_map_iff_is_iso_L_map L (fundamental_lemma.Lcof C) at hf,
+    rw ← is_iso_Lcof_map_iff_is_iso_L_map L Lcof' at hf,
     rw cofibrant_object.is_iso_Lcof_map_iff at hf,
     exact (CM2.left_iff_right_of_sq sq.flip weak_eq.property weak_eq.property).mp hf, },
   { exact localization.inverts_W L weq f, },
