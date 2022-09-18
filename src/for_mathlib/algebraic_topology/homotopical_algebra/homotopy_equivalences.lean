@@ -63,16 +63,12 @@ namespace algebraic_topology
 
 namespace model_category
 
-variables {C : Type*} [category C] [M : model_category C]
+variables {C : Type*} [category C] [model_category C]
   {Ho : Type*} [category Ho] (L : C ⥤ Ho) [L.is_localization weq]
   {Hocof : Type*} [category Hocof] (Lcof : cofibrant_object C ⥤ Hocof)
     [Lcof.is_localization cofibrant_object.weq]
   {Hobif : Type*} [category Hobif] (Lbif : bifibrant_object C ⥤ Hobif)
     [Lbif.is_localization bifibrant_object.weq]
-
-include M Lbif Lcof
-
-omit Lbif Lcof
 
 lemma strong_deformation_retract_of_cofibration_and_homotopy_equivalence
   {X Y : bifibrant_object C} (f : X ⟶ Y) [is_iso (Lbif.map f)] :

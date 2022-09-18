@@ -9,8 +9,7 @@ namespace algebraic_topology
 
 namespace model_category
 
-variables {C : Type*} [category C] [M : model_category C]
-include M
+variables {C : Type*} [category C] [model_category C]
 
 namespace bifibrant_replacement
 
@@ -137,13 +136,9 @@ end
 def forget_comp_R_iso : bifibrant_object.forget_fib C ⋙ R Lbif ≅ Lbif :=
 begin
   symmetry,
-  refine nat_iso.of_components (λ X, localization.iso_of_W Lbif bifibrant_object.weq
-    ((bifibrant_object.forget C).map (app' X)) weak_eq.property) (λ X Y f, begin
-    simp only [bifibrant_object.forget_map, localization.iso_of_W_hom,
-      bifibrant_object.forget_fib_map],
-    rw [← Lbif.map_comp, ← fac', Lbif.map_comp],
-    refl,
-  end),
+  exact nat_iso.of_components
+    (λ X, localization.iso_of_W Lbif bifibrant_object.weq (app' X) weak_eq.property)
+    (λ X Y f, by { rw [localization.iso_of_W_hom, ← Lbif.map_comp, ← fac', Lbif.map_comp], refl, }),
 end
 
 def R_comp_I'_iso {I' : Hobif ⥤ Hocof} (sq : Comm_sq (bifibrant_object.forget_fib C) Lbif Lcof I') :

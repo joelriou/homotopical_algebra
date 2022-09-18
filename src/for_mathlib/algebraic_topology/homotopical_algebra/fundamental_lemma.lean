@@ -9,8 +9,7 @@ namespace algebraic_topology
 
 namespace model_category
 
-variables {C : Type*} [category C] [M : model_category C]
-include M
+variables {C : Type*} [category C] [model_category C]
 
 variables {Hcof : Type*} [category Hcof] (Lcof : cofibrant_object C ⥤ Hcof)
   [Lcof.is_localization cofibrant_object.weq]

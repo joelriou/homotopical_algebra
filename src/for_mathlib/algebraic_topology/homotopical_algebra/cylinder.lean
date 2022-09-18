@@ -15,8 +15,7 @@ namespace algebraic_topology
 
 namespace model_category
 
-variables {C : Type*} [category C] [M : model_category C]
-include M
+variables {C : Type*} [category C] [model_category C]
 
 variables (A B : C)
 

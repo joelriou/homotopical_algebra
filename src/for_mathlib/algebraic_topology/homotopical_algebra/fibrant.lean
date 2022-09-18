@@ -14,8 +14,7 @@ namespace algebraic_topology
 
 namespace model_category
 
-variables {C : Type*} [category C] [M : model_category C] (A B X Y : C)
-include M
+variables {C : Type*} [category C] [model_category C] (A B X Y : C)
 
 abbreviation is_cofibrant (B : C) := cofibration (initial.to B)
 abbreviation is_fibrant (B : C) := fibration (terminal.from B)

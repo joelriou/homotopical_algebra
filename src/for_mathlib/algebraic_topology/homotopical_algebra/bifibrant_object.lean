@@ -75,8 +75,7 @@ namespace algebraic_topology
 
 namespace model_category
 
-variables (C : Type*) [category C] [M : model_category C]
-include M
+variables (C : Type*) [category C] [model_category C]
 
 @[nolint has_nonempty_instance]
 structure bifibrant_object :=
@@ -106,7 +105,8 @@ instance is_fibrant_forget_obj (X : bifibrant_object C) :
 variable {C}
 
 @[simp]
-def weq : morphism_property (bifibrant_object C) := λ X Y f, M.weq f
+def weq : morphism_property (bifibrant_object C) :=
+λ X Y f, model_category.weq ((bifibrant_object.forget C).map f)
 
 def right_homotopy : hom_rel (bifibrant_object C) :=
 λ A X f₁ f₂, cofibrant_object.right_homotopy f₁ f₂
@@ -198,7 +198,7 @@ category_theory.quotient.lift _ F (λ X Y f₁ f₂ h, begin
   have eq₂ : f₂ = d₁ ≫ η := H.h₁.symm,
   simp only [eq₁, eq₂, F.map_comp],
   congr' 1,
-  haveI : is_iso (F.map s) := hF s weak_eq.property,
+  haveI : is_iso (F.map s) := hF s (by { dsimp [s], exact weak_eq.property, }),
   simp only [← cancel_mono (F.map s), ← F.map_comp],
   congr' 1,
   exact Cyl.σd₀.trans Cyl.σd₁.symm,
