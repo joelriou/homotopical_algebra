@@ -136,7 +136,6 @@ instance is_equivalence_from_model := (as_localization L W).is_equivalence
 def equivalence_from_model : W.localization ≌ D :=
 (localization.construction.lift L (inverts_W L W)).as_equivalence
 
-
 def Q_comp_equivalence_from_model_functor_iso :
   W.Q ⋙ (equivalence_from_model L W).functor ≅ L := eq_to_iso (construction.fac _ _)
 
@@ -150,6 +149,11 @@ begin
   ... ≅ W.Q ⋙ 𝟭 _ : iso_whisker_left _ ((equivalence_from_model L W).unit_iso.symm)
   ... ≅ W.Q : functor.right_unitor _,
 end
+
+lemma ess_surj : ess_surj L :=
+⟨λ X, ⟨(construction.obj_equiv W).inv_fun ((equivalence_from_model L W).inverse.obj X),
+    nonempty.intro ((Q_comp_equivalence_from_model_functor_iso L W).symm.app _ ≪≫
+    (equivalence_from_model L W).counit_iso.app X)⟩⟩
 
 def whiskering_left_functor : (D ⥤ E) ⥤ W.functors_inverting E :=
 full_subcategory.lift _ ((whiskering_left _ _ E).obj L)
