@@ -103,6 +103,15 @@ lemma eq_rlp_with
   (h₃ : G.is_stable_by_retract) : G = F.rlp_with :=
 by rw [← G.unop_op, eq_llp_with h₁.op h₂.op h₃.op, F.llp_with_op, morphism_property.unop_op]
 
+lemma under (h : factorisation_axiom F G) (A : C) :
+  factorisation_axiom (F.inverse_image (under.forget A)) (G.inverse_image (under.forget A)) :=
+λ X Y f, begin
+  let f' := (under.forget A).map f,
+  refine ⟨under.mk (X.hom ≫ h.i f'), under.hom_mk (h.i f'), h.i_property f',
+    under.hom_mk (h.p f'), h.p_property f', _⟩,
+  tidy,
+end
+
 end factorisation_axiom
 
 end algebraic_topology

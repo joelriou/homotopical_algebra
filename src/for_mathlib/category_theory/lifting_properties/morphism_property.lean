@@ -2,6 +2,7 @@ import for_mathlib.category_theory.morphism_property_misc
 import category_theory.lifting_properties.basic
 import for_mathlib.category_theory.lifting_properties.pullbacks
 import for_mathlib.category_theory.lifting_properties.products
+import for_mathlib.category_theory.lifting_properties.over
 
 open category_theory.limits
 
@@ -36,6 +37,11 @@ variables (F G)
 lemma iff_op : has_lifting_property F G ↔ has_lifting_property G.op F.op := ⟨op, unop⟩
 lemma iff_unop (F' G' : morphism_property Cᵒᵖ) :
   has_lifting_property F' G' ↔ has_lifting_property G'.unop F'.unop := ⟨unop, op⟩
+
+variables {F G}
+lemma under (h : has_lifting_property F G) (M : C) :
+  has_lifting_property (F.inverse_image (under.forget M)) (G.inverse_image (under.forget M)) :=
+λ A B X Y i hi p hp, by { haveI := h _ hi _ hp, apply_instance, }
 
 end has_lifting_property
 

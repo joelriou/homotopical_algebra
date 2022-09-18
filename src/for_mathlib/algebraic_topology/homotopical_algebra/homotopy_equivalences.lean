@@ -5,6 +5,7 @@ Authors: Joël Riou
 -/
 
 import for_mathlib.algebraic_topology.homotopical_algebra.fundamental_lemma
+import for_mathlib.algebraic_topology.homotopical_algebra.over
 
 noncomputable theory
 
