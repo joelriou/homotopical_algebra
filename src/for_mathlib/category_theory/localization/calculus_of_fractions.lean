@@ -33,9 +33,11 @@ variables (W) [left_calculus_of_fractions W]
 structure zigzag (X Y : C) :=
 (Z : C) (f : X ⟶ Z) (s : Y ⟶ Z) (hs : W s)
 
+@[simps]
 def zigzag.of_hom {X Y : C} (f : X ⟶ Y) : zigzag W X Y :=
 ⟨Y, f, 𝟙 Y, left_calculus_of_fractions.id _⟩
 
+@[simps]
 def zigzag.id (X : C) := zigzag.of_hom W (𝟙 X)
 
 variable {W}
@@ -118,6 +120,76 @@ begin
   { sorry, },
   { sorry, },
 end
+
+lemma hom.comp_eq {X₁ X₂ X₃ : C} (z₁₂ : zigzag W X₁ X₂) (z₂₃ : zigzag W X₂ X₃)
+  (sq : to_sq z₁₂.s z₁₂.hs z₂₃.f) : hom.comp (quot.mk _ z₁₂) (quot.mk _ z₂₃) =
+  quot.mk _ (zigzag.comp₀ z₁₂ z₂₃ sq) :=
+begin
+  let sq' := (left_calculus_of_fractions.ex z₁₂.s z₁₂.hs z₂₃.f).some,
+  have eq : (quot.mk _ (z₁₂.comp₀ z₂₃ sq) : hom W _ _) = quot.mk _ (z₁₂.comp₀ z₂₃ sq'),
+  { rw [← zigzag.comp_eq, ← zigzag.comp_eq], },
+  simpa only [eq],
+end
+
+include W
+
+variable (W)
+
+structure localization :=
+(obj : C)
+
+instance : category (localization W) :=
+{ hom := λ X Y, hom W X.obj Y.obj,
+  id := λ X, quot.mk _ (zigzag.id W X.obj),
+  comp := λ X₁ X₂ X₃, hom.comp,
+  id_comp' := λ X Y f, begin
+    cases surjective_quot_mk _ f with g hg,
+    subst hg,
+    dsimp [hom.comp],
+    let sq : to_sq (𝟙 X.obj) (left_calculus_of_fractions.id X.obj : W (𝟙 X.obj)) g.f :=
+      ⟨g.Z, g.f, 𝟙 g.Z, left_calculus_of_fractions.id g.Z, by rw [id_comp, comp_id]⟩,
+    rw zigzag.comp_eq (zigzag.id W X.obj) g sq,
+    congr' 1,
+    dsimp [zigzag.comp₀],
+    cases g,
+    tidy,
+  end,
+  comp_id' := λ X Y f, begin
+    cases surjective_quot_mk _ f with g hg,
+    subst hg,
+    dsimp [hom.comp],
+    let sq : to_sq g.s g.hs (𝟙 Y.obj) := ⟨g.Z, 𝟙 g.Z, g.s, g.hs, by rw [id_comp, comp_id]⟩,
+    rw zigzag.comp_eq g (zigzag.id W Y.obj) sq,
+    congr' 1,
+    dsimp [zigzag.comp₀],
+    cases g,
+    tidy,
+  end,
+  assoc' := λ X₁ X₂ X₃ X₄ f₁₂ f₂₃ f₃₄, begin
+    cases surjective_quot_mk _ f₁₂ with z₁₂ h₁₂,
+    cases surjective_quot_mk _ f₂₃ with z₂₃ h₂₃,
+    cases surjective_quot_mk _ f₃₄ with z₃₄ h₃₄,
+    let sq₁₃ := (left_calculus_of_fractions.ex z₁₂.s z₁₂.hs z₂₃.f).some,
+    let sq₂₄ := (left_calculus_of_fractions.ex z₂₃.s z₂₃.hs z₃₄.f).some,
+    dsimp,
+    let H := (left_calculus_of_fractions.ex sq₁₃.s' sq₁₃.hs' sq₂₄.g).some,
+    let sq : to_sq (z₁₂.comp₀ z₂₃ sq₁₃).s (z₁₂.comp₀ z₂₃ sq₁₃).hs z₃₄.f := begin
+      refine ⟨H.obj, H.g, sq₂₄.s' ≫ H.s', left_calculus_of_fractions.comp _ _ sq₂₄.hs' H.hs', _⟩,
+      dsimp [zigzag.comp₀],
+      rw [assoc, ← H.fac, reassoc_of sq₂₄.fac],
+    end,
+    let sq' : to_sq z₁₂.s z₁₂.hs (z₂₃.comp₀ z₃₄ sq₂₄).f := begin
+      refine ⟨H.obj, sq₁₃.g ≫ H.g, H.s', H.hs', _⟩,
+      dsimp [zigzag.comp₀],
+      rw [assoc, H.fac, reassoc_of sq₁₃.fac],
+    end,
+    simp only [← h₁₂, ← h₂₃, ← h₃₄],
+    rw [hom.comp_eq z₁₂ z₂₃ sq₁₃, hom.comp_eq z₂₃ z₃₄ sq₂₄,
+      hom.comp_eq (z₁₂.comp₀ z₂₃ sq₁₃) z₃₄ sq, hom.comp_eq z₁₂ (z₂₃.comp₀ z₃₄ sq₂₄) sq'],
+    congr' 1,
+    dsimp [zigzag.comp₀],
+    tidy,
+  end, }
 
 end left_calculus_of_fractions
 
