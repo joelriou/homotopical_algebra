@@ -7,20 +7,13 @@ Authors: Joël Riou
 import for_mathlib.algebraic_topology.homotopical_algebra.cofibrant_object
 import for_mathlib.category_theory.localization.predicate
 import for_mathlib.algebraic_topology.homotopical_algebra.ks_brown_lemma
+import for_mathlib.category_theory.functor_misc
 
 noncomputable theory
 
 open algebraic_topology category_theory category_theory.limits category_theory.category
 
 namespace category_theory.functor
-
-lemma congr_map_conjugate {C D : Type*} [category C] [category D]
-  {F₁ F₂ : C ⥤ D} (h : F₁ = F₂) {X Y : C} (f : X ⟶ Y) :
-  F₁.map f = eq_to_hom (by rw h) ≫ F₂.map f ≫ eq_to_hom (by rw h) :=
-begin
-  subst h,
-  simp only [eq_to_hom_refl, comp_id, id_comp],
-end
 
 lemma map_eq_iff_of_nat_iso {C D : Type*} [category C] [category D]
   {F₁ F₂ : C ⥤ D} (e : F₁ ≅ F₂) {X Y : C} (f₁ f₂ : X ⟶ Y) :

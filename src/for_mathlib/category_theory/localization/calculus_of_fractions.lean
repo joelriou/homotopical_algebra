@@ -1,4 +1,5 @@
 import for_mathlib.category_theory.localization.predicate
+import for_mathlib.category_theory.functor_misc
 
 noncomputable theory
 
@@ -46,29 +47,43 @@ def zigzag_rel ⦃X Y : C⦄ (z₁ z₂ : zigzag W X Y) : Prop :=
 ∃ (Z₃ : C) (t₁ : z₁.Z ⟶ Z₃) (t₂ : z₂.Z ⟶ Z₃) (hst : z₁.s ≫ t₁ = z₂.s ≫ t₂)
   (hft : z₁.f ≫ t₁ = z₂.f ≫ t₂), W (z₁.s ≫ t₁)
 
+namespace zigzag_rel
+
+lemma refl {X Y : C} (z : zigzag W X Y) : zigzag_rel z z :=
+⟨z.Z, 𝟙 _, 𝟙 _, rfl, rfl, by simpa only [comp_id] using z.hs⟩
+
+lemma symm {X Y : C} {z₁ z₂ : zigzag W X Y} (h : zigzag_rel z₁ z₂) : zigzag_rel z₂ z₁ :=
+begin
+  rcases h with ⟨Z₃, t₁, t₂, hst, hft, ht⟩,
+  refine ⟨Z₃, t₂, t₁, hst.symm, hft.symm, by simpa only [← hst] using ht⟩,
+end
+
+lemma trans {X Y : C} {z₁ z₂ z₃ : zigzag W X Y} (h₁₂ : zigzag_rel z₁ z₂)
+  (h₂₃ : zigzag_rel z₂ z₃) : zigzag_rel z₁ z₃ :=
+begin
+  rcases h₁₂ with ⟨Z₄, t₁, t₂, hst, hft, ht⟩,
+  rcases h₂₃ with ⟨Z₅, u₂, u₃, hsu, hfu, hu⟩,
+  rcases left_calculus_of_fractions.ex (z₁.s ≫ t₁) ht (z₃.s ≫ u₃) with ⟨Z₆, v₄, v₅, hv₅, fac⟩,
+  simp only [assoc] at fac,
+  have eq : z₂.s ≫ u₂ ≫ v₅ = z₂.s ≫ t₂ ≫ v₄,
+  { simpa only [← reassoc_of hsu, reassoc_of hst] using fac, },
+  rcases left_calculus_of_fractions.ext _ _ _ z₂.hs eq with ⟨Z₇, w, hw, fac'⟩,
+  simp only [assoc] at fac',
+  refine ⟨Z₇, t₁ ≫ v₄ ≫ w, u₃ ≫ v₅ ≫ w, _, _, _⟩,
+  { rw reassoc_of fac, },
+  { rw [reassoc_of hft, ← fac', reassoc_of hfu], },
+  { rw [← reassoc_of fac, ← reassoc_of hsu, ← assoc],
+    exact left_calculus_of_fractions.comp _ _ hu
+      (left_calculus_of_fractions.comp _ _ hv₅ hw), },
+end
+
+end zigzag_rel
+
 instance is_equiv_zigzag_rel (X Y : C) :
   is_equiv (zigzag W X Y) (λ z₁ z₂, zigzag_rel z₁ z₂) :=
-{ refl := λ z, ⟨z.Z, 𝟙 _, 𝟙 _, rfl, rfl, by simpa only [comp_id] using z.hs⟩,
-  symm := λ z₁ z₂ h, begin
-    rcases h with ⟨Z₃, t₁, t₂, hst, hft, ht⟩,
-    refine ⟨Z₃, t₂, t₁, hst.symm, hft.symm, by simpa only [← hst] using ht⟩,
-  end,
-  trans := λ z₁ z₂ z₃ h₁₂ h₂₃, begin
-    rcases h₁₂ with ⟨Z₄, t₁, t₂, hst, hft, ht⟩,
-    rcases h₂₃ with ⟨Z₅, u₂, u₃, hsu, hfu, hu⟩,
-    rcases left_calculus_of_fractions.ex (z₁.s ≫ t₁) ht (z₃.s ≫ u₃) with ⟨Z₆, v₄, v₅, hv₅, fac⟩,
-    simp only [assoc] at fac,
-    have eq : z₂.s ≫ u₂ ≫ v₅ = z₂.s ≫ t₂ ≫ v₄,
-    { simpa only [← reassoc_of hsu, reassoc_of hst] using fac, },
-    rcases left_calculus_of_fractions.ext _ _ _ z₂.hs eq with ⟨Z₇, w, hw, fac'⟩,
-    simp only [assoc] at fac',
-    refine ⟨Z₇, t₁ ≫ v₄ ≫ w, u₃ ≫ v₅ ≫ w, _, _, _⟩,
-    { rw reassoc_of fac, },
-    { rw [reassoc_of hft, ← fac', reassoc_of hfu], },
-    { rw [← reassoc_of fac, ← reassoc_of hsu, ← assoc],
-      exact left_calculus_of_fractions.comp _ _ hu
-        (left_calculus_of_fractions.comp _ _ hv₅ hw), },
-  end, }
+{ refl := zigzag_rel.refl,
+  symm := λ z₁ z₂, zigzag_rel.symm,
+  trans := λ z₁ z₂ z₃, zigzag_rel.trans, }
 
 variable {W}
 
@@ -203,7 +218,7 @@ begin
         refine left_calculus_of_fractions.comp _ _ z₂₃.hs
           (left_calculus_of_fractions.comp _ _ sq'.hs'
           (left_calculus_of_fractions.comp _ _ H'.hs' hu)), }, }, },
-end #exit
+end
 
 lemma hom.comp_eq {X₁ X₂ X₃ : C} (z₁₂ : zigzag W X₁ X₂) (z₂₃ : zigzag W X₂ X₃)
   (sq : to_sq z₁₂.s z₁₂.hs z₂₃.f) : hom.comp (quot.mk _ z₁₂) (quot.mk _ z₂₃) =
@@ -274,6 +289,256 @@ instance : category (localization W) :=
     dsimp [zigzag.comp₀],
     tidy,
   end, }
+
+example : ℕ := 42
+
+variable {W}
+
+def zigzag.hom {X Y : localization W} (z : zigzag W X.obj Y.obj) : X ⟶ Y := quot.mk _ z
+
+def map_zigzag {D : Type*} [category D] (F : C ⥤ D) (hF : W.is_inverted_by F)
+  {X Y : C} (z : zigzag W X Y) : F.obj X ⟶ F.obj Y :=
+F.map z.f ≫ by { haveI := hF z.s z.hs, exact inv (F.map z.s), }
+
+namespace localization
+
+lemma comp_eq {X₁ X₂ X₃ : localization W} (z₁₂ : zigzag W X₁.obj X₂.obj) (z₂₃ : zigzag W X₂.obj X₃.obj)
+  (sq : to_sq z₁₂.s z₁₂.hs z₂₃.f) : z₁₂.hom ≫ z₂₃.hom = (zigzag.comp₀ z₁₂ z₂₃ sq).hom :=
+hom.comp_eq z₁₂ z₂₃ sq
+
+variable (W)
+
+def hom_obj {X Y : C} (f : X ⟶ Y) :
+  (⟨X⟩ : localization W).obj ⟶ (⟨Y⟩ : localization W).obj := f
+
+@[simps]
+def Q : C ⥤ localization W :=
+{ obj := λ X, ⟨X⟩,
+  map := λ X Y f, (zigzag.of_hom W (hom_obj W f)).hom,
+  map_comp' := λ X₁ X₂ X₃ f g, begin
+    dsimp,
+    rw localization.comp_eq (zigzag.of_hom W (hom_obj W f)) (zigzag.of_hom W (hom_obj W g))
+      ⟨X₃, g, 𝟙 X₃, left_calculus_of_fractions.id X₃, by tidy⟩,
+    dsimp [zigzag.of_hom, zigzag.comp₀],
+    congr' 1,
+    tidy,
+  end, }
+
+variable {W}
+
+@[simps]
+def zigzag.inv {X Y : C} (s : X ⟶ Y) (hs : W s) :
+  zigzag W (⟨Y⟩ : localization W).obj (⟨X⟩ : localization W).obj := ⟨Y, 𝟙 Y, s, hs⟩
+
+def inv_Q_map {X Y : C} (s : X ⟶ Y) (hs : W s) : (Q W).obj Y ⟶ (Q W).obj X :=
+zigzag.hom (zigzag.inv s hs)
+
+lemma comp_inv_Q_map {X Y : C} (s : X ⟶ Y) (hs : W s) :
+  (Q W).map s ≫ inv_Q_map s hs = 𝟙 _ :=
+begin
+  dsimp only [Q, inv_Q_map],
+  rw localization.comp_eq (zigzag.of_hom W (hom_obj W s)) (zigzag.inv s hs)
+    ⟨Y, 𝟙 Y, 𝟙 Y, left_calculus_of_fractions.id _, rfl⟩,
+  dsimp [zigzag.comp₀],
+  exact quot.sound ⟨Y, 𝟙 Y, s, by tidy, by tidy, by tidy⟩,
+end
+
+lemma inv_Q_map_comp {X Y : C} (s : X ⟶ Y) (hs : W s) :
+   inv_Q_map s hs ≫ (Q W).map s = 𝟙 _ :=
+begin
+  dsimp [Q, inv_Q_map],
+  rw localization.comp_eq (zigzag.inv s hs) (zigzag.of_hom W (hom_obj W s))
+    ⟨Y, 𝟙 Y, 𝟙 Y, left_calculus_of_fractions.id _, rfl⟩,
+  dsimp [zigzag.comp₀],
+  exact quot.sound ⟨Y, 𝟙 Y, 𝟙 Y, by tidy, by tidy,
+    by { dsimp, simp only [comp_id], exact left_calculus_of_fractions.id _, }⟩,
+end
+
+variable (W)
+
+lemma Q_inverts_W : W.is_inverted_by (Q W) :=
+λ X Y s hs, ⟨⟨inv_Q_map s hs, comp_inv_Q_map s hs, inv_Q_map_comp s hs⟩⟩
+
+lemma inv_Q_map_eq {X Y : C} (s : X ⟶ Y) (hs : W s) :
+  inv_Q_map s hs = (by { haveI := Q_inverts_W W s hs, exact inv ((Q W).map s), }) :=
+begin
+  haveI := Q_inverts_W W s hs,
+  simp only [← cancel_mono ((Q W).map s), is_iso.inv_hom_id, inv_Q_map_comp],
+end
+
+instance {X Y : C} (s : X ⟶ Y) (hs : W s) : is_iso (inv_Q_map s hs) :=
+by { rw inv_Q_map_eq, apply_instance, }
+
+variables {W}
+
+@[simp]
+lemma id_eq (X : localization W) : 𝟙 X = quot.mk _ (zigzag.id W X.obj) := rfl
+
+instance {X Y : C} (z : zigzag W X Y) : is_iso ((Q W).map z.s) :=
+Q_inverts_W W z.s z.hs
+
+
+lemma map_zigzag_eq {X Y : C} (z : zigzag W X Y) :
+  map_zigzag (localization.Q W) (Q_inverts_W W) z = quot.mk _ z :=
+begin
+  dsimp only [map_zigzag],
+  rw ← inv_Q_map_eq W z.s z.hs,
+  dsimp only [Q, inv_Q_map],
+  rw comp_eq (zigzag.of_hom W (hom_obj W z.f)) (zigzag.inv z.s z.hs)
+    ⟨z.Z, 𝟙 _, 𝟙 _, left_calculus_of_fractions.id _, rfl⟩,
+  dsimp [zigzag.of_hom, zigzag.comp₀, hom_obj, zigzag.hom],
+  simp only [comp_id],
+  cases z,
+  refl,
+end
+
+variable (W)
+lemma hom_fac {X Y : C} (f : (Q W).obj X ⟶ (Q W).obj Y) :
+  ∃ (z : zigzag W X Y), f = map_zigzag (Q W) (Q_inverts_W W) z :=
+begin
+  cases surjective_quot_mk _ f with z hz,
+  subst hz,
+  exact ⟨z, (map_zigzag_eq z).symm⟩,
+end
+
+variable {W}
+
+def lift {D : Type*} [category D] (F : C ⥤ D) (hF : W.is_inverted_by F) :
+  localization W ⥤ D :=
+{ obj := λ X, F.obj X.obj,
+  map := λ X Y, quot.lift (λ (f : zigzag W X.obj Y.obj),
+    by { haveI := hF f.s f.hs, exact F.map f.f ≫ inv (F.map f.s)})
+    (λ z z' (h : zigzag_rel z z'), begin
+      dsimp,
+      rcases h with ⟨Y, t₁, t₂, hst, hft, ht⟩,
+      haveI := hF _ ht,
+      rw [← cancel_mono (F.map (z.s ≫ t₁)), assoc, assoc],
+      nth_rewrite 0 F.map_comp,
+      rw [is_iso.inv_hom_id_assoc, hst, F.map_comp, is_iso.inv_hom_id_assoc,
+        ← F.map_comp z'.f, ← hft, F.map_comp],
+    end),
+  map_comp' := λ X₁ X₂ X₃ f₁ f₂, begin
+    dsimp,
+    cases surjective_quot_mk _ f₁ with g₁ h₁,
+    cases surjective_quot_mk _ f₂ with g₂ h₂,
+    substs h₁ h₂,
+    let sq := (left_calculus_of_fractions.ex g₁.s g₁.hs g₂.f).some,
+    erw comp_eq g₁ g₂ sq,
+    dsimp [zigzag.comp₀, zigzag.hom],
+    simp only [functor.map_comp, assoc],
+    haveI := hF g₁.s g₁.hs,
+    haveI := hF g₂.s g₂.hs,
+    haveI := hF sq.s' sq.hs',
+    rw is_iso.inv_comp,
+    congr' 1,
+    simp only [← cancel_mono (F.map g₂.s), ← cancel_mono (F.map sq.s'), ← cancel_epi (F.map g₁.s),
+      assoc, is_iso.inv_hom_id, comp_id, is_iso.hom_inv_id_assoc, ← F.map_comp, sq.fac],
+  end, }
+
+example : ℕ := 42
+
+lemma fac {D : Type*} [category D] (F : C ⥤ D) (hF : W.is_inverted_by F) :
+  Q W ⋙ lift F hF = F :=
+functor.ext (λ X, rfl) (λ X Y f, begin
+  dsimp [lift, zigzag.hom, hom_obj],
+  simp only [functor.map_id, is_iso.inv_id, id_comp],
+end)
+
+lemma uniq {D : Type*} [category D] (F₁ F₂ : localization W ⥤ D) (h : Q W ⋙ F₁ = Q W ⋙ F₂) :
+  F₁ = F₂ :=
+begin
+  have eq : ∀ (X : localization W), F₁.obj X = F₂.obj X,
+  { intro X,
+    cases X,
+    apply functor.congr_obj h X, },
+  apply functor.ext eq,
+  intros X Y f,
+  cases X,
+  cases Y,
+  rcases hom_fac W f with ⟨φ, hφ⟩,
+  subst f,
+  have eq₁ := functor.congr_map_conjugate h φ.f,
+  have eq₂ := functor.congr_map_conjugate h φ.s,
+  dsimp only [functor.comp_map] at eq₁ eq₂,
+  dsimp only [map_zigzag],
+  simpa only [functor.map_comp, functor.map_inv, eq₁, eq₂, assoc, is_iso.inv_comp,
+    inv_eq_to_hom, eq_to_hom_trans_assoc, eq_to_hom_refl, id_comp],
+end
+
+def universal_property (D : Type*) [category D]:
+  localization.strict_universal_property_fixed_target (Q W) W D :=
+{ inverts_W := Q_inverts_W W,
+  lift := lift,
+  fac := fac,
+  uniq := uniq, }
+
+instance Q_is_localization : (Q W).is_localization W :=
+functor.is_localization.mk' (Q W) W (universal_property _) (universal_property _)
+
+end localization
+
+lemma map_zigzag_compatibility {D E : Type*} [category D] [category E]
+  (L₁ : C ⥤ D) (hL₁ : W.is_inverted_by L₁) (L₂ : C ⥤ E) (hL₂ : W.is_inverted_by L₂)
+  (M : D ⥤ E) (e : L₁ ⋙ M ≅ L₂) {X Y : C} (z : zigzag W X Y) :
+  map_zigzag L₂ hL₂ z = e.inv.app X ≫ M.map (map_zigzag L₁ hL₁ z) ≫ e.hom.app Y :=
+begin
+  dsimp [map_zigzag],
+  simp only [M.map_comp, assoc],
+  erw ← e.inv.naturality_assoc,
+  congr' 1,
+  haveI := hL₂ z.s z.hs,
+  simp only [← cancel_mono (L₂.map z.s), is_iso.inv_hom_id, functor.map_inv, assoc,
+    ← cancel_epi (e.hom.app z.Z), comp_id, iso.hom_inv_id_app_assoc, is_iso.eq_inv_comp],
+  apply e.hom.naturality,
+end
+
+lemma map_zigzag_compatibility_imp {D E : Type*} [category D] [category E]
+  (L₁ : C ⥤ D) (hL₁ : W.is_inverted_by L₁) (L₂ : C ⥤ E) (hL₂ : W.is_inverted_by L₂)
+  (M : D ⥤ E) (e : L₁ ⋙ M ≅ L₂) {X Y : C} (z z' : zigzag W X Y)
+  (eq : map_zigzag L₁ hL₁ z = map_zigzag L₁ hL₁ z') :
+  map_zigzag L₂ hL₂ z = map_zigzag L₂ hL₂ z' :=
+by simp only [map_zigzag_compatibility L₁ hL₁ L₂ hL₂ M e, eq]
+
+lemma L_map_fac {D : Type*} [category D] (L : C ⥤ D) (W : morphism_property C)
+  [left_calculus_of_fractions W]
+  [L.is_localization W] {X Y : C} (f : L.obj X ⟶ L.obj Y) :
+  ∃ (z : zigzag W X Y), f = map_zigzag L (localization.inverts_W L W) z :=
+begin
+  let E := (localization.uniq_equivalence W (localization.Q W) L),
+  let e : localization.Q W ⋙ E.functor ≅ L :=
+    localization.comp_uniq_equivalence_functor_iso W (localization.Q W) L,
+  let f' := e.hom.app X ≫ f ≫ e.inv.app Y,
+  cases localization.hom_fac W (E.functor.preimage f') with z hz,
+  change E.functor.preimage f' =
+    map_zigzag (localization.Q W) (localization.inverts_W _ W) z at hz,
+  replace hz := congr_arg E.functor.map hz,
+  refine ⟨z, _⟩,
+  simp only [map_zigzag_compatibility (localization.Q W) (localization.inverts_W _ W)
+    L (localization.inverts_W _ W) E.functor e, ← hz, functor.image_preimage, assoc,
+    iso.inv_hom_id_app, comp_id, iso.inv_hom_id_app_assoc],
+end
+
+lemma L_map_zigzag_eq_iff {D : Type*} [category D] (L : C ⥤ D) {W : morphism_property C}
+  [left_calculus_of_fractions W] [L.is_localization W] {X Y : C} (z₁ z₂ : zigzag W X Y) :
+  map_zigzag L (localization.inverts_W L W) z₁ =
+    map_zigzag L (localization.inverts_W L W) z₂ ↔ zigzag_rel z₁ z₂ :=
+begin
+  have eq : map_zigzag L (localization.inverts_W _ W) z₁ =
+      map_zigzag L (localization.inverts_W _ W) z₂ ↔
+    map_zigzag (localization.Q W) (localization.inverts_W _ W) z₁ =
+      map_zigzag (localization.Q W) (localization.inverts_W _ W) z₂,
+  { split,
+    all_goals { exact map_zigzag_compatibility_imp _ _ _ _ _
+      (localization.comp_uniq_equivalence_functor_iso W _ _)  _ _, }, },
+  simp only [eq, localization.map_zigzag_eq],
+  split,
+  { rw quot.eq,
+    clear eq,
+    intro h,
+    induction h with s₁ s₂ h s s₁ s₂ h' h s₁ s₂ s₃ h'₁ h'₂ h₁ h₂,
+    exacts [h, zigzag_rel.refl _, h.symm, h₁.trans h₂], },
+  { exact quot.sound, },
+end
 
 end left_calculus_of_fractions
 
