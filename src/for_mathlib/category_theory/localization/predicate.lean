@@ -96,22 +96,48 @@ end localization
 
 namespace functor
 
-def is_localization.mk' (h₁ : localization.strict_universal_property_fixed_target L W D)
-  (h₂ : localization.strict_universal_property_fixed_target L W W.localization) :
+variables (h₁ : localization.strict_universal_property_fixed_target L W D)
+  (h₂ : localization.strict_universal_property_fixed_target L W W.localization)
+
+namespace is_localization.mk'
+
+lemma unit_eq :
+  𝟭 W.localization = localization.construction.lift L h₁.inverts_W ⋙ h₂.lift W.Q W.Q_inverts :=
+begin
+  apply localization.construction.uniq,
+  rw [← functor.assoc, localization.construction.fac, h₂.fac, functor.comp_id],
+end
+
+lemma counit_eq :
+  h₂.lift W.Q W.Q_inverts ⋙ localization.construction.lift L h₁.inverts_W = 𝟭 D :=
+begin
+  apply h₁.uniq,
+  rw [← functor.assoc, h₂.fac, localization.construction.fac, functor.comp_id],
+end
+
+def equivalence : W.localization ≌ D :=
+{ functor := localization.construction.lift L h₁.inverts_W,
+  inverse := h₂.lift W.Q W.Q_inverts,
+  unit_iso := eq_to_iso (unit_eq L W h₁ h₂),
+  counit_iso := eq_to_iso (counit_eq L W h₁ h₂),
+  functor_unit_iso_comp' := λ X, by simpa only [eq_to_iso.hom, eq_to_hom_app, eq_to_hom_map,
+    eq_to_hom_trans, eq_to_hom_refl], }
+
+def equivalence_obj_equiv' : W.localization ≃ D :=
+{ to_fun := (is_localization.mk'.equivalence L W h₁ h₂).functor.obj,
+  inv_fun := (is_localization.mk'.equivalence L W h₁ h₂).inverse.obj,
+  left_inv := congr_obj (unit_eq L W h₁ h₂).symm,
+  right_inv := congr_obj (counit_eq L W h₁ h₂), }
+
+lemma obj_bijective : function.bijective L.obj :=
+((localization.construction.obj_equiv W).trans (equivalence_obj_equiv' L W h₁ h₂)).bijective
+
+end is_localization.mk'
+
+def is_localization.mk' :
   is_localization L W :=
 { inverts_W := h₁.inverts_W,
-  is_equivalence :=
-  { inverse := h₂.lift W.Q W.Q_inverts,
-    unit_iso := eq_to_iso begin
-      apply localization.construction.uniq,
-      rw [← functor.assoc, localization.construction.fac, h₂.fac, functor.comp_id],
-    end,
-    counit_iso := eq_to_iso begin
-      apply h₁.uniq,
-      rw [← functor.assoc, h₂.fac, localization.construction.fac, functor.comp_id],
-    end,
-    functor_unit_iso_comp' := λ X, by simpa only [eq_to_iso.hom, eq_to_hom_app, eq_to_hom_map,
-      eq_to_hom_trans, eq_to_hom_refl], }, }
+  is_equivalence := is_equivalence.of_equivalence (is_localization.mk'.equivalence L W h₁ h₂), }
 
 end functor
 
