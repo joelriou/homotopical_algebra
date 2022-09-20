@@ -310,6 +310,11 @@ def of_isos {F₁ F₂ : C ⥤ E} {F'₁ F'₂ : D ⥤ E} (e : F₁ ≅ F₂) (e
   [h : lifting L W F₁ F'₁] : lifting L W F₂ F'₂ :=
 ⟨iso_whisker_left L e'.symm ≪≫ h.iso ≪≫ e⟩
 
+omit L
+
+instance (F : C ⥤ D) (hF : W.is_inverted_by F) : lifting W.Q W F (construction.lift F hF) :=
+⟨eq_to_iso (construction.fac F hF)⟩
+
 end lifting
 
 variables {W E}
@@ -350,5 +355,29 @@ calc L₁ ⋙ (uniq_equivalence W L₁ L₂).functor ≅ (L₁ ⋙
 end
 
 end localization
+
+namespace functor
+
+namespace is_localization
+
+def of_equivalence {E : Type*} [category E] (L' : C ⥤ E) (eq : D ≌ E)
+  [L.is_localization W] (e : L ⋙ eq.functor ≅ L') : L'.is_localization W :=
+begin
+  have h : W.is_inverted_by L',
+  { rw ← morphism_property.is_inverted_by.iff_of_iso W e,
+    exact morphism_property.is_inverted_by.of_comp W L (localization.inverts_W L W) eq.functor, },
+  let F₁ := localization.construction.lift L (localization.inverts_W L W),
+  let F₂ := localization.construction.lift L' h,
+  haveI : localization.lifting W.Q W (L ⋙ eq.functor) F₂ :=
+    localization.lifting.of_isos W.Q W e.symm (iso.refl F₂),
+  let e : F₁ ⋙ eq.functor ≅ F₂ := localization.lifting.uniq W.Q W (L ⋙ eq.functor) _ _,
+  exact
+  { inverts_W := h,
+    is_equivalence := is_equivalence.of_iso e infer_instance, },
+end
+
+end is_localization
+
+end functor
 
 end category_theory
