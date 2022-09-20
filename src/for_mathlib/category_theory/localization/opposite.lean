@@ -63,7 +63,7 @@ namespace functor
 
 variables (L W)
 
-lemma is_localization.op [h : L.is_localization W] : L.op.is_localization W.op :=
+instance is_localization.op [h : L.is_localization W] : L.op.is_localization W.op :=
 is_localization.of_equivalence W.Q.op W.op L.op (localization.equivalence_from_model L W).op
   (nat_iso.op (localization.Q_comp_equivalence_from_model_functor_iso L W).symm)
 

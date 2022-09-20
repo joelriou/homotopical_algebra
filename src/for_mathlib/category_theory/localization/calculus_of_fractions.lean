@@ -9,8 +9,7 @@ open category
 
 variables {C : Type*} [category C] {W : morphism_property C}
 
-structure left_calculus_of_fractions.to_sq
-  {X' X Y : C} (s : X ⟶ X') (hs : W s) (f : X ⟶ Y) :=
+structure left_calculus_of_fractions.to_sq {X' X Y : C} (s : X ⟶ X') (hs : W s) (f : X ⟶ Y) :=
 (obj : C)
 (g : X' ⟶ obj)
 (s' : Y ⟶ obj)
@@ -34,21 +33,26 @@ variables (W)
 structure zigzag (X Y : C) :=
 (Z : C) (f : X ⟶ Z) (s : Y ⟶ Z) (hs : W s)
 
-variable [left_calculus_of_fractions W]
-
-@[simps]
-def zigzag.of_hom {X Y : C} (f : X ⟶ Y) : zigzag W X Y :=
-⟨Y, f, 𝟙 Y, left_calculus_of_fractions.id _⟩
-
-@[simps]
-def zigzag.id (X : C) := zigzag.of_hom W (𝟙 X)
-
 variable {W}
 def zigzag_rel ⦃X Y : C⦄ (z₁ z₂ : zigzag W X Y) : Prop :=
 ∃ (Z₃ : C) (t₁ : z₁.Z ⟶ Z₃) (t₂ : z₂.Z ⟶ Z₃) (hst : z₁.s ≫ t₁ = z₂.s ≫ t₂)
   (hft : z₁.f ≫ t₁ = z₂.f ≫ t₂), W (z₁.s ≫ t₁)
 
+variable [left_calculus_of_fractions W]
+
+variables (W)
+
+@[simps]
+def zigzag.of_hom {X Y : C} (f : X ⟶ Y) : zigzag W X Y :=
+⟨Y, f, 𝟙 Y, left_calculus_of_fractions.id _⟩
+
+
+@[simps]
+def zigzag.id (X : C) := zigzag.of_hom W (𝟙 X)
+
 namespace zigzag_rel
+
+variables {W}
 
 lemma refl {X Y : C} (z : zigzag W X Y) : zigzag_rel z z :=
 ⟨z.Z, 𝟙 _, 𝟙 _, rfl, rfl, by simpa only [comp_id] using z.hs⟩
@@ -291,8 +295,6 @@ instance : category (localization W) :=
     tidy,
   end, }
 
-example : ℕ := 42
-
 variable {W}
 
 def zigzag.hom {X Y : localization W} (z : zigzag W X.obj Y.obj) : X ⟶ Y := quot.mk _ z
@@ -436,8 +438,6 @@ def lift {D : Type*} [category D] (F : C ⥤ D) (hF : W.is_inverted_by F) :
       assoc, is_iso.inv_hom_id, comp_id, is_iso.hom_inv_id_assoc, ← F.map_comp, sq.fac],
   end, }
 
-example : ℕ := 42
-
 lemma fac {D : Type*} [category D] (F : C ⥤ D) (hF : W.is_inverted_by F) :
   Q W ⋙ lift F hF = F :=
 functor.ext (λ X, rfl) (λ X Y f, begin
@@ -466,7 +466,7 @@ begin
     inv_eq_to_hom, eq_to_hom_trans_assoc, eq_to_hom_refl, id_comp],
 end
 
-def universal_property (D : Type*) [category D]:
+def universal_property (D : Type*) [category D] :
   localization.strict_universal_property_fixed_target (Q W) W D :=
 { inverts_W := Q_inverts_W W,
   lift := lift,
@@ -545,8 +545,7 @@ end left_calculus_of_fractions
 
 variable {W}
 
-structure right_calculus_of_fractions.to_sq
-  {X Y Y' : C} (s : Y' ⟶ Y) (hs : W s) (f : X ⟶ Y) :=
+structure right_calculus_of_fractions.to_sq {X Y Y' : C} (s : Y' ⟶ Y) (hs : W s) (f : X ⟶ Y) :=
 (obj : C)
 (g : obj ⟶ Y')
 (s' : obj ⟶ X)
@@ -629,18 +628,71 @@ def right_calculus_of_fractions.unop {W : morphism_property Cᵒᵖ}
     exact ⟨opposite.unop Y', t.unop, ht, quiver.hom.op_inj fac⟩,
   end, }
 
-instance [right_calculus_of_fractions W] :
-  left_calculus_of_fractions W.op := right_calculus_of_fractions.op infer_instance
+instance [h : right_calculus_of_fractions W] :
+  left_calculus_of_fractions W.op := right_calculus_of_fractions.op h
 
-instance [left_calculus_of_fractions W] :
-  right_calculus_of_fractions W.op := left_calculus_of_fractions.op infer_instance
+instance [h : left_calculus_of_fractions W] :
+  right_calculus_of_fractions W.op := left_calculus_of_fractions.op h
 
 namespace right_calculus_of_fractions
 
-variables (W) [right_calculus_of_fractions W]
+variables (W)
 
 structure zigzag (X Y : C) :=
 (Z : C) (s : Z ⟶ X) (f : Z ⟶ Y) (hs : W s)
+
+variable {W}
+
+def zigzag.op {X Y : C} (z : zigzag W X Y) :
+  left_calculus_of_fractions.zigzag W.op (opposite.op Y) (opposite.op X) :=
+⟨opposite.op z.Z, z.f.op, z.s.op, z.hs⟩
+
+def zigzag_rel ⦃X Y : C⦄ (z₁ z₂ : zigzag W X Y) : Prop :=
+∃ (Z₃ : C) (t₁ : Z₃ ⟶ z₁.Z) (t₂ : Z₃ ⟶ z₂.Z) (hts : t₁ ≫ z₁.s = t₂ ≫ z₂.s)
+  (htf : t₁ ≫ z₁.f = t₂ ≫ z₂.f), W (t₁ ≫ z₁.s)
+
+lemma zigzag_rel.iff_op {X Y : C} (z₁ z₂ : zigzag W X Y) :
+  zigzag_rel z₁ z₂ ↔ left_calculus_of_fractions.zigzag_rel z₁.op z₂.op :=
+begin
+  split,
+  { intro h,
+    rcases h with ⟨Z₃, t₁, t₂, hts, htf, ht⟩,
+    exact ⟨opposite.op Z₃, t₁.op, t₂.op, quiver.hom.unop_inj hts, quiver.hom.unop_inj htf, ht⟩, },
+  { intro h,
+    rcases h with ⟨Z₃, t₁, t₂, hst, hft, ht⟩,
+    refine ⟨opposite.unop Z₃, t₁.unop, t₂.unop, quiver.hom.op_inj hst, quiver.hom.op_inj hft, ht⟩, },
+end
+
+variables (W) [right_calculus_of_fractions W]
+
+@[simps]
+def zigzag.of_hom {X Y : C} (f : X ⟶ Y) : zigzag W X Y :=
+⟨X, 𝟙 X, f, right_calculus_of_fractions.id _⟩
+
+@[simps]
+def zigzag.id (X : C) := zigzag.of_hom W (𝟙 X)
+
+namespace zigzag_rel
+
+variables {W}
+
+lemma refl {X Y : C} (z : zigzag W X Y) : zigzag_rel z z :=
+by { rw zigzag_rel.iff_op, apply left_calculus_of_fractions.zigzag_rel.refl, }
+
+lemma symm {X Y : C} {z₁ z₂ : zigzag W X Y} (h : zigzag_rel z₁ z₂) : zigzag_rel z₂ z₁ :=
+by { rw zigzag_rel.iff_op at h ⊢, exact h.symm, }
+
+lemma trans {X Y : C} {z₁ z₂ z₃ : zigzag W X Y} (h₁₂ : zigzag_rel z₁ z₂)
+  (h₂₃ : zigzag_rel z₂ z₃) : zigzag_rel z₁ z₃ :=
+by { rw zigzag_rel.iff_op at h₁₂ h₂₃ ⊢, exact h₁₂.trans h₂₃, }
+
+end zigzag_rel
+
+instance is_equiv_zigzag_rel (X Y : C) :
+  is_equiv (zigzag W X Y) (λ z₁ z₂, zigzag_rel z₁ z₂) :=
+{ refl := zigzag_rel.refl,
+  symm := λ z₁ z₂, zigzag_rel.symm,
+  trans := λ z₁ z₂ z₃, zigzag_rel.trans, }
 
 end right_calculus_of_fractions
 
@@ -662,19 +714,34 @@ def map_zigzag {D : Type*} [category D] (F : C ⥤ D) (hF : W.is_inverted_by F)
   {X Y : C} (z : zigzag W X Y) : F.obj X ⟶ F.obj Y :=
 by { haveI := hF z.s z.hs, exact inv (F.map z.s), } ≫ F.map z.f
 
+lemma map_zigzag_eq_unop_map_zigzag_op {D : Type*} [category D] (F : C ⥤ D)
+  (hF : W.is_inverted_by F) {X Y : C} (z : zigzag W X Y) :
+  map_zigzag F hF z = (left_calculus_of_fractions.map_zigzag F.op hF.op z.op).unop :=
+begin
+  dsimp [left_calculus_of_fractions.map_zigzag, map_zigzag, zigzag.op],
+  simp only [quiver.hom.unop_op, unop_inv],
+end
+
 lemma L_map_fac {D : Type*} [category D] (L : C ⥤ D) (W : morphism_property C)
   [right_calculus_of_fractions W]
   [L.is_localization W] {X Y : C} (f : L.obj X ⟶ L.obj Y) :
   ∃ (z : zigzag W X Y), f = map_zigzag L (localization.inverts_W L W) z :=
 begin
-  haveI : L.op.is_localization W.op := functor.is_localization.op _ _,
   let f' : L.op.obj (opposite.op Y) ⟶ L.op.obj (opposite.op X) := f.op,
   rcases left_calculus_of_fractions.L_map_fac L.op W.op f' with ⟨z, hz⟩,
   refine ⟨z.unop, _⟩,
   change f'.unop = _,
-  rw hz,
-  dsimp [map_zigzag, left_calculus_of_fractions.map_zigzag, left_calculus_of_fractions.zigzag.unop],
-  simp only [quiver.hom.unop_op, unop_inv],
+  simpa only [hz, map_zigzag_eq_unop_map_zigzag_op],
+end
+
+lemma L_map_zigzag_eq_iff {D : Type*} [category D] (L : C ⥤ D) {W : morphism_property C}
+  [right_calculus_of_fractions W] [L.is_localization W] {X Y : C} (z₁ z₂ : zigzag W X Y) :
+  map_zigzag L (localization.inverts_W L W) z₁ =
+    map_zigzag L (localization.inverts_W L W) z₂ ↔ zigzag_rel z₁ z₂ :=
+begin
+  simp only [zigzag_rel.iff_op, ← left_calculus_of_fractions.L_map_zigzag_eq_iff L.op z₁.op,
+    map_zigzag_eq_unop_map_zigzag_op],
+  exact ⟨λ h, quiver.hom.unop_inj h, λ h, quiver.hom.op_inj h⟩,
 end
 
 end right_calculus_of_fractions
