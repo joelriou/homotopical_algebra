@@ -4,9 +4,9 @@ noncomputable theory
 
 namespace category_theory
 
-open category
+open localization category
 
-namespace localization
+namespace adjunction
 
 variables {C₁ C₂ D₁ D₂ : Type*} [category C₁] [category C₂] [category D₁] [category D₂]
   {G : C₁ ⥤ C₂} {F : C₂ ⥤ C₁} (adj : G ⊣ F)
@@ -16,7 +16,7 @@ variables {C₁ C₂ D₁ D₂ : Type*} [category C₁] [category C₂] [categor
 
 include adj
 
-def adjunction [lifting L₁ W₁ (G ⋙ L₂) G'] [lifting L₂ W₂ (F ⋙ L₁) F'] :
+def localization [lifting L₁ W₁ (G ⋙ L₂) G'] [lifting L₂ W₂ (F ⋙ L₁) F'] :
   G' ⊣ F' := adjunction.mk_of_unit_counit
 begin
   let α₁ := lifting.iso L₂ W₂ (F ⋙ L₁) F',
@@ -67,29 +67,29 @@ begin
 end
 
 @[simp]
-lemma adjunction_unit_app [lifting L₁ W₁ (G ⋙ L₂) G'] [lifting L₂ W₂ (F ⋙ L₁) F'] (X₁ : C₁) :
-  (adjunction adj L₁ W₁ L₂ W₂ G' F').unit.app (L₁.obj X₁) =
+lemma localization_unit_app [lifting L₁ W₁ (G ⋙ L₂) G'] [lifting L₂ W₂ (F ⋙ L₁) F'] (X₁ : C₁) :
+  (adj.localization L₁ W₁ L₂ W₂ G' F').unit.app (L₁.obj X₁) =
     L₁.map (adj.unit.app X₁) ≫ (lifting.iso L₂ W₂ (F ⋙ L₁) F').inv.app (G.obj X₁) ≫
     F'.map ((lifting.iso L₁ W₁ (G ⋙ L₂) G').inv.app X₁) :=
 begin
-  dsimp only [adjunction, adjunction.mk_of_unit_counit],
+  dsimp only [localization, adjunction.mk_of_unit_counit],
   rw lift_nat_trans_app,
   dsimp,
   simp only [id_comp, comp_id],
 end
 
 @[simp]
-lemma adjunction_counit_app [lifting L₁ W₁ (G ⋙ L₂) G'] [lifting L₂ W₂ (F ⋙ L₁) F'] (X₂ : C₂) :
-  (adjunction adj L₁ W₁ L₂ W₂ G' F').counit.app (L₂.obj X₂) =
+lemma localization_counit_app [lifting L₁ W₁ (G ⋙ L₂) G'] [lifting L₂ W₂ (F ⋙ L₁) F'] (X₂ : C₂) :
+  (adj.localization L₁ W₁ L₂ W₂ G' F').counit.app (L₂.obj X₂) =
     G'.map (((lifting.iso L₂ W₂ (F ⋙ L₁) F')).hom.app X₂) ≫
       (lifting.iso L₁ W₁ (G ⋙ L₂) G').hom.app (F.obj X₂) ≫ L₂.map (adj.counit.app X₂) :=
 begin
-  dsimp only [adjunction, adjunction.mk_of_unit_counit],
+  dsimp only [localization, adjunction.mk_of_unit_counit],
   rw lift_nat_trans_app,
   dsimp,
   simp only [id_comp, comp_id, assoc],
 end
 
-end localization
+end adjunction
 
 end category_theory
