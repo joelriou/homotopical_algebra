@@ -333,8 +333,16 @@ instance (F : C ⥤ D) (hF : W.is_inverted_by F) : lifting W.Q W F (construction
 
 end lifting
 
-def lift_nat_trans (F₁ F₂ : C ⥤ E) (F₁' F₂' : D ⥤ E) [h₁ : lifting L W F₁ F₁'] [h₂ : lifting L W F₂ F₂']
-  (τ : F₁ ⟶ F₂) : F₁' ⟶ F₂' :=
+lemma nat_trans_ext {F₁ F₂ : D ⥤ E} (τ τ' : F₁ ⟶ F₂)
+  (h : ∀ (X : C), τ.app (L.obj X) = τ'.app (L.obj X)) : τ = τ' :=
+begin
+  haveI : category_theory.ess_surj L := ess_surj L W,
+  ext Y,
+  rw [← cancel_epi (F₁.map (L.obj_obj_preimage_iso Y).hom), τ.naturality, τ'.naturality, h],
+end
+
+def lift_nat_trans (F₁ F₂ : C ⥤ E) (F₁' F₂' : D ⥤ E) [h₁ : lifting L W F₁ F₁']
+  [h₂ : lifting L W F₂ F₂'] (τ : F₁ ⟶ F₂) : F₁' ⟶ F₂' :=
 (whiskering_left_functor' L W E).preimage (h₁.iso.hom ≫ τ ≫ h₂.iso.inv)
 
 @[simp]

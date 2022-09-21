@@ -28,11 +28,12 @@ begin
       ((functor.left_unitor L₁).inv ≫ nat_trans.hcomp adj.unit (𝟙 L₁)),
     counit := lift_nat_trans L₂ W₂ ((F ⋙ G) ⋙ L₂) L₂ (F' ⋙ G') (𝟭 D₂)
       (nat_trans.hcomp adj.counit (𝟙 L₂) ≫ (functor.left_unitor L₂).hom),
-    left_triangle' := begin
-      ext Y₁,
+    left_triangle' := nat_trans_ext L₁ W₁ _ _ (λ X₁, begin
       sorry,
-    end,
-    right_triangle' := sorry, },
+    end),
+    right_triangle' := nat_trans_ext L₂ W₂ _ _ (λ X₂, begin
+      sorry,
+    end) },
 end
 
 end localization
