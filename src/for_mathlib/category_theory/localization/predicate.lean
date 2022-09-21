@@ -216,43 +216,33 @@ is_equivalence.of_iso (functor_equivalence₀_functor_iso L W E) (is_equivalence
 def functor_equivalence : (D ⥤ E) ≌ (W.functors_inverting E) :=
 (whiskering_left_functor L W E).as_equivalence
 
-end localization
-
-namespace functor
-
-namespace is_localization
-
-variables {L W}
-
-def whiskering_left_functor' (h : L.is_localization W) (E : Type*) [category E] :
-  (D ⥤ E) ⥤ (C ⥤ E) := (whiskering_left C D E).obj L
-
-@[simp]
-def whiskering_left_functor'_obj (h : L.is_localization W) {E : Type*} [category E]
-  (F : D ⥤ E) : (h.whiskering_left_functor' E).obj F = L ⋙ F := rfl
-
-lemma whiskering_left_functor'_eq (h : L.is_localization W) (E : Type*) [category E] :
-  h.whiskering_left_functor' E =
-    localization.whiskering_left_functor L W E ⋙ induced_functor _ := rfl
-
-instance (h : L.is_localization W) (E : Type*) [category E] :
-  full (h.whiskering_left_functor' E) :=
-by { rw whiskering_left_functor'_eq, apply_instance, }
-
-instance (h : L.is_localization W) (E : Type*) [category E] :
-  faithful (h.whiskering_left_functor' E) :=
-by { rw whiskering_left_functor'_eq, apply_instance, }
-
-end is_localization
-
-end functor
-
-namespace localization
-
 section
 
-variables [L.is_localization W] {E}
-include L W
+variables [hL : L.is_localization W] (E)
+
+include hL
+@[nolint unused_arguments]
+def whiskering_left_functor' :
+  (D ⥤ E) ⥤ (C ⥤ E) := (whiskering_left C D E).obj L
+
+lemma whiskering_left_functor'_eq :
+  whiskering_left_functor' L W E =
+    localization.whiskering_left_functor L W E ⋙ induced_functor _ := rfl
+
+variable {E}
+
+@[simp]
+def whiskering_left_functor'_obj
+  (F : D ⥤ E) : (whiskering_left_functor' L W E).obj F = L ⋙ F := rfl
+
+
+instance : full (whiskering_left_functor' L W E) :=
+by { rw whiskering_left_functor'_eq, apply_instance, }
+
+instance : faithful (whiskering_left_functor' L W E) :=
+by { rw whiskering_left_functor'_eq, apply_instance, }
+
+omit hL
 
 /-- When `L : C ⥤ D` is a localization functor for `W : morphism_property C` and
 `F : C ⥤ E` is a functor, we shall that `F' : D ⥤ E` lifts `F` if the obvious diagram
@@ -275,7 +265,7 @@ def fac (F : C ⥤ E) (F' : D ⥤ E) [h : lifting L W F F'] : L ⋙ F' ≅ F := 
 
 def uniq (F : C ⥤ E) (F'₁ F'₂ : D ⥤ E) [h₁ : lifting L W F F'₁] [h₂ : lifting L W F F'₂] :
   F'₁ ≅ F'₂ :=
-((as_localization L W).whiskering_left_functor' E).preimage_iso (h₁.iso.trans h₂.iso.symm)
+(whiskering_left_functor' L W E).preimage_iso (h₁.iso.trans h₂.iso.symm)
 
 lemma uniq_refl (F : C ⥤ E) (F' : D ⥤ E) [h : lifting L W F F'] :
   uniq L W F F' F' = iso.refl F' :=
@@ -343,6 +333,34 @@ instance (F : C ⥤ D) (hF : W.is_inverted_by F) : lifting W.Q W F (construction
 
 end lifting
 
+def lift_nat_trans (F₁ F₂ : C ⥤ E) (F₁' F₂' : D ⥤ E) [h₁ : lifting L W F₁ F₁'] [h₂ : lifting L W F₂ F₂']
+  (τ : F₁ ⟶ F₂) : F₁' ⟶ F₂' :=
+(whiskering_left_functor' L W E).preimage (h₁.iso.hom ≫ τ ≫ h₂.iso.inv)
+
+@[simp]
+lemma comp_lift_nat_trans (F₁ F₂ F₃ : C ⥤ E) (F₁' F₂' F₃' : D ⥤ E)
+  [h₁ : lifting L W F₁ F₁'] [h₂ : lifting L W F₂ F₂'] [h₃ : lifting L W F₃ F₃']
+  (τ : F₁ ⟶ F₂) (τ' : F₂ ⟶ F₃) :
+  lift_nat_trans L W F₁ F₂ F₁' F₂' τ ≫ lift_nat_trans L W F₂ F₃ F₂' F₃' τ' =
+  lift_nat_trans L W F₁ F₃ F₁' F₃' (τ ≫ τ') :=
+begin
+  dsimp only [lift_nat_trans],
+  simp only [← preimage_comp, assoc, iso.inv_hom_id_assoc],
+end
+
+@[simp]
+lemma lift_nat_trans_id (F : C ⥤ E) (F' : D ⥤ E) [h : lifting L W F F'] :
+  lift_nat_trans L W F F F' F' (𝟙 F) = 𝟙 F' :=
+begin
+  dsimp only [lift_nat_trans],
+  simp only [id_comp, iso.hom_inv_id, preimage_id],
+end
+
+def lift_nat_iso (F₁ F₂ : C ⥤ E) (F₁' F₂' : D ⥤ E) [h₁ : lifting L W F₁ F₁'] [h₂ : lifting L W F₂ F₂']
+  (e : F₁ ≅ F₂) : F₁' ≅ F₂' :=
+{ hom := lift_nat_trans L W F₁ F₂ F₁' F₂' e.hom,
+  inv := lift_nat_trans L W F₂ F₁ F₂' F₁' e.inv, }
+
 variables {W E}
 
 def lift (F : C ⥤ E) (hF : W.is_inverted_by F) (L : C ⥤ D) [hL : L.is_localization W] :
@@ -366,6 +384,7 @@ variables {D₁ D₂ : Type*} [category D₁] [category D₂] (L₁ : C ⥤ D₁
   [h₁ : L₁.is_localization W] [h₂ : L₂.is_localization W]
 
 include h₁ h₂
+omit L
 
 def uniq_equivalence : D₁ ≌ D₂ :=
 (equivalence_from_model L₁ W).symm.trans (equivalence_from_model L₂ W)
