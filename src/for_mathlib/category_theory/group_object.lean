@@ -1,4 +1,5 @@
 import category_theory.limits.shapes.finite_products
+import category_theory.preadditive
 
 noncomputable theory
 
@@ -90,6 +91,103 @@ instance : category (add_comm_group_object C) :=
   id := hom.id,
   comp := λ X Y Z, hom.comp, }
 
+@[ext]
+lemma hom_ext {G₁ G₂ : add_comm_group_object C} (f g : G₁ ⟶ G₂) (h : f.1 = g.1) : f = g := by tidy
+
+variable (C)
+
+@[simps]
+def forget : add_comm_group_object C ⥤ C :=
+{ obj := λ G, G.X,
+  map := λ G₁ G₂ f, f.1, }
+
+variables {C} (F : C ⥤ add_comm_group_object C) (e : F ⋙ forget C ≅ 𝟭 C)
+
+namespace preadditive_of
+
+include e
+
+def hom_group (X Y : C) : add_comm_group (X ⟶ Y) :=
+begin
+  let add : (X ⟶ Y) → (X ⟶ Y) → (X ⟶ Y) :=
+    λ f₁ f₂, ((f₁ ≫ e.inv.app Y : X ⟶ (F.obj Y).X) + (f₂ ≫ e.inv.app Y : X ⟶ (F.obj Y).X)) ≫ e.hom.app Y,
+  have add_comm : ∀ (f₁ f₂), add f₁ f₂ = add f₂ f₁ := λ f₁ f₂, begin
+    dsimp [add],
+    rw add_comm,
+  end,
+  let neg : (X ⟶ Y) → (X ⟶ Y) :=
+    λ f, (-(f ≫ e.inv.app Y : X ⟶ (F.obj Y).X)) ≫ e.hom.app Y,
+  exact
+  { add := add,
+    add_comm := add_comm,
+    add_assoc := λ f₁ f₂ f₃, begin
+      change add (add _ _ ) _ = add _ (add _ _ ),
+      dsimp [add],
+      simp only [assoc, iso.hom_inv_id_app],
+      dsimp,
+      rw [comp_id, comp_id, add_assoc],
+    end,
+    zero := (0 : X ⟶ (F.obj Y).X) ≫ e.hom.app Y,
+    zero_add := λ f, begin
+      change add _ _ = _,
+      dsimp [add],
+      simp only [assoc, iso.hom_inv_id_app],
+      dsimp,
+      rw [comp_id, zero_add, assoc, iso.inv_hom_id_app],
+      dsimp,
+      rw comp_id,
+    end,
+    add_zero := λ f, begin
+      change add _ _ = _,
+      dsimp [add],
+      simp only [assoc, iso.hom_inv_id_app],
+      dsimp,
+      rw [comp_id, add_zero, assoc, iso.inv_hom_id_app],
+      dsimp,
+      rw comp_id,
+    end,
+    neg := neg,
+    add_left_neg := λ f, begin
+      change add (neg f) f = _,
+      dsimp [add, neg],
+      simp only [assoc, iso.hom_inv_id_app],
+      dsimp,
+      simpa only [comp_id, add_left_neg],
+    end, },
+end
+
+end preadditive_of
+
+lemma preadditive_of :
+  preadditive C :=
+{ hom_group := λ X Y, preadditive_of.hom_group F e X Y,
+  comp_add' := sorry,
+  add_comp' := sorry, }
+
 end add_comm_group_object
+
+namespace preadditive
+
+@[simps]
+def to_add_comm_group_object [preadditive C] : C ⥤ add_comm_group_object C :=
+{ obj := λ X,
+  { X := X,
+    zero := 0,
+    add := limits.prod.fst + limits.prod.snd,
+    neg := -𝟙 X,
+    add_assoc' := begin
+      simp only [comp_add, limits.prod.map_fst, comp_id, limits.prod.map_snd, prod.lift_fst, prod.lift_snd],
+      apply add_assoc,
+    end,
+    add_zero' := by tidy,
+    comm' := by simpa only [comp_add, prod.lift_fst, prod.lift_snd] using add_comm _ _,
+    add_left_neg' := by simp, },
+  map := λ X Y f, ⟨f, by simp⟩, }
+
+@[simps]
+def to_add_comm_group_object_comp_forget_iso [preadditive C] :
+  (to_add_comm_group_object C) ⋙ add_comm_group_object.forget C ≅ 𝟭 C := iso.refl _
+
+end preadditive
 
 end category_theory
