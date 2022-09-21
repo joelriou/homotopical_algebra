@@ -235,7 +235,6 @@ variable {E}
 def whiskering_left_functor'_obj
   (F : D ⥤ E) : (whiskering_left_functor' L W E).obj F = L ⋙ F := rfl
 
-
 instance : full (whiskering_left_functor' L W E) :=
 by { rw whiskering_left_functor'_eq, apply_instance, }
 
@@ -247,34 +246,30 @@ omit hL
 /-- When `L : C ⥤ D` is a localization functor for `W : morphism_property C` and
 `F : C ⥤ E` is a functor, we shall that `F' : D ⥤ E` lifts `F` if the obvious diagram
 is commutative up to an isomorphism. -/
-class lifting (F : C ⥤ E) (F' : D ⥤ E) := (iso : L ⋙ F' ≅ F)
+class lifting (F : C ⥤ E) (F' : D ⥤ E) := (iso [] : L ⋙ F' ≅ F)
 
 namespace lifting
 
-variables {L W}
-
-def F {F : C ⥤ E} {F' : D ⥤ E} (h : lifting L W F F') : W.functors_inverting E :=
+/-def F {F : C ⥤ E} {F' : D ⥤ E} (h : lifting L W F F') : W.functors_inverting E :=
 ⟨F, begin
-  rw ← morphism_property.is_inverted_by.iff_of_iso W h.iso,
+  rw ← morphism_property.is_inverted_by.iff_of_iso W (lifting.iso L W F F'),
   exact morphism_property.is_inverted_by.of_comp W L (as_localization L W).inverts_W F',
-end⟩
+end⟩-/
 
 variables (L W)
 
-def fac (F : C ⥤ E) (F' : D ⥤ E) [h : lifting L W F F'] : L ⋙ F' ≅ F := h.iso
-
-def uniq (F : C ⥤ E) (F'₁ F'₂ : D ⥤ E) [h₁ : lifting L W F F'₁] [h₂ : lifting L W F F'₂] :
+def uniq (F : C ⥤ E) (F'₁ F'₂ : D ⥤ E) [lifting L W F F'₁] [lifting L W F F'₂] :
   F'₁ ≅ F'₂ :=
-(whiskering_left_functor' L W E).preimage_iso (h₁.iso.trans h₂.iso.symm)
+(whiskering_left_functor' L W E).preimage_iso ((iso L W F F'₁).trans (iso L W F F'₂).symm)
 
-lemma uniq_refl (F : C ⥤ E) (F' : D ⥤ E) [h : lifting L W F F'] :
+lemma uniq_refl (F : C ⥤ E) (F' : D ⥤ E) [lifting L W F F'] :
   uniq L W F F' F' = iso.refl F' :=
 begin
   dsimp only [uniq],
   simpa only [iso.self_symm_id] using functor.preimage_iso_refl _ _,
 end
 
-lemma uniq_symm (F : C ⥤ E) (F'₁ F'₂ : D ⥤ E) [h₁ : lifting L W F F'₁] [h₂ : lifting L W F F'₂] :
+lemma uniq_symm (F : C ⥤ E) (F'₁ F'₂ : D ⥤ E) [lifting L W F F'₁] [lifting L W F F'₂] :
   (uniq L W F F'₁ F'₂).symm = uniq L W F F'₂ F'₁ :=
 by { erw ← functor.preimage_iso_symm, congr' 1, }
 
@@ -287,35 +282,35 @@ begin
   simp only [iso.trans_assoc, iso.symm_self_id_assoc],
 end
 
-lemma uniq_whiskering (F : C ⥤ E) (F'₁ F'₂ : D ⥤ E) [h₁ : lifting L W F F'₁]
-  [h₂ : lifting L W F F'₂] :
-  iso_whisker_left L (uniq L W F F'₁ F'₂) = h₁.iso.trans h₂.iso.symm :=
+lemma uniq_whiskering (F : C ⥤ E) (F'₁ F'₂ : D ⥤ E) [lifting L W F F'₁]
+  [lifting L W F F'₂] :
+  iso_whisker_left L (uniq L W F F'₁ F'₂) = (iso L W F F'₁).trans (iso L W F F'₂).symm :=
 functor.image_preimage_iso _ _
 
-lemma uniq_app (F : C ⥤ E) (F'₁ F'₂ : D ⥤ E) [h₁ : lifting L W F F'₁] [h₂ : lifting L W F F'₂]
-  (X : C) : (uniq L W F F'₁ F'₂).app (L.obj X) = h₁.iso.app X ≪≫ h₂.iso.symm.app X :=
+lemma uniq_app (F : C ⥤ E) (F'₁ F'₂ : D ⥤ E) [lifting L W F F'₁] [lifting L W F F'₂]
+  (X : C) : (uniq L W F F'₁ F'₂).app (L.obj X) = (iso L W F F'₁).app X ≪≫ (iso L W F F'₂).symm.app X :=
 congr_arg (λ (e : ((_ : C ⥤ E) ≅ _)), e.app X) (uniq_whiskering L W F F'₁ F'₂)
 
 @[simp]
-lemma uniq_hom_app (F : C ⥤ E) (F'₁ F'₂ : D ⥤ E) [h₁ : lifting L W F F'₁] [h₂ : lifting L W F F'₂]
-  (X : C) : (uniq L W F F'₁ F'₂).hom.app (L.obj X) = h₁.iso.hom.app X ≫ h₂.iso.inv.app X :=
+lemma uniq_hom_app (F : C ⥤ E) (F'₁ F'₂ : D ⥤ E) [lifting L W F F'₁] [lifting L W F F'₂]
+  (X : C) : (uniq L W F F'₁ F'₂).hom.app (L.obj X) = (iso L W F F'₁).hom.app X ≫ (iso L W F F'₂).inv.app X :=
 begin
   change ((uniq L W F F'₁ F'₂).app (L.obj X)).hom = _,
   simpa only [uniq_app],
 end
 
 @[simp]
-lemma uniq_inv_app (F : C ⥤ E) (F'₁ F'₂ : D ⥤ E) [h₁ : lifting L W F F'₁] [h₂ : lifting L W F F'₂]
-  (X : C) : (uniq L W F F'₁ F'₂).inv.app (L.obj X) = h₂.iso.hom.app X ≫ h₁.iso.inv.app X :=
+lemma uniq_inv_app (F : C ⥤ E) (F'₁ F'₂ : D ⥤ E) [lifting L W F F'₁] [lifting L W F F'₂]
+  (X : C) : (uniq L W F F'₁ F'₂).inv.app (L.obj X) = (iso L W F F'₂).hom.app X ≫ (iso L W F F'₁).inv.app X :=
 begin
   change ((uniq L W F F'₁ F'₂).app (L.obj X)).inv = _,
   simpa only [uniq_app],
 end
 
 @[simps]
-instance comp_right {E' : Type*} [category E'] (F : C ⥤ E) (F' : D ⥤ E) [h : lifting L W F F']
+instance comp_right {E' : Type*} [category E'] (F : C ⥤ E) (F' : D ⥤ E) [lifting L W F F']
   (G : E ⥤ E') : lifting L W (F ⋙ G) (F' ⋙ G) :=
-⟨iso_whisker_right h.iso G⟩
+⟨iso_whisker_right (iso L W F F') G⟩
 
 @[simps]
 instance id : lifting L W L (𝟭 D) :=
@@ -323,8 +318,8 @@ instance id : lifting L W L (𝟭 D) :=
 
 @[simps]
 def of_isos {F₁ F₂ : C ⥤ E} {F'₁ F'₂ : D ⥤ E} (e : F₁ ≅ F₂) (e' : F'₁ ≅ F'₂)
-  [h : lifting L W F₁ F'₁] : lifting L W F₂ F'₂ :=
-⟨iso_whisker_left L e'.symm ≪≫ h.iso ≪≫ e⟩
+  [lifting L W F₁ F'₁] : lifting L W F₂ F'₂ :=
+⟨iso_whisker_left L e'.symm ≪≫ iso L W F₁ F'₁ ≪≫ e⟩
 
 omit L
 
@@ -341,9 +336,9 @@ begin
   rw [← cancel_epi (F₁.map (L.obj_obj_preimage_iso Y).hom), τ.naturality, τ'.naturality, h],
 end
 
-def lift_nat_trans (F₁ F₂ : C ⥤ E) (F₁' F₂' : D ⥤ E) [h₁ : lifting L W F₁ F₁']
+def lift_nat_trans (F₁ F₂ : C ⥤ E) (F₁' F₂' : D ⥤ E) [lifting L W F₁ F₁']
   [h₂ : lifting L W F₂ F₂'] (τ : F₁ ⟶ F₂) : F₁' ⟶ F₂' :=
-(whiskering_left_functor' L W E).preimage (h₁.iso.hom ≫ τ ≫ h₂.iso.inv)
+(whiskering_left_functor' L W E).preimage ((lifting.iso L W F₁ F₁').hom ≫ τ ≫ (lifting.iso L W F₂ F₂').inv)
 
 @[simp]
 lemma comp_lift_nat_trans (F₁ F₂ F₃ : C ⥤ E) (F₁' F₂' F₃' : D ⥤ E)
@@ -370,11 +365,11 @@ def lift_nat_iso (F₁ F₂ : C ⥤ E) (F₁' F₂' : D ⥤ E) [h₁ : lifting L
   inv := lift_nat_trans L W F₂ F₁ F₂' F₁' e.inv, }
 
 @[simp]
-lemma lift_nat_trans_app (F₁ F₂ : C ⥤ E) (F₁' F₂' : D ⥤ E) [h₁ : lifting L W F₁ F₁']
-  [h₂ : lifting L W F₂ F₂'] (τ : F₁ ⟶ F₂) (X : C) :
+lemma lift_nat_trans_app (F₁ F₂ : C ⥤ E) (F₁' F₂' : D ⥤ E) [lifting L W F₁ F₁']
+  [lifting L W F₂ F₂'] (τ : F₁ ⟶ F₂) (X : C) :
   (lift_nat_trans L W F₁ F₂ F₁' F₂' τ).app (L.obj X) =
-    h₁.iso.hom.app X ≫ τ.app X ≫ h₂.iso.inv.app X :=
-congr_app (functor.image_preimage (whiskering_left_functor' L W E) (h₁.iso.hom ≫ τ ≫ h₂.iso.inv)) X
+    (lifting.iso L W F₁ F₁').hom.app X ≫ τ.app X ≫ ((lifting.iso L W F₂ F₂')).inv.app X :=
+congr_app (functor.image_preimage (whiskering_left_functor' L W E) _) X
 
 variables {W E}
 
@@ -389,7 +384,7 @@ instance lift_is_lifting (F : C ⥤ E) (hF : W.is_inverted_by F) (L : C ⥤ D)
 @[simps]
 def fac (F : C ⥤ E) (hF : W.is_inverted_by F) (L : C ⥤ D) [hL : L.is_localization W] :
   L ⋙ lift F hF L ≅ F :=
-lifting.fac _ W _ _
+lifting.iso _ W _ _
 
 end
 
