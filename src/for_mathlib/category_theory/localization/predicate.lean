@@ -413,7 +413,7 @@ begin
     exact morphism_property.is_inverted_by.of_comp W L (localization.inverts_W L W) eq.functor, },
   let F₁ := localization.construction.lift L (localization.inverts_W L W),
   let F₂ := localization.construction.lift L' h,
-  haveI : localization.lifting W.Q W (L ⋙ eq.functor) F₂ :=
+  letI : localization.lifting W.Q W (L ⋙ eq.functor) F₂ :=
     localization.lifting.of_isos W.Q W e.symm (iso.refl F₂),
   let e : F₁ ⋙ eq.functor ≅ F₂ := localization.lifting.uniq W.Q W (L ⋙ eq.functor) _ _,
   exact
