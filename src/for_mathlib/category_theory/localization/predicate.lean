@@ -361,6 +361,13 @@ def lift_nat_iso (F₁ F₂ : C ⥤ E) (F₁' F₂' : D ⥤ E) [h₁ : lifting L
 { hom := lift_nat_trans L W F₁ F₂ F₁' F₂' e.hom,
   inv := lift_nat_trans L W F₂ F₁ F₂' F₁' e.inv, }
 
+@[simp]
+lemma lift_nat_trans_app (F₁ F₂ : C ⥤ E) (F₁' F₂' : D ⥤ E) [h₁ : lifting L W F₁ F₁']
+  [h₂ : lifting L W F₂ F₂'] (τ : F₁ ⟶ F₂) (X : C) :
+  (lift_nat_trans L W F₁ F₂ F₁' F₂' τ).app (L.obj X) =
+    h₁.iso.hom.app X ≫ τ.app X ≫ h₂.iso.inv.app X :=
+congr_app (functor.image_preimage (whiskering_left_functor' L W E) (h₁.iso.hom ≫ τ ≫ h₂.iso.inv)) X
+
 variables {W E}
 
 def lift (F : C ⥤ E) (hF : W.is_inverted_by F) (L : C ⥤ D) [hL : L.is_localization W] :

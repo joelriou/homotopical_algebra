@@ -17,14 +17,19 @@ include adj W₁ W₂ h₁ h₂
 
 def adjunction : G' ⊣ F' := adjunction.mk_of_unit_counit
 begin
-  letI : lifting L₁ W₁ ((G ⋙ F) ⋙ L₁) (G' ⋙ F') := ⟨sorry⟩,
-  letI : lifting L₂ W₂ ((F ⋙ G) ⋙ L₂) (F' ⋙ G') := ⟨sorry⟩,
+  let e₁ : (G ⋙ L₂) ⋙ F' ≅ (G ⋙ F) ⋙ L₁ := iso_whisker_left G h₂.iso,
+  let e₂ : (F ⋙ L₁) ⋙ G' ≅ (F ⋙ G) ⋙ L₂ := iso_whisker_left F h₁.iso,
+  letI : lifting L₁ W₁ ((G ⋙ F) ⋙ L₁) (G' ⋙ F') :=
+    lifting.of_isos L₁ W₁ e₁ (iso.refl (G' ⋙ F')),
+  letI : lifting L₂ W₂ ((F ⋙ G) ⋙ L₂) (F' ⋙ G') :=
+    lifting.of_isos L₂ W₂ e₂ (iso.refl (F' ⋙ G')),
   exact
   { unit := lift_nat_trans L₁ W₁ L₁ ((G ⋙ F) ⋙ L₁) (𝟭 D₁) (G' ⋙ F')
       ((functor.left_unitor L₁).inv ≫ nat_trans.hcomp adj.unit (𝟙 L₁)),
     counit := lift_nat_trans L₂ W₂ ((F ⋙ G) ⋙ L₂) L₂ (F' ⋙ G') (𝟭 D₂)
       (nat_trans.hcomp adj.counit (𝟙 L₂) ≫ (functor.left_unitor L₂).hom),
     left_triangle' := begin
+      ext Y₁,
       sorry,
     end,
     right_triangle' := sorry, },
