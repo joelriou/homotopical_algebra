@@ -20,7 +20,7 @@ structure add_comm_group_object :=
 (comm' : prod.lift limits.prod.snd limits.prod.fst ≫ add = add)
 (add_left_neg' : prod.lift neg (𝟙 X) ≫ add = terminal.from X ≫ zero)
 
-instance (A : C) [G : add_comm_group_object C] : add_comm_group (A ⟶ G.X) :=
+instance (A : C) (G : add_comm_group_object C) : add_comm_group (A ⟶ G.X) :=
 begin
   let zero : A ⟶ G.X := terminal.from A ≫ G.zero,
   let add := λ (g₁ g₂ : A ⟶ G.X), prod.lift g₁ g₂ ≫ G.add,
@@ -67,7 +67,17 @@ begin
     end, },
 end
 
+
+
+example : ℕ := 42
 namespace add_comm_group_object
+
+lemma add_eq {A : C} {G : add_comm_group_object C} (g₁ g₂ : A ⟶ G.X) :
+  g₁ + g₂ = prod.lift g₁ g₂ ≫ G.add := rfl
+
+lemma comp_add {A A': C} (f : A ⟶ A') {G : add_comm_group_object C}
+  (g₁ g₂ : A' ⟶ G.X) : f ≫ (g₁ + g₂) = f ≫ g₁ + f ≫ g₂ :=
+by simp only [add_eq, prod.comp_lift_assoc]
 
 variable {C}
 
@@ -102,6 +112,10 @@ def forget : add_comm_group_object C ⥤ C :=
   map := λ G₁ G₂ f, f.1, }
 
 variables {C} (F : C ⥤ add_comm_group_object C) (e : F ⋙ forget C ≅ 𝟭 C)
+
+lemma add_comp {A : C} {G G' : add_comm_group_object C} (f₁ f₂ : A ⟶ G.X) (g : G ⟶ G') :
+  (f₁ + f₂) ≫ g.1 = f₁ ≫ g.1 + f₂ ≫ g.1 :=
+by simp only [add_eq, assoc, g.2, prod.lift_map_assoc]
 
 namespace preadditive_of
 
@@ -156,13 +170,38 @@ begin
     end, },
 end
 
+lemma add_comp_inv_app {X Y : C} (f₁ f₂ : X ⟶ Y) :
+  (hom_group F e X Y).add f₁ f₂ ≫ e.inv.app Y =
+    (f₁ ≫ e.inv.app Y + f₂ ≫ e.inv.app Y : X ⟶ (F.obj Y).X) :=
+begin
+  rw [← cancel_mono (e.hom.app Y), assoc, iso.inv_hom_id_app],
+  dsimp,
+  simpa only [comp_id],
+end
+
 end preadditive_of
 
-lemma preadditive_of :
-  preadditive C :=
+def preadditive_of : preadditive C :=
 { hom_group := λ X Y, preadditive_of.hom_group F e X Y,
-  comp_add' := sorry,
-  add_comp' := sorry, }
+  comp_add' := λ X₁ X₂ X₃ f g₁ g₂, begin
+    change f ≫ (preadditive_of.hom_group F e _ _).add _ _ =
+      (preadditive_of.hom_group F e _ _).add _ _,
+    rw ← cancel_mono (e.inv.app X₃),
+    dsimp,
+    simp only [preadditive_of.add_comp_inv_app, comp_add, assoc],
+  end,
+  add_comp' := λ X₁ X₂ X₃ f₁ f₂ g, begin
+    change (preadditive_of.hom_group F e _ _).add _ _ ≫ g =
+      (preadditive_of.hom_group F e _ _).add _ _,
+    rw ← cancel_mono (e.inv.app X₃),
+    dsimp,
+    have hg := e.inv.naturality g,
+    simp only [functor.id_map, functor.comp_map, forget_map] at hg,
+    simp only [preadditive_of.add_comp_inv_app, assoc, hg,
+      reassoc_of (preadditive_of.add_comp_inv_app F e f₁ f₂)],
+    simp only [← assoc],
+    apply add_comp,
+  end, }
 
 end add_comm_group_object
 
