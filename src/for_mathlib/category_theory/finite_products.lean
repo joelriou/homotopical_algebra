@@ -15,7 +15,9 @@ by simp only [functor.comp_map, adjunction.counit_naturality, adjunction.left_tr
 
 namespace limits
 
-lemma is_left_adjoint_diag_of_has_binary_products [has_binary_products C] :
+variable (C)
+
+def is_left_adjoint_diag_of_has_binary_products [has_binary_products C] :
   is_left_adjoint (functor.diag C) :=
 { right := uncurry.obj prod.functor,
   adj :=
@@ -89,9 +91,13 @@ begin
   exact has_terminal_of_unique (F.obj (discrete.mk t)),
 end
 
+variable {C}
+
 lemma limit.congr_π {J : Type*} [category J] (F : J ⥤ C) [has_limit F] {j₁ j₂ : J}
   (h : j₁ = j₂) : limit.π F j₁ ≫ eq_to_hom (by rw h) = limit.π F j₂ :=
 by { subst h, rw [eq_to_hom_refl, category.comp_id], }
+
+variable (C)
 
 lemma has_finite_products_of_has_binary_products
   [has_terminal C] [has_binary_products C] : has_finite_products C :=

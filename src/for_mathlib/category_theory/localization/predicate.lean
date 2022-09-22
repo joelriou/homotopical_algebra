@@ -92,6 +92,13 @@ def strict_universal_property_fixed_target.for_Q : strict_universal_property_fix
   fac := construction.fac,
   uniq := construction.uniq, }
 
+def strict_universal_property_fixed_target.for_id (hW : W ⊆ morphism_property.isomorphisms C):
+  strict_universal_property_fixed_target (𝟭 C) W E :=
+{ inverts_W := λ X Y f hf, hW f hf,
+  lift := λ F hF, F,
+  fac := λ F hF, by { cases F, refl, },
+  uniq := λ F₁ F₂ eq, by { cases F₁, cases F₂, exact eq, }, }
+
 end localization
 
 namespace functor
@@ -434,5 +441,15 @@ end
 end is_localization
 
 end functor
+
+namespace localization
+
+instance identity_functor_is_localization :
+  (𝟭 C).is_localization (morphism_property.isomorphisms C) :=
+functor.is_localization.mk' _ _
+  (strict_universal_property_fixed_target.for_id _ _ (λ X Y f hf, hf))
+  (strict_universal_property_fixed_target.for_id _ _ (λ X Y f hf, hf))
+
+end localization
 
 end category_theory

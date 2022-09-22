@@ -203,7 +203,7 @@ functor.is_localization.mk' _ _
   (strict_universal_property_fixed_target.prod W₁ W₂ _)
   (strict_universal_property_fixed_target.prod W₁ W₂ _)
 
-instance prod_is_localization (L₁ : C₁ ⥤ D₁) (L₂ : C₂ ⥤ D₂)
+lemma prod_is_localization (L₁ : C₁ ⥤ D₁) (L₂ : C₂ ⥤ D₂)
   [L₁.is_localization W₁] [L₂.is_localization W₂] :
   (L₁.prod L₂).is_localization (W₁.prod W₂) :=
 begin
