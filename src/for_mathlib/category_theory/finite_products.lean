@@ -29,6 +29,8 @@ def is_left_adjoint_diag_of_has_binary_products [has_binary_products C] :
     unit := { app := λ X, prod.lift (𝟙 X) (𝟙 X), },
     counit := { app := λ Y, ⟨prod.fst, prod.snd⟩, }, }, }
 
+variable {C}
+
 lemma limit_cone_pair_of_is_left_adjoint_diag [is_left_adjoint (functor.diag C)]
   (X₁ X₂ : C) : limit_cone (pair X₁ X₂) :=
 begin
@@ -51,6 +53,8 @@ begin
     simp only [binary_fan.mk_fst, binary_fan.mk_snd, adjunction.hom_equiv_counit,
       functor.diag_map, prod_comp], },
 end
+
+variable (C)
 
 lemma has_binary_products_of_is_left_adjoint_diag [is_left_adjoint (functor.diag C)] :
   has_binary_products C :=

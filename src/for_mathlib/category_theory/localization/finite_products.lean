@@ -74,7 +74,7 @@ begin
   exact has_binary_products_of_is_left_adjoint_diag D,
 end
 
-lemma has_finite_products [W.contains_identities] [has_binary_products C] [has_terminal C]
+lemma has_finite_products [W.contains_identities] [has_finite_products C]
   (hW : W.stable_under_binary_product) : has_finite_products D :=
 begin
   haveI : has_terminal D := localization.has_terminal L W,
