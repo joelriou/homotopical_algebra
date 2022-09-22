@@ -217,4 +217,130 @@ end
 
 end localization
 
+section
+
+variables {J : Type*} {C : J → Type*} {D : J → Type*}
+  [Π j, category (C j)] [Π j, category (D j)]
+  (W : Π j, morphism_property (C j))
+  [hW : ∀ j, (W j).contains_identities]
+  (L : Π j, C j ⥤ D j) [Π j, (L j).is_localization (W j)]
+
+instance : category (Π j, C j) :=
+{ hom := λ X Y, Π j, X j ⟶ Y j,
+  id := λ X j, 𝟙 (X j),
+  comp := λ X Y Z f g j, f j ≫ g j, }
+
+@[simps]
+def functor.pi_ (F : Π j, C j ⥤ D j) : (Π j, C j) ⥤ (Π j, D j) :=
+{ obj := λ X j, (F j).obj (X j),
+  map := λ X Y f j, (F j).map (f j), }
+
+@[simps]
+def nat_trans.pi_ {F G : Π j, C j ⥤ D j} (e : Π j, F j ⟶ G j) :
+  functor.pi_ F ⟶ functor.pi_ G :=
+{ app := λ X j, (e j).app (X j), }
+
+@[simps]
+def nat_iso.pi {F G : Π j, C j ⥤ D j} (e : Π j, F j ≅ G j) :
+  functor.pi_ F ≅ functor.pi_ G :=
+{ hom := nat_trans.pi_ (λ j, (e j).hom),
+  inv := nat_trans.pi_ (λ j, (e j).inv), }
+
+def equivalence.pi (e : Π j, C j ≌ D j) : (Π j, C j) ≌ (Π j, D j) :=
+{ functor := functor.pi_ (λ j, (e j).functor),
+  inverse := functor.pi_ (λ j, (e j).inverse),
+  unit_iso := nat_iso.pi (λ j, (e j).unit_iso),
+  counit_iso := nat_iso.pi (λ j, (e j).counit_iso), }
+
+variable (C)
+
+def functor.pi_.eval (j : J) : (Π j, C j) ⥤ C j :=
+{ obj := λ X, X j,
+  map := λ X Y f, f j, }
+
+variable {C}
+
+lemma is_iso_pi_iff {X Y : Π j, C j} (f : X ⟶ Y) :
+  is_iso f ↔ ∀ j, is_iso (f j) :=
+begin
+  split,
+  { introI,
+    intro j,
+    change is_iso ((functor.pi_.eval C j).map f),
+    apply_instance, },
+  { introI,
+    exact ⟨⟨λ j, inv (f j), by tidy⟩⟩, },
+end
+
+def morphism_property.pi : morphism_property (Π j, C j) := λ X Y f, ∀ j, (W j) (f j)
+
+end
+
+namespace localization
+
+section
+
+variables {n : ℕ} {C : fin n → Type*} {D : fin n → Type*}
+  [Π j, category (C j)] [Π j, category (D j)]
+  (W : Π j, morphism_property (C j))
+  [hW : ∀ j, (W j).contains_identities]
+  (L : Π j, C j ⥤ D j) [Π j, (L j).is_localization (W j)]
+
+include hW
+
+namespace strict_universal_property_fixed_target
+
+lemma pi.inverts_W :
+  (morphism_property.pi W).is_inverted_by (functor.pi_ (λ (j : fin n), (W j).Q)) :=
+λ X Y f hf, begin
+  rw is_iso_pi_iff,
+  intro j,
+  exact localization.inverts_W _ _ _ (hf j),
+end
+
+def pi : strict_universal_property_fixed_target
+  (functor.pi_ (λ j, (W j).Q)) (morphism_property.pi W) E :=
+{ inverts_W := pi.inverts_W _,
+  lift := sorry,
+  fac := sorry,
+  uniq := sorry, }
+
+end strict_universal_property_fixed_target
+
+instance pi_construction_is_localization :
+  (functor.pi_ (λ j, (W j).Q)).is_localization (morphism_property.pi W) :=
+functor.is_localization.mk' _ _
+  (strict_universal_property_fixed_target.pi _)
+  (strict_universal_property_fixed_target.pi _)
+
+lemma pi_is_localization_fin :
+  (functor.pi_ L).is_localization (morphism_property.pi W) :=
+begin
+  let E := λ j, equivalence_from_model (L j) (W j),
+  let e : Π j, (W j).Q ⋙ (E j).functor ≅ L j :=
+    λ j, Q_comp_equivalence_from_model_functor_iso _ _,
+  exact functor.is_localization.of_equivalence (functor.pi_ (λ j, (W j).Q)) (morphism_property.pi W)
+    (functor.pi_ L) (equivalence.pi E) (nat_iso.pi e),
+end
+
+end
+
+section
+
+variables {J : Type*} {C : J → Type*} {D : J → Type*}
+  [Π j, category (C j)] [Π j, category (D j)]
+  (W : Π j, morphism_property (C j))
+  [hW : ∀ j, (W j).contains_identities]
+  (L : Π j, C j ⥤ D j) [Π j, (L j).is_localization (W j)]
+
+lemma pi_is_localization [fintype J] :
+  (functor.pi_ L).is_localization (morphism_property.pi W) :=
+begin
+  sorry,
+end
+
+end
+
+end localization
+
 end category_theory

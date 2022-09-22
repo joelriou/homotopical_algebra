@@ -6,6 +6,7 @@ Authors: Joël Riou
 
 import for_mathlib.algebraic_topology.homotopical_algebra.fundamental_lemma
 import for_mathlib.algebraic_topology.homotopical_algebra.over
+import for_mathlib.category_theory.functor_misc
 
 noncomputable theory
 
@@ -43,19 +44,6 @@ begin
 end
 
 end category_theory.morphism_property.three_of_two
-
-lemma category_theory.is_iso_iff_of_nat_iso {C D : Type*} [category C] [category D]
-  {F₁ F₂ : C ⥤ D} (e : F₁ ≅ F₂) {X Y : C} (f : X ⟶ Y) :
-  is_iso (F₁.map f) ↔ is_iso (F₂.map f) :=
-begin
-  revert F₁ F₂,
-  suffices : ∀ {F₁ F₂ : C ⥤ D} (e : F₁ ≅ F₂) (hf : is_iso (F₁.map f)), is_iso (F₂.map f),
-  { exact λ F₁ F₂ e, ⟨this e, this e.symm⟩, },
-  introsI F₁ F₂ e hf,
-  refine is_iso.mk ⟨e.inv.app Y ≫ inv (F₁.map f) ≫ e.hom.app X, _, _⟩,
-  { simp only [nat_trans.naturality_assoc, is_iso.hom_inv_id_assoc, iso.inv_hom_id_app], },
-  { simp only [assoc, ← e.hom.naturality, is_iso.inv_hom_id_assoc, iso.inv_hom_id_app], },
-end
 
 open category_theory
 
@@ -132,8 +120,7 @@ lemma bifibrant_object.is_iso_Lbif_map_iff_is_iso_Lcof_map
   {X Y : bifibrant_object C} (f : X ⟶ Y) :
   is_iso (Lbif.map f) ↔ is_iso (Lcof.map ((bifibrant_object.forget_fib C).map f)) :=
 by rw [← (Hobif_to_Hocof Lcof Lbif).is_iso_map_iff, ← functor.comp_map,
-  is_iso_iff_of_nat_iso (Lbif_comp_Hobif_to_Hocof_iso Lcof Lbif), functor.comp_map]
-
+  is_iso_map_iff_of_nat_iso (Lbif_comp_Hobif_to_Hocof_iso Lcof Lbif), functor.comp_map]
 
 lemma cofibrant_object.is_iso_Lcof_map_iff
   {X Y : cofibrant_object C} (f : X ⟶ Y) :
@@ -157,7 +144,7 @@ lemma is_iso_Lcof_map_iff_is_iso_L_map
   {X Y : cofibrant_object C} (f : X ⟶ Y) :
   is_iso (Lcof.map f) ↔ is_iso (L.map ((cofibrant_object.forget C).map f)) :=
 by rw [← (Hocof_to_Ho Lcof L).is_iso_map_iff, ← functor.comp_map,
-  is_iso_iff_of_nat_iso (Lcof_comp_Hocof_to_Ho_iso Lcof L), functor.comp_map]
+  is_iso_map_iff_of_nat_iso (Lcof_comp_Hocof_to_Ho_iso Lcof L), functor.comp_map]
 
 lemma is_iso_L_map_iff {X Y : C} (f : X ⟶ Y) :
   is_iso (L.map f) ↔ weq f :=
