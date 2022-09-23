@@ -8,6 +8,8 @@ universes v v' u
 
 namespace category_theory
 
+section
+
 variables {C₁ D₁ C₂ D₂ : Type*} [category C₁] [category C₂] [category D₁] [category D₂]
   (W₁ : morphism_property C₁) (W₂ : morphism_property C₂) {E : Type*} [category E]
 
@@ -278,6 +280,26 @@ def functor.pi_.eval (j : J) : (Π j, C j) ⥤ C j :=
 
 variable {C}
 
+@[simp]
+lemma functor.pi_eval (F : Π j, C j ⥤ D j) (j : J) :
+  functor.pi_ F ⋙ functor.pi_.eval _ j = functor.pi_.eval _ j ⋙ F j := rfl
+
+@[simp]
+def functor.pi'__eval (F : Π j, E ⥤ D j) (j : J) :
+  functor.pi'_ F ⋙ functor.pi_.eval _ j = F j :=
+functor.ext (λ X, rfl) (by tidy)
+
+lemma functor.pi_.ext {F₁ F₂ : E ⥤ (Π j, C j)}
+  (h : ∀ (j : J), F₁ ⋙ functor.pi_.eval _ j = F₂ ⋙ functor.pi_.eval _ j) : F₁ = F₂ :=
+begin
+  refine functor.ext (λ X, _) (λ X Y f, _),
+  { ext j,
+    exact functor.congr_obj (h j) X, },
+  { ext j,
+    simpa only [pi.comp_apply, functor.eq_to_hom_proj]
+      using functor.congr_map_conjugate (h j) f, },
+end
+
 def equivalence.pi' {J' : Type*} (α : J ≃ J') {D : J' → Type*}
   [Π j', category (D j')] (e : Π j, C j ≌ D (α j)) :
   (Π j, C j) ≌ (Π j', D j') :=
@@ -288,7 +310,9 @@ begin
   exact
   { functor := functor.pi'_ (λ j', functor.pi_.eval _ _ ⋙ (e' j').functor),
     inverse := functor.pi'_ (λ j, functor.pi_.eval _ _ ⋙ (e j).inverse),
-    unit_iso := sorry,
+    unit_iso := eq_to_iso (functor.pi_.ext (λ c, begin
+      sorry,
+    end)),
     counit_iso := sorry, },
 end
 
@@ -305,6 +329,65 @@ begin
 end
 
 def morphism_property.pi : morphism_property (Π j, C j) := λ X Y f, ∀ j, (W j) (f j)
+
+end
+
+end
+
+section
+
+variables {J₁ J₂ : Type*} (C₁ : J₁ → Type u) (C₂ : J₂ → Type u)
+
+@[simp]
+def sum.desc : sum J₁ J₂ →  Type u
+|(sum.inl j₁) := C₁ j₁
+|(sum.inr j₂) := C₂ j₂
+
+variables [Π j₁, category.{v} (C₁ j₁)] [Π j₂, category.{v} (C₂ j₂)]
+
+instance : Π j, category.{v} (sum.desc C₁ C₂ j) :=
+λ j, by { cases j; dsimp only [sum.desc]; apply_instance, }
+
+def equivalence_pi_prod :
+  (Π j₁, C₁ j₁) × (Π j₂, C₂ j₂) ≌ (Π j, sum.desc C₁ C₂ j) :=
+{ functor := functor.pi'_ (λ j, match j with
+    | sum.inl j₁ := category_theory.prod.fst _ _ ⋙ functor.pi_.eval _ j₁
+    | sum.inr j₂ := category_theory.prod.snd _ _ ⋙ functor.pi_.eval _ j₂
+  end),
+  inverse := functor.prod'
+    (functor.pi'_ (λ j₁, functor.pi_.eval _ (sum.inl j₁)))
+    (functor.pi'_ (λ j₂, functor.pi_.eval _ (sum.inr j₂))),
+  unit_iso := eq_to_iso (functor.ext (by tidy) (by tidy)),
+  counit_iso := eq_to_iso (functor.ext (by tidy) (by tidy)), }
+
+end
+
+section
+
+variables {J : Type*} (j : J) [subsingleton J] (C : J → Type*) [Π t, category (C t)]
+
+def equivalence_pi_single :
+  (Π t, C t) ≌ C j :=
+{ functor := functor.pi_.eval _ j,
+  inverse := functor.pi'_ (λ t, begin
+    have eq := subsingleton.elim j t,
+    subst eq,
+    exact 𝟭 _,
+  end),
+  unit_iso := eq_to_iso begin
+    refine functor.ext _ _,
+    { intro X,
+      ext t,
+      have eq := subsingleton.elim j t,
+      subst eq,
+      refl, },
+    { intros X Y f,
+      ext t,
+      have eq := subsingleton.elim j t,
+      subst eq,
+      simp, },
+  end,
+  counit_iso := eq_to_iso rfl, }
 
 end
 
