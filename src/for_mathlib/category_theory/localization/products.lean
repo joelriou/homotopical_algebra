@@ -51,7 +51,7 @@ end functor
 namespace morphism_property
 
 class contains_identities {C : Type*} [category C] (W : morphism_property C) : Prop :=
-(id : ∀ (X : C), W (𝟙 X))
+(id [] : ∀ (X : C), W (𝟙 X))
 
 def prod : morphism_property (C₁ × C₂) := λ X Y f, W₁ f.fst ∧ W₂ f.snd
 
@@ -83,7 +83,7 @@ localization.construction.lift (curry.obj F) (λ X₁ Y₁ f₁ hf₁, begin
   haveI : Π (Z₂ : C₂), is_iso (((curry.obj F).map f₁).app Z₂),
   { intro Z₂,
     apply hF,
-    exact ⟨hf₁, morphism_property.contains_identities.id _⟩, },
+    exact ⟨hf₁, morphism_property.contains_identities.id _ _⟩, },
     apply nat_iso.is_iso_of_is_iso_app,
 end)
 
@@ -109,7 +109,7 @@ localization.construction.lift (lift₁ W₁ W₂ F hF).flip (λ X₂ Y₂ f₂ 
     cases hF₁ with A₁ hA₁,
     subst hA₁,
     simp only [functor.flip_map_app, lift₁_obj_map],
-    haveI := hF (prod.hom_mk (𝟙 A₁) f₂) ⟨morphism_property.contains_identities.id _, hf₂⟩,
+    haveI := hF (prod.hom_mk (𝟙 A₁) f₂) ⟨morphism_property.contains_identities.id _ _, hf₂⟩,
     apply_instance, },
   apply nat_iso.is_iso_of_is_iso_app,
 end)
@@ -236,6 +236,11 @@ def functor.pi_ (F : Π j, C j ⥤ D j) : (Π j, C j) ⥤ (Π j, D j) :=
   map := λ X Y f j, (F j).map (f j), }
 
 @[simps]
+def functor.pi'_ (F : Π j, E ⥤ D j) : E ⥤ (Π j, D j) :=
+{ obj := λ X j, (F j).obj X,
+  map := λ X Y f j, (F j).map f, }
+
+@[simps]
 def nat_trans.pi_ {F G : Π j, C j ⥤ D j} (e : Π j, F j ⟶ G j) :
   functor.pi_ F ⟶ functor.pi_ G :=
 { app := λ X j, (e j).app (X j), }
@@ -246,6 +251,18 @@ def nat_iso.pi {F G : Π j, C j ⥤ D j} (e : Π j, F j ≅ G j) :
 { hom := nat_trans.pi_ (λ j, (e j).hom),
   inv := nat_trans.pi_ (λ j, (e j).inv), }
 
+@[simps]
+def nat_trans.pi'_ {F G : Π j, E ⥤ D j} (e : Π j, F j ⟶ G j) :
+  functor.pi'_ F ⟶ functor.pi'_ G :=
+{ app := λ X j, (e j).app X, }
+
+@[simps]
+def nat_iso.pi'_ {F G : Π j, E ⥤ D j} (e : Π j, F j ≅ G j) :
+  functor.pi'_ F ≅ functor.pi'_ G :=
+{ hom := nat_trans.pi'_ (λ j, (e j).hom),
+  inv := nat_trans.pi'_ (λ j, (e j).inv), }
+
+@[simps]
 def equivalence.pi (e : Π j, C j ≌ D j) : (Π j, C j) ≌ (Π j, D j) :=
 { functor := functor.pi_ (λ j, (e j).functor),
   inverse := functor.pi_ (λ j, (e j).inverse),
@@ -254,11 +271,26 @@ def equivalence.pi (e : Π j, C j ≌ D j) : (Π j, C j) ≌ (Π j, D j) :=
 
 variable (C)
 
+@[simps]
 def functor.pi_.eval (j : J) : (Π j, C j) ⥤ C j :=
 { obj := λ X, X j,
   map := λ X Y f, f j, }
 
 variable {C}
+
+def equivalence.pi' {J' : Type*} (α : J ≃ J') {D : J' → Type*}
+  [Π j', category (D j')] (e : Π j, C j ≌ D (α j)) :
+  (Π j, C j) ≌ (Π j', D j') :=
+begin
+  let eqC : Π {j₁ j₂} (h : j₁ = j₂), D j₁ ≌ D j₂ := λ j₁ j₂ h, by subst h,
+  let eqD : Π {j'₁ j'₂} (h : j'₁ = j'₂), D j'₁ ≌ D j'₂ := λ j'₁ j'₂ h, by subst h,
+  let e' : Π j', C (α.symm j') ≌ D j' := λ j', (e (α.symm j')).trans (eqD (by simp)),
+  exact
+  { functor := functor.pi'_ (λ j', functor.pi_.eval _ _ ⋙ (e' j').functor),
+    inverse := functor.pi'_ (λ j, functor.pi_.eval _ _ ⋙ (e j).inverse),
+    unit_iso := sorry,
+    counit_iso := sorry, },
+end
 
 lemma is_iso_pi_iff {X Y : Π j, C j} (f : X ⟶ Y) :
   is_iso f ↔ ∀ j, is_iso (f j) :=
@@ -276,55 +308,6 @@ def morphism_property.pi : morphism_property (Π j, C j) := λ X Y f, ∀ j, (W 
 
 end
 
-namespace localization
-
-section
-
-variables {n : ℕ} {C : fin n → Type*} {D : fin n → Type*}
-  [Π j, category (C j)] [Π j, category (D j)]
-  (W : Π j, morphism_property (C j))
-  [hW : ∀ j, (W j).contains_identities]
-  (L : Π j, C j ⥤ D j) [Π j, (L j).is_localization (W j)]
-
-include hW
-
-namespace strict_universal_property_fixed_target
-
-lemma pi.inverts_W :
-  (morphism_property.pi W).is_inverted_by (functor.pi_ (λ (j : fin n), (W j).Q)) :=
-λ X Y f hf, begin
-  rw is_iso_pi_iff,
-  intro j,
-  exact localization.inverts_W _ _ _ (hf j),
-end
-
-def pi : strict_universal_property_fixed_target
-  (functor.pi_ (λ j, (W j).Q)) (morphism_property.pi W) E :=
-{ inverts_W := pi.inverts_W _,
-  lift := sorry,
-  fac := sorry,
-  uniq := sorry, }
-
-end strict_universal_property_fixed_target
-
-instance pi_construction_is_localization :
-  (functor.pi_ (λ j, (W j).Q)).is_localization (morphism_property.pi W) :=
-functor.is_localization.mk' _ _
-  (strict_universal_property_fixed_target.pi _)
-  (strict_universal_property_fixed_target.pi _)
-
-lemma pi_is_localization_fin :
-  (functor.pi_ L).is_localization (morphism_property.pi W) :=
-begin
-  let E := λ j, equivalence_from_model (L j) (W j),
-  let e : Π j, (W j).Q ⋙ (E j).functor ≅ L j :=
-    λ j, Q_comp_equivalence_from_model_functor_iso _ _,
-  exact functor.is_localization.of_equivalence (functor.pi_ (λ j, (W j).Q)) (morphism_property.pi W)
-    (functor.pi_ L) (equivalence.pi E) (nat_iso.pi e),
-end
-
-end
-
 section
 
 variables {J : Type*} {C : J → Type*} {D : J → Type*}
@@ -333,14 +316,47 @@ variables {J : Type*} {C : J → Type*} {D : J → Type*}
   [hW : ∀ j, (W j).contains_identities]
   (L : Π j, C j ⥤ D j) [Π j, (L j).is_localization (W j)]
 
+lemma morphism_property.is_inverted_by.pi  :
+  (morphism_property.pi W).is_inverted_by (functor.pi_ (λ j, (W j).Q)) :=
+λ X Y f hf, begin
+  rw is_iso_pi_iff,
+  intro j,
+  exact localization.inverts_W _ _ _ (hf j),
+end
+
+include hW
+
+instance : morphism_property.contains_identities (morphism_property.pi W) :=
+⟨λ X j, morphism_property.contains_identities.id (W j) (X j)⟩
+
+namespace localization
+
 lemma pi_is_localization [fintype J] :
   (functor.pi_ L).is_localization (morphism_property.pi W) :=
 begin
-  sorry,
-end
-
+  let α := fintype.equiv_fin J,
+  let J' := λ (n : ℕ), { j : J // (α j : ℕ) < n },
+  let C' := λ (n : ℕ) (j : J' n), C j.1,
+  let D' := λ (n : ℕ) (j : J' n), D j.1,
+  let W' := λ (n : ℕ) (j : J' n), W j.1,
+  let L' := λ (n : ℕ) (j : J' n), L j.1,
+  suffices : ∀ (n : ℕ), (functor.pi_ (L' n)).is_localization (morphism_property.pi (W' n)),
+  { sorry, },
+  intro n,
+  induction n with n hn,
+  { sorry, },
+  { haveI := hn,
+    by_cases n < fintype.card J,
+    { let a : fin (fintype.card J) := ⟨n, h⟩,
+      let i : J' (n+1) := ⟨α.inv_fun a, by simp⟩,
+      haveI := prod_is_localization (morphism_property.pi (W' n)) (W i.1)
+        (functor.pi_ (L' n)) (L i.1),
+      all_goals { sorry, }, },
+    { sorry, }, },
 end
 
 end localization
+
+end
 
 end category_theory
