@@ -92,6 +92,8 @@ end
 
 end localization
 
+section
+
 variables {C₁ C₂ D : Type*} [category C₁] [category C₂] [category D]
   (L₁ : C₁ ⥤ D) (W₁ : morphism_property C₁) (L₂ : C₂ ⥤ D) (W₂ : morphism_property C₂)
   (E : C₂ ≌ C₁) (hW₁ : W₁ ⊆ W₂.inverse_image' E.inverse) (hW₂ : W₂.is_inverted_by L₂)
@@ -130,6 +132,37 @@ begin
   { inverts_W := h₁,
     is_equivalence := localization.lifting_is_equivalence C W₂ W₁ (E.inverse ⋙ W₂.Q)
       (localization.lift (E.inverse ⋙ W₂.Q) h₂ L₁) iso₁ iso₂, }
+end
+
+end
+
+section
+
+variables {C₁ C₂ D₁ D₂ : Type*} [category C₁] [category C₂] [category D₁] [category D₂]
+  (E : C₁ ≌ C₂) (E' : D₁ ≌ D₂) {L₁ : C₁ ⥤ D₁} {L₂ : C₂ ⥤ D₂}
+  (H : Comm_sq E.functor L₁ L₂ E'.functor)
+  (W₁ : morphism_property C₁) (W₂ : morphism_property C₂)
+  (hW₁ : W₁.is_inverted_by L₁)
+  (hW₂ : W₂ ⊆ W₁.inverse_image' E.inverse)
+  [L₂.is_localization W₂]
+
+include H hW₁ hW₂
+
+def functor.is_localization.of_equivalence'' : L₁.is_localization W₁ :=
+begin
+  haveI : (E.functor ⋙ L₂).is_localization W₁,
+  { refine functor.is_localization.of_equivalence' L₂ W₂ (E.functor ⋙ L₂)
+      W₁ E hW₂ _ (iso.refl _),
+    rw ← morphism_property.is_inverted_by.iff_of_iso W₁ H.iso,
+    exact morphism_property.is_inverted_by.of_comp _ _ hW₁ _, },
+  haveI := functor.is_localization.of_iso W₁ H.iso.symm,
+  refine functor.is_localization.of_equivalence (L₁ ⋙ E'.functor) W₁ L₁ E'.symm _,
+  calc (L₁ ⋙ E'.functor) ⋙ E'.symm.functor ≅ L₁ ⋙ E'.functor ⋙ E'.symm.functor :
+    functor.associator _ _ _
+  ... ≅ L₁ ⋙ 𝟭 D₁ : iso_whisker_left _ E'.unit_iso.symm
+  ... ≅ L₁ : functor.right_unitor _,
+end
+
 end
 
 end category_theory
