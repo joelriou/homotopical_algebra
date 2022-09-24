@@ -275,7 +275,7 @@ by { dsimp [L'], apply_instance, }
 variables {Ho : Type*} [category Ho] (L : C ⥤ Ho) [L.is_localization weq]
 
 lemma is_iso_L_map' {X Y : C} (f : X ⟶ Y) (hf : weq f) : is_iso (L.map f) :=
-localization.inverts_W L weq f hf
+localization.inverts L weq f hf
 
 lemma is_iso_L_map {X Y : C} (f : X ⟶ Y) [weak_eq f] : is_iso (L.map f) :=
 is_iso_L_map' L f weak_eq.property

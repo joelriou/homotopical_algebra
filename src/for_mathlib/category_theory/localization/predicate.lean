@@ -64,15 +64,15 @@ variables (E : Type*) [category E]
 
 namespace functor
 
-class is_localization :=
-(inverts_W : W.is_inverted_by L)
-(is_equivalence : is_equivalence (localization.construction.lift L inverts_W))
+class is_localization : Prop :=
+(inverts : W.is_inverted_by L)
+(nonempty_is_equivalence : nonempty (is_equivalence (localization.construction.lift L inverts)))
 
 instance Q_is_localization : W.Q.is_localization W :=
-{ inverts_W := W.Q_inverts,
-  is_equivalence := begin
+{ inverts := W.Q_inverts,
+  nonempty_is_equivalence := begin
     suffices : localization.construction.lift W.Q W.Q_inverts = 𝟭 _,
-    { rw this, apply_instance, },
+    { apply nonempty.intro, rw this, apply_instance, },
     apply localization.construction.uniq,
     simpa only [localization.construction.fac],
   end, }
@@ -82,20 +82,20 @@ end functor
 namespace localization
 
 structure strict_universal_property_fixed_target :=
-(inverts_W : W.is_inverted_by L)
+(inverts : W.is_inverted_by L)
 (lift : Π (F : C ⥤ E) (hF : W.is_inverted_by F), D ⥤ E)
 (fac : Π (F : C ⥤ E) (hF : W.is_inverted_by F), L ⋙ lift F hF = F)
 (uniq : Π (F₁ F₂ : D ⥤ E) (h : L ⋙ F₁ = L ⋙ F₂), F₁ = F₂)
 
 def strict_universal_property_fixed_target.for_Q : strict_universal_property_fixed_target W.Q W E :=
-{ inverts_W := W.Q_inverts,
+{ inverts := W.Q_inverts,
   lift := construction.lift,
   fac := construction.fac,
   uniq := construction.uniq, }
 
 def strict_universal_property_fixed_target.for_id (hW : W ⊆ morphism_property.isomorphisms C):
   strict_universal_property_fixed_target (𝟭 C) W E :=
-{ inverts_W := λ X Y f hf, hW f hf,
+{ inverts := λ X Y f hf, hW f hf,
   lift := λ F hF, F,
   fac := λ F hF, by { cases F, refl, },
   uniq := λ F₁ F₂ eq, by { cases F₁, cases F₂, exact eq, }, }
@@ -110,21 +110,21 @@ variables (h₁ : localization.strict_universal_property_fixed_target L W D)
 namespace is_localization.mk'
 
 lemma unit_eq :
-  𝟭 W.localization = localization.construction.lift L h₁.inverts_W ⋙ h₂.lift W.Q W.Q_inverts :=
+  𝟭 W.localization = localization.construction.lift L h₁.inverts ⋙ h₂.lift W.Q W.Q_inverts :=
 begin
   apply localization.construction.uniq,
   rw [← functor.assoc, localization.construction.fac, h₂.fac, functor.comp_id],
 end
 
 lemma counit_eq :
-  h₂.lift W.Q W.Q_inverts ⋙ localization.construction.lift L h₁.inverts_W = 𝟭 D :=
+  h₂.lift W.Q W.Q_inverts ⋙ localization.construction.lift L h₁.inverts = 𝟭 D :=
 begin
   apply h₁.uniq,
   rw [← functor.assoc, h₂.fac, localization.construction.fac, functor.comp_id],
 end
 
 def equivalence : W.localization ≌ D :=
-{ functor := localization.construction.lift L h₁.inverts_W,
+{ functor := localization.construction.lift L h₁.inverts,
   inverse := h₂.lift W.Q W.Q_inverts,
   unit_iso := eq_to_iso (unit_eq L W h₁ h₂),
   counit_iso := eq_to_iso (counit_eq L W h₁ h₂),
@@ -144,8 +144,9 @@ end is_localization.mk'
 
 def is_localization.mk' :
   is_localization L W :=
-{ inverts_W := h₁.inverts_W,
-  is_equivalence := is_equivalence.of_equivalence (is_localization.mk'.equivalence L W h₁ h₂), }
+{ inverts := h₁.inverts,
+  nonempty_is_equivalence :=
+    nonempty.intro (is_equivalence.of_equivalence (is_localization.mk'.equivalence L W h₁ h₂)), }
 
 end functor
 
@@ -156,19 +157,20 @@ include L W
 
 def as_localization : L.is_localization W := infer_instance
 
-lemma inverts_W : W.is_inverted_by L := (as_localization _ _).inverts_W
+lemma inverts : W.is_inverted_by L := (as_localization _ _).inverts
 
 @[simps]
 def iso_of_W {X Y : C} (f : X ⟶ Y) (hf : W f) : L.obj X ≅ L.obj Y :=
 begin
-  haveI : is_iso (L.map f) := inverts_W L W f hf,
+  haveI : is_iso (L.map f) := inverts L W f hf,
   exact as_iso (L.map f),
 end
 
-instance is_equivalence_from_model := (as_localization L W).is_equivalence
+instance : is_equivalence (localization.construction.lift L (inverts L W)) :=
+(as_localization L W).nonempty_is_equivalence.some
 
 def equivalence_from_model : W.localization ≌ D :=
-(localization.construction.lift L (inverts_W L W)).as_equivalence
+(localization.construction.lift L (inverts L W)).as_equivalence
 
 def Q_comp_equivalence_from_model_functor_iso :
   W.Q ⋙ (equivalence_from_model L W).functor ≅ L := eq_to_iso (construction.fac _ _)
@@ -191,7 +193,7 @@ lemma ess_surj : ess_surj L :=
 
 def whiskering_left_functor : (D ⥤ E) ⥤ W.functors_inverting E :=
 full_subcategory.lift _ ((whiskering_left _ _ E).obj L)
-  (morphism_property.is_inverted_by.of_comp W L (as_localization L W).inverts_W)
+  (morphism_property.is_inverted_by.of_comp W L (as_localization L W).inverts)
 
 @[simps]
 def functor_equivalence₀ : (D ⥤ E) ≌ (W.functors_inverting E) :=
@@ -202,7 +204,7 @@ lemma functor_equivalence₀_functor_iso :
   (functor_equivalence₀ L W E).functor ≅ whiskering_left_functor L W E :=
 nat_iso.of_components (λ F, eq_to_iso begin
   ext,
-  change (W.Q ⋙ (localization.construction.lift L (inverts_W L W))) ⋙ F = L ⋙ F,
+  change (W.Q ⋙ (localization.construction.lift L (inverts L W))) ⋙ F = L ⋙ F,
   rw construction.fac,
 end)
 begin
@@ -214,7 +216,7 @@ begin
   dsimp [equivalence_from_model, morphism_property.Q],
   erw [eq_to_hom_app, eq_to_hom_app, eq_to_hom_refl, eq_to_hom_refl, comp_id, id_comp],
   all_goals
-  { change (W.Q ⋙ (localization.construction.lift L (inverts_W L W))) ⋙ _ = L ⋙ _,
+  { change (W.Q ⋙ (localization.construction.lift L (inverts L W))) ⋙ _ = L ⋙ _,
     rw construction.fac, },
 end
 
@@ -428,29 +430,29 @@ def of_equivalence {E : Type*} [category E] (L' : C ⥤ E) (eq : D ≌ E)
 begin
   have h : W.is_inverted_by L',
   { rw ← morphism_property.is_inverted_by.iff_of_iso W e,
-    exact morphism_property.is_inverted_by.of_comp W L (localization.inverts_W L W) eq.functor, },
-  let F₁ := localization.construction.lift L (localization.inverts_W L W),
+    exact morphism_property.is_inverted_by.of_comp W L (localization.inverts L W) eq.functor, },
+  let F₁ := localization.construction.lift L (localization.inverts L W),
   let F₂ := localization.construction.lift L' h,
   letI : localization.lifting W.Q W (L ⋙ eq.functor) F₂ :=
     localization.lifting.of_isos W.Q W e.symm (iso.refl F₂),
   let e : F₁ ⋙ eq.functor ≅ F₂ := localization.lifting.uniq W.Q W (L ⋙ eq.functor) _ _,
   exact
-  { inverts_W := h,
-    is_equivalence := is_equivalence.of_iso e infer_instance, },
+  { inverts := h,
+    nonempty_is_equivalence := nonempty.intro (is_equivalence.of_iso e infer_instance) },
 end
 
 def of_iso {L₁ L₂ : C ⥤ D} (e : L₁ ≅ L₂) [L₁.is_localization W] : L₂.is_localization W :=
 begin
   have h : W.is_inverted_by L₂ := λ X Y f hf,
-    by simpa only [is_iso_map_iff_of_nat_iso e.symm] using localization.inverts_W L₁ W f hf,
-  let F₁ := localization.construction.lift L₁ (localization.inverts_W L₁ W),
+    by simpa only [is_iso_map_iff_of_nat_iso e.symm] using localization.inverts L₁ W f hf,
+  let F₁ := localization.construction.lift L₁ (localization.inverts L₁ W),
   let F₂ := localization.construction.lift L₂ h,
   haveI : localization.lifting W.Q W L₁ F₂ :=
     localization.lifting.of_isos W.Q W e.symm (iso.refl F₂),
   exact
-  { inverts_W := h,
-    is_equivalence := is_equivalence.of_iso (localization.lifting.uniq W.Q W L₁ F₁ F₂)
-      is_localization.is_equivalence, },
+  { inverts := h,
+    nonempty_is_equivalence := nonempty.intro
+      (is_equivalence.of_iso (localization.lifting.uniq W.Q W L₁ F₁ F₂) infer_instance), },
 end
 
 end is_localization

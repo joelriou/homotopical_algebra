@@ -39,7 +39,7 @@ namespace localization
 def strict_universal_property_fixed_target.op {E : Type*} [category E]
   (h : strict_universal_property_fixed_target L W Eᵒᵖ):
   strict_universal_property_fixed_target L.op W.op E :=
-{ inverts_W := h.inverts_W.op,
+{ inverts := h.inverts.op,
   lift := λ F hF, (h.lift F.right_op hF.right_op).left_op,
   fac := λ F hF, begin
     convert congr_arg functor.left_op (h.fac F.right_op hF.right_op),

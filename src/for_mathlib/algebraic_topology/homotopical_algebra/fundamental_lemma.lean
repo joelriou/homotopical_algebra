@@ -122,7 +122,7 @@ begin
   suffices : function.surjective (@category_theory.functor.map _ _ _ _ L X Y'),
   { intro g,
     let p : Y' ⟶ Y := CM5b.p (initial.to Y),
-    haveI := localization.inverts_W L weq p weak_eq.property,
+    haveI := localization.inverts L weq p weak_eq.property,
     rcases this (g ≫ inv (L.map p)) with ⟨φ, hφ⟩,
     exact ⟨φ ≫ p, by rw [L.map_comp, hφ, assoc, is_iso.inv_hom_id, comp_id]⟩, },
   suffices : ∀ (A B : cofibrant_object C) [is_fibrant B.obj], function.surjective
@@ -135,7 +135,7 @@ begin
 end
 
 instance {X Y : C} (f : X ⟶ Y) [weak_eq f] : is_iso (L.map f) :=
-localization.inverts_W L weq f weak_eq.property
+localization.inverts L weq f weak_eq.property
 
 lemma map_eq_of_left_homotopy {X Y : C} {f₁ f₂ : X ⟶ Y} {P : precylinder X}
   (h : left_homotopy P f₁ f₂) : L.map f₁ = L.map f₂ :=
@@ -156,7 +156,7 @@ begin
     have sq₂ : comm_sq (initial.to Y') (initial.to X) i f₂ := by tidy,
     let g₁ : cofibrant_object.mk X ⟶ cofibrant_object.mk Y' := sq₁.lift,
     let g₂ : cofibrant_object.mk X ⟶ cofibrant_object.mk Y' := sq₂.lift,
-    haveI := localization.inverts_W L weq i weak_eq.property,
+    haveI := localization.inverts L weq i weak_eq.property,
     rw [← sq₁.fac_right, ← sq₂.fac_right, L.map_comp, L.map_comp,
       cancel_mono] at h,
     change (cofibrant_object.forget C ⋙ L).map g₁ =

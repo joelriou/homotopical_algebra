@@ -256,7 +256,7 @@ variable (C)
 
 def strict_universal_property_fixed_target (D : Type*) [category D] :
   localization.strict_universal_property_fixed_target (Q : bifibrant_object C ⥤ _) weq D :=
-{ inverts_W := Q_inverts_weq,
+{ inverts := Q_inverts_weq,
   lift := lift,
   fac := fac,
   uniq := uniq, }
@@ -297,7 +297,7 @@ lemma Lbif_map_eq_iff' {X Y : bifibrant_object C} (P : path_object Y.obj) (f₁ 
 by rw [← bifibrant_object.homotopy_category.Q_map_eq_iff', Lbif_map_eq_iff_Q_map_eq]
 
 lemma is_iso_Lbif_map' {X Y : bifibrant_object C} (f : X ⟶ Y) (hf : bifibrant_object.weq f):
-  is_iso (Lbif.map f) := localization.inverts_W Lbif bifibrant_object.weq f hf
+  is_iso (Lbif.map f) := localization.inverts Lbif bifibrant_object.weq f hf
 
 lemma is_iso_Lbif_map {X Y : bifibrant_object C} (f : X ⟶ Y) [hf : weak_eq ((bifibrant_object.forget C).map f)] :
   is_iso (Lbif.map f) := is_iso_Lbif_map' Lbif f hf.property

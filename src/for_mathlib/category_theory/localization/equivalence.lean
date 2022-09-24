@@ -112,7 +112,7 @@ begin
     rw [← cancel_mono (e₂.inv), assoc, e₂.hom_inv_id, comp_id, assoc] at eq,
     rw eq,
     simp only [functor.map_comp],
-    haveI := localization.inverts_W W₂.Q W₂ _ hf',
+    haveI := localization.inverts W₂.Q W₂ _ hf',
     apply_instance,
   end,
   let I' := localization.construction.lift L₂ h₁,
@@ -129,9 +129,10 @@ begin
     ... ≅ 𝟭 _ ⋙ W₂.Q : iso_whisker_right E.unit_iso.symm _
     ... ≅ W₂.Q : functor.left_unitor _, },
   exact
-  { inverts_W := h₁,
-    is_equivalence := localization.lifting_is_equivalence C W₂ W₁ (E.inverse ⋙ W₂.Q)
-      (localization.lift (E.inverse ⋙ W₂.Q) h₂ L₁) iso₁ iso₂, }
+  { inverts := h₁,
+    nonempty_is_equivalence := nonempty.intro
+      (localization.lifting_is_equivalence C W₂ W₁ (E.inverse ⋙ W₂.Q)
+      (localization.lift (E.inverse ⋙ W₂.Q) h₂ L₁) iso₁ iso₂), }
 end
 
 end

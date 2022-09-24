@@ -65,7 +65,7 @@ begin
   { rintros ⟨X₁, X₂⟩ ⟨Y₁, Y₂⟩ ⟨f₁, f₂⟩ ⟨hf₁, hf₂⟩,
     dsimp,
     simp only [limits.prod.map_map, comp_id, id_comp],
-    exact localization.inverts_W L W _ (hW f₁ f₂ hf₁ hf₂), },
+    exact localization.inverts L W _ (hW f₁ f₂ hf₁ hf₂), },
   let G' := functor.diag D,
   haveI : (L.prod L).is_localization (W.prod W) := prod_is_localization _ _ _ _,
   let F' := localization.lift (F ⋙ L) hF (L.prod L),

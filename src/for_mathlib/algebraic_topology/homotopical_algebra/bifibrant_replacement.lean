@@ -109,11 +109,11 @@ namespace bifibrant_replacement
 
 @[simps]
 def π : bifibrant_object.homotopy_category C ⥤ Hobif :=
-bifibrant_object.homotopy_category.lift Lbif (localization.inverts_W Lbif bifibrant_object.weq)
+bifibrant_object.homotopy_category.lift Lbif (localization.inverts Lbif bifibrant_object.weq)
 
 lemma forget_comp_Lcof_inverts_weq :
   bifibrant_object.weq.is_inverted_by (bifibrant_object.forget_fib C ⋙ Lcof) :=
-λ X Y f hf, by convert localization.inverts_W Lcof cofibrant_object.weq f hf
+λ X Y f hf, by convert localization.inverts Lcof cofibrant_object.weq f hf
 
 def R : cofibrant_object C ⥤ Hobif := bifibrant_replacement C ⋙ π Lbif
 

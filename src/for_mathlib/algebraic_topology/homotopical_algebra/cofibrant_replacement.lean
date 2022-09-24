@@ -130,7 +130,7 @@ category_theory.quotient.lift _ Lcof (λ (X Y : cofibrant_object C), begin
   let Y' : cofibrant_object C := cofibrant_object.mk (CM5a.obj (terminal.from Y.obj)),
   let φ : Y ⟶ Y' := CM5a.i (terminal.from Y.obj),
   intros f₁ f₂ h,
-  haveI : is_iso (Lcof.map φ) := localization.inverts_W Lcof cofibrant_object.weq φ
+  haveI : is_iso (Lcof.map φ) := localization.inverts Lcof cofibrant_object.weq φ
     (by { change weq (CM5a.i (terminal.from Y.obj)), exact weak_eq.property, }),
   simp only [← cancel_mono (Lcof.map φ), ← Lcof.map_comp],
   induction h with g₁ g₂ h g₁ g₂ g₃ H₁₂ H₂₃ h₁₂ h₂₃,
@@ -138,7 +138,7 @@ category_theory.quotient.lift _ Lcof (λ (X Y : cofibrant_object C), begin
     let Cyl := cylinder.some X.obj,
     let I' := cofibrant_object.mk Cyl.I,
     let s : I' ⟶ X := Cyl.σ,
-    haveI : is_iso (Lcof.map s) := localization.inverts_W Lcof cofibrant_object.weq s
+    haveI : is_iso (Lcof.map s) := localization.inverts Lcof cofibrant_object.weq s
       (by { change weq Cyl.σ, exact weak_eq.property, }),
     let h' := H.some.to_left_homotopy Cyl,
     let ψ : I' ⟶ Y' := h'.h,
@@ -160,7 +160,7 @@ begin
   subst hg,
   simp only [cofibrant_object.homotopy_category.Q_map, quotient.functor_map,
     π_map, quot.lift_on_mk],
-  apply localization.inverts_W Lcof cofibrant_object.weq g,
+  apply localization.inverts Lcof cofibrant_object.weq g,
   exact (cofibrant_object.homotopy_category.weq_Q_map_iff g).mp hf,
 end
 
@@ -168,7 +168,7 @@ omit Lcof
 
 lemma forget_comp_L_inverts_weq :
   cofibrant_object.weq.is_inverted_by (cofibrant_object.forget C ⋙ L) :=
-λ X Y f hf, by convert localization.inverts_W L weq ((cofibrant_object.forget C).map f) hf
+λ X Y f hf, by convert localization.inverts L weq ((cofibrant_object.forget C).map f) hf
 
 def R : C ⥤ Hocof := cofibrant_replacement C ⋙ π Lcof
 
@@ -222,7 +222,7 @@ cofibrant_replacement.is_equivalence Lcof L (Hocof_to_Ho Lcof L)
     ⟨Lcof_comp_Hocof_to_Ho_iso Lcof L⟩
 
 lemma is_iso_Lcof_map' {X Y : cofibrant_object C} (f : X ⟶ Y) (hf : cofibrant_object.weq f) :
-  is_iso (Lcof.map f) := localization.inverts_W Lcof cofibrant_object.weq f hf
+  is_iso (Lcof.map f) := localization.inverts Lcof cofibrant_object.weq f hf
 
 lemma is_iso_Lcof_map {X Y : cofibrant_object C} (f : X ⟶ Y)
   [weak_eq ((cofibrant_object.forget C).map f)] : is_iso (Lcof.map f) :=

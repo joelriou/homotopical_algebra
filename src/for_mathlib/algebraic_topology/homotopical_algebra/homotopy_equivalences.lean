@@ -71,7 +71,7 @@ lemma bifibrant_object.is_iso_Lbif_map_cofibration_iff
   {X Y : bifibrant_object C} (f : X ⟶ Y) [cofibration ((bifibrant_object.forget C).map f)] :
   is_iso (Lbif.map f) ↔ bifibrant_object.weq f :=
 begin
-  refine ⟨_, localization.inverts_W Lbif bifibrant_object.weq f⟩,
+  refine ⟨_, localization.inverts Lbif bifibrant_object.weq f⟩,
   introI,
   rcases strong_deformation_retract_of_cofibration_and_homotopy_equivalence Lbif f
     with ⟨g, hg₁, P, H, property⟩,
@@ -113,7 +113,7 @@ begin
     haveI : is_iso (Lbif.map i) := is_iso.of_is_iso_comp_right _ (Lbif.map p),
     refine CM2.of_comp _ _ _ weak_eq.property,
     exact (bifibrant_object.is_iso_Lbif_map_cofibration_iff Lbif i).mp infer_instance, },
-  { exact localization.inverts_W Lbif bifibrant_object.weq f, },
+  { exact localization.inverts Lbif bifibrant_object.weq f, },
 end
 
 lemma bifibrant_object.is_iso_Lbif_map_iff_is_iso_Lcof_map
@@ -137,7 +137,7 @@ begin
       bifibrant_object.homotopy_category.Q at hf,
     rw bifibrant_object.is_iso_Lbif_map_iff at hf,
     exact (CM2.left_iff_right_of_sq ((cofibrant_object.forget C).map_comm_sq sq) weak_eq.property weak_eq.property).mpr hf, },
-  { exact localization.inverts_W Lcof cofibrant_object.weq f, },
+  { exact localization.inverts Lcof cofibrant_object.weq f, },
 end
 
 lemma is_iso_Lcof_map_iff_is_iso_L_map
@@ -159,7 +159,7 @@ begin
     rw ← is_iso_Lcof_map_iff_is_iso_L_map L Lcof' at hf,
     rw cofibrant_object.is_iso_Lcof_map_iff at hf,
     exact (CM2.left_iff_right_of_sq sq.flip weak_eq.property weak_eq.property).mp hf, },
-  { exact localization.inverts_W L weq f, },
+  { exact localization.inverts L weq f, },
 end
 
 end model_category

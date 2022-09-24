@@ -189,7 +189,7 @@ include hW₁ hW₂
 variable (E)
 
 def prod : strict_universal_property_fixed_target (W₁.Q.prod W₂.Q) (W₁.prod W₂) E :=
-{ inverts_W := (localization.inverts_W _ _).prod (localization.inverts_W _ _),
+{ inverts := (localization.inverts _ _).prod (localization.inverts _ _),
   lift := λ F hF, prod.lift₃ W₁ W₂ F hF,
   fac := λ F hF, prod.fac W₁ W₂ F hF,
   uniq := λ H H' eq, begin
@@ -481,7 +481,7 @@ begin
       exact functor.congr_map_arrow_obj_arrow_mk (equivalence.pi'_functor_comp_eval e _ _) f, },
     exact nonempty.intro (functor.is_localization.of_equivalence'' E.symm E'.symm Sq
       (morphism_property.pi W₂) (morphism_property.pi W₁)
-      (morphism_property.is_inverted_by.pi W₂ L₂ (λ j₂, localization.inverts_W _ _)) hW₁), },
+      (morphism_property.is_inverted_by.pi W₂ L₂ (λ j₂, localization.inverts _ _)) hW₁), },
   { intros C D, introI, introI, intros W L, introI,
     sorry, },
   { sorry, },

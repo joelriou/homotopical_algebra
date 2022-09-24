@@ -468,7 +468,7 @@ end
 
 def universal_property (D : Type*) [category D] :
   localization.strict_universal_property_fixed_target (Q W) W D :=
-{ inverts_W := Q_inverts_W W,
+{ inverts := Q_inverts_W W,
   lift := lift,
   fac := fac,
   uniq := uniq, }
@@ -503,7 +503,7 @@ by simp only [map_zigzag_compatibility L₁ hL₁ L₂ hL₂ M e, eq]
 lemma L_map_fac {D : Type*} [category D] (L : C ⥤ D) (W : morphism_property C)
   [left_calculus_of_fractions W]
   [L.is_localization W] {X Y : C} (f : L.obj X ⟶ L.obj Y) :
-  ∃ (z : zigzag W X Y), f = map_zigzag L (localization.inverts_W L W) z :=
+  ∃ (z : zigzag W X Y), f = map_zigzag L (localization.inverts L W) z :=
 begin
   let E := (localization.uniq_equivalence W (localization.Q W) L),
   let e : localization.Q W ⋙ E.functor ≅ L :=
@@ -511,23 +511,23 @@ begin
   let f' := e.hom.app X ≫ f ≫ e.inv.app Y,
   cases localization.hom_fac W (E.functor.preimage f') with z hz,
   change E.functor.preimage f' =
-    map_zigzag (localization.Q W) (localization.inverts_W _ W) z at hz,
+    map_zigzag (localization.Q W) (localization.inverts _ W) z at hz,
   replace hz := congr_arg E.functor.map hz,
   refine ⟨z, _⟩,
-  simp only [map_zigzag_compatibility (localization.Q W) (localization.inverts_W _ W)
-    L (localization.inverts_W _ W) E.functor e, ← hz, functor.image_preimage, assoc,
+  simp only [map_zigzag_compatibility (localization.Q W) (localization.inverts _ W)
+    L (localization.inverts _ W) E.functor e, ← hz, functor.image_preimage, assoc,
     iso.inv_hom_id_app, comp_id, iso.inv_hom_id_app_assoc],
 end
 
 lemma L_map_zigzag_eq_iff {D : Type*} [category D] (L : C ⥤ D) {W : morphism_property C}
   [left_calculus_of_fractions W] [L.is_localization W] {X Y : C} (z₁ z₂ : zigzag W X Y) :
-  map_zigzag L (localization.inverts_W L W) z₁ =
-    map_zigzag L (localization.inverts_W L W) z₂ ↔ zigzag_rel z₁ z₂ :=
+  map_zigzag L (localization.inverts L W) z₁ =
+    map_zigzag L (localization.inverts L W) z₂ ↔ zigzag_rel z₁ z₂ :=
 begin
-  have eq : map_zigzag L (localization.inverts_W _ W) z₁ =
-      map_zigzag L (localization.inverts_W _ W) z₂ ↔
-    map_zigzag (localization.Q W) (localization.inverts_W _ W) z₁ =
-      map_zigzag (localization.Q W) (localization.inverts_W _ W) z₂,
+  have eq : map_zigzag L (localization.inverts _ W) z₁ =
+      map_zigzag L (localization.inverts _ W) z₂ ↔
+    map_zigzag (localization.Q W) (localization.inverts _ W) z₁ =
+      map_zigzag (localization.Q W) (localization.inverts _ W) z₂,
   { split,
     all_goals { exact map_zigzag_compatibility_imp _ _ _ _ _
       (localization.comp_uniq_equivalence_functor_iso W _ _)  _ _, }, },
@@ -725,7 +725,7 @@ end
 lemma L_map_fac {D : Type*} [category D] (L : C ⥤ D) (W : morphism_property C)
   [right_calculus_of_fractions W]
   [L.is_localization W] {X Y : C} (f : L.obj X ⟶ L.obj Y) :
-  ∃ (z : zigzag W X Y), f = map_zigzag L (localization.inverts_W L W) z :=
+  ∃ (z : zigzag W X Y), f = map_zigzag L (localization.inverts L W) z :=
 begin
   let f' : L.op.obj (opposite.op Y) ⟶ L.op.obj (opposite.op X) := f.op,
   rcases left_calculus_of_fractions.L_map_fac L.op W.op f' with ⟨z, hz⟩,
@@ -736,8 +736,8 @@ end
 
 lemma L_map_zigzag_eq_iff {D : Type*} [category D] (L : C ⥤ D) {W : morphism_property C}
   [right_calculus_of_fractions W] [L.is_localization W] {X Y : C} (z₁ z₂ : zigzag W X Y) :
-  map_zigzag L (localization.inverts_W L W) z₁ =
-    map_zigzag L (localization.inverts_W L W) z₂ ↔ zigzag_rel z₁ z₂ :=
+  map_zigzag L (localization.inverts L W) z₁ =
+    map_zigzag L (localization.inverts L W) z₂ ↔ zigzag_rel z₁ z₂ :=
 begin
   simp only [zigzag_rel.iff_op, ← left_calculus_of_fractions.L_map_zigzag_eq_iff L.op z₁.op,
     map_zigzag_eq_unop_map_zigzag_op],
