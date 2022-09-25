@@ -4,13 +4,13 @@ import for_mathlib.category_theory.finite_products
 
 noncomputable theory
 
-universes v v' u
+universes v v' u u'
 
 namespace category_theory
 
 open limits category
 
-variables {C D : Type*} [category C] [category D]
+variables {C : Type u} {D : Type u'} [category.{v} C] [category.{v'} D]
   (L : C ⥤ D) (W : morphism_property C) [L.is_localization W]
 
 namespace morphism_property
@@ -94,6 +94,7 @@ begin
   exact (has_terminal_of_is_left_adjoint_const D) unit.star,
 end
 
+@[protected]
 lemma has_products_of_shape (J : Type) [fintype J] [W.contains_identities]
   [has_products_of_shape J C] (hW : W.stable_under_products_of_shape J) :
   has_products_of_shape J D :=
@@ -119,10 +120,44 @@ begin
   exact has_limits_of_shape_discrete_of_is_left_adjoint_diag D J,
 end
 
+@[protected]
 lemma has_finite_products [W.contains_identities] [has_finite_products C]
   (hW : ∀ (J : Type) [fintype J], W.stable_under_products_of_shape J) :
   has_finite_products D :=
 ⟨λ J, by { introI, exact has_products_of_shape L W J (hW J), }⟩
+
+@[protected]
+lemma preserves_products_of_shape (J : Type) [fintype J] [W.contains_identities]
+  [has_products_of_shape J C] [has_products_of_shape J D]
+  (hW : W.stable_under_products_of_shape J) :
+  preserves_limits_of_shape (discrete J) L :=
+⟨begin
+  suffices : ∀ (K : J → C), preserves_limit (discrete.functor K) L,
+  { intro K,
+    haveI := this,
+    exact preserves_limit_of_iso_diagram L discrete.nat_iso_functor.symm, },
+  intro K,
+  refine preserves_limit_of_preserves_limit_cone (limit.is_limit _) _,
+  let G := functor.pi.diag C J,
+  let F := (pi_equivalence_functors_from_discrete C J).functor ⋙ lim,
+  let adj : G ⊣ F := (is_left_adjoint_of_has_limits_of_shape_discrete C J).adj,
+  let W' : morphism_property (Π (j : J), C) := morphism_property.pi (λ j, W),
+  have hF : W'.is_inverted_by (F ⋙ L),
+  { intros X Y f hf,
+    dsimp,
+    suffices : is_iso (L.map (pi.map f)),
+    { convert this,
+      ext j,
+      cases j,
+      refl, },
+    exact localization.inverts L W _ (hW.pi_map f hf), },
+  let L' := functor.pi_ (λ (j : J), L),
+  let G' := functor.pi.diag D J,
+  let F' := localization.lift (F ⋙ L) hF L',
+  haveI : lifting L W (G ⋙ L') G' := ⟨iso.refl _⟩,
+  let adj' := adj.localization L W L' W' G' F',
+  sorry,
+end⟩
 
 end localization
 
