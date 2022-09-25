@@ -360,18 +360,15 @@ def is_left_adjoint_of_has_limits_of_shape_discrete (J : Type*)
 
 variable {C}
 
-lemma pi.limit_cone_pair_of_is_left_adjoint_diag {J : Type*} [is_left_adjoint (functor.pi.diag C J)]
-  (X : J → C) : limit_cone (discrete.functor X) :=
+lemma pi.limit_cone_of_adjunction_diag {J : Type*} {R : (Π (j : J), C) ⥤ C}
+  (adj : (functor.pi.diag C J) ⊣ R) (X : J → C) : limit_cone (discrete.functor X) :=
 begin
-  let Δ := functor.pi.diag C J,
-  let R := right_adjoint Δ,
-  let adj : Δ ⊣ R := is_left_adjoint.adj,
   refine limit_cone.mk (fan.mk (R.obj X) (λ j, adj.counit.app X j)) _,
   refine mk_fan_limit _ (λ s, adj.hom_equiv s.X X (λ j, s.proj j)) (λ s, _) (λ s m hm, _),
   { intro j,
     dsimp,
     simpa only [adjunction.hom_equiv_unit, assoc] using congr_arg
-      (λ (f : Π j, s.X ⟶ X j), f j) (adj.compatibility (λ j, s.proj j : Δ.obj s.X ⟶ X)), },
+      (λ (f : Π j, s.X ⟶ X j), f j) (adj.compatibility (λ j, s.proj j : (functor.pi.diag C J).obj s.X ⟶ X)), },
   { dsimp,
     symmetry,
     simp only [adj.hom_equiv_apply_eq],
@@ -383,10 +380,10 @@ end
 variable (C)
 
 lemma has_limits_of_shape_discrete_of_is_left_adjoint_diag (J : Type*)
-  [is_left_adjoint (functor.pi.diag C J)] : has_limits_of_shape (discrete J) C :=
+  [h : is_left_adjoint (functor.pi.diag C J)] : has_limits_of_shape (discrete J) C :=
 ⟨λ F, begin
   haveI : has_limit (discrete.functor (F.obj ∘ discrete.mk)),
-  { exact ⟨nonempty.intro (pi.limit_cone_pair_of_is_left_adjoint_diag _)⟩, },
+  { exact ⟨nonempty.intro (pi.limit_cone_of_adjunction_diag h.adj _)⟩, },
   exact has_limit_of_iso discrete.nat_iso_functor.symm,
 end⟩
 
