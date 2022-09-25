@@ -1,5 +1,6 @@
 import category_theory.limits.shapes.finite_products
 import category_theory.products.basic
+import for_mathlib.category_theory.functor_misc
 
 noncomputable theory
 
@@ -7,6 +8,7 @@ namespace category_theory
 
 open category
 
+section
 variables {C D : Type*} [category C] [category D]
 
 lemma adjunction.compatibility {G : C ⥤ D} {F : D ⥤ C} (adj : G ⊣ F) {X : C} {Y : D}
@@ -160,6 +162,237 @@ begin
           rw hπ, }, }, },
     exact has_limit.mk ⟨c, hc⟩, },
 end
+
+
+end limits
+
+end
+example : ℕ := 42
+
+section
+
+variables {J : Type*} {C : J → Type*} {D : J → Type*}
+  [Π j, category (C j)] [Π j, category (D j)] {E : Type*} [category E]
+
+instance : category (Π j, C j) :=
+{ hom := λ X Y, Π j, X j ⟶ Y j,
+  id := λ X j, 𝟙 (X j),
+  comp := λ X Y Z f g j, f j ≫ g j, }
+
+@[simps]
+def functor.pi_ (F : Π j, C j ⥤ D j) : (Π j, C j) ⥤ (Π j, D j) :=
+{ obj := λ X j, (F j).obj (X j),
+  map := λ X Y f j, (F j).map (f j), }
+
+@[simps]
+def functor.pi'_ (F : Π j, E ⥤ D j) : E ⥤ (Π j, D j) :=
+{ obj := λ X j, (F j).obj X,
+  map := λ X Y f j, (F j).map f, }
+
+@[simps]
+def nat_trans.pi_ {F G : Π j, C j ⥤ D j} (e : Π j, F j ⟶ G j) :
+  functor.pi_ F ⟶ functor.pi_ G :=
+{ app := λ X j, (e j).app (X j), }
+
+@[simps]
+def nat_iso.pi {F G : Π j, C j ⥤ D j} (e : Π j, F j ≅ G j) :
+  functor.pi_ F ≅ functor.pi_ G :=
+{ hom := nat_trans.pi_ (λ j, (e j).hom),
+  inv := nat_trans.pi_ (λ j, (e j).inv), }
+
+@[simps]
+def nat_trans.pi'_ {F G : Π j, E ⥤ D j} (e : Π j, F j ⟶ G j) :
+  functor.pi'_ F ⟶ functor.pi'_ G :=
+{ app := λ X j, (e j).app X, }
+
+@[simps]
+def nat_iso.pi'_ {F G : Π j, E ⥤ D j} (e : Π j, F j ≅ G j) :
+  functor.pi'_ F ≅ functor.pi'_ G :=
+{ hom := nat_trans.pi'_ (λ j, (e j).hom),
+  inv := nat_trans.pi'_ (λ j, (e j).inv), }
+
+@[simps]
+def equivalence.pi (e : Π j, C j ≌ D j) : (Π j, C j) ≌ (Π j, D j) :=
+{ functor := functor.pi_ (λ j, (e j).functor),
+  inverse := functor.pi_ (λ j, (e j).inverse),
+  unit_iso := nat_iso.pi (λ j, (e j).unit_iso),
+  counit_iso := nat_iso.pi (λ j, (e j).counit_iso), }
+
+variable (C)
+
+@[simps]
+def functor.pi_.eval (j : J) : (Π j, C j) ⥤ C j :=
+{ obj := λ X, X j,
+  map := λ X Y f, f j, }
+
+variable {C}
+
+@[simp]
+lemma functor.pi_eval (F : Π j, C j ⥤ D j) (j : J) :
+  functor.pi_ F ⋙ functor.pi_.eval _ j = functor.pi_.eval _ j ⋙ F j := rfl
+
+@[simp]
+def functor.pi'__eval (F : Π j, E ⥤ D j) (j : J) :
+  functor.pi'_ F ⋙ functor.pi_.eval _ j = F j :=
+functor.ext (λ X, rfl) (by tidy)
+
+@[simp]
+def functor.pi'__eval_iso (F : Π j, E ⥤ D j) (j : J) :
+  functor.pi'_ F ⋙ functor.pi_.eval _ j ≅ F j :=
+eq_to_iso (functor.pi'__eval F j)
+
+lemma functor.pi_.ext {F₁ F₂ : E ⥤ (Π j, C j)}
+  (h : ∀ (j : J), F₁ ⋙ functor.pi_.eval _ j = F₂ ⋙ functor.pi_.eval _ j) : F₁ = F₂ :=
+begin
+  refine functor.ext (λ X, _) (λ X Y f, _),
+  { ext j,
+    exact functor.congr_obj (h j) X, },
+  { ext j,
+    simpa only [pi.comp_apply, functor.eq_to_hom_proj]
+      using functor.congr_map_conjugate (h j) f, },
+end
+
+@[simps]
+def functor.pi_.mk_nat_trans {F₁ F₂ : E ⥤ (Π j, C j)}
+  (τ : Π (j : J), F₁ ⋙ functor.pi_.eval _ j ⟶ F₂ ⋙ functor.pi_.eval _ j) : F₁ ⟶ F₂ :=
+{ app := λ X j, (τ j).app X,
+  naturality' := λ X Y f, by { ext j, exact (τ j).naturality f, }, }
+
+@[simps]
+def functor.pi_.mk_nat_iso {F₁ F₂ : E ⥤ (Π j, C j)}
+  (e : Π (j : J), F₁ ⋙ functor.pi_.eval _ j ≅ F₂ ⋙ functor.pi_.eval _ j) : F₁ ≅ F₂ :=
+{ hom := functor.pi_.mk_nat_trans (λ j, (e j).hom),
+  inv := functor.pi_.mk_nat_trans (λ j, (e j).inv), }
+
+variable (C)
+
+def pi.equivalence_of_eq {j j' : J} (eq : j = j') : C j ≌ C j' := by subst eq
+
+def pi.equivalence_of_eq_functor_eq {J' : Type*} {j'₁ j'₂ : J'} (f : J' → J) (eq : j'₁ = j'₂) :
+  (pi.equivalence_of_eq (λ j', C (f j')) eq).functor = (pi.equivalence_of_eq C (by rw eq)).functor :=
+by { subst eq, refl, }
+
+def pi.equivalence_of_eq_functor_iso {J' : Type*} {j'₁ j'₂ : J'} (f : J' → J) (eq : j'₁ = j'₂) :
+  (pi.equivalence_of_eq (λ j', C (f j')) eq).functor ≅ (pi.equivalence_of_eq C (by rw eq)).functor :=
+by { subst eq, refl, }
+
+@[simp]
+def pi.equivalence_of_eq_functor_iso_hom_app {J' : Type*} {j'₁ j'₂ : J'} (f : J' → J) (eq : j'₁ = j'₂)
+  (X : C (f j'₁)) :
+  (pi.equivalence_of_eq_functor_iso C f eq).hom.app X = eq_to_hom (by { subst eq, refl, }) :=
+by { subst eq, refl, }
+
+@[simp]
+lemma pi.equivalence_of_eq_functor_iso_refl {J' : Type*} (j' : J') (f : J' → J) :
+  pi.equivalence_of_eq_functor_iso C f (show j' = j', by refl) = iso.refl _ := rfl
+
+def functor.pi_.eval_eq_of_eq {j j' : J} (eq : j = j') :
+  functor.pi_.eval C j ⋙ (pi.equivalence_of_eq C eq).functor = functor.pi_.eval C j' :=
+by { subst eq, refl, }
+
+@[simps]
+def functor.pi_.eval_iso_of_eq {j j' : J} (eq : j = j') :
+  functor.pi_.eval C j ⋙ (pi.equivalence_of_eq C eq).functor ≅ functor.pi_.eval C j' :=
+by { apply eq_to_iso, subst eq, refl, }
+
+lemma functor.pi_.eval_iso_of_eq_refl (j : J) :
+  functor.pi_.eval_iso_of_eq C (show j = j, by refl) = iso.refl _ := rfl
+
+@[simp]
+lemma functor.pi_.eval_iso_of_eq_eq_to_hom {j j' : J} (eq : j = j') (X : Π j, C j) :
+  (functor.pi_.eval_iso_of_eq C eq).hom.app X = eq_to_hom (by { subst eq, refl, }) :=
+by simp only [functor.pi_.eval_iso_of_eq_hom, eq_to_hom_app]
+
+variable {C}
+
+def functor.pi_.lift (F : Π j, E ⥤ C j) : E ⥤ Π j, C j :=
+{ obj := λ X j, (F j).obj X,
+  map := λ X Y f j, (F j).map f, }
+
+end
+
+variables (C : Type*) [category C]
+
+@[simps]
+def pi_equivalence_functors_from_discrete (J : Type*) :
+  (Π (j : J), C) ≌ (discrete J ⥤ C) :=
+{ functor :=
+  { obj := λ F, discrete.functor F,
+    map := λ F₁ F₂ f, discrete.nat_trans (by { rintro ⟨i⟩, exact f i}),
+    map_id' := λ F, by { ext j, cases j, refl, },
+    map_comp' := λ F₁ F₂ F₃ f g, by { ext j, cases j, refl, }, },
+  inverse :=
+  { obj := λ F j, F.obj (discrete.mk j),
+    map := λ F₁ F₂ f j, f.app (discrete.mk j), },
+  unit_iso := eq_to_iso rfl,
+  counit_iso := eq_to_iso begin
+    refine functor.ext (λ F, _) (λ F₁ F₂ f, _),
+    { refine functor.ext _ _,
+      { rintro ⟨j⟩, refl, },
+      { rintros ⟨j⟩ ⟨j'⟩ f,
+        have h := discrete.eq_of_hom f,
+        dsimp at h,
+        subst h,
+        have h' : f = 𝟙 _ := by tidy,
+        subst h',
+        dsimp,
+        simpa, }, },
+    { ext j,
+      cases j,
+      dsimp,
+      simp,
+      erw id_comp, },
+  end,
+  functor_unit_iso_comp' := λ X, begin
+    ext j,
+    cases j,
+    dsimp,
+    simpa,
+  end, }
+
+def functor.pi.diag (J : Type*) : C ⥤ Π (j : J), C := functor.pi_.lift (λ j, 𝟭 C)
+
+namespace limits
+
+def is_left_adjoint_of_has_limits_of_shape_discrete (J : Type*)
+  [has_limits_of_shape (discrete J) C] : is_left_adjoint (functor.pi.diag C J) :=
+⟨_, const_lim_adj.comp (pi_equivalence_functors_from_discrete C J).symm.to_adjunction⟩
+
+variable {C}
+
+lemma pi.limit_cone_pair_of_is_left_adjoint_diag {J : Type*} [is_left_adjoint (functor.pi.diag C J)]
+  (X : J → C) : limit_cone (discrete.functor X) :=
+begin
+  let Δ := functor.pi.diag C J,
+  let R := right_adjoint Δ,
+  let adj : Δ ⊣ R := is_left_adjoint.adj,
+  refine limit_cone.mk (fan.mk (R.obj X) (λ j, adj.counit.app X j)) _,
+  refine mk_fan_limit _ (λ s, adj.hom_equiv s.X X (λ j, s.proj j)) (λ s, _) (λ s m hm, _),
+  { intro j,
+    dsimp,
+    simpa only [adjunction.hom_equiv_unit, assoc] using congr_arg
+      (λ (f : Π j, s.X ⟶ X j), f j) (adj.compatibility (λ j, s.proj j : Δ.obj s.X ⟶ X)), },
+  { dsimp,
+    symmetry,
+    simp only [adj.hom_equiv_apply_eq],
+    ext j,
+    rw ← hm,
+    simpa only [adjunction.hom_equiv_counit], },
+end
+
+variable (C)
+
+lemma has_limits_of_shape_discrete_of_is_left_adjoint_diag (J : Type*)
+  [is_left_adjoint (functor.pi.diag C J)] : has_limits_of_shape (discrete J) C :=
+⟨λ F, begin
+  haveI : has_limit (discrete.functor (F.obj ∘ discrete.mk)),
+  { exact ⟨nonempty.intro (pi.limit_cone_pair_of_is_left_adjoint_diag _)⟩, },
+  exact has_limit_of_iso discrete.nat_iso_functor.symm,
+end⟩
+
+lemma has_finite_products_of_is_left_adjoint_diag
+  [Π (J : Type) [fintype J], is_left_adjoint (functor.pi.diag C J)] : has_finite_products C :=
+⟨λ J, by { introI, apply has_limits_of_shape_discrete_of_is_left_adjoint_diag, }⟩
 
 end limits
 

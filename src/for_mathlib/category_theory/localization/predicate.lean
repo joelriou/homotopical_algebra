@@ -461,7 +461,14 @@ end functor
 
 namespace localization
 
-instance identity_functor_is_localization :
+lemma id_is_localization (hW : W ⊆ morphism_property.isomorphisms C):
+  (𝟭 C).is_localization W :=
+functor.is_localization.mk' _ _
+  (strict_universal_property_fixed_target.for_id _ _ hW)
+  (strict_universal_property_fixed_target.for_id _ _ hW)
+
+
+instance identity_functor_is_localization' :
   (𝟭 C).is_localization (morphism_property.isomorphisms C) :=
 functor.is_localization.mk' _ _
   (strict_universal_property_fixed_target.for_id _ _ (λ X Y f hf, hf))
