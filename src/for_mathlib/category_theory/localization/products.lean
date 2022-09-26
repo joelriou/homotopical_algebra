@@ -535,4 +535,39 @@ end
 
 end localization
 
+def morphism_property.functor_category {C : Type*} [category C]
+  (W : morphism_property C) (J : Type*) [category J] :
+  morphism_property (J ⥤ C) := λ X Y f, ∀ j, W (f.app j)
+
+namespace localization
+
+variables (J : Type) [finite J] {C D : Type*} [category C] [category D]
+  (W : morphism_property C)
+  [morphism_property.contains_identities W]
+  (L : C ⥤ D) [L.is_localization W]
+
+instance whiskering_right_discrete_is_localization :
+  ((whiskering_right (discrete J) C D).obj L).is_localization (W.functor_category _) :=
+begin
+  let E := pi_equivalence_functors_from_discrete C J,
+  let E' := pi_equivalence_functors_from_discrete D J,
+  let L₁ := (whiskering_right (discrete J) C D).obj L,
+  let L₂ := functor.pi_ (λ (j : J), L),
+  let H : Comm_sq E.symm.functor L₁ L₂ E'.symm.functor := ⟨iso.refl _⟩,
+  refine functor.is_localization.of_equivalence'' E.symm E'.symm H (W.functor_category _)
+    (morphism_property.pi (λ j, W)) _ _,
+  { intros X Y f hf,
+    haveI : ∀ (j : discrete J), is_iso ((((whiskering_right
+      (discrete J) C D).obj L).map f).app j),
+    { rintro ⟨j⟩,
+      dsimp,
+      exact localization.inverts L W _ (hf (discrete.mk j)), },
+    apply nat_iso.is_iso_of_is_iso_app, },
+  { refine has_subset.subset.trans _ (morphism_property.inverse_image_subset_inverse_image' _ _),
+    rintros X Y f hf ⟨j⟩,
+    exact hf j, },
+end
+
+end localization
+
 end category_theory

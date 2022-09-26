@@ -1,6 +1,7 @@
 import category_theory.limits.shapes.finite_products
 import category_theory.products.basic
 import for_mathlib.category_theory.functor_misc
+import for_mathlib.category_theory.limits
 
 noncomputable theory
 
@@ -10,10 +11,6 @@ open category
 
 section
 variables {C D : Type*} [category C] [category D]
-
-lemma adjunction.compatibility {G : C ⥤ D} {F : D ⥤ C} (adj : G ⊣ F) {X : C} {Y : D}
-  (f : G.obj X ⟶ Y) : G.map (adj.unit.app X) ≫ (F ⋙ G).map f ≫ adj.counit.app Y = f :=
-by simp only [functor.comp_map, adjunction.counit_naturality, adjunction.left_triangle_components_assoc]
 
 namespace limits
 
@@ -167,7 +164,6 @@ end
 end limits
 
 end
-example : ℕ := 42
 
 section
 
@@ -360,6 +356,7 @@ def is_left_adjoint_of_has_limits_of_shape_discrete (J : Type*)
 
 variable {C}
 
+@[simps]
 lemma pi.limit_cone_of_adjunction_diag {J : Type*} {R : (Π (j : J), C) ⥤ C}
   (adj : (functor.pi.diag C J) ⊣ R) (X : J → C) : limit_cone (discrete.functor X) :=
 begin

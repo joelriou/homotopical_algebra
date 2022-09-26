@@ -8,6 +8,23 @@ universes v v' u u'
 
 namespace category_theory
 
+namespace limits
+
+def is_limit_postcompose {J C : Type*} [category J] [category C] {F₁ F₂ : J ⥤ C}
+  (e : F₁ ≅ F₂) {c : cone F₁} (hc : is_limit c) : is_limit ((cones.postcompose e.hom).obj c) :=
+{ lift := λ s, hc.lift ((cones.postcompose e.inv).obj s),
+  fac' := λ s j, begin
+    simp only [cones.postcompose_obj_π, nat_trans.comp_app, is_limit.fac_assoc, category.assoc, iso.inv_hom_id_app,
+  category.comp_id],
+  end,
+  uniq' := λ s m w, hc.hom_ext (λ j, begin
+    simp only [cones.postcompose_obj_π, nat_trans.comp_app] at w,
+    simp only [← cancel_mono (e.hom.app j), w, category.assoc, is_limit.fac,
+      cones.postcompose_obj_π, nat_trans.comp_app, iso.inv_hom_id_app, category.comp_id],
+  end), }
+
+end limits
+
 open limits category
 
 variables {C : Type u} {D : Type u'} [category.{v} C] [category.{v'} D]
@@ -23,51 +40,28 @@ begin
   apply_instance,
 end
 
-def stable_under_products_of_shape (W : morphism_property C) (J : Type*) : Prop :=
-(∀ (X₁ X₂ : J → C) (c₁ : fan X₁) (c₂ : fan X₂) (h₁ : is_limit c₁) (h₂ : is_limit c₂)
-  (f : Π j, X₁ j ⟶ X₂ j) (hf : ∀ j, W (f j)), W (h₂.lift (fan.mk c₁.X (λ j, c₁.proj j ≫ f j))))
+def stable_under_limits_of_shape (W : morphism_property C) (J : Type*) [category J] : Prop :=
+∀ (X₁ X₂ : J ⥤ C) (c₁ : cone X₁) (c₂ : cone X₂) (h₁ : is_limit c₁) (h₂ : is_limit c₂)
+  (f : X₁ ⟶ X₂) (hf : Π (j : J), W (nat_trans.app f j)), W (h₂.lift (cone.mk _ (c₁.π ≫ f)))
+
+abbreviation stable_under_products_of_shape (W : morphism_property C) (J : Type*) : Prop :=
+W.stable_under_limits_of_shape (discrete J)
 
 def stable_under_finite_products (W : morphism_property C) : Prop :=
-∀ (J : Type) [fintype J], stable_under_products_of_shape W J
+∀ (J : Type) [finite J], stable_under_products_of_shape W J
 
 abbreviation stable_under_binary_products (W : morphism_property C) :=
   W.stable_under_products_of_shape walking_pair
-
-namespace stable_under_binary_product
-
-lemma prod_map (h : W.stable_under_binary_products) ⦃X₁ X₂ Y₁ Y₂ : C⦄
-  [has_binary_product X₁ X₂] [has_binary_product Y₁ Y₂]
-  (f₁ : X₁ ⟶ Y₁) (f₂ : X₂ ⟶ Y₂) (hf₁ : W f₁) (hf₂ : W f₂) : W (limits.prod.map f₁ f₂) :=
-begin
-  convert h (pair_function X₁ X₂) (pair_function Y₁ Y₂) _ _ (prod_is_prod X₁ X₂)
-    (prod_is_prod Y₁ Y₂) (by { rintro (_|_), exacts [f₁, f₂], })
-      (by { rintro (_|_), exacts [hf₁, hf₂], }),
-  apply binary_fan.is_limit.hom_ext (prod_is_prod Y₁ Y₂),
-  { dsimp [prod_is_prod, iso.refl],
-    simp only [limits.prod.map_fst, assoc],
-    erw [id_comp, is_limit.fac],
-    refl, },
-  { dsimp [prod_is_prod, iso.refl],
-    simp only [limits.prod.map_snd, assoc],
-    erw [id_comp, is_limit.fac],
-    refl, },
-end
-
-end stable_under_binary_product
 
 namespace stable_under_products_of_shape
 
 variable {W}
 
-lemma pi_map {J : Type*} (h : W.stable_under_products_of_shape J) {X Y : J → C}
-  (f : Π j, X j ⟶ Y j) [has_products_of_shape J C]
-  (hf : ∀ j, W (f j)) : W (pi.map f) :=
-begin
-  convert h X Y _ _ (limit.is_limit _) (limit.is_limit _) f hf,
-  ext j,
-  cases j,
-  simpa only [lim_map_π, limit.is_limit_lift, limit.lift_π],
-end
+lemma lim_map {J : Type*} (h : W.stable_under_products_of_shape J) {X Y : discrete J ⥤ C}
+  (f : X ⟶ Y) [has_products_of_shape J C]
+  (hf : ∀ j, W (f.app (discrete.mk j))) : W (lim.map f) :=
+h X Y _ _ (limit.is_limit X) (limit.is_limit Y) f
+  (by { rintro ⟨j⟩, exact hf j, })
 
 end stable_under_products_of_shape
 
@@ -78,86 +72,56 @@ namespace localization
 include L W
 
 @[protected]
-lemma has_terminal [has_terminal C] : has_terminal D :=
-begin
-  haveI := is_left_adjoint_const_of_has_terminal C unit.star,
-  let G := (functor.const C).obj (discrete.mk unit.star),
-  have hG : W.is_inverted_by G := λ X Y f hf, infer_instance,
-  let F := right_adjoint G,
-  let adj : G ⊣ F := is_left_adjoint.adj,
-  let G' := (functor.const D).obj (discrete.mk unit.star),
-  let F' := localization.lift F (morphism_property.isomorphisms.is_inverted_by F) (𝟭 _) ⋙ L,
-  haveI : lifting L W (G ⋙ 𝟭 (discrete unit)) G' :=
-    ⟨nat_iso.of_components (λ X, iso.refl _) (λ X Y f, subsingleton.elim _ _)⟩,
-  haveI : is_left_adjoint G' :=
-    ⟨_, adj.localization L W (𝟭 _) (morphism_property.isomorphisms _) G' F'⟩,
-  exact (has_terminal_of_is_left_adjoint_const D) unit.star,
-end
-
-@[protected]
-lemma has_products_of_shape (J : Type) [fintype J] [W.contains_identities]
+lemma has_products_of_shape (J : Type) [finite J] [W.contains_identities]
   [has_products_of_shape J C] (hW : W.stable_under_products_of_shape J) :
   has_products_of_shape J D :=
 begin
-  let G := functor.pi.diag C J,
-  let F := (pi_equivalence_functors_from_discrete C J).functor ⋙ lim,
-  let adj : G ⊣ F := (is_left_adjoint_of_has_limits_of_shape_discrete C J).adj,
-  let W' : morphism_property (Π (j : J), C) := morphism_property.pi (λ j, W),
+  let G : C ⥤ _ := functor.const (discrete J),
+  let F : ((discrete J) ⥤ C) ⥤ C := lim,
+  let adj : G ⊣ F := const_lim_adj,
+  let L' := (whiskering_right (discrete J) C D).obj L,
+  let G' : D ⥤ _ := functor.const (discrete J),
+  let W' := morphism_property.functor_category W (discrete J),
   have hF : W'.is_inverted_by (F ⋙ L),
   { intros X Y f hf,
     dsimp,
-    suffices : is_iso (L.map (pi.map f)),
-    { convert this,
-      ext j,
-      cases j,
-      refl, },
-    exact localization.inverts L W _ (hW.pi_map f hf), },
-  let L' := functor.pi_ (λ (j : J), L),
-  let G' := functor.pi.diag D J,
+    exact localization.inverts L W (F.map f) (hW.lim_map f (λ j, hf (discrete.mk j))), },
   let F' := localization.lift (F ⋙ L) hF L',
-  haveI : lifting L W (G ⋙ L') G' := ⟨iso.refl _⟩,
-  haveI : is_left_adjoint G' := ⟨_, adj.localization L W L' W' G' F'⟩,
-  exact has_limits_of_shape_discrete_of_is_left_adjoint_diag D J,
+  haveI : lifting L W (G ⋙ L') G' := ⟨L.comp_const (discrete J)⟩,
+  exact has_limits_of_shape_of_adj (adj.localization L W L' W' G' F'),
 end
 
-@[protected]
-lemma has_finite_products [W.contains_identities] [has_finite_products C]
-  (hW : ∀ (J : Type) [fintype J], W.stable_under_products_of_shape J) :
-  has_finite_products D :=
-⟨λ J, by { introI, exact has_products_of_shape L W J (hW J), }⟩
-
-@[protected]
-lemma preserves_products_of_shape (J : Type) [fintype J] [W.contains_identities]
-  [has_products_of_shape J C] [has_products_of_shape J D]
-  (hW : W.stable_under_products_of_shape J) :
+def preserves_products_of_shape (J : Type) [finite J] [W.contains_identities]
+  [has_products_of_shape J C] (hW : W.stable_under_products_of_shape J) :
   preserves_limits_of_shape (discrete J) L :=
-⟨begin
-  suffices : ∀ (K : J → C), preserves_limit (discrete.functor K) L,
-  { intro K,
-    haveI := this,
-    exact preserves_limit_of_iso_diagram L discrete.nat_iso_functor.symm, },
-  intro K,
-  refine preserves_limit_of_preserves_limit_cone (limit.is_limit _) _,
-  let G := functor.pi.diag C J,
-  let F := (pi_equivalence_functors_from_discrete C J).functor ⋙ lim,
-  let adj : G ⊣ F := (is_left_adjoint_of_has_limits_of_shape_discrete C J).adj,
-  let W' : morphism_property (Π (j : J), C) := morphism_property.pi (λ j, W),
+begin
+  let G : C ⥤ _ := functor.const (discrete J),
+  let F : ((discrete J) ⥤ C) ⥤ C := lim,
+  let adj : G ⊣ F := const_lim_adj,
+  let L' := (whiskering_right (discrete J) C D).obj L,
+  let G' : D ⥤ _ := functor.const (discrete J),
+  let W' := morphism_property.functor_category W (discrete J),
   have hF : W'.is_inverted_by (F ⋙ L),
   { intros X Y f hf,
     dsimp,
-    suffices : is_iso (L.map (pi.map f)),
-    { convert this,
-      ext j,
-      cases j,
-      refl, },
-    exact localization.inverts L W _ (hW.pi_map f hf), },
-  let L' := functor.pi_ (λ (j : J), L),
-  let G' := functor.pi.diag D J,
+    exact localization.inverts L W (F.map f) (hW.lim_map f (λ j, hf (discrete.mk j))), },
   let F' := localization.lift (F ⋙ L) hF L',
-  haveI : lifting L W (G ⋙ L') G' := ⟨iso.refl _⟩,
+  letI : lifting L W (G ⋙ L') G' := ⟨L.comp_const (discrete J)⟩,
   let adj' := adj.localization L W L' W' G' F',
-  sorry,
-end⟩
+  have h : ∀ (X : discrete J ⥤ C), adj.unit.app (F.obj X) ≫ F.map (adj.counit.app X) = 𝟙 (F.obj X),
+  { intro X,
+    exact adj.right_triangle_components, },
+  haveI : ∀ (X : discrete J ⥤ C), is_iso ((limit_comparison_of_adj adj adj' L).app X),
+  { intro X,
+    dsimp only [limit_comparison_of_adj],
+    simp only [adjunction.adjoint_nat_trans_equiv_app, adjunction.localization_unit_app, assoc,
+      whiskering_right_obj_map, ← F'.map_comp, iso.inv_hom_id_app_assoc],
+    erw [← nat_trans.naturality, ← assoc, ← L.map_comp],
+    rw adj.right_triangle_components,
+    apply_instance, },
+  haveI : is_iso (limit_comparison_of_adj adj adj' L) := nat_iso.is_iso_of_is_iso_app _,
+  exact preserves_limits_of_shape_of_adj adj adj' L,
+end
 
 end localization
 

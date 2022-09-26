@@ -37,6 +37,11 @@ end
 def inverse_image' {D : Type*} [category D] (P : morphism_property D) (F : C ⥤ D) :
   morphism_property C := (P.inverse_image F).iso_closure
 
+lemma inverse_image_subset_inverse_image'
+  {D : Type*} [category D] (P : morphism_property D) (F : C ⥤ D) :
+  P.inverse_image F ⊆ P.inverse_image' F :=
+subset_iso_closure _
+
 end morphism_property
 
 class Comm_sq {C₁ C₂ D₁ D₂ : Type*} [category C₁] [category C₂] [category D₁] [category D₂]
