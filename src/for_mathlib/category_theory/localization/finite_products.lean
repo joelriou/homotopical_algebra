@@ -91,6 +91,13 @@ begin
   exact has_limits_of_shape_of_adj (adj.localization L W L' W' G' F'),
 end
 
+@[protected]
+lemma has_finite_products [W.contains_identities]
+  [has_finite_products C] (hW : Π (J : Type) [finite J], W.stable_under_products_of_shape J) :
+  has_finite_products D :=
+⟨λ J, by { introI, exact localization.has_products_of_shape L W J (hW J), }⟩
+
+@[protected]
 def preserves_products_of_shape (J : Type) [finite J] [W.contains_identities]
   [has_products_of_shape J C] (hW : W.stable_under_products_of_shape J) :
   preserves_limits_of_shape (discrete J) L :=

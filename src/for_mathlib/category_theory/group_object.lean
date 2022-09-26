@@ -1,5 +1,6 @@
 import category_theory.limits.shapes.finite_products
-import category_theory.preadditive
+import category_theory.preadditive.additive_functor
+import category_theory.limits.preserves.shapes.binary_products
 
 noncomputable theory
 
@@ -67,9 +68,6 @@ begin
     end, },
 end
 
-
-
-example : ℕ := 42
 namespace add_comm_group_object
 
 lemma add_eq {A : C} {G : add_comm_group_object C} (g₁ g₂ : A ⟶ G.X) :
@@ -227,6 +225,41 @@ def to_add_comm_group_object [preadditive C] : C ⥤ add_comm_group_object C :=
 def to_add_comm_group_object_comp_forget_iso [preadditive C] :
   (to_add_comm_group_object C) ⋙ add_comm_group_object.forget C ≅ 𝟭 C := iso.refl _
 
+instance : reflects_isomorphisms (add_comm_group_object.forget C) := sorry
+
 end preadditive
+
+namespace functor
+
+variables {C} {D : Type*} [category D]
+  [has_finite_products C] [has_finite_products D] (F : C ⥤ D)
+  [hF₀ : preserves_limit (functor.empty.{0} C) F]
+  [hF₂ : preserves_limits_of_shape (discrete (walking_pair)) F]
+
+include F hF₀ hF₂
+
+@[simps]
+def map_add_comm_group_object.obj (G : add_comm_group_object C) : add_comm_group_object D :=
+{ X := F.obj G.X,
+  zero := (preserves_terminal.iso F).inv ≫ F.map G.zero,
+  add := (preserves_limit_pair.iso F G.X G.X).inv ≫ F.map G.add,
+  neg := F.map G.neg,
+  add_assoc' := sorry,
+  add_zero' := sorry,
+  comm' := sorry,
+  add_left_neg' := sorry, }
+
+@[simps]
+def map_add_comm_group_object :
+  add_comm_group_object C ⥤ add_comm_group_object D :=
+{ obj := λ G, map_add_comm_group_object.obj F G,
+  map := λ G₁ G₂ f, ⟨F.map f.1, sorry⟩, }
+
+lemma additive_of_preserves_binary_products [preadditive C] [preadditive D] : F.additive :=
+begin
+  sorry,
+end
+
+end functor
 
 end category_theory
