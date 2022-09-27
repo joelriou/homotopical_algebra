@@ -6,7 +6,38 @@ noncomputable theory
 
 namespace category_theory
 
-open limits category
+open category
+
+namespace limits
+
+variables {C : Type*} [category C] [preadditive C]
+
+variables (X Y : C) [has_binary_coproduct X Y] [has_binary_product X Y]
+
+def coprod_iso_prod :
+  X ⨿ Y ≅ X ⨯ Y :=
+{ hom := prod.lift (coprod.desc (𝟙 X) 0) (coprod.desc 0 (𝟙 Y)),
+  inv := limits.prod.fst ≫ coprod.inl + limits.prod.snd ≫ coprod.inr, }
+
+@[simp, reassoc]
+lemma coprod_inl_coprod_iso_prod_hom :
+  coprod.inl ≫ (coprod_iso_prod X Y).hom = prod.lift (𝟙 X) 0 :=
+begin
+  dsimp [coprod_iso_prod],
+  simp only [prod.comp_lift, coprod.inl_desc],
+end
+
+@[simp, reassoc]
+lemma coprod_inr_coprod_iso_prod_hom :
+  coprod.inr ≫ (coprod_iso_prod X Y).hom = prod.lift 0 (𝟙 Y) :=
+begin
+  dsimp [coprod_iso_prod],
+  simp only [prod.comp_lift, coprod.inr_desc],
+end
+
+end limits
+
+open limits
 
 variables (C : Type*) [category C] [has_finite_products C]
 
@@ -21,7 +52,10 @@ structure add_comm_group_object :=
 (comm' : prod.lift limits.prod.snd limits.prod.fst ≫ add = add)
 (add_left_neg' : prod.lift neg (𝟙 X) ≫ add = terminal.from X ≫ zero)
 
-instance (A : C) (G : add_comm_group_object C) : add_comm_group (A ⟶ G.X) :=
+variable {C}
+
+def add_comm_group_object.add_comm_group_hom
+  (A : C) (G : add_comm_group_object C) : add_comm_group (A ⟶ G.X) :=
 begin
   let zero : A ⟶ G.X := terminal.from A ≫ G.zero,
   let add := λ (g₁ g₂ : A ⟶ G.X), prod.lift g₁ g₂ ≫ G.add,
@@ -68,7 +102,53 @@ begin
     end, },
 end
 
+
 namespace add_comm_group_object
+
+lemma add_comm_group_object_add [preadditive C] (G : add_comm_group_object C) :
+  G.add = limits.prod.fst + limits.prod.snd :=
+begin
+  haveI : has_finite_biproducts C := limits.has_finite_biproducts.of_has_finite_products,
+  let s₀ := terminal.from G.X ≫ G.zero,
+  let s₁ := coprod.inl ≫ (coprod_iso_prod G.X G.X).hom ≫ G.add,
+  let s₂ := coprod.inr ≫ (coprod_iso_prod G.X G.X).hom ≫ G.add,
+  have hs₀ : ∃ t₀, t₀ = s₀ := ⟨s₀, rfl⟩,
+  have hs₁ : ∃ t₁, t₁ = s₁ := ⟨s₁, rfl⟩,
+  have hs₂ : ∃ t₂, t₂ = s₂ := ⟨s₂, rfl⟩,
+  rcases hs₀ with ⟨t₀, ht₀⟩,
+  rcases hs₁ with ⟨t₁, ht₁⟩,
+  rcases hs₂ with ⟨t₂, ht₂⟩,
+  have Gadd : G.add = limits.prod.fst ≫ t₁ + limits.prod.snd ≫ t₂,
+  { rw [ht₁, ht₂],
+    rw ← cancel_epi (coprod_iso_prod G.X G.X).hom,
+    ext,
+    { simp only [s₁, coprod_inl_coprod_iso_prod_hom_assoc, preadditive.comp_add,
+        prod.lift_fst_assoc, id_comp, prod.lift_snd_assoc, zero_comp, add_zero], },
+    { simp only [s₂, coprod_inr_coprod_iso_prod_hom_assoc, preadditive.comp_add,
+        prod.lift_fst_assoc, zero_comp, prod.lift_snd_assoc, id_comp, zero_add], }, },
+  have h₀ : t₁ ≫ t₁ = t₁ := by simpa only [Gadd, preadditive.comp_add, prod.map_fst_assoc,
+    id_comp, prod.map_snd_assoc, prod.lift_fst_assoc, preadditive.add_comp, assoc,
+    prod.lift_snd_assoc, zero_comp, add_zero]
+      using prod.lift (𝟙 G.X) (prod.lift 0 0) ≫= G.add_assoc',
+  have h₁ : t₁ = t₂ := by simpa only [Gadd, preadditive.comp_add,
+    prod.lift_fst_assoc, prod.lift_snd_assoc, id_comp, zero_comp,
+    add_zero, zero_add] using prod.lift 0 (𝟙 G.X) ≫= G.comm',
+  subst h₁,
+  have h₂ : t₀ ≫ t₁ + t₁ = 𝟙 G.X := by simpa only [ht₀, ← assoc, Gadd,
+    preadditive.comp_add, prod.lift_fst_assoc, prod.lift_snd_assoc, id_comp] using G.add_zero',
+  have h₃ : G.neg ≫ t₁ + t₁ = t₀ := by simpa only [ht₀, Gadd, preadditive.comp_add,
+    prod.lift_fst_assoc, prod.lift_snd_assoc, id_comp] using G.add_left_neg',
+  have h₄ : t₀ + t₁ = 𝟙 G.X,
+  { rw [← h₃, preadditive.add_comp, h₀, assoc, h₀, h₃] at h₂,
+    exact h₂, },
+  have h₅ : t₀ = 𝟙 G.X -t₁ := by simp only [← h₄, add_sub_cancel],
+  have h₆ : t₁ = 𝟙 G.X := by simpa only [h₀, h₅, preadditive.sub_comp,
+    id_comp, sub_self, zero_add] using h₂,
+  subst h₆,
+  simpa only [comp_id] using Gadd,
+end
+
+local attribute [instance] add_comm_group_object.add_comm_group_hom
 
 lemma add_eq {A : C} {G : add_comm_group_object C} (g₁ g₂ : A ⟶ G.X) :
   g₁ + g₂ = prod.lift g₁ g₂ ≫ G.add := rfl
@@ -212,6 +292,8 @@ end add_comm_group_object
 
 namespace preadditive
 
+variable (C)
+
 @[simps]
 def to_add_comm_group_object [preadditive C] : C ⥤ add_comm_group_object C :=
 { obj := λ X,
@@ -243,6 +325,13 @@ instance : reflects_isomorphisms (add_comm_group_object.forget C) :=
   { apply add_comm_group_object.hom_ext,
     exact is_iso.inv_hom_id f.1, },
 end⟩
+
+variable {C}
+
+lemma add_eq_of_add_comm_group [hC : preadditive C] {X Y : C} {G : add_comm_group_object C} (e : G.X ≅ Y)
+  (f₁ f₂ : X ⟶ Y) : f₁ + f₂ = prod.lift (f₁ ≫ e.inv) (f₂ ≫ e.inv) ≫ G.add ≫ e.hom :=
+by simp only [G.add_comm_group_object_add, add_comp, comp_add, prod.lift_fst_assoc, assoc,
+    iso.inv_hom_id, comp_id, prod.lift_snd_assoc]
 
 end preadditive
 
@@ -281,17 +370,72 @@ begin
       prod.lift_snd, assoc, ← F.map_comp], },
 end
 
+lemma preserves_limit_pair_compatibility₃ {X Y₁ Y₂ : C} (f₁ : X ⟶ Y₁) (f₂ : X ⟶ Y₂) :
+  limits.prod.lift (F.map f₁) (F.map f₂) =
+    F.map (limits.prod.lift f₁ f₂) ≫ (preserves_limit_pair.iso F Y₁ Y₂).hom :=
+begin
+  ext,
+  { simp only [prod.lift_fst, preserves_limit_pair.iso_hom, assoc, prod_comparison_fst,
+      ← F.map_comp], },
+  { simp only [prod.lift_snd, preserves_limit_pair.iso_hom, assoc, prod_comparison_snd,
+      ← F.map_comp], },
+end
+
+lemma preserves_limit_pair_compatibility_fst (X₁ X₂ : C) :
+  limits.prod.fst = (preserves_limit_pair.iso F X₁ X₂).inv ≫ F.map limits.prod.fst  :=
+by rw [← cancel_epi (preserves_limit_pair.iso F X₁ X₂).hom,
+    iso.hom_inv_id_assoc, preserves_limit_pair.iso_hom, prod_comparison_fst]
+
+lemma preserves_limit_pair_compatibility_snd (X₁ X₂ : C) :
+  limits.prod.snd = (preserves_limit_pair.iso F X₁ X₂).inv ≫ F.map limits.prod.snd  :=
+by rw [← cancel_epi (preserves_limit_pair.iso F X₁ X₂).hom,
+    iso.hom_inv_id_assoc, preserves_limit_pair.iso_hom, prod_comparison_snd]
+
+lemma preserves_terminal_compatibility (X : C) :
+  terminal.from (F.obj X) = F.map (terminal.from X) ≫ (preserves_terminal.iso F).hom :=
+subsingleton.elim _ _
+
 @[simps]
 def map_add_comm_group_object.obj (G : add_comm_group_object C) : add_comm_group_object D :=
 { X := F.obj G.X,
   zero := (preserves_terminal.iso F).inv ≫ F.map G.zero,
   add := (preserves_limit_pair.iso F G.X G.X).inv ≫ F.map G.add,
   neg := F.map G.neg,
-  add_assoc' := sorry,
-  add_zero' := sorry,
+  add_assoc' := begin
+    rw ← cancel_epi (limits.prod.map (𝟙 (F.obj G.X)) (preserves_limit_pair.iso F G.X G.X).hom),
+    rw ← cancel_epi (preserves_limit_pair.iso F G.X (G.X ⨯ G.X)).hom,
+    convert F.congr_map G.add_assoc',
+    { simp only [F.map_comp, ← assoc],
+      congr' 1,
+      simp only [assoc, ← cancel_mono (preserves_limit_pair.iso F G.X G.X).hom,
+        iso.inv_hom_id, comp_id],
+      ext,
+      { rw [assoc, assoc, assoc, prod.lift_fst, prod.map_map_assoc, comp_id,
+          preserves_limit_pair_compatibility_fst, iso.hom_inv_id_assoc,
+          ← F.map_id, preserves_limit_pair_compatibility₁, assoc, assoc,
+          iso.hom_inv_id_assoc, iso.hom_inv_id_assoc, ← F.map_comp,
+          ← F.map_comp, prod.lift_fst], },
+      { rw [assoc, assoc, assoc, prod.lift_snd, prod.map_snd_assoc,
+          preserves_limit_pair_compatibility_snd, assoc, iso.hom_inv_id_assoc,
+          preserves_limit_pair_compatibility_snd, iso.hom_inv_id_assoc,
+          ← F.map_comp, ← F.map_comp, prod.lift_snd], }, },
+    { rw [prod.map_map_assoc, id_comp, iso.hom_inv_id_assoc, F.map_comp, ← assoc, ← assoc],
+      conv_lhs { rw ← F.map_id, },
+      simp only [preserves_limit_pair_compatibility₁, assoc, iso.hom_inv_id_assoc], },
+  end,
+  add_zero' := begin
+    simp only [preserves_terminal_compatibility, assoc, iso.hom_inv_id_assoc, ← F.map_comp],
+    nth_rewrite 0 ← F.map_id,
+    rw [preserves_limit_pair_compatibility₃, assoc, iso.hom_inv_id_assoc, ← F.map_comp,
+      G.add_zero', F.map_id],
+  end,
   comm' := by simp only [preserves_limit_pair_compatibility₂, assoc,
     iso.hom_inv_id_assoc, ← F.map_comp, G.comm'],
-  add_left_neg' := sorry, }
+  add_left_neg' := begin
+    rw [← F.map_id, preserves_limit_pair_compatibility₃, assoc, iso.hom_inv_id_assoc,
+      ← F.map_comp, G.add_left_neg', preserves_terminal_compatibility, assoc,
+      iso.hom_inv_id_assoc, F.map_comp],
+  end, }
 
 @[simps]
 def map_add_comm_group_object :
@@ -300,10 +444,26 @@ def map_add_comm_group_object :
   map := λ G₁ G₂ f, ⟨F.map f.1, by simp only [map_add_comm_group_object.obj_add, assoc,
     ← F.map_comp, f.2, preserves_limit_pair_compatibility₁, assoc, iso.hom_inv_id_assoc]⟩, }
 
-lemma additive_of_preserves_binary_products [preadditive C] [preadditive D] : F.additive :=
+lemma map_add_comm_group_object_add_compatibility {X : C} (G : add_comm_group_object C)
+  (f₁ f₂ : X ⟶ G.X) : F.map (prod.lift f₁ f₂ ≫ G.add) =
+  prod.lift (F.map f₁) (F.map f₂) ≫ (F.map_add_comm_group_object.obj G).add :=
 begin
-  sorry,
+  dsimp [map_add_comm_group_object.obj],
+  simp only [assoc, preserves_limit_pair_compatibility₃, iso.hom_inv_id_assoc, ← F.map_comp],
 end
+
+lemma additive_of_preserves_binary_products [hC : preadditive C] [hD : preadditive D] : F.additive :=
+⟨λ X Y f₁ f₂, begin
+  let G := (preadditive.to_add_comm_group_object C).obj Y,
+  let e : G.X ≅ Y := iso.refl _,
+  let G' := F.map_add_comm_group_object.obj G,
+  let e' : G'.X ≅ F.obj Y := iso.refl _,
+  rw preadditive.add_eq_of_add_comm_group e,
+  rw preadditive.add_eq_of_add_comm_group e',
+  dsimp [e, e'],
+  repeat { erw comp_id, },
+  exact map_add_comm_group_object_add_compatibility F G f₁ f₂,
+end⟩
 
 end functor
 
