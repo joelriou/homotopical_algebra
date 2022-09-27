@@ -45,20 +45,23 @@ begin
   let μ : Π (a₁ a₂ : A), F a₁ ⋙ F a₂ ≅ F (a₁ + a₂) := λ a₁ a₂,
     localization.lifting_comp_iso (H a₁) (H a₂) (H (a₁+a₂))
       (shift_functor_add C a₁ a₂).symm W W W,
-  have left_unitality : ∀ (a : A), nat_iso.hcomp ε (iso.refl (F a)) ≪≫ μ 0 a =
-    eq_to_iso (by simpa only [zero_add]),
+  have left_unitality : ∀ (a : A), ε.hom ◫ 𝟙 (F a) ≫ (μ 0 a).hom =
+    eq_to_hom (by simpa only [zero_add]),
+  { sorry, },
+  have right_unitality : ∀ (a : A), 𝟙 (F a) ◫ ε.hom ≫ (μ a 0).hom =
+    eq_to_hom (by simpa only [add_zero]),
   { sorry, },
   exact has_shift_mk D A
   { F := F,
     ε := ε,
     μ := μ,
     associativity := sorry,
-    left_unitality := λ a X, begin
-      have h := congr_arg (λ (e : _ ≅ _), e.hom) (left_unitality a),
-      simpa only [iso.trans_hom, nat_trans.comp_app, eq_to_iso.hom, eq_to_hom_app,
-        nat_iso.hcomp, nat_trans.hcomp_id_app, iso.refl_hom] using congr_app h X,
-    end,
-    right_unitality := sorry, },
+    left_unitality := λ a X, by simpa only [iso.trans_hom, nat_trans.comp_app,
+      eq_to_iso.hom, eq_to_hom_app, nat_iso.hcomp, nat_trans.hcomp_id_app,
+      iso.refl_hom] using congr_app (left_unitality a) X,
+    right_unitality := λ a X, by simpa only [iso.trans_hom, nat_trans.comp_app,
+      eq_to_iso.hom, eq_to_hom_app, nat_iso.hcomp, iso.refl_hom,
+      nat_trans.id_hcomp_app] using congr_app (right_unitality a) X, },
 end
 
 end shift
