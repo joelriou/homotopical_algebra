@@ -100,6 +100,21 @@ namespace morphism_property
 class contains_identities {C : Type*} [category C] (W : morphism_property C) : Prop :=
 (id [] : ∀ (X : C), W (𝟙 X))
 
+namespace contains_identities
+
+lemma op {C : Type*} [category C] {W : morphism_property C}
+  (h : W.contains_identities) : W.op.contains_identities :=
+⟨λ X, h.id X.unop⟩
+
+lemma unop {C : Type*} [category C] {W : morphism_property Cᵒᵖ}
+  (h : W.contains_identities) : W.unop.contains_identities :=
+⟨λ X, h.id (opposite.op X)⟩
+
+instance op' {C : Type*} [category C] {W : morphism_property C} [h : W.contains_identities] :
+  W.op.contains_identities := h.op
+
+end contains_identities
+
 def prod : morphism_property (C₁ × C₂) := λ X Y f, W₁ f.fst ∧ W₂ f.snd
 
 variables {W₁ W₂}
