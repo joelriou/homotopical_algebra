@@ -44,10 +44,6 @@ subset_iso_closure _
 
 end morphism_property
 
-class Comm_sq {C₁ C₂ D₁ D₂ : Type*} [category C₁] [category C₂] [category D₁] [category D₂]
-  (F : C₁ ⥤ C₂) (G₁ : C₁ ⥤ D₁) (G₂ : C₂ ⥤ D₂) (F' : D₁ ⥤ D₂) :=
-(iso : G₁ ⋙ F' ≅ F ⋙ G₂)
-
 namespace localization
 
 section

@@ -13,6 +13,10 @@ open category_theory.category category_theory
 
 namespace category_theory
 
+class Comm_sq {C₁ C₂ D₁ D₂ : Type*} [category C₁] [category C₂] [category D₁] [category D₂]
+  (F : C₁ ⥤ C₂) (G₁ : C₁ ⥤ D₁) (G₂ : C₂ ⥤ D₂) (F' : D₁ ⥤ D₂) :=
+(iso : G₁ ⋙ F' ≅ F ⋙ G₂)
+
 namespace functor
 
 lemma assoc {C₁ C₂ C₃ C₄ : Type*} [category C₁] [category C₂] [category C₃] [category C₄]
@@ -473,6 +477,37 @@ instance identity_functor_is_localization' :
 functor.is_localization.mk' _ _
   (strict_universal_property_fixed_target.for_id _ _ (λ X Y f hf, hf))
   (strict_universal_property_fixed_target.for_id _ _ (λ X Y f hf, hf))
+
+end localization
+
+namespace localization
+
+variables {C₁ C₂ C₃ D₁ D₂ D₃ : Type*} [category C₁] [category C₂] [category C₃]
+  [category D₁] [category D₂] [category D₃]
+  {L₁ : C₁ ⥤ D₁} {L₂ : C₂ ⥤ D₂} {L₃ : C₃ ⥤ D₃}
+  {F₁₂ : C₁ ⥤ C₂} {F₂₃ : C₂ ⥤ C₃} {F'₁₂ : D₁ ⥤ D₂} {F'₂₃ : D₂ ⥤ D₃}
+  {F₁₃ : C₁ ⥤ C₃} {F'₁₃ : D₁ ⥤ D₃}
+  (H₁₂ : Comm_sq F₁₂ L₁ L₂ F'₁₂) (H₂₃ : Comm_sq F₂₃ L₂ L₃ F'₂₃)
+  (H₁₃ : Comm_sq F₁₃ L₁ L₃ F'₁₃)
+  (e : F₁₂ ⋙ F₂₃ ≅ F₁₃)
+  (W₁ : morphism_property C₁) (W₂ : morphism_property C₂) (W₃ : morphism_property C₃)
+  [L₁.is_localization W₁] [L₂.is_localization W₂] [L₃.is_localization W₃]
+
+include H₁₂ H₂₃ H₁₃ e W₁ W₂ W₃
+
+def lifting_comp_iso : F'₁₂ ⋙ F'₂₃ ≅ F'₁₃ :=
+begin
+  letI : lifting L₁ W₁ (F₁₃ ⋙ L₃) F'₁₃ := ⟨H₁₃.iso⟩,
+  letI : lifting L₁ W₁ (F₁₃ ⋙ L₃) (F'₁₂ ⋙ F'₂₃) := ⟨begin
+    calc L₁ ⋙ F'₁₂ ⋙ F'₂₃ ≅ (L₁ ⋙ F'₁₂) ⋙ F'₂₃ : (functor.associator _ _ _).symm
+    ... ≅ (F₁₂ ⋙ L₂) ⋙ F'₂₃ : iso_whisker_right H₁₂.iso _
+    ... ≅ F₁₂ ⋙ (L₂ ⋙ F'₂₃) : functor.associator _ _ _
+    ... ≅ F₁₂ ⋙ (F₂₃ ⋙ L₃) : iso_whisker_left _ H₂₃.iso
+    ... ≅ (F₁₂ ⋙ F₂₃) ⋙ L₃ : (functor.associator _ _ _).symm
+    ... ≅ _ : iso_whisker_right e _,
+  end⟩,
+  exact lifting.uniq L₁ W₁ (F₁₃ ⋙ L₃) _ _,
+end
 
 end localization
 

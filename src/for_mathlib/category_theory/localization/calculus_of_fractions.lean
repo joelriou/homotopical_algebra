@@ -19,12 +19,16 @@ structure left_calculus_of_fractions.to_sq {X' X Y : C} (s : X ⟶ X') (hs : W s
 
 variable (W)
 
-class left_calculus_of_fractions [morphism_property.contains_identities W] : Prop :=
+class left_calculus_of_fractions : Prop :=
+(id : W.contains_identities)
 (comp : W.stable_under_composition)
 (ex : ∀ ⦃X' X Y : C⦄ (s : X ⟶ X') (hs : W s) (u : X ⟶ Y),
   nonempty (left_calculus_of_fractions.to_sq s hs u))
 (ext : ∀ ⦃X' X Y : C⦄ (f₁ f₂ : X ⟶ Y) (s : X' ⟶ X) (hs : W s) (eq : s ≫ f₁ = s ≫ f₂),
   ∃ (Y' : C) (t : Y ⟶ Y') (ht : W t), f₁ ≫ t = f₂ ≫ t)
+
+instance left_calculus_of_fractions.contains_identities
+  [h : left_calculus_of_fractions W] : W.contains_identities := h.id
 
 namespace left_calculus_of_fractions
 
@@ -38,9 +42,7 @@ def zigzag_rel ⦃X Y : C⦄ (z₁ z₂ : zigzag W X Y) : Prop :=
 ∃ (Z₃ : C) (t₁ : z₁.Z ⟶ Z₃) (t₂ : z₂.Z ⟶ Z₃) (hst : z₁.s ≫ t₁ = z₂.s ≫ t₂)
   (hft : z₁.f ≫ t₁ = z₂.f ≫ t₂), W (z₁.s ≫ t₁)
 
-variables [morphism_property.contains_identities W] [left_calculus_of_fractions W]
-
-variables (W)
+variables [left_calculus_of_fractions W] (W)
 
 @[simps]
 def zigzag.of_hom {X Y : C} (f : X ⟶ Y) : zigzag W X Y :=
@@ -500,8 +502,7 @@ lemma map_zigzag_compatibility_imp {D E : Type*} [category D] [category E]
 by simp only [map_zigzag_compatibility L₁ hL₁ L₂ hL₂ M e, eq]
 
 lemma L_map_fac {D : Type*} [category D] (L : C ⥤ D) (W : morphism_property C)
-  [W.contains_identities] [left_calculus_of_fractions W]
-  [L.is_localization W] {X Y : C} (f : L.obj X ⟶ L.obj Y) :
+  [left_calculus_of_fractions W] [L.is_localization W] {X Y : C} (f : L.obj X ⟶ L.obj Y) :
   ∃ (z : zigzag W X Y), f = map_zigzag L (localization.inverts L W) z :=
 begin
   let E := (localization.uniq_equivalence W (localization.Q W) L),
@@ -519,7 +520,6 @@ begin
 end
 
 lemma L_map_zigzag_eq_iff {D : Type*} [category D] (L : C ⥤ D) {W : morphism_property C}
-  [morphism_property.contains_identities W]
   [left_calculus_of_fractions W] [L.is_localization W] {X Y : C} (z₁ z₂ : zigzag W X Y) :
   map_zigzag L (localization.inverts L W) z₁ =
     map_zigzag L (localization.inverts L W) z₂ ↔ zigzag_rel z₁ z₂ :=
@@ -554,18 +554,23 @@ structure right_calculus_of_fractions.to_sq {X Y Y' : C} (s : Y' ⟶ Y) (hs : W 
 
 variable (W)
 
-class right_calculus_of_fractions [morphism_property.contains_identities W] : Prop :=
+class right_calculus_of_fractions : Prop :=
+(id : W.contains_identities)
 (comp : W.stable_under_composition)
 (ex : ∀ ⦃X Y Y' : C⦄ (s : Y' ⟶ Y) (hs : W s) (u : X ⟶ Y),
   nonempty (right_calculus_of_fractions.to_sq s hs u))
 (ext : ∀ ⦃X Y Y' : C⦄ (f₁ f₂ : X ⟶ Y) (s : Y ⟶ Y') (hs : W s) (eq : f₁ ≫ s = f₂ ≫ s),
   ∃ (X' : C) (t : X' ⟶ X) (ht : W t), t ≫ f₁ = t ≫ f₂)
 
+instance right_calculus_of_fractions.contains_identities
+  [h : right_calculus_of_fractions W] : W.contains_identities := h.id
+
 variable {W}
 
-def left_calculus_of_fractions.op [morphism_property.contains_identities W]
+def left_calculus_of_fractions.op
   (h : left_calculus_of_fractions W) : right_calculus_of_fractions W.op :=
-{ comp := h.comp.op,
+{ id := h.id.op,
+  comp := h.comp.op,
   ex := λ X Y Y' s hs u, begin
     let sq := (h.ex s.unop hs u.unop).some,
     exact nonempty.intro ⟨opposite.op sq.obj, sq.g.op, sq.s'.op, sq.hs',
@@ -578,10 +583,10 @@ def left_calculus_of_fractions.op [morphism_property.contains_identities W]
   end, }
 
 def left_calculus_of_fractions.unop {W : morphism_property Cᵒᵖ}
-  [morphism_property.contains_identities W] [morphism_property.contains_identities W.unop]
   (h : left_calculus_of_fractions W) :
   right_calculus_of_fractions W.unop :=
-{ comp := h.comp.unop,
+{ id := h.id.unop,
+  comp := h.comp.unop,
   ex := λ X Y Y' s hs u, begin
     let sq := (h.ex s.op hs u.op).some,
     exact nonempty.intro ⟨opposite.unop sq.obj, sq.g.unop, sq.s'.unop, sq.hs',
@@ -594,9 +599,9 @@ def left_calculus_of_fractions.unop {W : morphism_property Cᵒᵖ}
   end, }
 
 def right_calculus_of_fractions.op
-  [morphism_property.contains_identities W]
   (h : right_calculus_of_fractions W) : left_calculus_of_fractions W.op :=
-{ comp := h.comp.op,
+{ id := h.id.op,
+  comp := h.comp.op,
   ex := λ X' X Y s hs u, begin
     let sq := (h.ex s.unop hs u.unop).some,
     exact nonempty.intro ⟨opposite.op sq.obj, sq.g.op, sq.s'.op, sq.hs',
@@ -610,10 +615,10 @@ def right_calculus_of_fractions.op
   end, }
 
 def right_calculus_of_fractions.unop {W : morphism_property Cᵒᵖ}
-  [morphism_property.contains_identities W] [morphism_property.contains_identities W.unop]
   (h : right_calculus_of_fractions W) :
   left_calculus_of_fractions W.unop :=
-{ comp := h.comp.unop,
+{ id := h.id.unop,
+  comp := h.comp.unop,
   ex := λ X' X Y s hs u, begin
     let sq := (h.ex s.op hs u.op).some,
     exact nonempty.intro ⟨opposite.unop sq.obj, sq.g.unop, sq.s'.unop, sq.hs',
@@ -626,10 +631,10 @@ def right_calculus_of_fractions.unop {W : morphism_property Cᵒᵖ}
     exact ⟨opposite.unop Y', t.unop, ht, quiver.hom.op_inj fac⟩,
   end, }
 
-instance [morphism_property.contains_identities W] [h : right_calculus_of_fractions W] :
+instance [h : right_calculus_of_fractions W] :
   left_calculus_of_fractions W.op := right_calculus_of_fractions.op h
 
-instance [morphism_property.contains_identities W] [h : left_calculus_of_fractions W] :
+instance [h : left_calculus_of_fractions W] :
   right_calculus_of_fractions W.op := left_calculus_of_fractions.op h
 
 namespace right_calculus_of_fractions
@@ -661,7 +666,7 @@ begin
     refine ⟨opposite.unop Z₃, t₁.unop, t₂.unop, quiver.hom.op_inj hst, quiver.hom.op_inj hft, ht⟩, },
 end
 
-variables (W) [morphism_property.contains_identities W] [right_calculus_of_fractions W]
+variables (W) [right_calculus_of_fractions W]
 
 @[simps]
 def zigzag.of_hom {X Y : C} (f : X ⟶ Y) : zigzag W X Y :=
@@ -721,7 +726,7 @@ begin
 end
 
 lemma L_map_fac {D : Type*} [category D] (L : C ⥤ D) (W : morphism_property C)
-  [W.contains_identities] [right_calculus_of_fractions W]
+  [right_calculus_of_fractions W]
   [L.is_localization W] {X Y : C} (f : L.obj X ⟶ L.obj Y) :
   ∃ (z : zigzag W X Y), f = map_zigzag L (localization.inverts L W) z :=
 begin
@@ -733,7 +738,7 @@ begin
 end
 
 lemma L_map_zigzag_eq_iff {D : Type*} [category D] (L : C ⥤ D) {W : morphism_property C}
-  [W.contains_identities] [right_calculus_of_fractions W] [L.is_localization W]
+  [right_calculus_of_fractions W] [L.is_localization W]
   {X Y : C} (z₁ z₂ : zigzag W X Y) :
   map_zigzag L (localization.inverts L W) z₁ =
     map_zigzag L (localization.inverts L W) z₂ ↔ zigzag_rel z₁ z₂ :=
