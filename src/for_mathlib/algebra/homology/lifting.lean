@@ -5,7 +5,6 @@ Authors: Joël Riou
 -/
 
 import for_mathlib.algebra.homology.twist_cocycle
-import for_mathlib.category_theory.comm_sq_lift
 
 noncomputable theory
 
@@ -20,7 +19,7 @@ open hom_complex
 variables {C : Type*} [category C] [abelian C]
 
 variables {A B K X Y : cochain_complex C ℤ} {n : ℤ} {z : cocycle B A 1} {f : A ⟶ X} (g : twist z ⟶ Y) {p : X ⟶ Y} {j : K ⟶ X}
-  (sq : comm_sq f (twist.inr z) p g) (l : Π q, comm_sq.lifts (sq.apply (homological_complex.eval C _ q)))
+  (sq : comm_sq f (twist.inr z) p g) (l : Π (q : ℤ), comm_sq.lift_struct ((homological_complex.eval C _ q).map_comm_sq sq))
   (hpj : is_termwise_kernel j p)
 
 @[simp]
@@ -90,10 +89,10 @@ by simp only [F, δ_sub, δ_comp_of_second_is_zero_cochain _ _ _ (zero_add 1),
   cocycle.δ_cochain_of_hom, cochain.comp_zero, zero_add, hw, obs_comp, obs₀,
   cocycle.mk_coe, sub_sub_cancel]
 
-lemma lift_of_coboundary : comm_sq.lifts sq :=
+lemma lift_of_coboundary : comm_sq.lift_struct sq :=
 { l := twist.desc z (F j sq l w) f (zero_add 1) (dF sq l hpj w hw),
-  fac_left := by apply twist.inr_comp_desc,
-  fac_right := begin
+  fac_left' := by apply twist.inr_comp_desc,
+  fac_right' := begin
     apply cochain.of_hom_injective,
     simp only [twist.desc, cochain.of_hom_comp,cocycle.cochain_of_hom_hom_of_eq_coe,
       twist.desc_hom_as_cocycle_coe,
