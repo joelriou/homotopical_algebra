@@ -17,12 +17,12 @@ namespace projective_structure
 def CM3 : (arrow_classes : category_with_fib_cof_weq (cochain_complex C ℤ)).CM3 :=
 { weq := λ X₁ X₂ Y₁ Y₂ f g hfg hg, ⟨λ n, begin
     have hfg' := is_retract.imp_of_functor (homology_functor _ _ n).map_arrow _ _ hfg,
-    apply arrow_class.is_stable_by_retract.for_isomorphisms _ _ hfg',
+    apply morphism_property.is_stable_by_retract.for_isomorphisms _ _ hfg',
     apply hg.1,
   end⟩,
   cof := λ X₁ X₂ Y₁ Y₂ f g hfg hg n, mono_with_projective_coker.is_stable_by_retract C _ _
     (is_retract.imp_of_functor (homological_complex.eval _ _ n).map_arrow _ _ hfg) (hg n),
-  fib := λ X₁ X₂ Y₁ Y₂ f g hfg hg n, arrow_class.is_stable_by_retract.for_epimorphisms _ _
+  fib := λ X₁ X₂ Y₁ Y₂ f g hfg hg n, morphism_property.is_stable_by_retract.for_epimorphisms _ _
     (is_retract.imp_of_functor (homological_complex.eval _ _ n).map_arrow _ _ hfg) (hg n), }
 
 end projective_structure

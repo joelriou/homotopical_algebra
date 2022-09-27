@@ -146,8 +146,6 @@ lemma of_inter {P₁ P₂ : morphism_property C} (h₁ : P₁.is_stable_by_retra
   (h₂ : P₂.is_stable_by_retract) : (P₁ ∩ P₂).is_stable_by_retract :=
 λ X₁ X₂ Y₁ Y₂ x y hxy hy, ⟨h₁ x y hxy hy.1, h₂ x y hxy hy.2⟩
 
-variable (C)
-
 lemma for_isomorphisms : (isomorphisms C).is_stable_by_retract :=
 λ X₁ X₂ Y₁ Y₂ x y hxy hy,
 begin
@@ -180,9 +178,7 @@ lemma for_monomorphisms : (monomorphisms C).is_stable_by_retract :=
 end⟩
 
 lemma for_epimorphisms : (epimorphisms C).is_stable_by_retract :=
-by simpa only [unop_monomorphisms] using (for_monomorphisms Cᵒᵖ).unop
-
-variable {C}
+by simpa only [unop_monomorphisms] using (@for_monomorphisms Cᵒᵖ _).unop
 
 lemma inverse_image {W : morphism_property D} (h : W.is_stable_by_retract) (F : C ⥤ D) :
   (W.inverse_image F).is_stable_by_retract := λ X₁ X₂ Y₁ Y₂ x y hxy hy,

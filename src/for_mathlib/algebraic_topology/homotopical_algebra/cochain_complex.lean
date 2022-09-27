@@ -25,7 +25,7 @@ variables (C : Type*) [category C] [abelian C]
 namespace cochain_complex
 
 @[derive category]
-def Cminus := { K : cochain_complex C ℤ // K.is_bounded_above }
+def Cminus := full_subcategory (λ (K : cochain_complex C ℤ), K.is_bounded_above)
 
 namespace Cminus
 
@@ -43,9 +43,9 @@ namespace projective_structure
 variable (C)
 
 def arrow_classes : category_with_fib_cof_weq (Cminus C) :=
-{ weq := λ w, quasi_iso w.hom,
-  fib := λ w, ∀ n, epi (w.hom.f n),
-  cof := λ w, ∀ n, mono (w.hom.f n) ∧ (projective (cokernel (w.hom.f n))), }
+{ weq := λ X Y w, quasi_iso w,
+  fib := λ X Y w, ∀ n, epi (w.f n),
+  cof := λ X Y w, ∀ n, mono (w.f n) ∧ (projective (cokernel (w.f n))), }
 
 variable {C}
 
@@ -70,17 +70,17 @@ def CM3 : (arrow_classes C).CM3 :=
 { weq := λ X₁ X₂ Y₁ Y₂ f g hfg hg, ⟨λ n, begin
     have hfg' := is_retract.imp_of_functor (homology_functor n).map_arrow
       (arrow.mk f) (arrow.mk g) hfg,
-    apply arrow_class.is_stable_by_retract.for_isomorphisms _ _ hfg',
+    apply morphism_property.is_stable_by_retract.for_isomorphisms _ _ hfg',
     apply hg.1,
   end⟩,
   cof := λ X₁ X₂ Y₁ Y₂ f g hfg hg n, begin
     split,
-    { exact arrow_class.is_stable_by_retract.for_monomorphisms _ _
+    { exact morphism_property.is_stable_by_retract.for_monomorphisms _ _
       (is_retract.imp_of_functor (eval n).map_arrow _ _ hfg) (hg n).1, },
     { exact projective.of_retract (is_retract.imp_of_functor
       ((eval n).map_arrow ⋙ limits.cokernel_functor C) _ _ hfg) (hg n).2, },
   end,
-  fib := λ X₁ X₂ Y₁ Y₂ f g hfg hg n, arrow_class.is_stable_by_retract.for_epimorphisms _ _
+  fib := λ X₁ X₂ Y₁ Y₂ f g hfg hg n, morphism_property.is_stable_by_retract.for_epimorphisms _ _
       (is_retract.imp_of_functor (eval n).map_arrow _ _ hfg) (hg n), }
 
 def CM4 : (arrow_classes C).CM4 := sorry
@@ -221,7 +221,6 @@ begin
   refine ⟨X ⊞ Y, i, _, p, _, hip⟩,
   { sorry, },
   { intro,
-    dsimp,
     have hjp : j ≫ p = CM5a.π Z := biprod.inr_desc _ _,
     have hjp' : j.f n ≫ p.f n = (CM5a.π Z).f n,
     { rw [← hjp, ← homological_complex.comp_f],

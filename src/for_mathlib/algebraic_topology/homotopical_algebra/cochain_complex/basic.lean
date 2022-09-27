@@ -29,23 +29,23 @@ variables (α : Type*) [add_right_cancel_semigroup α] [has_one α]
 
 def quasi_isomorphisms [has_zero_morphisms C] [has_cokernels C] [has_images C] [has_equalizers C]
   [has_zero_object C] [has_image_maps C] :
-  arrow_class (cochain_complex C α) :=
-λ w, quasi_iso w.hom
+  morphism_property (cochain_complex C α) :=
+λ X Y w, quasi_iso w
 
 namespace quasi_isomorphisms
 
 lemma mem_iff [has_zero_morphisms C] [has_cokernels C] [has_images C] [has_equalizers C]
   [has_zero_object C] [has_image_maps C] {X Y : cochain_complex C α} (f : X ⟶ Y) :
-  arrow.mk f ∈ quasi_isomorphisms C α ↔ quasi_iso f := by refl
+  quasi_isomorphisms C α f ↔ quasi_iso f := by refl
 
 end quasi_isomorphisms
 
-def degreewise_epi [preadditive C] : arrow_class (cochain_complex C α) :=
-λ w, ∀ n, epi (w.hom.f n)
+def degreewise_epi [preadditive C] : morphism_property (cochain_complex C α) :=
+λ X Y w, ∀ n, epi (w.f n)
 
 def degreewise_mono_with_projective_coker [preadditive C] :
-  arrow_class (cochain_complex C α) :=
-λ w, ∀ n, arrow.mk (w.hom.f n) ∈ mono_with_projective_coker C
+  morphism_property (cochain_complex C α) :=
+λ X Y w, ∀ n, mono_with_projective_coker C (w.f n)
 
 variable {C}
 @[simps]
@@ -58,7 +58,8 @@ def projective_structure.arrow_classes [abelian C] :
 end cochain_complex
 
 @[derive category]
-def bounded_above_cochain_complex [preadditive C] := { K : cochain_complex C ℤ // K.is_bounded_above }
+def bounded_above_cochain_complex [preadditive C] :=
+full_subcategory (λ (K : cochain_complex C ℤ), K.is_bounded_above)
 
 namespace bounded_above_cochain_complex
 

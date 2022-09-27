@@ -120,7 +120,7 @@ begin
 end
 
 lemma π_is_degreewise_epi (L : cochain_complex C ℤ) :
-  arrow.mk (π L) ∈ (projective_structure.arrow_classes.fib : arrow_class (cochain_complex C ℤ)) :=
+  projective_structure.arrow_classes.fib (π L) :=
 begin
   intro n,
   have h : epi ((cochain.comp (twist.inl _ (show -(1 : ℤ)+1 = 0, by linarith))
@@ -168,8 +168,7 @@ lemma fac : i f ≫ p f = f :=
 by simp only [i, p, homological_complex.biprod.inl_desc]
 
 lemma p_is_fib :
-  arrow.mk (p f) ∈ (projective_structure.arrow_classes.fib :
-    arrow_class (cochain_complex C ℤ)) :=
+  projective_structure.arrow_classes.fib (p f) :=
 begin
   intro n,
   have h : biprod.inr ≫ biprod.desc (f.f n) ((π L).f n) = (π L).f n := biprod.inr_desc _ _,
@@ -178,8 +177,7 @@ begin
 end
 
 lemma i_is_cof :
-  arrow.mk (i f) ∈ (projective_structure.arrow_classes.cof :
-    arrow_class (cochain_complex C ℤ)) :=
+  projective_structure.arrow_classes.cof (i f) :=
 begin
   intro n,
   apply preadditive.mono_with_projective_coker.of_biprod_inl,
@@ -199,13 +197,11 @@ def homotopy_equiv_i : homotopy_equiv K (obj f) :=
   end, }
 
 lemma i_is_weq :
-  arrow.mk (i f) ∈ (projective_structure.arrow_classes.weq :
-    arrow_class (cochain_complex C ℤ)) :=
+  projective_structure.arrow_classes.weq (i f) :=
 quasi_iso.of_homotopy_equiv (homotopy_equiv_i f)
 
 lemma i_is_triv_cof :
-  arrow.mk (i f) ∈ (projective_structure.arrow_classes.triv_cof :
-    arrow_class (cochain_complex C ℤ)) := ⟨i_is_cof f, i_is_weq f⟩
+  projective_structure.arrow_classes.triv_cof (i f) := ⟨i_is_cof f, i_is_weq f⟩
 
 end CM5a
 
@@ -251,11 +247,9 @@ def p : obj f ⟶ L := CM5a.p f
 
 lemma fac : i f ≫ p f = f := CM5a.fac f
 
-lemma p_is_fib : arrow.mk (p f) ∈ (arrow_classes.fib :
-  arrow_class (bounded_above_cochain_complex C)) := CM5a.p_is_fib f
+lemma p_is_fib : arrow_classes.fib (p f) := CM5a.p_is_fib f
 
-lemma i_is_triv_cof : arrow.mk (i f) ∈ (arrow_classes.triv_cof :
-  arrow_class (bounded_above_cochain_complex C)) := CM5a.i_is_triv_cof f
+lemma i_is_triv_cof : arrow_classes.triv_cof (i f) := CM5a.i_is_triv_cof f
 
 end CM5a
 

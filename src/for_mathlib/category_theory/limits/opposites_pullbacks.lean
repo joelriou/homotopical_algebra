@@ -11,7 +11,7 @@ namespace category_theory
 namespace limits
 
 variables {C : Type u} [category.{v} C]
-
+/-
 /-- The canonical isomorphism relating `span f.op g.op` and `(cospan f g).op` -/
 @[simps]
 def span_op {X Y Z : C} (f : X ⟶ Z) (g : Y ⟶ Z) :
@@ -130,7 +130,7 @@ begin
 end
 
 end pullback_cone
-
+-/
 end limits
 
 end category_theory

@@ -7,7 +7,6 @@ Authors: Joël Riou
 import category_theory.preadditive.projective
 --import category_theory.limits.shapes.kernels
 import algebra.homology.short_exact.preadditive
-import for_mathlib.category_theory.arrow_class
 import for_mathlib.category_theory.retracts
 import category_theory.abelian.projective
 import category_theory.abelian.basic
@@ -83,17 +82,16 @@ namespace preadditive
 
 variable (C)
 
-def mono_with_projective_coker [preadditive C] : arrow_class C :=
-  λ φ, ∃ (Z : C) (hZ : projective Z) (p : φ.right ⟶ Z), split φ.hom p
+def mono_with_projective_coker [preadditive C] : morphism_property C :=
+  λ X Y φ, ∃ (Z : C) (hZ : projective Z) (p : Y ⟶ Z), category_theory.split φ p
 
 namespace mono_with_projective_coker
 
 lemma mem_iff [abelian C] {X Y : C} (φ : X ⟶ Y) :
-  arrow.mk φ ∈ mono_with_projective_coker C ↔ (mono φ ∧ projective (cokernel φ)) :=
+  mono_with_projective_coker C φ ↔ (mono φ ∧ projective (cokernel φ)) :=
 begin
   split,
   { rintro ⟨Z, hZ, p, hp⟩,
-    dsimp at p hp,
     haveI := hp.short_exact.epi,
     refine ⟨hp.short_exact.mono, _⟩,
     have e : Z ≅ cokernel φ := is_colimit.cocone_point_unique_up_to_iso
@@ -108,23 +106,21 @@ begin
 end
 
 lemma of_biprod_inl [preadditive C] (X Y : C) [hY : projective Y] [has_binary_biproduct X Y] :
-  arrow.mk (biprod.inl : X ⟶ X ⊞ Y) ∈ mono_with_projective_coker C :=
+  mono_with_projective_coker C (biprod.inl : X ⟶ X ⊞ Y) :=
 ⟨Y, hY, biprod.snd, ⟨⟨biprod.fst, biprod.inr, by tidy⟩⟩⟩
 
 lemma is_stable_by_composition [preadditive C] [has_binary_biproducts C]:
-  (mono_with_projective_coker C).is_stable_by_composition :=
+  (mono_with_projective_coker C).stable_under_composition :=
 begin
   intros X Y Z f g hf hg,
   rcases hf with ⟨A, hA, p, hp⟩,
   rcases hg with ⟨B, hB, q, hq⟩,
   haveI := hA,
   haveI := hB,
-  dsimp at p q hp hq,
   rcases hp with ⟨rf, i, hfr, hip, hfp, hir, hY⟩,
   rcases hq with ⟨rg, j, hgr, hjq, hgq, hjr, hZ⟩,
   refine ⟨A ⊞ B, infer_instance, biprod.lift (rg ≫ p) q,
     ⟨⟨rg ≫ rf, biprod.desc (i ≫ g) j, _, _, _, _, _⟩⟩⟩,
-  all_goals { dsimp, },
   { slice_lhs 2 3 { rw hgr, },
     rw [id_comp, hfr], },
   { ext,
@@ -158,8 +154,8 @@ lemma is_stable_by_retract [abelian C] :
 begin
   intros X₁ X₂ Y₁ Y₂ x y hxy hy,
   rw mem_iff at ⊢ hy,
-  exact ⟨arrow_class.is_stable_by_retract.for_monomorphisms x y hxy hy.1,
-    projective.of_retract (is_retract.imp_of_functor (limits.cokernel_functor C) _ _ hxy) hy.2,⟩,
+  exact ⟨morphism_property.is_stable_by_retract.for_monomorphisms x y hxy hy.1,
+    projective.of_retract (is_retract.imp_of_functor (limits.cokernel_functor C) _ _ hxy) hy.2⟩,
 end
 
 end mono_with_projective_coker
