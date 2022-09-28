@@ -61,7 +61,24 @@ begin
     simp only [eq_to_hom_refl, id_comp, comp_id], },
   have left_unitality : ∀ (a : A), ε.hom ◫ 𝟙 (F a) ≫ (μ 0 a).hom =
     eq_to_hom (by simpa only [zero_add]),
-  { sorry, },
+  { intro a,
+    dsimp [ε, μ],
+    rw ← localization.lift_nat_trans'_id (H a) W,
+    erw localization.lifting_comp_iso_nat_trans_compatibility H₀ (H a) (H (0 + a)) (H 0) (H a) (H (0 + a))
+      ((functor.right_unitor _) ≪≫ e (zero_add a).symm) (shift_functor_add C 0 a).symm W W
+      (shift_functor_zero C A).inv (𝟙 _) (𝟙 _) begin
+        ext X,
+        dsimp,
+        simp only [eq_to_hom_map, obj_ε_app, eq_to_iso.inv, eq_to_hom_app, id_comp, assoc,
+          μ_inv_hom_app],
+      end,
+    simp only [localization.lifting_comp_iso_hom, localization.lift_nat_trans'_id, comp_id],
+    refine localization.nat_trans_ext L W _ _ (λ X, _),
+    rw [localization.lift_nat_trans'_app, eq_to_hom_app, Heq (zero_add a), iso.trans_hom,
+      nat_trans.comp_app, functor.right_unitor_hom_app, eq_to_iso.hom, eq_to_hom_app],
+    erw id_comp,
+    simpa only [eq_to_hom_map, eq_to_hom_trans_assoc, eq_to_hom_refl, id_comp,
+      Comm_sq.refl_horiz_comp_iso, iso.hom_inv_id_app_assoc], },
   have right_unitality : ∀ (a : A), 𝟙 (F a) ◫ ε.hom ≫ (μ a 0).hom =
     eq_to_hom (by simpa only [add_zero]),
   { intro a,
@@ -76,8 +93,7 @@ begin
         simp only [ε_app_obj, eq_to_iso.inv, functor.map_id, assoc, comp_id, μ_inv_hom_app, eq_to_hom_app, id_comp,
           eq_to_hom_map],
       end,
-    simp only [localization.lifting_comp_iso_hom, localization.lift_nat_trans'_id,
-      category.comp_id],
+    simp only [localization.lifting_comp_iso_hom, localization.lift_nat_trans'_id, comp_id],
     refine localization.nat_trans_ext L W _ _ (λ X, _),
     rw [localization.lift_nat_trans'_app, eq_to_hom_app, Heq (add_zero a), iso.trans_hom,
       nat_trans.comp_app, functor.right_unitor_hom_app, eq_to_iso.hom, eq_to_hom_app],
