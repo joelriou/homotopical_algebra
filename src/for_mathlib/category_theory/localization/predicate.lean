@@ -17,6 +17,22 @@ class Comm_sq {C₁ C₂ D₁ D₂ : Type*} [category C₁] [category C₂] [cat
   (F : C₁ ⥤ C₂) (G₁ : C₁ ⥤ D₁) (G₂ : C₂ ⥤ D₂) (F' : D₁ ⥤ D₂) :=
 (iso : G₁ ⋙ F' ≅ F ⋙ G₂)
 
+namespace Comm_sq
+
+def horiz_comp {C₁ C₂ C₃ D₁ D₂ D₃ : Type*} [category C₁] [category C₂] [category C₃]
+  [category D₁] [category D₂] [category D₃]
+  {L₁ : C₁ ⥤ D₁} {L₂ : C₂ ⥤ D₂} {L₃ : C₃ ⥤ D₃}
+  {F : C₁ ⥤ C₂} {F' : D₁ ⥤ D₂} {G : C₂ ⥤ C₃} {G' : D₂ ⥤ D₃}
+  (H₁₂ : Comm_sq F L₁ L₂ F') (H₂₃ : Comm_sq G L₂ L₃ G') :
+  Comm_sq (F ⋙ G) L₁ L₃ (F' ⋙ G') :=
+⟨calc L₁ ⋙ F' ⋙ G' ≅ (L₁ ⋙ F') ⋙ G' : (functor.associator _ _ _).symm
+  ... ≅ (F ⋙ L₂) ⋙ G' : iso_whisker_right H₁₂.iso _
+  ... ≅ F ⋙ (L₂ ⋙ G') : functor.associator _ _ _
+  ... ≅ F ⋙ (G ⋙ L₃) : iso_whisker_left _ H₂₃.iso
+  ... ≅ (F ⋙ G) ⋙ L₃ : (functor.associator _ _ _).symm⟩
+
+end Comm_sq
+
 namespace functor
 
 lemma assoc {C₁ C₂ C₃ C₄ : Type*} [category C₁] [category C₂] [category C₃] [category C₄]
@@ -385,6 +401,27 @@ lemma lift_nat_trans_app (F₁ F₂ : C ⥤ E) (F₁' F₂' : D ⥤ E) [lifting 
     (lifting.iso L W F₁ F₁').hom.app X ≫ τ.app X ≫ ((lifting.iso L W F₂ F₂')).inv.app X :=
 congr_app (functor.image_preimage (whiskering_left_functor' L W E) _) X
 
+section
+
+omit L W
+
+variables {C₁ C₂ D₁ D₂ : Type*} [category C₁] [category C₂] [category D₁]
+  [category D₂] {L₁ : C₁ ⥤ D₁} {L₂ : C₂ ⥤ D₂} {F G : C₁ ⥤ C₂} {F' G' : D₁ ⥤ D₂}
+  (hF : Comm_sq F L₁ L₂ F') (hG : Comm_sq G L₁ L₂ G') (W₁ : morphism_property C₁)
+  (W₂ : morphism_property C₂) [L₁.is_localization W₁] [L₂.is_localization W₂]
+  (τ : F ⟶ G)
+
+include hF hG W₁ W₂ τ
+
+def lift_nat_trans' : F' ⟶ G' :=
+begin
+  letI : lifting L₁ W₁ (F ⋙ L₂) F' := ⟨hF.iso⟩,
+  letI : lifting L₁ W₁ (G ⋙ L₂) G' := ⟨hG.iso⟩,
+  exact lift_nat_trans L₁ W₁ (F ⋙ L₂) (G ⋙ L₂) F' G' (τ ◫ (𝟙 L₂)),
+end
+
+end
+
 variables {W E}
 
 def lift (F : C ⥤ E) (hF : W.is_inverted_by F) (L : C ⥤ D) [hL : L.is_localization W] :
@@ -487,9 +524,14 @@ variables {C₁ C₂ C₃ D₁ D₂ D₃ : Type*} [category C₁] [category C₂
   {L₁ : C₁ ⥤ D₁} {L₂ : C₂ ⥤ D₂} {L₃ : C₃ ⥤ D₃}
   {F₁₂ : C₁ ⥤ C₂} {F₂₃ : C₂ ⥤ C₃} {F'₁₂ : D₁ ⥤ D₂} {F'₂₃ : D₂ ⥤ D₃}
   {F₁₃ : C₁ ⥤ C₃} {F'₁₃ : D₁ ⥤ D₃}
+  {G₁₂ : C₁ ⥤ C₂} {G₂₃ : C₂ ⥤ C₃} {G'₁₂ : D₁ ⥤ D₂} {G'₂₃ : D₂ ⥤ D₃}
+  {G₁₃ : C₁ ⥤ C₃} {G'₁₃ : D₁ ⥤ D₃}
   (H₁₂ : Comm_sq F₁₂ L₁ L₂ F'₁₂) (H₂₃ : Comm_sq F₂₃ L₂ L₃ F'₂₃)
   (H₁₃ : Comm_sq F₁₃ L₁ L₃ F'₁₃)
+  (K₁₂ : Comm_sq G₁₂ L₁ L₂ G'₁₂) (K₂₃ : Comm_sq G₂₃ L₂ L₃ G'₂₃)
+  (K₁₃ : Comm_sq G₁₃ L₁ L₃ G'₁₃)
   (e : F₁₂ ⋙ F₂₃ ≅ F₁₃)
+  (e' : G₁₂ ⋙ G₂₃ ≅ G₁₃)
   (W₁ : morphism_property C₁) (W₂ : morphism_property C₂) (W₃ : morphism_property C₃)
   [L₁.is_localization W₁] [L₂.is_localization W₂] [L₃.is_localization W₃]
 
@@ -498,15 +540,33 @@ include H₁₂ H₂₃ H₁₃ e W₁ W₂ W₃
 def lifting_comp_iso : F'₁₂ ⋙ F'₂₃ ≅ F'₁₃ :=
 begin
   letI : lifting L₁ W₁ (F₁₃ ⋙ L₃) F'₁₃ := ⟨H₁₃.iso⟩,
-  letI : lifting L₁ W₁ (F₁₃ ⋙ L₃) (F'₁₂ ⋙ F'₂₃) := ⟨begin
-    calc L₁ ⋙ F'₁₂ ⋙ F'₂₃ ≅ (L₁ ⋙ F'₁₂) ⋙ F'₂₃ : (functor.associator _ _ _).symm
-    ... ≅ (F₁₂ ⋙ L₂) ⋙ F'₂₃ : iso_whisker_right H₁₂.iso _
-    ... ≅ F₁₂ ⋙ (L₂ ⋙ F'₂₃) : functor.associator _ _ _
-    ... ≅ F₁₂ ⋙ (F₂₃ ⋙ L₃) : iso_whisker_left _ H₂₃.iso
-    ... ≅ (F₁₂ ⋙ F₂₃) ⋙ L₃ : (functor.associator _ _ _).symm
-    ... ≅ _ : iso_whisker_right e _,
-  end⟩,
+  letI : lifting L₁ W₁ (F₁₃ ⋙ L₃) (F'₁₂ ⋙ F'₂₃) := ⟨(H₁₂.horiz_comp H₂₃).iso ≪≫ iso_whisker_right e _⟩,
   exact lifting.uniq L₁ W₁ (F₁₃ ⋙ L₃) _ _,
+end
+
+def lifting_comp_iso_hom : (lifting_comp_iso H₁₂ H₂₃ H₁₃ e W₁ W₂ W₃).hom =
+  lift_nat_trans' (H₁₂.horiz_comp H₂₃) H₁₃ W₁ W₃ e.hom :=
+begin
+  sorry,
+end
+
+def lifting_comp_iso_inv : (lifting_comp_iso H₁₂ H₂₃ H₁₃ e W₁ W₂ W₃).inv =
+  lift_nat_trans' H₁₃ (H₁₂.horiz_comp H₂₃) W₁ W₃ e.inv :=
+begin
+  sorry,
+end
+
+variables (τ₁₂ : F₁₂ ⟶ G₁₂) (τ₂₃ : F₂₃ ⟶ G₂₃) (τ₁₃ : F₁₃ ⟶ G₁₃)
+  (comm_τ : (τ₁₂ ◫ τ₂₃) ≫ e'.hom = e.hom ≫ τ₁₃)
+
+include comm_τ
+
+lemma lifting_comp_iso_nat_trans_compatibility :
+  (lift_nat_trans' H₁₂ K₁₂ W₁ W₂ τ₁₂ ◫ lift_nat_trans' H₂₃ K₂₃ W₂ W₃ τ₂₃) ≫
+  (lifting_comp_iso K₁₂ K₂₃ K₁₃ e' W₁ W₂ W₃).hom =
+  (lifting_comp_iso H₁₂ H₂₃ H₁₃ e W₁ W₂ W₃).hom ≫ lift_nat_trans' H₁₃ K₁₃ W₁ W₃ τ₁₃ :=
+begin
+  sorry
 end
 
 end localization
