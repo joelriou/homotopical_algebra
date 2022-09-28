@@ -13,14 +13,20 @@ open category_theory.category category_theory
 
 namespace category_theory
 
-class Comm_sq {C₁ C₂ D₁ D₂ : Type*} [category C₁] [category C₂] [category D₁] [category D₂]
+structure Comm_sq {C₁ C₂ D₁ D₂ : Type*} [category C₁] [category C₂] [category D₁] [category D₂]
   (F : C₁ ⥤ C₂) (G₁ : C₁ ⥤ D₁) (G₂ : C₂ ⥤ D₂) (F' : D₁ ⥤ D₂) :=
-(iso : G₁ ⋙ F' ≅ F ⋙ G₂)
+(iso [] : G₁ ⋙ F' ≅ F ⋙ G₂)
 
 namespace Comm_sq
 
-def horiz_comp {C₁ C₂ C₃ D₁ D₂ D₃ : Type*} [category C₁] [category C₂] [category C₃]
+variables {C₁ C₂ C₃ D₁ D₂ D₃ : Type*} [category C₁] [category C₂] [category C₃]
   [category D₁] [category D₂] [category D₃]
+
+@[simps]
+def horiz_refl {C D : Type*} [category C] [category D]
+  (F : C ⥤ D) : Comm_sq (𝟭 C) F F (𝟭 D) := ⟨iso.refl _⟩
+
+def horiz_comp
   {L₁ : C₁ ⥤ D₁} {L₂ : C₂ ⥤ D₂} {L₃ : C₃ ⥤ D₃}
   {F : C₁ ⥤ C₂} {F' : D₁ ⥤ D₂} {G : C₂ ⥤ C₃} {G' : D₂ ⥤ D₃}
   (H₁₂ : Comm_sq F L₁ L₂ F') (H₂₃ : Comm_sq G L₂ L₃ G') :
@@ -31,6 +37,34 @@ def horiz_comp {C₁ C₂ C₃ D₁ D₂ D₃ : Type*} [category C₁] [category
   ... ≅ F ⋙ (G ⋙ L₃) : iso_whisker_left _ H₂₃.iso
   ... ≅ (F ⋙ G) ⋙ L₃ : (functor.associator _ _ _).symm⟩
 
+@[simp]
+lemma horiz_comp_iso_hom_app
+  {L₁ : C₁ ⥤ D₁} {L₂ : C₂ ⥤ D₂} {L₃ : C₃ ⥤ D₃}
+  {F : C₁ ⥤ C₂} {F' : D₁ ⥤ D₂} {G : C₂ ⥤ C₃} {G' : D₂ ⥤ D₃}
+  (H₁₂ : Comm_sq F L₁ L₂ F') (H₂₃ : Comm_sq G L₂ L₃ G') (X₁ : C₁):
+  (H₁₂.horiz_comp H₂₃).iso.hom.app X₁ =
+    G'.map (H₁₂.iso.hom.app X₁) ≫ H₂₃.iso.hom.app (F.obj X₁) :=
+by { dsimp [horiz_comp], simp only [id_comp, comp_id], }
+
+@[simp]
+lemma horiz_comp_iso_inv_app
+  {L₁ : C₁ ⥤ D₁} {L₂ : C₂ ⥤ D₂} {L₃ : C₃ ⥤ D₃}
+  {F : C₁ ⥤ C₂} {F' : D₁ ⥤ D₂} {G : C₂ ⥤ C₃} {G' : D₂ ⥤ D₃}
+  (H₁₂ : Comm_sq F L₁ L₂ F') (H₂₃ : Comm_sq G L₂ L₃ G') (X₁ : C₁):
+  (H₁₂.horiz_comp H₂₃).iso.inv.app X₁ =
+    H₂₃.iso.inv.app (F.obj X₁) ≫ G'.map (H₁₂.iso.inv.app X₁) :=
+by { dsimp [horiz_comp], simp only [comp_id, id_comp], }
+
+@[simp]
+lemma horiz_comp_refl_iso {L₁ : C₁ ⥤ D₁} {L₂ : C₂ ⥤ D₂} {F : C₁ ⥤ C₂} {F' : D₁ ⥤ D₂}
+  (H : Comm_sq F L₁ L₂ F') : (H.horiz_comp (horiz_refl L₂)).iso = H.iso :=
+by { ext X, rw horiz_comp_iso_hom_app, apply comp_id, }
+
+@[simp]
+lemma refl_horiz_comp_iso {L₁ : C₁ ⥤ D₁} {L₂ : C₂ ⥤ D₂} {F : C₁ ⥤ C₂} {F' : D₁ ⥤ D₂}
+  (H : Comm_sq F L₁ L₂ F') : ((horiz_refl L₁).horiz_comp H).iso = H.iso :=
+by { ext X, rw horiz_comp_iso_hom_app, dsimp, rw [F'.map_id, id_comp], }
+
 end Comm_sq
 
 namespace functor
@@ -38,42 +72,6 @@ namespace functor
 lemma assoc {C₁ C₂ C₃ C₄ : Type*} [category C₁] [category C₂] [category C₃] [category C₄]
   (F₁ : C₁ ⥤ C₂) (F₂ : C₂ ⥤ C₃) (F₃ : C₃ ⥤ C₄) :
   (F₁ ⋙ F₂) ⋙ F₃ = F₁ ⋙ F₂ ⋙ F₃ := by refl
-
-section
-
-variables {C D : Type*} [category C] [category D] (F : C ⥤ D) [full F] [faithful F]
-
-@[simp]
-lemma preimage_iso_refl (X : C) : F.preimage_iso (iso.refl (F.obj X)) = iso.refl X :=
-begin
-  ext,
-  apply F.map_injective,
-  simp only [preimage_iso_hom, iso.refl_hom, preimage_id],
-end
-
-@[simp]
-lemma preimage_iso_symm {X Y : C} (e : F.obj X ≅ F.obj Y) :
-  F.preimage_iso e.symm = (F.preimage_iso e).symm :=
-begin
-  ext,
-  apply F.map_injective,
-  simp only [preimage_iso_hom, iso.symm_hom, map_comp, image_preimage, iso.hom_inv_id, map_id],
-end
-
-@[simp]
-lemma preimage_iso_trans {X Y Z : C} (e : F.obj X ≅ F.obj Y) (f : F.obj Y ≅ F.obj Z) :
-  F.preimage_iso (e.trans f) = (F.preimage_iso e).trans (F.preimage_iso f) :=
-begin
-  ext,
-  apply F.map_injective,
-  simp only [preimage_iso_hom, iso.trans_hom, map_comp, image_preimage],
-end
-
-@[simp]
-lemma image_preimage_iso {X Y : C} (e : F.obj X ≅ F.obj Y) : F.map_iso (F.preimage_iso e) = e :=
-by tidy
-
-end
 
 end functor
 
@@ -162,7 +160,7 @@ lemma obj_bijective : function.bijective L.obj :=
 
 end is_localization.mk'
 
-def is_localization.mk' :
+lemma is_localization.mk' :
   is_localization L W :=
 { inverts := h₁.inverts,
   nonempty_is_equivalence :=
@@ -175,7 +173,7 @@ namespace localization
 variable [L.is_localization W]
 include L W
 
-def as_localization : L.is_localization W := infer_instance
+lemma as_localization : L.is_localization W := infer_instance
 
 lemma inverts : W.is_inverted_by L := (as_localization _ _).inverts
 
@@ -248,9 +246,9 @@ def functor_equivalence : (D ⥤ E) ≌ (W.functors_inverting E) :=
 
 section
 
-variables [hL : L.is_localization W] (E)
+variables (E)
 
-include hL
+--include hL
 @[nolint unused_arguments]
 def whiskering_left_functor' :
   (D ⥤ E) ⥤ (C ⥤ E) := (whiskering_left C D E).obj L
@@ -271,7 +269,6 @@ by { rw whiskering_left_functor'_eq, apply_instance, }
 instance : faithful (whiskering_left_functor' L W E) :=
 by { rw whiskering_left_functor'_eq, apply_instance, }
 
-omit hL
 
 lemma nat_trans_ext {F₁ F₂ : D ⥤ E} (τ τ' : F₁ ⟶ F₂)
   (h : ∀ (X : C), τ.app (L.obj X) = τ'.app (L.obj X)) : τ = τ' :=
@@ -374,10 +371,9 @@ omit L W
 variables {C₁ C₂ D₁ D₂ : Type*} [category C₁] [category C₂] [category D₁]
   [category D₂] {L₁ : C₁ ⥤ D₁} {L₂ : C₂ ⥤ D₂} {F G : C₁ ⥤ C₂} {F' G' : D₁ ⥤ D₂}
   (hF : Comm_sq F L₁ L₂ F') (hG : Comm_sq G L₁ L₂ G') (W₁ : morphism_property C₁)
-  (W₂ : morphism_property C₂) [L₁.is_localization W₁] [L₂.is_localization W₂]
-  (τ : F ⟶ G)
+  [L₁.is_localization W₁] (τ : F ⟶ G)
 
-include hF hG W₁ W₂ τ
+include hF hG W₁ τ
 
 def lift_nat_trans' : F' ⟶ G' :=
 begin
@@ -387,7 +383,7 @@ begin
 end
 
 @[simp]
-lemma lift_nat_trans'_app (X₁ : C₁) : (lift_nat_trans' hF hG W₁ W₂ τ).app (L₁.obj X₁) =
+lemma lift_nat_trans'_app (X₁ : C₁) : (lift_nat_trans' hF hG W₁ τ).app (L₁.obj X₁) =
   hF.iso.hom.app X₁ ≫ L₂.map (τ.app X₁) ≫ hG.iso.inv.app X₁ :=
 begin
   dsimp only [lift_nat_trans'],
@@ -395,6 +391,65 @@ begin
   dsimp,
   rw id_comp,
 end
+
+omit hG τ
+
+@[simp]
+lemma lift_nat_trans'_id : lift_nat_trans' hF hF W₁ (𝟙 F) = 𝟙 F' :=
+nat_trans_ext L₁ W₁ _ _ (λ X, begin
+  rw [lift_nat_trans'_app, nat_trans.id_app, L₂.map_id],
+  dsimp,
+  rw id_comp,
+  apply iso.hom_inv_id_app,
+end)
+
+omit hF
+
+@[simp]
+lemma comp_lift_nat_trans' {F₁ F₂ F₃ : C₁ ⥤ C₂} {F₁' F₂' F₃' : D₁ ⥤ D₂}
+  (H₁ : Comm_sq F₁ L₁ L₂ F₁') (H₂ : Comm_sq F₂ L₁ L₂ F₂') (H₃ : Comm_sq F₃ L₁ L₂ F₃')
+  (τ : F₁ ⟶ F₂) (τ' : F₂ ⟶ F₃) :
+  lift_nat_trans' H₁ H₂ W₁ τ ≫ lift_nat_trans' H₂ H₃ W₁ τ' =
+    lift_nat_trans' H₁ H₃ W₁ (τ ≫ τ') :=
+nat_trans_ext L₁ W₁ _ _ (λ X, by simp only [nat_trans.comp_app, lift_nat_trans'_app,
+  assoc, iso.inv_hom_id_app_assoc, functor.map_comp])
+
+include hF hG
+
+@[simps]
+def lift_nat_iso' (e : F ≅ G) : F' ≅ G' :=
+{ hom := lift_nat_trans' hF hG W₁ e.hom,
+  inv := lift_nat_trans' hG hF W₁ e.inv, }
+
+end
+
+section
+
+omit L W
+
+variables {C₁ C₂ C₃ D₁ D₂ D₃ : Type*} [category C₁] [category C₂] [category C₃]
+  [category D₁] [category D₂] [category D₃]
+  {F₁ G₁ : C₁ ⥤ C₂} {F₂ G₂ : C₂ ⥤ C₃}
+  {F'₁ G'₁ : D₁ ⥤ D₂} {F'₂ G'₂ : D₂ ⥤ D₃}
+  {L₁ : C₁ ⥤ D₁} {L₂ : C₂ ⥤ D₂} {L₃ : C₃ ⥤ D₃}
+  (H₁₂ : Comm_sq F₁ L₁ L₂ F'₁) (H₂₃ : Comm_sq F₂ L₂ L₃ F'₂)
+  (K₁₂ : Comm_sq G₁ L₁ L₂ G'₁) (K₂₃ : Comm_sq G₂ L₂ L₃ G'₂)
+  (W₁ : morphism_property C₁) (W₂ : morphism_property C₂)
+  [L₁.is_localization W₁] [L₂.is_localization W₂]
+  (τ : F₁ ⟶ G₁) (τ' : F₂ ⟶ G₂)
+
+lemma hcomp_lift_nat_trans' :
+  lift_nat_trans' H₁₂ K₁₂ W₁ τ ◫ lift_nat_trans' H₂₃ K₂₃ W₂ τ' =
+    lift_nat_trans' (H₁₂.horiz_comp H₂₃) (K₁₂.horiz_comp K₂₃) W₁ (τ ◫ τ') :=
+nat_trans_ext L₁ W₁ _ _ (λ X, begin
+  simp only [lift_nat_trans'_app, nat_trans.hcomp_app, assoc, G'₂.map_comp],
+  rw ← nat_trans.naturality_assoc,
+  erw lift_nat_trans'_app,
+  simp only [assoc, Comm_sq.horiz_comp_iso_hom_app, Comm_sq.horiz_comp_iso_inv_app,
+    functor.map_comp],
+  erw ← K₂₃.iso.inv.naturality_assoc,
+  refl,
+end)
 
 end
 
@@ -508,10 +563,10 @@ variables {C₁ C₂ C₃ D₁ D₂ D₃ : Type*} [category C₁] [category C₂
   (K₁₃ : Comm_sq G₁₃ L₁ L₃ G'₁₃)
   (e : F₁₂ ⋙ F₂₃ ≅ F₁₃)
   (e' : G₁₂ ⋙ G₂₃ ≅ G₁₃)
-  (W₁ : morphism_property C₁) (W₂ : morphism_property C₂) (W₃ : morphism_property C₃)
-  [L₁.is_localization W₁] [L₂.is_localization W₂] [L₃.is_localization W₃]
+  (W₁ : morphism_property C₁) (W₂ : morphism_property C₂)
+  [L₁.is_localization W₁]
 
-include H₁₂ H₂₃ H₁₃ e W₁ W₂ W₃
+include H₁₂ H₂₃ H₁₃ e W₁ W₂
 
 def lifting_comp_iso : F'₁₂ ⋙ F'₂₃ ≅ F'₁₃ :=
 begin
@@ -520,8 +575,9 @@ begin
   exact lifting.uniq L₁ W₁ (F₁₃ ⋙ L₃) _ _,
 end
 
-def lifting_comp_iso_hom : (lifting_comp_iso H₁₂ H₂₃ H₁₃ e W₁ W₂ W₃).hom =
-  lift_nat_trans' (H₁₂.horiz_comp H₂₃) H₁₃ W₁ W₃ e.hom :=
+@[simp]
+def lifting_comp_iso_hom : (lifting_comp_iso H₁₂ H₂₃ H₁₃ e W₁ W₂).hom =
+  lift_nat_trans' (H₁₂.horiz_comp H₂₃) H₁₃ W₁ e.hom :=
 begin
   apply nat_trans_ext L₁ W₁,
   intro X,
@@ -530,8 +586,9 @@ begin
     whisker_right_app, assoc, lift_nat_trans'_app],
 end
 
-def lifting_comp_iso_inv : (lifting_comp_iso H₁₂ H₂₃ H₁₃ e W₁ W₂ W₃).inv =
-  lift_nat_trans' H₁₃ (H₁₂.horiz_comp H₂₃) W₁ W₃ e.inv :=
+@[simp]
+def lifting_comp_iso_inv : (lifting_comp_iso H₁₂ H₂₃ H₁₃ e W₁ W₂).inv =
+  lift_nat_trans' H₁₃ (H₁₂.horiz_comp H₂₃) W₁ e.inv :=
 begin
   apply nat_trans_ext L₁ W₁,
   intro X,
@@ -545,13 +602,11 @@ variables (τ₁₂ : F₁₂ ⟶ G₁₂) (τ₂₃ : F₂₃ ⟶ G₂₃) (τ�
 
 include comm_τ
 
-lemma lifting_comp_iso_nat_trans_compatibility :
-  (lift_nat_trans' H₁₂ K₁₂ W₁ W₂ τ₁₂ ◫ lift_nat_trans' H₂₃ K₂₃ W₂ W₃ τ₂₃) ≫
-  (lifting_comp_iso K₁₂ K₂₃ K₁₃ e' W₁ W₂ W₃).hom =
-  (lifting_comp_iso H₁₂ H₂₃ H₁₃ e W₁ W₂ W₃).hom ≫ lift_nat_trans' H₁₃ K₁₃ W₁ W₃ τ₁₃ :=
-begin
-  sorry
-end
+lemma lifting_comp_iso_nat_trans_compatibility [L₂.is_localization W₂] :
+  (lift_nat_trans' H₁₂ K₁₂ W₁ τ₁₂ ◫ lift_nat_trans' H₂₃ K₂₃ W₂ τ₂₃) ≫
+    (lifting_comp_iso K₁₂ K₂₃ K₁₃ e' W₁ W₂).hom =
+  (lifting_comp_iso H₁₂ H₂₃ H₁₃ e W₁ W₂).hom ≫ lift_nat_trans' H₁₃ K₁₃ W₁ τ₁₃ :=
+by simp only [lifting_comp_iso_hom, comp_lift_nat_trans', hcomp_lift_nat_trans', ← comm_τ]
 
 end localization
 

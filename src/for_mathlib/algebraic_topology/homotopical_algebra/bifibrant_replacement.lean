@@ -156,7 +156,7 @@ begin
 end
 
 def is_equivalence (I' : Hobif ⥤ Hocof)
-  [sq : Comm_sq (bifibrant_object.forget_fib C) Lbif Lcof I'] : is_equivalence I' :=
+  (sq : Comm_sq (bifibrant_object.forget_fib C) Lbif Lcof I') : is_equivalence I' :=
 localization.lifting_is_equivalence sq bifibrant_object.weq cofibrant_object.weq
   (R Lbif) (localization.lift (R Lbif) (R_inverts_weq Lbif) Lcof)
   (R_comp_I'_iso Lcof Lbif sq) (forget_comp_R_iso Lbif)
@@ -170,11 +170,9 @@ localization.lift ((bifibrant_object.forget_fib C) ⋙ Lcof)
 def Lbif_comp_Hobif_to_Hocof_iso : Lbif ⋙ Hobif_to_Hocof Lcof Lbif ≅
   bifibrant_object.forget_fib C ⋙ Lcof := localization.fac _ _ _
 
-instance : Comm_sq (bifibrant_object.forget_fib C) Lbif Lcof (Hobif_to_Hocof Lcof Lbif) :=
-⟨Lbif_comp_Hobif_to_Hocof_iso Lcof Lbif⟩
-
 instance : is_equivalence (Hobif_to_Hocof Lcof Lbif) :=
 bifibrant_replacement.is_equivalence Lcof Lbif (Hobif_to_Hocof Lcof Lbif)
+  ⟨Lbif_comp_Hobif_to_Hocof_iso Lcof Lbif⟩
 
 instance : full (bifibrant_object.forget_fib C ⋙ Lcof) :=
 full.of_iso (Lbif_comp_Hobif_to_Hocof_iso Lcof bifibrant_object.homotopy_category.Q)

@@ -102,7 +102,7 @@ variables {C₁ C₂ D : Type*} [category C₁] [category C₂] [category D]
 
 include iso hW₁ hW₂
 
-def functor.is_localization.of_equivalence' :
+lemma functor.is_localization.of_equivalence' :
   L₂.is_localization W₂ :=
 begin
   have h₁ : W₂.is_inverted_by L₂ := hW₂,
@@ -150,7 +150,7 @@ variables {C₁ C₂ D₁ D₂ : Type*} [category C₁] [category C₂] [categor
 
 include H hW₁ hW₂
 
-def functor.is_localization.of_equivalence'' : L₁.is_localization W₁ :=
+lemma functor.is_localization.of_equivalence'' : L₁.is_localization W₁ :=
 begin
   haveI : (E.functor ⋙ L₂).is_localization W₁,
   { refine functor.is_localization.of_equivalence' L₂ W₂ (E.functor ⋙ L₂)
