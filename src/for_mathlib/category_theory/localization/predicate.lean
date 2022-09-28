@@ -19,8 +19,9 @@ structure Comm_sq {C₁ C₂ D₁ D₂ : Type*} [category C₁] [category C₂] 
 
 namespace Comm_sq
 
-variables {C₁ C₂ C₃ D₁ D₂ D₃ : Type*} [category C₁] [category C₂] [category C₃]
-  [category D₁] [category D₂] [category D₃]
+variables {C₁ C₂ C₃ C₄ D₁ D₂ D₃ D₄ : Type*}
+  [category C₁] [category C₂] [category C₃] [category C₄]
+  [category D₁] [category D₂] [category D₃] [category D₄]
 
 @[simps]
 def horiz_refl {C D : Type*} [category C] [category D]
@@ -64,6 +65,13 @@ by { ext X, rw horiz_comp_iso_hom_app, apply comp_id, }
 lemma refl_horiz_comp_iso {L₁ : C₁ ⥤ D₁} {L₂ : C₂ ⥤ D₂} {F : C₁ ⥤ C₂} {F' : D₁ ⥤ D₂}
   (H : Comm_sq F L₁ L₂ F') : ((horiz_refl L₁).horiz_comp H).iso = H.iso :=
 by { ext X, rw horiz_comp_iso_hom_app, dsimp, rw [F'.map_id, id_comp], }
+
+lemma horiz_comp_assoc_iso
+  {L₁ : C₁ ⥤ D₁} {L₂ : C₂ ⥤ D₂} {L₃ : C₃ ⥤ D₃} {L₄ : C₄ ⥤ D₄}
+  {F : C₁ ⥤ C₂} {F' : D₁ ⥤ D₂} {G : C₂ ⥤ C₃} {G' : D₂ ⥤ D₃} {K : C₃ ⥤ C₄} {K' : D₃ ⥤ D₄}
+  (H₁₂ : Comm_sq F L₁ L₂ F') (H₂₃ : Comm_sq G L₂ L₃ G') (H₃₄ : Comm_sq K L₃ L₄ K') :
+  ((H₁₂.horiz_comp H₂₃).horiz_comp H₃₄).iso = (H₁₂.horiz_comp (H₂₃.horiz_comp H₃₄)).iso :=
+by { ext X, simpa only [horiz_comp_iso_hom_app, functor.map_comp, assoc, functor.comp_map], }
 
 end Comm_sq
 
@@ -296,7 +304,7 @@ lemma lift_nat_trans_app (F₁ F₂ : C ⥤ E) (F₁' F₂' : D ⥤ E) [lifting 
     (lifting.iso L W F₁ F₁').hom.app X ≫ τ.app X ≫ ((lifting.iso L W F₂ F₂')).inv.app X :=
 congr_app (functor.image_preimage (whiskering_left_functor' L W E) _) X
 
-@[simp]
+@[simp, reassoc]
 lemma comp_lift_nat_trans (F₁ F₂ F₃ : C ⥤ E) (F₁' F₂' F₃' : D ⥤ E)
   [h₁ : lifting L W F₁ F₁'] [h₂ : lifting L W F₂ F₂'] [h₃ : lifting L W F₃ F₃']
   (τ : F₁ ⟶ F₂) (τ' : F₂ ⟶ F₃) :
@@ -405,7 +413,7 @@ end)
 
 omit hF
 
-@[simp]
+@[simp, reassoc]
 lemma comp_lift_nat_trans' {F₁ F₂ F₃ : C₁ ⥤ C₂} {F₁' F₂' F₃' : D₁ ⥤ D₂}
   (H₁ : Comm_sq F₁ L₁ L₂ F₁') (H₂ : Comm_sq F₂ L₁ L₂ F₂') (H₃ : Comm_sq F₃ L₁ L₂ F₃')
   (τ : F₁ ⟶ F₂) (τ' : F₂ ⟶ F₃) :
