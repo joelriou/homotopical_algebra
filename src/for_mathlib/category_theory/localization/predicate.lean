@@ -420,6 +420,16 @@ begin
   exact lift_nat_trans L₁ W₁ (F ⋙ L₂) (G ⋙ L₂) F' G' (τ ◫ (𝟙 L₂)),
 end
 
+@[simp]
+lemma lift_nat_trans'_app (X₁ : C₁) : (lift_nat_trans' hF hG W₁ W₂ τ).app (L₁.obj X₁) =
+  hF.iso.hom.app X₁ ≫ L₂.map (τ.app X₁) ≫ hG.iso.inv.app X₁ :=
+begin
+  dsimp only [lift_nat_trans'],
+  rw lift_nat_trans_app,
+  dsimp,
+  rw id_comp,
+end
+
 end
 
 variables {W E}
@@ -547,13 +557,21 @@ end
 def lifting_comp_iso_hom : (lifting_comp_iso H₁₂ H₂₃ H₁₃ e W₁ W₂ W₃).hom =
   lift_nat_trans' (H₁₂.horiz_comp H₂₃) H₁₃ W₁ W₃ e.hom :=
 begin
-  sorry,
+  apply nat_trans_ext L₁ W₁,
+  intro X,
+  dsimp only [lifting_comp_iso],
+  simp only [lifting.uniq_hom_app, iso.trans_hom, iso_whisker_right_hom, nat_trans.comp_app,
+    whisker_right_app, assoc, lift_nat_trans'_app],
 end
 
 def lifting_comp_iso_inv : (lifting_comp_iso H₁₂ H₂₃ H₁₃ e W₁ W₂ W₃).inv =
   lift_nat_trans' H₁₃ (H₁₂.horiz_comp H₂₃) W₁ W₃ e.inv :=
 begin
-  sorry,
+  apply nat_trans_ext L₁ W₁,
+  intro X,
+  dsimp only [lifting_comp_iso],
+  simp only [lifting.uniq_inv_app, iso.trans_inv, iso_whisker_right_inv, nat_trans.comp_app,
+    whisker_right_app, lift_nat_trans'_app],
 end
 
 variables (τ₁₂ : F₁₂ ⟶ G₁₂) (τ₂₃ : F₂₃ ⟶ G₂₃) (τ₁₃ : F₁₃ ⟶ G₁₃)
