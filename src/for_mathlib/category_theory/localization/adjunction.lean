@@ -15,7 +15,7 @@ variables {C₁ C₂ D₁ D₂ : Type*} [category C₁] [category C₂] [categor
   (G' : D₁ ⥤ D₂) (F' : D₂ ⥤ D₁)
 
 include adj
-
+/-- Should be redone using Comm_sq instead of `lifting`. -/
 def localization [lifting L₁ W₁ (G ⋙ L₂) G'] [lifting L₂ W₂ (F ⋙ L₁) F'] :
   G' ⊣ F' := adjunction.mk_of_unit_counit
 begin
