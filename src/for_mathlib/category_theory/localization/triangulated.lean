@@ -168,6 +168,7 @@ def contractible_triangle_functor : C ⥤ triangle C :=
 
 variable {C}
 
+@[simps]
 def triangle.mk_iso (T T' : triangle C) (e₁ : T.obj₁ ≅ T'.obj₁) (e₂ : T.obj₂ ≅ T'.obj₂)
   (e₃ : T.obj₃ ≅ T'.obj₃)
   (comm₁ : T.mor₁ ≫ e₂.hom = e₁.hom ≫ T'.mor₁)
@@ -190,8 +191,46 @@ def triangle.mk_iso (T T' : triangle C) (e₁ : T.obj₁ ≅ T'.obj₁) (e₂ : 
   hom_inv_id' := by { ext; apply iso.hom_inv_id, },
   inv_hom_id' := by { ext; apply iso.inv_hom_id, }, }
 
+@[simps]
+def map_triangle_rotate [preadditive C] [∀ n : ℤ, functor.additive (shift_functor C n)]
+  {D : Type*} [category D] [has_zero_object D] [preadditive D] [has_shift D ℤ]
+  [∀ n : ℤ, functor.additive (shift_functor D n)]
+  (F : triangulated_functor_struct C D) [functor.additive F.to_functor] :
+  F.map_triangle ⋙ rotate D ≅ rotate C ⋙ F.map_triangle :=
+nat_iso.of_components (λ T, triangle.mk_iso _ _ (iso.refl _) (iso.refl _)
+  (F.comm_shift.app _).symm (by tidy) (by tidy) begin
+    dsimp,
+    simp only [functor.map_id, preadditive.neg_comp, comp_id, functor.map_neg,
+      preadditive.comp_neg, neg_inj],
+    erw F.comm_shift.hom.naturality,
+    rw F.comm_shift.inv_hom_id_app_assoc,
+    refl,
+  end)
+(λ T₁ T₂ f, begin
+  ext,
+  { tidy, },
+  { tidy, },
+  { apply F.comm_shift.inv.naturality, },
+end)
+
+@[simps]
+def map_triangle_inv_rotate [preadditive C] [∀ n : ℤ, functor.additive (shift_functor C n)]
+  {D : Type*} [category D] [has_zero_object D] [preadditive D] [has_shift D ℤ]
+  [∀ n : ℤ, functor.additive (shift_functor D n)]
+  (F : triangulated_functor_struct C D) [functor.additive F.to_functor] :
+  F.map_triangle ⋙ inv_rotate D ≅ inv_rotate C ⋙ F.map_triangle :=
+begin
+  calc F.map_triangle ⋙ inv_rotate D ≅ _ : (functor.left_unitor _).symm
+  ... ≅ _ : iso_whisker_right (triangle_rotation C).counit_iso.symm _
+  ... ≅ _ : functor.associator _ _ _
+  ... ≅ _ : iso_whisker_left _ (functor.associator _ _ _).symm
+  ... ≅ _ : iso_whisker_left _ (iso_whisker_right (map_triangle_rotate F).symm _)
+  ... ≅ _ : iso_whisker_left _ (functor.associator _ _ _)
+  ... ≅ _ : iso_whisker_left _ (iso_whisker_left _ (triangle_rotation D).unit_iso.symm)
+  ... ≅ _: iso_whisker_left _ (functor.right_unitor _),
 end
 
+end
 
 variables {C D : Type*} [category C] [category D]
   [has_zero_object C] [has_shift C ℤ] [preadditive C]
@@ -214,6 +253,8 @@ def functor : triangulated_functor_struct C D :=
 { comm_shift := comm_shift,
   .. L }
 
+instance : functor.additive (functor L comm_shift).to_functor := { }
+
 include hC
 @[simp]
 def distinguished_triangles : set (triangle D) :=
@@ -235,6 +276,23 @@ begin
     tidy, },
 end
 
+lemma rotate_distinguished_triangle (T : triangle D) :
+  T ∈ distinguished_triangles L comm_shift ↔ T.rotate ∈ distinguished_triangles L comm_shift :=
+begin
+  split,
+  { intro h,
+    rcases h with ⟨T', e', hT'⟩,
+    refine ⟨T'.rotate, (rotate D).map_iso e' ≪≫
+      ((map_triangle_rotate (functor L comm_shift)).app T'),
+      pretriangulated.rot_of_dist_triangle C T' hT'⟩, },
+  { intro h,
+    rcases h with ⟨T', e', hT'⟩,
+    refine ⟨T'.inv_rotate, ((triangle_rotation D).unit_iso.app T) ≪≫
+        (inv_rotate D).map_iso e' ≪≫
+        (map_triangle_inv_rotate (functor L comm_shift)).app T' ,
+      pretriangulated.inv_rot_of_dist_triangle C T' hT'⟩, },
+end
+
 end localization
 
 def localization [pretriangulated C] : pretriangulated D :=
@@ -243,7 +301,7 @@ def localization [pretriangulated C] : pretriangulated D :=
     localization.isomorphic_distinguished L comm_shift e hT₁,
   contractible_distinguished := localization.contractible_distinguished L W comm_shift,
   distinguished_cocone_triangle := sorry,
-  rotate_distinguished_triangle := sorry,
+  rotate_distinguished_triangle := localization.rotate_distinguished_triangle L W comm_shift,
   complete_distinguished_triangle_morphism := sorry, }
 
 end triangulated
