@@ -241,7 +241,6 @@ variables {C D : Type*} [category C] [category D]
   [W.compatible_with_shift ℤ] [functor.additive L]
   (comm_shift : shift_functor C (1 : ℤ) ⋙ L ≅ L ⋙ shift_functor D (1 : ℤ))
   [left_calculus_of_fractions W] [right_calculus_of_fractions W]
---  [hL₂ : functor.additive L]
 /- state SM6 -/
 
 include L comm_shift
@@ -293,6 +292,16 @@ begin
       pretriangulated.inv_rot_of_dist_triangle C T' hT'⟩, },
 end
 
+lemma distinguished_cocone_triangle {X Y : D} (f : X ⟶ Y) :
+  ∃ (Z : D) (g : Y ⟶ Z) (h : Z ⟶ (shift_functor D (1 : ℤ)).obj X),
+    triangle.mk D f g h ∈ localization.distinguished_triangles L comm_shift :=
+begin
+  let f' := left_calculus_of_fractions.lift_map L W f,
+  rcases pretriangulated.distinguished_cocone_triangle _ _ f' with ⟨Z, g, h, H⟩,
+  refine ⟨L.obj Z, _⟩,
+  sorry
+end
+
 end localization
 
 def localization [pretriangulated C] : pretriangulated D :=
@@ -300,7 +309,7 @@ def localization [pretriangulated C] : pretriangulated D :=
   isomorphic_distinguished := λ T₁ hT₁ T₂ e,
     localization.isomorphic_distinguished L comm_shift e hT₁,
   contractible_distinguished := localization.contractible_distinguished L W comm_shift,
-  distinguished_cocone_triangle := sorry,
+  distinguished_cocone_triangle := λ X Y f, localization.distinguished_cocone_triangle L W comm_shift f,
   rotate_distinguished_triangle := localization.rotate_distinguished_triangle L W comm_shift,
   complete_distinguished_triangle_morphism := sorry, }
 

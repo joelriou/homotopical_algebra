@@ -571,6 +571,10 @@ def lift_map {X Y : D} (f : X ⟶ Y) : lift_map₁ L W' f ⟶ lift_map₂ L W' f
 def map_lift_map_iso {X Y : D} (f : X ⟶ Y) :
   arrow.mk f ≅ arrow.mk (L.map (lift_map L W' f)) :=
 (exists_lift_arrow L W' (arrow.mk f)).some_spec.some
+def lift_map_iso₁ {X Y : D} (f : X ⟶ Y) : X ≅ L.obj (lift_map₁ L W' f) :=
+arrow.left_func.map_iso (map_lift_map_iso L W' f)
+def lift_map_iso₂ {X Y : D} (f : X ⟶ Y) : Y ≅ L.obj (lift_map₂ L W' f) :=
+arrow.right_func.map_iso (map_lift_map_iso L W' f)
 
 end
 
