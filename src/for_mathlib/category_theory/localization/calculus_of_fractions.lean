@@ -541,6 +541,39 @@ begin
   { exact quot.sound, },
 end
 
+section
+
+variables {D : Type*} [category D] (L : C ⥤ D) (W' : morphism_property C)
+  [left_calculus_of_fractions W'] [L.is_localization W']
+omit W
+include L W'
+
+lemma exists_lift_arrow (f : arrow D) :
+  ∃ (g : arrow C), nonempty (f ≅ L.map_arrow.obj g) :=
+begin
+  haveI : ess_surj L := localization.ess_surj L W',
+  let e₁ := L.obj_obj_preimage_iso _,
+  let e₂ := L.obj_obj_preimage_iso _,
+  let f' := e₁.hom ≫ f.hom ≫ e₂.inv,
+  rcases L_map_fac L W' f' with ⟨z, hz⟩,
+  refine ⟨arrow.mk z.f, nonempty.intro _⟩,
+  haveI := localization.inverts L W' z.s z.hs,
+  refine arrow.iso_mk e₁.symm (e₂.symm ≪≫ as_iso (L.map z.s)) _,
+  dsimp [map_zigzag] at hz ⊢,
+  simp only [← cancel_mono (inv (L.map z.s)), assoc, ← hz, is_iso.hom_inv_id, comp_id,
+    ← cancel_epi e₁.hom, e₁.hom_inv_id_assoc],
+end
+
+def lift_map₁ {X Y : D} (f : X ⟶ Y) : C := (exists_lift_arrow L W' (arrow.mk f)).some.left
+def lift_map₂ {X Y : D} (f : X ⟶ Y) : C := (exists_lift_arrow L W' (arrow.mk f)).some.right
+def lift_map {X Y : D} (f : X ⟶ Y) : lift_map₁ L W' f ⟶ lift_map₂ L W' f :=
+(exists_lift_arrow L W' (arrow.mk f)).some.hom
+def map_lift_map_iso {X Y : D} (f : X ⟶ Y) :
+  arrow.mk f ≅ arrow.mk (L.map (lift_map L W' f)) :=
+(exists_lift_arrow L W' (arrow.mk f)).some_spec.some
+
+end
+
 end left_calculus_of_fractions
 
 variable {W}

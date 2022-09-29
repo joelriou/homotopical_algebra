@@ -304,6 +304,13 @@ def localization [pretriangulated C] : pretriangulated D :=
   rotate_distinguished_triangle := localization.rotate_distinguished_triangle L W comm_shift,
   complete_distinguished_triangle_morphism := sorry, }
 
+include W
+
+def localization_functor [pretriangulated C] :
+  @triangulated_functor C _ _ _ _ _ D _ _ _ _ _ _ (triangulated.localization L W comm_shift) :=
+{ map_distinguished' := λ T hT, ⟨T, iso.refl _, hT⟩,
+  .. localization.functor L comm_shift}
+
 end triangulated
 
 end category_theory
