@@ -6,7 +6,7 @@ noncomputable theory
 
 namespace category_theory
 
-open category limits
+open category limits triangulated
 
 class morphism_property.compatible_with_shift {C : Type*} [category C]
   (W : morphism_property C) (A : Type*) [add_monoid A] [has_shift C A] : Prop :=
@@ -17,6 +17,15 @@ lemma morphism_property.compatible_with_shift.iff {C : Type*} [category C]
   [h : W.compatible_with_shift A]
   {X Y : C} (f : X ⟶ Y) (a : A) : W ((shift_functor C a).map f) ↔ W f :=
 by { conv_rhs { rw ← h.translate a }, refl, }
+
+class morphism_property.compatible_with_triangulation {C : Type*} [category C]
+  [has_zero_object C] [has_shift C ℤ] [preadditive C]
+  [∀ (n : ℤ), (shift_functor C n).additive] [pretriangulated C]
+  (W : morphism_property C) : Prop :=
+(condition : ∀ (T₁ T₂ : triangle C) (h₁ : T₁ ∈ dist_triang C) (h₂ : T₂ ∈ dist_triang C)
+  (a : T₁.obj₁ ⟶ T₂.obj₁) (b : T₁.obj₂ ⟶ T₂.obj₂) (ha : W a) (hb : W b),
+  ∃ (c : T₁.obj₃ ⟶ T₂.obj₃) (hc : W c),
+  (T₁.mor₂ ≫ c = b ≫ T₂.mor₂) ∧ (T₁.mor₃ ≫ a⟦1⟧' = c ≫ T₂.mor₃))
 
 namespace shift
 
@@ -191,6 +200,36 @@ def triangle.mk_iso (T T' : triangle C) (e₁ : T.obj₁ ≅ T'.obj₁) (e₂ : 
   hom_inv_id' := by { ext; apply iso.hom_inv_id, },
   inv_hom_id' := by { ext; apply iso.inv_hom_id, }, }
 
+@[simp, reassoc]
+lemma triangle.hom_inv_id_hom₁ {T T' : triangle C} (e : T ≅ T') :
+  e.hom.hom₁ ≫ e.inv.hom₁ = 𝟙 _ :=
+by { change (e.hom ≫ e.inv).hom₁ = _, simpa only [e.hom_inv_id], }
+
+@[simp, reassoc]
+lemma triangle.inv_hom_id_hom₁ {T T' : triangle C} (e : T ≅ T') :
+  e.inv.hom₁ ≫ e.hom.hom₁ = 𝟙 _ :=
+by { change (e.inv ≫ e.hom).hom₁ = _, simpa only [e.inv_hom_id], }
+
+@[simp, reassoc]
+lemma triangle.hom_inv_id_hom₂ {T T' : triangle C} (e : T ≅ T') :
+  e.hom.hom₂ ≫ e.inv.hom₂ = 𝟙 _ :=
+by { change (e.hom ≫ e.inv).hom₂ = _, simpa only [e.hom_inv_id], }
+
+@[simp, reassoc]
+lemma triangle.inv_hom_id_hom₂ {T T' : triangle C} (e : T ≅ T') :
+  e.inv.hom₂ ≫ e.hom.hom₂ = 𝟙 _ :=
+by { change (e.inv ≫ e.hom).hom₂ = _, simpa only [e.inv_hom_id], }
+@[simp, reassoc]
+
+lemma triangle.hom_inv_id_hom₃ {T T' : triangle C} (e : T ≅ T') :
+  e.hom.hom₃ ≫ e.inv.hom₃ = 𝟙 _ :=
+by { change (e.hom ≫ e.inv).hom₃ = _, simpa only [e.hom_inv_id], }
+
+@[simp, reassoc]
+lemma triangle.inv_hom_id_hom₃ {T T' : triangle C} (e : T ≅ T') :
+  e.inv.hom₃ ≫ e.hom.hom₃ = 𝟙 _ :=
+by { change (e.inv ≫ e.hom).hom₃ = _, simpa only [e.inv_hom_id], }
+
 @[simps]
 def map_triangle_rotate [preadditive C] [∀ n : ℤ, functor.additive (shift_functor C n)]
   {D : Type*} [category D] [has_zero_object D] [preadditive D] [has_shift D ℤ]
@@ -241,7 +280,7 @@ variables {C D : Type*} [category C] [category D]
   [W.compatible_with_shift ℤ] [functor.additive L]
   (comm_shift : shift_functor C (1 : ℤ) ⋙ L ≅ L ⋙ shift_functor D (1 : ℤ))
   [left_calculus_of_fractions W] [right_calculus_of_fractions W]
-/- state SM6 -/
+  [hW₆ : W.compatible_with_triangulation]
 
 include L comm_shift
 
@@ -298,8 +337,50 @@ lemma distinguished_cocone_triangle {X Y : D} (f : X ⟶ Y) :
 begin
   let f' := left_calculus_of_fractions.lift_map L W f,
   rcases pretriangulated.distinguished_cocone_triangle _ _ f' with ⟨Z, g, h, H⟩,
-  refine ⟨L.obj Z, _⟩,
-  sorry
+  refine ⟨L.obj Z, (left_calculus_of_fractions.lift_map_iso₂ L W f).hom ≫ L.map g,
+    L.map h ≫ comm_shift.hom.app _ ≫ (shift_functor D (1 : ℤ)).map
+      (left_calculus_of_fractions.lift_map_iso₁ L W f).inv, triangle.mk C f' g h, _, H⟩,
+  dsimp,
+  refine triangle.mk_iso _ _ (left_calculus_of_fractions.lift_map_iso₁ L W f)
+    (left_calculus_of_fractions.lift_map_iso₂ L W f) (iso.refl _)
+      (left_calculus_of_fractions.lift_map_fac L W f) (comp_id _) _,
+  dsimp,
+  rw [assoc, assoc, id_comp, ← functor.map_comp, iso.inv_hom_id, functor.map_id, comp_id],
+end
+
+lemma complete_distinguished_triangle_morphism (T₁ T₂ : triangle D)
+  (hT₁ : T₁ ∈ distinguished_triangles L comm_shift)
+  (hT₂ : T₂ ∈ distinguished_triangles L comm_shift)
+  (a : T₁.obj₁ ⟶ T₂.obj₁) (b : T₁.obj₂ ⟶ T₂.obj₂) (fac : T₁.mor₁ ≫ b = a ≫ T₂.mor₁) :
+  ∃ (c : T₁.obj₃ ⟶ T₂.obj₃), T₁.mor₂ ≫ c = b ≫ T₂.mor₂ ∧ T₁.mor₃ ≫ (shift_functor D 1).map a = c ≫ T₂.mor₃ :=
+begin
+  suffices : ∀ (T'₁ T'₂ : triangle C) (h₁ : T'₁ ∈ dist_triang C) (h₂ : T'₂ ∈ dist_triang C)
+    (a : L.obj (T'₁.obj₁) ⟶ L.obj (T'₂.obj₁)) (b : L.obj (T'₁.obj₂) ⟶ L.obj (T'₂.obj₂))
+    (fac : L.map T'₁.mor₁ ≫ b = a ≫ L.map T'₂.mor₁),
+    ∃ (c : L.obj T'₁.obj₃ ⟶ L.obj T'₂.obj₃), L.map T'₁.mor₂ ≫ c = b ≫ L.map T'₂.mor₂ ∧
+      L.map T'₁.mor₃ ≫ comm_shift.hom.app _ ≫ (shift_functor D (1 : ℤ)).map a ≫ comm_shift.inv.app _
+        = c ≫ L.map T'₂.mor₃,
+  { rcases hT₁ with ⟨T'₁, e₁, hT'₁⟩,
+    rcases hT₂ with ⟨T'₂, e₂, hT'₂⟩,
+    have comm₁ := e₁.inv.comm₁,
+    have comm₂ := e₂.hom.comm₁,
+    have comm₃ := e₁.hom.comm₂,
+    have comm₄ := e₂.hom.comm₂,
+    have comm₅ := e₂.inv.comm₃,
+    have comm₆ := e₁.hom.comm₃,
+    dsimp at comm₁ comm₂ comm₃ comm₄ comm₅ comm₆,
+    rcases this T'₁ T'₂ hT'₁ hT'₂ (e₁.inv.hom₁ ≫ a ≫ e₂.hom.hom₁)
+      (e₁.inv.hom₂ ≫ b ≫ e₂.hom.hom₂) (by rw [reassoc_of comm₁, reassoc_of fac, assoc, assoc, comm₂])
+      with ⟨c, ⟨hc₁, hc₂⟩⟩,
+    refine ⟨e₁.hom.hom₃ ≫ c ≫ e₂.inv.hom₃, ⟨_, _⟩⟩,
+    { simp only [reassoc_of comm₃, reassoc_of hc₁, ← reassoc_of comm₄,
+        triangle.hom_inv_id_hom₃, comp_id, triangle.hom_inv_id_hom₂_assoc], },
+    { simp only [assoc, ← comm₅, ← reassoc_of hc₂, comm_shift.inv_hom_id_app_assoc,
+      ← functor.map_comp, triangle.hom_inv_id_hom₁, comp_id, ← reassoc_of comm₆,
+      triangle.hom_inv_id_hom₁_assoc], }, },
+  clear fac a b hT₁ hT₂ T₁ T₂,
+  intros T'₁ T'₂ hT'₁ hT'₂ a b fac,
+  sorry,
 end
 
 end localization
@@ -311,7 +392,7 @@ def localization [pretriangulated C] : pretriangulated D :=
   contractible_distinguished := localization.contractible_distinguished L W comm_shift,
   distinguished_cocone_triangle := λ X Y f, localization.distinguished_cocone_triangle L W comm_shift f,
   rotate_distinguished_triangle := localization.rotate_distinguished_triangle L W comm_shift,
-  complete_distinguished_triangle_morphism := sorry, }
+  complete_distinguished_triangle_morphism := localization.complete_distinguished_triangle_morphism L W comm_shift, }
 
 include W
 

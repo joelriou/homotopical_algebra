@@ -576,6 +576,10 @@ arrow.left_func.map_iso (map_lift_map_iso L W' f)
 def lift_map_iso₂ {X Y : D} (f : X ⟶ Y) : Y ≅ L.obj (lift_map₂ L W' f) :=
 arrow.right_func.map_iso (map_lift_map_iso L W' f)
 
+lemma lift_map_fac {X Y : D} (f : X ⟶ Y) : f ≫ (lift_map_iso₂ L W' f).hom =
+  (lift_map_iso₁ L W' f).hom ≫ L.map (lift_map L W' f) :=
+(map_lift_map_iso L W' f).hom.w.symm
+
 end
 
 end left_calculus_of_fractions
@@ -786,5 +790,52 @@ begin
 end
 
 end right_calculus_of_fractions
+
+variable (W)
+
+class morphism_property.is_saturated : Prop :=
+(condition' : ∀ ⦃X Y Z T : C⦄ (f : X ⟶ Y) (g : Y ⟶ Z) (h : Z ⟶ T) (hfg : W (f ≫ g))
+  (hgh : W (g ≫ h)), W g)
+
+lemma morphism_property.is_saturated.condition [W.is_saturated] {X Y Z T : C}
+  (f : X ⟶ Y) (g : Y ⟶ Z) (h : Z ⟶ T) (hfg : W (f ≫ g))
+  (hgh : W (g ≫ h)) : W g :=
+morphism_property.is_saturated.condition' f g h hfg hgh
+
+namespace localization
+
+lemma is_iso_map_iff_of_calculus_of_fractions {D : Type*} [category D] (L : C ⥤ D)
+  (W : morphism_property C) [L.is_localization W] [W.is_saturated]
+  [left_calculus_of_fractions W] [right_calculus_of_fractions W] {X Y : C} (f : X ⟶ Y) :
+  is_iso (L.map f) ↔ W f :=
+begin
+  refine ⟨_ ,λ hf, localization.inverts L W f hf⟩,
+  introI,
+  rcases left_calculus_of_fractions.L_map_fac L W (inv (L.map f)) with ⟨z₁, h₁⟩,
+  rcases right_calculus_of_fractions.L_map_fac L W (inv (L.map f)) with ⟨z₂, h₂⟩,
+  dsimp [left_calculus_of_fractions.map_zigzag] at h₁,
+  dsimp [right_calculus_of_fractions.map_zigzag] at h₂,
+  rcases (left_calculus_of_fractions.L_map_zigzag_eq_iff L
+    (left_calculus_of_fractions.zigzag.mk _ (f ≫ z₁.f) z₁.s z₁.hs)
+    (left_calculus_of_fractions.zigzag.id W X)).mp begin
+      dsimp [left_calculus_of_fractions.map_zigzag],
+      simp only [L.map_comp, assoc, ← h₁, is_iso.hom_inv_id],
+    end with ⟨Z, t₁, t₁', hst, hft, H₁⟩,
+  rcases (right_calculus_of_fractions.L_map_zigzag_eq_iff L
+    (right_calculus_of_fractions.zigzag.mk _ z₂.s (z₂.f ≫ f) z₂.hs)
+    (right_calculus_of_fractions.zigzag.id W Y)).mp begin
+      dsimp [right_calculus_of_fractions.map_zigzag],
+      simp only [L.map_comp, assoc, ← reassoc_of h₂, is_iso.inv_hom_id],
+    end with ⟨Z', t₂, t₂', hts, htf, H₂⟩,
+  dsimp at t₁ t₁' hst hft H₁ t₂ t₂' hts htf H₂,
+  simp only [assoc, id_comp, comp_id] at hst hft hts htf,
+  rw ← hft at hst,
+  rw ← htf at hts,
+  exact morphism_property.is_saturated.condition W (t₂ ≫ z₂.f)
+    f (z₁.f ≫ t₁) (by simpa only [assoc, ← hts] using H₂)
+    (by simpa only [← hst] using H₁),
+end
+
+end localization
 
 end category_theory
