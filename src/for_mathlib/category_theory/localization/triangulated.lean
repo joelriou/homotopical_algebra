@@ -230,6 +230,17 @@ lemma triangle.inv_hom_id_hom₃ {T T' : triangle C} (e : T ≅ T') :
   e.inv.hom₃ ≫ e.hom.hom₃ = 𝟙 _ :=
 by { change (e.inv ≫ e.hom).hom₃ = _, simpa only [e.inv_hom_id], }
 
+lemma triangle.is_iso_of_is_iso_homs {T T' : triangle C} (f : T ⟶ T')
+  (h₁ : is_iso f.hom₁) (h₂ : is_iso f.hom₂) (h₃ : is_iso f.hom₃) : is_iso f :=
+begin
+  haveI := h₁,
+  haveI := h₂,
+  haveI := h₃,
+  convert is_iso.of_iso (triangle.mk_iso T T' (as_iso f.hom₁) (as_iso f.hom₂) (as_iso f.hom₃)
+    f.comm₁ f.comm₂ f.comm₃),
+  ext; refl,
+end
+
 @[simps]
 def map_triangle_rotate [preadditive C] [∀ n : ℤ, functor.additive (shift_functor C n)]
   {D : Type*} [category D] [has_zero_object D] [preadditive D] [has_shift D ℤ]
@@ -348,6 +359,8 @@ begin
   rw [assoc, assoc, id_comp, ← functor.map_comp, iso.inv_hom_id, functor.map_id, comp_id],
 end
 
+include hW₆
+
 lemma complete_distinguished_triangle_morphism (T₁ T₂ : triangle D)
   (hT₁ : T₁ ∈ distinguished_triangles L comm_shift)
   (hT₂ : T₂ ∈ distinguished_triangles L comm_shift)
@@ -395,25 +408,51 @@ begin
   rcases pretriangulated.distinguished_cocone_triangle _ _ (sq.g ≫ zb.s ≫ s)
     with ⟨Z₃, g₃, h₃, H₃⟩,
   let T'₃ := triangle.mk C (sq.g ≫ zb.s ≫ s) g₃ h₃,
-  rcases pretriangulated.complete_distinguished_triangle_morphism T'₂ T'₃ hT'₂ H₃ za.s
-    (sq.s' ≫ zb.s ≫ s) (by { dsimp, rw ← reassoc_of sq.fac, }),
-  all_goals { sorry, },
+  have comm : T'₂.mor₁ ≫ sq.s' ≫ zb.s ≫ s = za.s ≫ sq.g ≫ zb.s ≫ s,
+  { dsimp, rw ← reassoc_of sq.fac, },
+  have h₂ : W (sq.s' ≫ zb.s ≫ s) := left_calculus_of_fractions.comp _ _ sq.hs'
+    (left_calculus_of_fractions.comp _ _ zb.hs hs),
+  rcases morphism_property.compatible_with_triangulation.condition T'₂ T'₃ hT'₂ H₃
+    za.s (sq.s' ≫ zb.s ≫ s) za.hs h₂ with ⟨α, hα₀, ⟨hα₁, hα₂⟩⟩,
+  let φ : T'₂ ⟶ T'₃ := triangle_morphism.mk za.s (sq.s' ≫ zb.s ≫ s) α comm hα₁ hα₂,
+  let F := (functor L comm_shift),
+  haveI := localization.inverts L W _ za.hs,
+  haveI := localization.inverts L W _ h₂,
+  haveI := localization.inverts L W _ hα₀,
+  rcases pretriangulated.complete_distinguished_triangle_morphism T'₁ T'₃ hT'₁ H₃ za.f
+    (zb.f ≫ s) fac'.symm with ⟨c, ⟨hc₁, hc₂⟩⟩,
+  refine ⟨L.map c ≫ inv (L.map α), ⟨_, _⟩⟩,
+  { simp only [← cancel_mono (L.map α), assoc, is_iso.inv_hom_id, comp_id, ← L.map_comp, hα₁, hc₁],
+    simp only [L.map_comp, reassoc_of hzb, is_iso.inv_hom_id_assoc], },
+  { simp only [hza, functor.map_comp, assoc],
+    erw ← comm_shift.hom.naturality_assoc,
+    dsimp,
+    simp only [← L.map_comp_assoc, hc₂, assoc,
+      ← cancel_mono (comm_shift.hom.app T'₂.obj₁), iso.inv_hom_id_app_assoc,
+      ← cancel_mono ((shift_functor D (1 : ℤ)).map (L.map za.s))],
+    simp only [← functor.map_comp, is_iso.inv_hom_id, functor.map_id, comp_id],
+    erw ← comm_shift.hom.naturality,
+    erw ← L.map_comp_assoc,
+    simp only [hα₂, L.map_comp, assoc, is_iso.inv_hom_id_assoc], },
 end
 
 end localization
 
-def localization [pretriangulated C] : pretriangulated D :=
+include hW₆
+
+def localization : pretriangulated D :=
 { distinguished_triangles := localization.distinguished_triangles L comm_shift,
   isomorphic_distinguished := λ T₁ hT₁ T₂ e,
     localization.isomorphic_distinguished L comm_shift e hT₁,
   contractible_distinguished := localization.contractible_distinguished L W comm_shift,
   distinguished_cocone_triangle := λ X Y f, localization.distinguished_cocone_triangle L W comm_shift f,
   rotate_distinguished_triangle := localization.rotate_distinguished_triangle L W comm_shift,
-  complete_distinguished_triangle_morphism := localization.complete_distinguished_triangle_morphism L W comm_shift, }
+  complete_distinguished_triangle_morphism :=
+    localization.complete_distinguished_triangle_morphism L W comm_shift, }
 
 include W
 
-def localization_functor [pretriangulated C] :
+def localization_functor :
   @triangulated_functor C _ _ _ _ _ D _ _ _ _ _ _ (triangulated.localization L W comm_shift) :=
 { map_distinguished' := λ T hT, ⟨T, iso.refl _, hT⟩,
   .. localization.functor L comm_shift}
