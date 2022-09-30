@@ -380,7 +380,24 @@ begin
       triangle.hom_inv_id_hom₁_assoc], }, },
   clear fac a b hT₁ hT₂ T₁ T₂,
   intros T'₁ T'₂ hT'₁ hT'₂ a b fac,
-  sorry,
+  rcases left_calculus_of_fractions.L_map_fac L W a with ⟨za, hza⟩,
+  rcases left_calculus_of_fractions.ex za.s za.hs T'₂.mor₁ with ⟨sq⟩,
+  rcases left_calculus_of_fractions.L_map_fac L W (b ≫ L.map sq.s') with ⟨zb, hzb⟩,
+  simp only [left_calculus_of_fractions.map_zigzag] at hza hzb,
+  have hsq := L.congr_map sq.fac,
+  simp only [L.map_comp] at hsq,
+  haveI := localization.inverts L W zb.s zb.hs,
+  rcases (left_calculus_of_fractions.L_map_eq_iff L W (za.f ≫ sq.g ≫ zb.s) (T'₁.mor₁ ≫ zb.f)).mp
+    (by simp only [← cancel_mono (inv (L.map zb.s)), assoc, L.map_comp, ← hzb,
+        is_iso.hom_inv_id, comp_id, reassoc_of fac, hsq, reassoc_of hza,
+        is_iso.inv_hom_id_assoc]) with ⟨Y₃, s, hs, fac'⟩,
+  simp only [assoc] at fac',
+  rcases pretriangulated.distinguished_cocone_triangle _ _ (sq.g ≫ zb.s ≫ s)
+    with ⟨Z₃, g₃, h₃, H₃⟩,
+  let T'₃ := triangle.mk C (sq.g ≫ zb.s ≫ s) g₃ h₃,
+  rcases pretriangulated.complete_distinguished_triangle_morphism T'₂ T'₃ hT'₂ H₃ za.s
+    (sq.s' ≫ zb.s ≫ s) (by { dsimp, rw ← reassoc_of sq.fac, }),
+  all_goals { sorry, },
 end
 
 end localization

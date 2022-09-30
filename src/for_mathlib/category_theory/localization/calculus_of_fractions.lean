@@ -541,6 +541,24 @@ begin
   { exact quot.sound, },
 end
 
+lemma L_map_eq_iff {D : Type*} [category D] (L : C ⥤ D) (W : morphism_property C)
+  [left_calculus_of_fractions W] [L.is_localization W] {X Y : C} (f₁ f₂ : X ⟶ Y) :
+  L.map f₁ = L.map f₂ ↔ ∃ (Z : C) (s : Y ⟶ Z) (hs : W s), f₁ ≫ s = f₂ ≫ s :=
+begin
+  split,
+  { intro h,
+    rcases (L_map_zigzag_eq_iff L
+      (zigzag.mk Y f₁ (𝟙 Y) (morphism_property.contains_identities.id W Y))
+      (zigzag.mk Y f₂ (𝟙 Y) (morphism_property.contains_identities.id W Y))).mp
+      (by { dsimp [map_zigzag], rw h, }) with ⟨Z, t₁, t₂, hst, hft, ht⟩,
+    dsimp at t₁ t₂ ht hst hft,
+    simp only [id_comp] at ht hst,
+    refine ⟨Z, t₁, ht, by rw [hft, hst]⟩, },
+  { rintro ⟨Z, s, hs, eq⟩,
+    haveI := localization.inverts L W s hs,
+    simp only [← cancel_mono (L.map s), ← L.map_comp, eq], },
+end
+
 section
 
 variables {D : Type*} [category D] (L : C ⥤ D) (W' : morphism_property C)
