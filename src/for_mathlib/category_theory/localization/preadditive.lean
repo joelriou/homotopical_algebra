@@ -11,18 +11,22 @@ open limits
 namespace localization
 
 variables {C D : Type*} [category C] [category D] [preadditive C]
-  (L : C ⥤ D) (W : morphism_property C) [morphism_property.contains_identities W]
-  (hW : Π (J : Type) [finite J], W.stable_under_products_of_shape J)
-  [hL : L.is_localization W]
+  (L : C ⥤ D) (W : morphism_property C)
+
+variables [morphism_property.contains_identities W]
+  [hW : W.stable_under_finite_products]
+  [hL : L.is_localization W] [limits.has_finite_products C]
+
 
 include hL hW
 
 @[protected]
-lemma preadditive [limits.has_finite_products C] : preadditive D :=
+lemma preadditive : preadditive D :=
 begin
-  haveI : has_finite_products D := localization.has_finite_products L W hW,
+  haveI : has_finite_products D := localization.has_finite_products L W,
   haveI : ∀ (J : Type) [fintype J], preserves_limits_of_shape (discrete J) L :=
-    by { intro J, introI, exact localization.preserves_products_of_shape L W J (hW J), },
+    by { intro J, introI, exact localization.preserves_products_of_shape L W J
+      (hW.condition J), },
   let F := preadditive.to_add_comm_group_object C ⋙ L.map_add_comm_group_object,
   have hF : W.is_inverted_by F := λ X Y f hf, begin
     haveI : is_iso ((add_comm_group_object.forget D).map (F.map f)),
@@ -36,13 +40,29 @@ begin
     (lift F hF L ⋙ add_comm_group_object.forget D) (𝟭 D),
 end
 
-lemma additive [preadditive D] [limits.has_finite_products C] : functor.additive L :=
+lemma additive [preadditive D] : functor.additive L :=
 begin
-  haveI : has_finite_products D := localization.has_finite_products L W hW,
+  haveI : has_finite_products D := localization.has_finite_products L W,
   haveI : ∀ (J : Type) [fintype J], preserves_limits_of_shape (discrete J) L :=
-    by { intro J, introI, exact localization.preserves_products_of_shape L W J (hW J), },
+    by { intro J, introI, exact localization.preserves_products_of_shape L W J (hW.condition J), },
   exact functor.additive_of_preserves_binary_products L,
 end
+
+omit hL
+
+instance : preadditive W.localization := localization.preadditive W.Q W
+
+instance : functor.additive W.Q := localization.additive W.Q W
+
+instance : has_zero_object W.localization :=
+⟨⟨terminal _, begin
+  split,
+  { intro Y,
+    refine nonempty.intro ⟨⟨0⟩, λ a, _⟩,
+    have eq : 𝟙 (terminal W.localization) = 0 := subsingleton.elim _ _,
+    rw [← category.id_comp a, ← category.id_comp default, eq, zero_comp, zero_comp], },
+  { exact λ Y, nonempty.intro ⟨⟨0⟩, λ a, subsingleton.elim _ _⟩, },
+end⟩⟩
 
 end localization
 

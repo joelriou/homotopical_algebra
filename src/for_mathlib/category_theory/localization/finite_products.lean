@@ -47,8 +47,8 @@ def stable_under_limits_of_shape (W : morphism_property C) (J : Type*) [category
 abbreviation stable_under_products_of_shape (W : morphism_property C) (J : Type*) : Prop :=
 W.stable_under_limits_of_shape (discrete J)
 
-def stable_under_finite_products (W : morphism_property C) : Prop :=
-∀ (J : Type) [finite J], stable_under_products_of_shape W J
+class stable_under_finite_products (W : morphism_property C) : Prop :=
+(condition [] : ∀ (J : Type) [finite J], stable_under_products_of_shape W J)
 
 abbreviation stable_under_binary_products (W : morphism_property C) :=
   W.stable_under_products_of_shape walking_pair
@@ -93,9 +93,10 @@ end
 
 @[protected]
 lemma has_finite_products [W.contains_identities]
-  [has_finite_products C] (hW : Π (J : Type) [finite J], W.stable_under_products_of_shape J) :
+  [has_finite_products C] [W.stable_under_finite_products] :
   has_finite_products D :=
-⟨λ J, by { introI, exact localization.has_products_of_shape L W J (hW J), }⟩
+⟨λ J, by { introI, exact localization.has_products_of_shape L W J
+  (morphism_property.stable_under_finite_products.condition W J), }⟩
 
 @[protected]
 def preserves_products_of_shape (J : Type) [finite J] [W.contains_identities]
@@ -129,6 +130,16 @@ begin
   haveI : is_iso (limit_comparison_of_adj adj adj' L) := nat_iso.is_iso_of_is_iso_app _,
   exact preserves_limits_of_shape_of_adj adj adj' L,
 end
+
+instance localization_has_finite_products [W.contains_identities] [has_finite_products C]
+  [W.stable_under_finite_products] : has_finite_products W.localization :=
+  localization.has_finite_products W.Q W
+
+instance [W.contains_identities] [has_finite_products C]
+  [W.stable_under_finite_products] (J : Type) [finite J] :
+  preserves_limits_of_shape (discrete J) W.Q :=
+localization.preserves_products_of_shape W.Q W J
+  (morphism_property.stable_under_finite_products.condition W J)
 
 end localization
 

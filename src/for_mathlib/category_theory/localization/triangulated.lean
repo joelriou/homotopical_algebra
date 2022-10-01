@@ -29,6 +29,9 @@ class morphism_property.compatible_with_triangulation {C : Type*} [category C]
 
 namespace shift
 
+instance (A C : Type*) [category C] [preadditive C] [add_comm_group A]
+  (a : A) [has_shift C A]: functor.additive (shift_functor C a) := sorry
+
 variables {C D : Type*} [category C] [category D]
   (L : C ⥤ D) (W : morphism_property C) [L.is_localization W]
   {A : Type*} [add_monoid A] [has_shift C A] [W.compatible_with_shift A]
@@ -147,6 +150,8 @@ begin
       nat_trans.id_hcomp_app] using congr_app (right_unitality a) X, },
 end
 
+instance : has_shift W.localization A := shift.localization W.Q W A
+
 variable {A}
 
 @[simp]
@@ -156,6 +161,10 @@ def localization_comm_shift (a : A) :
 
 /- show that the localized shift functors are additive if `A` is an add_comm_group
   and D has finite products: this is because these functors are equivalences of categories. -/
+
+instance functor_additive_shift (a : A) [preadditive C] [functor.additive (shift_functor C a)] [has_finite_products C]
+  [preadditive W.localization] :
+  functor.additive (shift_functor W.localization a) := sorry
 
 end shift
 
@@ -456,6 +465,14 @@ def localization_functor :
   @triangulated_functor C _ _ _ _ _ D _ _ _ _ _ _ (triangulated.localization L W comm_shift) :=
 { map_distinguished' := λ T hT, ⟨T, iso.refl _, hT⟩,
   .. localization.functor L comm_shift}
+
+variables [morphism_property.stable_under_finite_products W] [has_finite_products C]
+
+omit comm_shift L
+include hC
+
+instance localization_pretriangulated : pretriangulated W.localization :=
+triangulated.localization W.Q W (shift.localization_comm_shift W.Q W (1 : ℤ))
 
 end triangulated
 
