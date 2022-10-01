@@ -17,6 +17,16 @@ def shift_functor_add_comm (a₁ a₂ : A) :
 (shift_functor_add C a₁ a₂).symm ≪≫ eq_to_iso (by rw add_comm a₁ a₂) ≪≫ (shift_functor_add C a₂ a₁)
 
 @[simp]
+lemma shift_functor_add_comm_hom_app (a₁ a₂ : A) (X : C) :
+  (shift_functor_add_comm C a₁ a₂).hom.app X  = (shift_functor_add C a₁ a₂).inv.app X ≫
+  eq_to_hom (by rw add_comm a₁ a₂) ≫ (shift_functor_add C a₂ a₁).hom.app X :=
+begin
+  dsimp only [shift_functor_add_comm, iso.trans, eq_to_iso],
+  simp only [iso.symm_hom, nat_trans.comp_app, eq_to_hom_app],
+end
+
+
+@[simp]
 lemma shift_functor_add_comm_eq_refl (a : A) :
   shift_functor_add_comm C a a = iso.refl _ :=
 begin
@@ -70,15 +80,51 @@ nat_iso.of_components
   end)
   (by tidy)
 
+local attribute [reducible] discrete.add_monoidal
+
 def triangle.shift_functor_zero : triangle.shift_functor C 0 ≅ 𝟭 _ :=
 nat_iso.of_components (λ T, triangle.mk_iso _ _ ((shift_functor_zero C ℤ).app _)
   ((shift_functor_zero C ℤ).app _) ((shift_functor_zero C ℤ).app _) (by tidy) (by tidy) begin
+  dsimp,
+  simp only [zpow_zero, units.coe_one, one_zsmul, assoc, shift_functor_add_comm_hom_app],
   erw ← nat_trans.naturality,
-  sorry,
-end) sorry
+  congr' 1,
+  dsimp,
+  simp only [obj_ε_inv_app, discrete.functor_map_id, nat_trans.id_app, comp_id,
+    μ_inv_hom_app, ε_inv_app_obj],
+end) (by tidy)
+
+example : ℕ := 42
 
 def triangle.shift_functor_add (a₁ a₂ : ℤ) :
-  triangle.shift_functor C (a₁ + a₂) ≅ triangle.shift_functor C a₁ ⋙ triangle.shift_functor C a₂ := sorry
+  triangle.shift_functor C (a₁ + a₂) ≅
+    triangle.shift_functor C a₁ ⋙ triangle.shift_functor C a₂ :=
+nat_iso.of_components (λ T, begin
+  dsimp only [triangle.shift_functor],
+  refine triangle.mk_iso _ _ ((shift_functor_add C a₁ a₂).app _) ((shift_functor_add C a₁ a₂).app _)
+    ((shift_functor_add C a₁ a₂).app _) _ _ _,
+  { dsimp only [triangle.mk, functor.comp],
+    simp only [zsmul_comp, comp_zsmul, functor.map_zsmul, smul_smul],
+    congr' 1,
+    { rw [zpow_add, units.coe_mul, mul_comm], },
+    { exact (shift_functor_add C a₁ a₂).hom.naturality T.mor₁, }, },
+  { dsimp only [triangle.mk, functor.comp],
+    simp only [zsmul_comp, comp_zsmul, functor.map_zsmul, smul_smul,
+      zpow_add, units.coe_mul, mul_comm],
+    congr' 1,
+    exact (shift_functor_add C a₁ a₂).hom.naturality T.mor₂, },
+  { dsimp only [triangle.mk, functor.comp],
+    simp only [zsmul_comp, comp_zsmul, functor.map_zsmul, smul_smul,
+      zpow_add, units.coe_mul, mul_comm],
+    congr' 1,
+    simp only [functor.map_comp, assoc],
+    erw ← nat_trans.naturality_assoc,
+    congr' 1,
+    sorry, },
+end)
+begin
+  sorry,
+end
 
 def triangle.shift_functor_sub_one_iso : triangle.shift_functor C (-1) ≅ inv_rotate C ⋙ inv_rotate C ⋙ inv_rotate C :=
 begin
