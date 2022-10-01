@@ -1,6 +1,7 @@
 import for_mathlib.category_theory.localization.preadditive
 import category_theory.triangulated.pretriangulated
 import for_mathlib.category_theory.localization.calculus_of_fractions
+import for_mathlib.category_theory.preadditive.equivalence
 
 noncomputable theory
 
@@ -29,8 +30,21 @@ class morphism_property.compatible_with_triangulation {C : Type*} [category C]
 
 namespace shift
 
-instance (A C : Type*) [category C] [preadditive C] [add_comm_group A]
-  (a : A) [has_shift C A] : functor.additive (shift_functor C a) := sorry
+def equivalence (C : Type*) [category C] {A : Type*} [add_comm_group A]
+  [has_shift C A]
+  (a : A) : C ≌ C :=
+{ functor := shift_functor C a,
+  inverse := shift_functor C (-a),
+  unit_iso := (shift_functor_zero C A).symm ≪≫
+    eq_to_iso (by { congr, simp,}) ≪≫ (shift_functor_add C a (-a)),
+  counit_iso := (shift_functor_add C (-a) a).symm ≪≫ eq_to_iso (by { congr, simp, }) ≪≫ shift_functor_zero C A,
+  functor_unit_iso_comp' := begin
+    sorry,
+  end, }
+
+instance (A C : Type*) [category C] [add_comm_group A]
+  (a : A) [has_shift C A] : is_equivalence (shift_functor C a) :=
+is_equivalence.of_equivalence (equivalence C a)
 
 variables {C D : Type*} [category C] [category D]
   (L : C ⥤ D) (W : morphism_property C) [L.is_localization W]

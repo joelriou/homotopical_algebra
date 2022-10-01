@@ -94,8 +94,6 @@ nat_iso.of_components (λ T, triangle.mk_iso _ _ ((shift_functor_zero C ℤ).app
     μ_inv_hom_app, ε_inv_app_obj],
 end) (by tidy)
 
-example : ℕ := 42
-
 def triangle.shift_functor_add (a₁ a₂ : ℤ) :
   triangle.shift_functor C (a₁ + a₂) ≅
     triangle.shift_functor C a₁ ⋙ triangle.shift_functor C a₂ :=
@@ -120,11 +118,10 @@ nat_iso.of_components (λ T, begin
     simp only [functor.map_comp, assoc],
     erw ← nat_trans.naturality_assoc,
     congr' 1,
+    dsimp,
     sorry, },
 end)
-begin
-  sorry,
-end
+(λ T T' f, by ext; apply nat_trans.naturality)
 
 def triangle.shift_functor_sub_one_iso : triangle.shift_functor C (-1) ≅ inv_rotate C ⋙ inv_rotate C ⋙ inv_rotate C :=
 begin
