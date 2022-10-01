@@ -164,6 +164,8 @@ begin
       nat_trans.id_hcomp_app] using congr_app (right_unitality a) X, },
 end
 
+omit L
+
 instance : has_shift W.localization A := shift.localization W.Q W A
 
 variable {A}
@@ -172,13 +174,6 @@ variable {A}
 def localization_comm_shift (a : A) :
   shift_functor C a ⋙ L ≅ L ⋙ @shift_functor D A _ _ (shift.localization L W A) a :=
 (localization.fac _ _ _).symm
-
-/- show that the localized shift functors are additive if `A` is an add_comm_group
-  and D has finite products: this is because these functors are equivalences of categories. -/
-
-instance functor_additive_shift (a : A) [preadditive C] [functor.additive (shift_functor C a)] [has_finite_products C]
-  [preadditive W.localization] :
-  functor.additive (shift_functor W.localization a) := sorry
 
 end shift
 
@@ -484,6 +479,8 @@ variables [morphism_property.stable_under_finite_products W] [has_finite_product
 
 omit comm_shift L
 include hC
+
+instance (n : ℤ) : functor.additive (shift_functor W.localization n) := infer_instance
 
 instance localization_pretriangulated : pretriangulated W.localization :=
 triangulated.localization W.Q W (shift.localization_comm_shift W.Q W (1 : ℤ))
