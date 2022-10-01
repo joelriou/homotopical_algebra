@@ -29,32 +29,11 @@ class morphism_property.compatible_with_triangulation {C : Type*} [category C]
   (T₁.mor₂ ≫ c = b ≫ T₂.mor₂) ∧ (T₁.mor₃ ≫ a⟦1⟧' = c ≫ T₂.mor₃))
 
 namespace shift
-
-def equivalence (C : Type*) [category C] {A : Type*} [add_comm_group A]
-  [has_shift C A]
-  (a : A) : C ≌ C :=
-{ functor := shift_functor C a,
-  inverse := shift_functor C (-a),
-  unit_iso := (shift_functor_zero C A).symm ≪≫
-    eq_to_iso (by { congr, simp,}) ≪≫ (shift_functor_add C a (-a)),
-  counit_iso := (shift_functor_add C (-a) a).symm ≪≫ eq_to_iso (by { congr, simp, }) ≪≫ shift_functor_zero C A,
-  functor_unit_iso_comp' := begin
-    sorry,
-  end, }
-
-instance (A C : Type*) [category C] [add_comm_group A]
-  (a : A) [has_shift C A] : is_equivalence (shift_functor C a) :=
-is_equivalence.of_equivalence (equivalence C a)
+local attribute [reducible] discrete.add_monoidal
 
 variables {C D : Type*} [category C] [category D]
   (L : C ⥤ D) (W : morphism_property C) [L.is_localization W]
   {A : Type*} [add_monoid A] [has_shift C A] [W.compatible_with_shift A]
-
-variable (C)
-
-local attribute [reducible] discrete.add_monoidal
-
-variable {C}
 
 include L W
 

@@ -118,7 +118,6 @@ nat_iso.of_components (λ T, begin
     simp only [functor.map_comp, assoc],
     erw ← nat_trans.naturality_assoc,
     congr' 1,
-    dsimp,
     sorry, },
 end)
 (λ T T' f, by ext; apply nat_trans.naturality)
