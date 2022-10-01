@@ -4,6 +4,7 @@ import for_mathlib.category_theory.localization.triangulated
 namespace category_theory
 
 open limits category
+open_locale zero_object
 
 namespace triangulated
 
@@ -53,6 +54,22 @@ lemma pretriangulated.complete_distinguished_triangle_morphism₂ (T₁ T₂ : t
   ∃ (b : T₁.obj₂ ⟶ T₂.obj₂), T₁.mor₁ ≫ b = a ≫ T₂.mor₁ ∧ T₁.mor₂ ≫ c = b ≫ T₂.mor₂ :=
 begin
   sorry,
+end
+
+lemma pretriangulated.contractible_distinguished₁ (X : C) : triangle.mk C (0 : 0 ⟶ X) (𝟙 X) 0 ∈ dist_triang C :=
+begin
+  refine pretriangulated.isomorphic_distinguished _ (inv_rot_of_dist_triangle C _ (pretriangulated.contractible_distinguished X)) _ _,
+  refine triangle.mk_iso _ _ (functor.map_zero_object _).symm (iso.refl _) (iso.refl _)
+    (by tidy) (by tidy) (by tidy),
+end
+
+lemma contravariant_yoneda_exact₂ (T : triangle C) (hT : T ∈ dist_triang C) {X : C} (f : T.obj₂ ⟶ X)
+  (hf : T.mor₁ ≫ f = 0) : ∃ (g : T.obj₃ ⟶ X), f = T.mor₂ ≫ g :=
+begin
+  obtain ⟨g, ⟨hg₁, hg₂⟩⟩ := pretriangulated.complete_distinguished_triangle_morphism T (triangle.mk C (0 : 0 ⟶ X) (𝟙 _) 0) hT
+    (pretriangulated.contractible_distinguished₁ _) 0 f (by tidy),
+  dsimp at hg₁,
+  refine ⟨g, by simpa only [comp_id] using hg₁.symm⟩,
 end
 
 end triangulated

@@ -16,7 +16,7 @@ end set
 
 namespace category_theory
 
-open limits category
+open limits category preadditive
 
 namespace triangulated
 
@@ -84,7 +84,21 @@ instance : left_calculus_of_fractions (W A) :=
       H mem' u (𝟙 Z) (by { dsimp, rw id_comp, }),
     exact nonempty.intro ⟨Y', b, s', ⟨Z, f', g ≫ u⟦1⟧', mem', mem⟩, hb₁.symm⟩,
   end,
-  ext := sorry, }
+  ext := λ X' X Y f₁ f₂ s hs hf₁, begin
+    let f := f₁ - f₂,
+    have hf₂ : s ≫ f = 0 := by { dsimp [f], rw [comp_sub, hf₁, sub_self], },
+    obtain ⟨Z, g, h, H, mem⟩ := hs,
+    obtain ⟨q, hq⟩ := contravariant_yoneda_exact₂ _ H f hf₂,
+    dsimp at q hq,
+    obtain ⟨Y', r, t, mem'⟩ := pretriangulated.distinguished_cocone_triangle _ _ q,
+    refine ⟨Y', r, _, _⟩,
+    { exact ⟨_, _, _, rot_of_dist_triangle C _ mem', subcategory.shift A _ 1 mem⟩, },
+    { rw [← sub_eq_zero, ← sub_comp],
+      change f ≫ r = 0,
+      have eq := comp_dist_triangle_mor_zero₁₂ C _ mem',
+      dsimp at eq,
+      rw [hq, assoc, eq, comp_zero], },
+  end, }
 
 instance : right_calculus_of_fractions (W A) := sorry
 instance W_compatible_with_shift : (W A).compatible_with_shift ℤ := sorry
