@@ -30,7 +30,7 @@ class morphism_property.compatible_with_triangulation {C : Type*} [category C]
 namespace shift
 
 instance (A C : Type*) [category C] [preadditive C] [add_comm_group A]
-  (a : A) [has_shift C A]: functor.additive (shift_functor C a) := sorry
+  (a : A) [has_shift C A] : functor.additive (shift_functor C a) := sorry
 
 variables {C D : Type*} [category C] [category D]
   (L : C ⥤ D) (W : morphism_property C) [L.is_localization W]

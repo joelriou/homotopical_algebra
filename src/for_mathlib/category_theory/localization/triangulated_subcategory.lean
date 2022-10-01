@@ -63,6 +63,8 @@ instance W_stable_under_finite_products : (W A).stable_under_finite_products := 
 instance W_compatible_with_triangulation : (W A).compatible_with_triangulation := sorry
 instance W_is_saturated : (W A).is_saturated := sorry
 
+lemma test [has_finite_products C] : pretriangulated (W A).localization := infer_instance
+
 end subcategory
 
 end triangulated
