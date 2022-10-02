@@ -1,6 +1,7 @@
 import for_mathlib.category_theory.localization.triangulated
 import for_mathlib.category_theory.triangulated.pretriangulated_misc
 import for_mathlib.category_theory.triangulated.shift_triangle
+import for_mathlib.category_theory.triangulated.triangulated
 
 noncomputable theory
 
@@ -44,7 +45,7 @@ open pretriangulated
 
 variables (C : Type*) [category C] [has_zero_object C] [has_shift C ℤ]
   [preadditive C] [∀ (n : ℤ), functor.additive (shift_functor C n)]
-  [pretriangulated C]
+  [pretriangulated C] [triangulated C]
 
 structure subcategory :=
 (set : set C)
@@ -97,6 +98,17 @@ variable (A)
 instance W_contains_identities : (W A).contains_identities :=
 ⟨λ X, ⟨0, 0, 0, pretriangulated.contractible_distinguished X, subcategory.zero A⟩⟩
 
+lemma W_stable_under_composition : (W A).stable_under_composition :=
+λ X₁ X₂ X₃ u₁₂ u₂₃ h₁₂ h₂₃,
+begin
+  rcases h₁₂ with ⟨Z₁₂, v₁₂, w₁₂, H₁₂, mem₁₂⟩,
+  rcases h₂₃ with ⟨Z₂₃, v₂₃, w₂₃, H₂₃, mem₂₃⟩,
+  rcases pretriangulated.distinguished_cocone_triangle _ _ (u₁₂ ≫ u₂₃) with ⟨Z₁₃, v₁₃, w₁₃, H₁₃⟩,
+  refine ⟨_, _, _, H₁₃, _⟩,
+  have eq : u₁₂ ≫ u₂₃ = u₁₂ ≫ u₂₃ := rfl,
+  exact subcategory.ext₂ A _ (octahedron.triangle_distinguished eq H₁₂ H₂₃ H₁₃) mem₁₂ mem₂₃,
+end
+
 lemma W_respects_iso : (W A).respects_iso :=
 begin
   split,
@@ -114,7 +126,7 @@ end
 
 instance : left_calculus_of_fractions (W A) :=
 { id := infer_instance,
-  comp := sorry,
+  comp := W_stable_under_composition A,
   ex := λ X' X Y s hs u, begin
     obtain ⟨Z, f, g, H, mem⟩ := hs,
     obtain ⟨Y', s', f', mem'⟩ := pretriangulated.distinguished_cocone_triangle₂ (g ≫ u⟦1⟧'),
@@ -140,7 +152,7 @@ instance : left_calculus_of_fractions (W A) :=
 
 instance : right_calculus_of_fractions (W A) :=
 { id := infer_instance,
-  comp := left_calculus_of_fractions.comp (W A),
+  comp := W_stable_under_composition A,
   ex := λ X Y Y' s hs u, begin
     obtain ⟨Z, f, g, H, mem⟩ := hs,
     obtain ⟨X', f', h', mem'⟩ := pretriangulated.distinguished_cocone_triangle₁ (u ≫ f),
