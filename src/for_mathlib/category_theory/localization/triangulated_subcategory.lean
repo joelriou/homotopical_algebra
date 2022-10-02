@@ -105,8 +105,7 @@ begin
   rcases h₂₃ with ⟨Z₂₃, v₂₃, w₂₃, H₂₃, mem₂₃⟩,
   rcases pretriangulated.distinguished_cocone_triangle _ _ (u₁₂ ≫ u₂₃) with ⟨Z₁₃, v₁₃, w₁₃, H₁₃⟩,
   refine ⟨_, _, _, H₁₃, _⟩,
-  have eq : u₁₂ ≫ u₂₃ = u₁₂ ≫ u₂₃ := rfl,
-  exact subcategory.ext₂ A _ (octahedron.triangle_distinguished eq H₁₂ H₂₃ H₁₃) mem₁₂ mem₂₃,
+  exact subcategory.ext₂ A _ (octahedron.triangle_distinguished rfl H₁₂ H₂₃ H₁₃) mem₁₂ mem₂₃,
 end
 
 lemma W_respects_iso : (W A).respects_iso :=
