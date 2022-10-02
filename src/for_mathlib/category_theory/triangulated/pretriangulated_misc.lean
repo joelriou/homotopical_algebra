@@ -3,7 +3,7 @@ import for_mathlib.category_theory.localization.triangulated
 
 namespace category_theory
 
-open limits category
+open limits category preadditive
 open_locale zero_object
 
 namespace triangulated
@@ -50,8 +50,10 @@ end
 
 lemma pretriangulated.distinguished_cocone_triangle₁ {Y Z : C} (g : Y ⟶ Z) :
   ∃ (X : C) (f : X ⟶ Y) (h : Z ⟶ X⟦1⟧), triangle.mk C f g h ∈ dist_triang C :=
-sorry
-
+begin
+  obtain ⟨X', f', g', mem⟩ := pretriangulated.distinguished_cocone_triangle _ _ g,
+  exact ⟨_, _, _, inv_rot_of_dist_triangle _ _ mem⟩,
+end
 
 lemma pretriangulated.complete_distinguished_triangle_morphism₁ (T₁ T₂ : triangle C)
   (hT₁ : T₁ ∈ dist_triang C) (hT₂ : T₂ ∈ dist_triang C) (b : T₁.obj₂ ⟶ T₂.obj₂)
@@ -59,9 +61,15 @@ lemma pretriangulated.complete_distinguished_triangle_morphism₁ (T₁ T₂ : t
   ∃ (a : T₁.obj₁ ⟶ T₂.obj₁), T₁.mor₁ ≫ b = a ≫ T₂.mor₁ ∧
     T₁.mor₃ ≫ (shift_functor C (1 : ℤ)).map a = c ≫ T₂.mor₃ :=
 begin
-  sorry,
+  obtain ⟨a, ⟨ha₁, ha₂⟩⟩ := pretriangulated.complete_distinguished_triangle_morphism _ _
+    (rot_of_dist_triangle _ _ hT₁) (rot_of_dist_triangle _ _ hT₂) b c comm,
+  refine ⟨(shift_functor C (1 : ℤ)).preimage a, ⟨_, _⟩⟩,
+  { apply (shift_functor C (1 : ℤ)).map_injective,
+    dsimp at ha₂,
+    rw [neg_comp, comp_neg, neg_inj] at ha₂,
+    simpa only [functor.map_comp, functor.image_preimage] using ha₂, },
+  { simpa only [functor.image_preimage] using ha₁, },
 end
-
 
 lemma pretriangulated.complete_distinguished_triangle_morphism₂ (T₁ T₂ : triangle C)
   (hT₁ : T₁ ∈ dist_triang C) (hT₂ : T₂ ∈ dist_triang C) (a : T₁.obj₁ ⟶ T₂.obj₁)

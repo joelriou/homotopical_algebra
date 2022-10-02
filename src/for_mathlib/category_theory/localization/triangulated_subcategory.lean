@@ -19,6 +19,23 @@ namespace category_theory
 
 open limits category preadditive
 
+namespace functor
+
+@[simps]
+def map_arrow_nat_trans_of_nat_trans {C D : Type*} [category C] [category D]
+  {F G : C ⥤ D} (τ : F ⟶ G) : F.map_arrow ⟶ G.map_arrow :=
+{ app := λ f,
+  { left := τ.app _,
+    right := τ.app _, }, }
+
+@[simps]
+def map_arrow_nat_iso_of_nat_iso {C D : Type*} [category C] [category D]
+  {F G : C ⥤ D} (e : F ≅ G) : F.map_arrow ≅ G.map_arrow :=
+{ hom := map_arrow_nat_trans_of_nat_trans e.hom,
+  inv := map_arrow_nat_trans_of_nat_trans e.inv, }
+
+end functor
+
 namespace triangulated
 
 open pretriangulated
@@ -146,17 +163,34 @@ instance : right_calculus_of_fractions (W A) :=
     rw [hq, ← assoc, eq, zero_comp], },
   end, }
 
-example : ℕ := 42
+lemma mul_mem_W_iff {X Y : C} (f : X ⟶ Y) (n : ℤ) :
+  (W A) ((↑((-1 : units ℤ) ^ n) : ℤ) • f) ↔ (W A) f :=
+(W_respects_iso A).arrow_mk_iso_iff
+begin
+  let e : X ≅ X :=
+  { hom := (↑((-1 : units ℤ) ^ n) : ℤ) • 𝟙 X,
+    inv := (↑((-1 : units ℤ) ^ n) : ℤ) • 𝟙 X,
+    hom_inv_id' := by simp only [zsmul_comp, id_comp, smul_smul, int.units_coe_mul_self, one_smul],
+    inv_hom_id' := by simp only [zsmul_comp, id_comp, smul_smul, int.units_coe_mul_self, one_smul], },
+  refine arrow.iso_mk e (iso.refl _) _,
+  dsimp,
+  rw [comp_id, zsmul_comp, id_comp],
+end
 
 instance W_compatible_with_shift : (W A).compatible_with_shift ℤ :=
-begin
+⟨begin
   have h : ∀ (X Y : C) (f : X ⟶ Y) (hf : (W A) f) (n : ℤ), (W A) (f⟦n⟧'),
   { rintro X Y f ⟨Z, g, h, H, mem⟩ n,
-    have h : A.W ((↑((-1 : units ℤ) ^ n) : ℤ) • (shift_functor C n).map f) :=
-      ⟨_, _, _, triangle.shift_distinguished C _ H n, subcategory.shift A Z n mem⟩,
-    sorry, },
+    rw ← mul_mem_W_iff A _ n,
+    exact ⟨_, _, _, triangle.shift_distinguished C _ H n, subcategory.shift A Z n mem⟩, },
+  intro n,
+  ext X Y f,
+  refine ⟨λ hf, _, λ hf, h _ _ f hf n⟩,
   sorry,
-end
+--  exact ((W_respects_iso A).arrow_mk_iso_iff
+--    ((functor.map_arrow_nat_iso_of_nat_iso
+--    (shift_functor_comp_shift_functor_neg C n)).app (arrow.mk f))).mp (h _ _ _ hf (-n)),
+end⟩
 
 instance W_stable_under_finite_products : (W A).stable_under_finite_products := sorry
 
