@@ -21,7 +21,7 @@ variable (W)
 
 class left_calculus_of_fractions : Prop :=
 (id : W.contains_identities)
-(comp : W.stable_under_composition)
+(comp [] : W.stable_under_composition)
 (ex : ∀ ⦃X' X Y : C⦄ (s : X ⟶ X') (hs : W s) (u : X ⟶ Y),
   nonempty (left_calculus_of_fractions.to_sq s hs u))
 (ext : ∀ ⦃X' X Y : C⦄ (f₁ f₂ : X ⟶ Y) (s : X' ⟶ X) (hs : W s) (eq : s ≫ f₁ = s ≫ f₂),
@@ -79,8 +79,8 @@ begin
   { rw reassoc_of fac, },
   { rw [reassoc_of hft, ← fac', reassoc_of hfu], },
   { rw [← reassoc_of fac, ← reassoc_of hsu, ← assoc],
-    exact left_calculus_of_fractions.comp _ _ hu
-      (left_calculus_of_fractions.comp _ _ hv₅ hw), },
+    exact left_calculus_of_fractions.comp _ _ _ hu
+      (left_calculus_of_fractions.comp _ _ _ hv₅ hw), },
 end
 
 end zigzag_rel
@@ -96,7 +96,7 @@ variable {W}
 def zigzag.comp₀ {X₁ X₂ X₃ : C} (z₁₂ : zigzag W X₁ X₂) (z₂₃ : zigzag W X₂ X₃)
   (sq : to_sq z₁₂.s z₁₂.hs z₂₃.f) :
   zigzag W X₁ X₃ :=
-⟨sq.obj, z₁₂.f ≫ sq.g , z₂₃.s ≫ sq.s', left_calculus_of_fractions.comp _ _ z₂₃.hs sq.hs'⟩
+⟨sq.obj, z₁₂.f ≫ sq.g , z₂₃.s ≫ sq.s', left_calculus_of_fractions.comp _ _ _ z₂₃.hs sq.hs'⟩
 
 lemma zigzag.comp₀_rel {X₁ X₂ X₃ : C} (z₁₂ : zigzag W X₁ X₂) (z₂₃ : zigzag W X₂ X₃)
   (sq sq' : to_sq z₁₂.s z₁₂.hs z₂₃.f) :
@@ -114,9 +114,9 @@ begin
     rw ← fac, },
   { dsimp [zigzag.comp₀],
     simp only [assoc, ← reassoc_of H.fac],
-    refine left_calculus_of_fractions.comp _ _ z₂₃.hs
-      (left_calculus_of_fractions.comp _ _ sq'.hs'
-        (left_calculus_of_fractions.comp _ _ H.hs' ht)), }
+    refine left_calculus_of_fractions.comp _ _ _ z₂₃.hs
+      (left_calculus_of_fractions.comp _ _ _ sq'.hs'
+        (left_calculus_of_fractions.comp _ _ _ H.hs' ht)), }
 end
 
 variable (W)
@@ -148,7 +148,7 @@ begin
     let H₀' := (left_calculus_of_fractions.ex sq'.s' sq'.hs' t').some,
     have h : W (z₂₃.s ≫ sq.s' ≫ H₀.g),
     { rw [← H₀.fac, ← assoc],
-      exact left_calculus_of_fractions.comp _ _ ht H₀.hs', },
+      exact left_calculus_of_fractions.comp _ _ _ ht H₀.hs', },
     let H₁ := (left_calculus_of_fractions.ex H₀.s' H₀.hs' H₀'.s').some,
     have eq : z₁₂.s ≫ sq.g ≫ H₀.g ≫ H₁.g = z₁₂.s ≫ sq'.g ≫ H₀'.g ≫ H₁.s',
     { simp only [← reassoc_of sq.fac, ← reassoc_of sq'.fac,← reassoc_of H₀.fac,
@@ -161,9 +161,9 @@ begin
     { simp only [assoc, fac], },
     { simp only [assoc],
       rw [← reassoc_of H₀.fac, ← reassoc_of H₁.fac, ← assoc],
-      refine left_calculus_of_fractions.comp _ _ ht
-        (left_calculus_of_fractions.comp _ _ H₀'.hs'
-          (left_calculus_of_fractions.comp _ _ H₁.hs' hu)), }, },
+      refine left_calculus_of_fractions.comp _ _ _ ht
+        (left_calculus_of_fractions.comp _ _ _ H₀'.hs'
+          (left_calculus_of_fractions.comp _ _ _ H₁.hs' hu)), }, },
   { dsimp,
     let sq := (left_calculus_of_fractions.ex z₁₂.s z₁₂.hs z₂₃.f).some,
     let sq' := (left_calculus_of_fractions.ex z₁₂'.s z₁₂'.hs z₂₃.f).some,
@@ -174,11 +174,11 @@ begin
     let H' := (left_calculus_of_fractions.ex (z₁₂'.s ≫ t') (by { rw ← hst, exact ht, })
       (z₂₃.f ≫ sq'.s')).some,
     let z : zigzag W X₁ X₃ := ⟨H.obj, z₁₂.f ≫ t ≫ H.g, z₂₃.s ≫ sq.s' ≫ H.s',
-      left_calculus_of_fractions.comp _ _ z₂₃.hs
-        (left_calculus_of_fractions.comp _ _ sq.hs' H.hs')⟩,
+      left_calculus_of_fractions.comp _ _ _ z₂₃.hs
+        (left_calculus_of_fractions.comp _ _ _ sq.hs' H.hs')⟩,
     let z' : zigzag W X₁ X₃ := ⟨H'.obj, z₁₂'.f ≫ t' ≫ H'.g, z₂₃.s ≫ sq'.s' ≫ H'.s',
-      left_calculus_of_fractions.comp _ _ z₂₃.hs
-        (left_calculus_of_fractions.comp _ _ sq'.hs' H'.hs')⟩,
+      left_calculus_of_fractions.comp _ _ _ z₂₃.hs
+        (left_calculus_of_fractions.comp _ _ _ sq'.hs' H'.hs')⟩,
     refine trans _ (trans (_ : zigzag_rel z z') (symm _)),
     { have eq : z₁₂.s ≫ sq.g ≫ H.s' = z₁₂.s ≫ t ≫ H.g,
       { have h := H.fac,
@@ -190,11 +190,11 @@ begin
       { simp only [assoc, comp_id], },
       { simp only [assoc, comp_id, fac], },
       { simp only [assoc],
-        refine left_calculus_of_fractions.comp _ _ z₂₃.hs
-          (left_calculus_of_fractions.comp _ _ sq.hs'
-          (left_calculus_of_fractions.comp _ _ H.hs' hu)), }, },
+        refine left_calculus_of_fractions.comp _ _ _ z₂₃.hs
+          (left_calculus_of_fractions.comp _ _ _ sq.hs'
+          (left_calculus_of_fractions.comp _ _ _ H.hs' hu)), }, },
     { let T := (left_calculus_of_fractions.ex (sq.s' ≫ H.s')
-        (left_calculus_of_fractions.comp _ _ sq.hs' H.hs') (sq'.s' ≫ H'.s')).some,
+        (left_calculus_of_fractions.comp _ _ _ sq.hs' H.hs') (sq'.s' ≫ H'.s')).some,
       have Tfac := T.fac,
       have fac := H.fac,
       have fac' := H'.fac,
@@ -207,10 +207,10 @@ begin
       { simp only [assoc, reassoc_of Tfac], },
       { rw [assoc, assoc, assoc, assoc, fac'', reassoc_of hft], },
       { simp only [assoc, ← reassoc_of Tfac],
-        exact left_calculus_of_fractions.comp _ _ z₂₃.hs
-          (left_calculus_of_fractions.comp _ _ sq'.hs'
-          (left_calculus_of_fractions.comp _ _ H'.hs'
-          (left_calculus_of_fractions.comp _ _ T.hs' hu))), }, },
+        exact left_calculus_of_fractions.comp _ _ _ z₂₃.hs
+          (left_calculus_of_fractions.comp _ _ _ sq'.hs'
+          (left_calculus_of_fractions.comp _ _ _ H'.hs'
+          (left_calculus_of_fractions.comp _ _ _ T.hs' hu))), }, },
     { have eq : z₁₂'.s ≫ sq'.g ≫ H'.s' = z₁₂'.s ≫ t' ≫ H'.g,
       { have h := H'.fac,
         simp only [assoc] at h,
@@ -221,9 +221,9 @@ begin
       { simp only [assoc, comp_id], },
       { simp only [assoc, comp_id, fac], },
       { simp only [assoc],
-        refine left_calculus_of_fractions.comp _ _ z₂₃.hs
-          (left_calculus_of_fractions.comp _ _ sq'.hs'
-          (left_calculus_of_fractions.comp _ _ H'.hs' hu)), }, }, },
+        refine left_calculus_of_fractions.comp _ _ _ z₂₃.hs
+          (left_calculus_of_fractions.comp _ _ _ sq'.hs'
+          (left_calculus_of_fractions.comp _ _ _ H'.hs' hu)), }, }, },
 end
 
 lemma hom.comp_eq {X₁ X₂ X₃ : C} (z₁₂ : zigzag W X₁ X₂) (z₂₃ : zigzag W X₂ X₃)
@@ -279,7 +279,7 @@ instance : category (localization W) :=
     dsimp,
     let H := (left_calculus_of_fractions.ex sq₁₃.s' sq₁₃.hs' sq₂₄.g).some,
     let sq : to_sq (z₁₂.comp₀ z₂₃ sq₁₃).s (z₁₂.comp₀ z₂₃ sq₁₃).hs z₃₄.f := begin
-      refine ⟨H.obj, H.g, sq₂₄.s' ≫ H.s', left_calculus_of_fractions.comp _ _ sq₂₄.hs' H.hs', _⟩,
+      refine ⟨H.obj, H.g, sq₂₄.s' ≫ H.s', left_calculus_of_fractions.comp _ _ _ sq₂₄.hs' H.hs', _⟩,
       dsimp [zigzag.comp₀],
       rw [assoc, ← H.fac, reassoc_of sq₂₄.fac],
     end,

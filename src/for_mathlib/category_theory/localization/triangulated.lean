@@ -407,8 +407,8 @@ begin
   let T'₃ := triangle.mk C (sq.g ≫ zb.s ≫ s) g₃ h₃,
   have comm : T'₂.mor₁ ≫ sq.s' ≫ zb.s ≫ s = za.s ≫ sq.g ≫ zb.s ≫ s,
   { dsimp, rw ← reassoc_of sq.fac, },
-  have h₂ : W (sq.s' ≫ zb.s ≫ s) := left_calculus_of_fractions.comp _ _ sq.hs'
-    (left_calculus_of_fractions.comp _ _ zb.hs hs),
+  have h₂ : W (sq.s' ≫ zb.s ≫ s) := left_calculus_of_fractions.comp _ _ _ sq.hs'
+    (left_calculus_of_fractions.comp _ _ _ zb.hs hs),
   rcases morphism_property.compatible_with_triangulation.condition T'₂ T'₃ hT'₂ H₃
     za.s (sq.s' ≫ zb.s ≫ s) za.hs h₂ with ⟨α, hα₀, ⟨hα₁, hα₂⟩⟩,
   let φ : T'₂ ⟶ T'₃ := triangle_morphism.mk za.s (sq.s' ≫ zb.s ≫ s) α comm hα₁ hα₂,

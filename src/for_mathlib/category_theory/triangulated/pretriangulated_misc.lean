@@ -48,6 +48,21 @@ begin
     (inv_rot_of_dist_triangle _ _ (inv_rot_of_dist_triangle _ _ mem)) _ e₃.symm,
 end
 
+lemma pretriangulated.distinguished_cocone_triangle₁ {Y Z : C} (g : Y ⟶ Z) :
+  ∃ (X : C) (f : X ⟶ Y) (h : Z ⟶ X⟦1⟧), triangle.mk C f g h ∈ dist_triang C :=
+sorry
+
+
+lemma pretriangulated.complete_distinguished_triangle_morphism₁ (T₁ T₂ : triangle C)
+  (hT₁ : T₁ ∈ dist_triang C) (hT₂ : T₂ ∈ dist_triang C) (b : T₁.obj₂ ⟶ T₂.obj₂)
+  (c : T₁.obj₃ ⟶ T₂.obj₃) (comm : T₁.mor₂ ≫ c = b ≫ T₂.mor₂) :
+  ∃ (a : T₁.obj₁ ⟶ T₂.obj₁), T₁.mor₁ ≫ b = a ≫ T₂.mor₁ ∧
+    T₁.mor₃ ≫ (shift_functor C (1 : ℤ)).map a = c ≫ T₂.mor₃ :=
+begin
+  sorry,
+end
+
+
 lemma pretriangulated.complete_distinguished_triangle_morphism₂ (T₁ T₂ : triangle C)
   (hT₁ : T₁ ∈ dist_triang C) (hT₂ : T₂ ∈ dist_triang C) (a : T₁.obj₁ ⟶ T₂.obj₁)
   (c : T₁.obj₃ ⟶ T₂.obj₃) (comm : T₁.mor₃ ≫ (shift_functor C (1 : ℤ)).map a = c ≫ T₂.mor₃) :
@@ -69,8 +84,18 @@ begin
   obtain ⟨g, ⟨hg₁, hg₂⟩⟩ := pretriangulated.complete_distinguished_triangle_morphism T (triangle.mk C (0 : 0 ⟶ X) (𝟙 _) 0) hT
     (pretriangulated.contractible_distinguished₁ _) 0 f (by tidy),
   dsimp at hg₁,
-  refine ⟨g, by simpa only [comp_id] using hg₁.symm⟩,
+  exact ⟨g, by simpa only [comp_id] using hg₁.symm⟩,
 end
+
+lemma covariant_yoneda_exact₂ (T : triangle C) (hT : T ∈ dist_triang C) {X : C} (f : X ⟶ T.obj₂)
+  (hf : f ≫ T.mor₂ = 0) : ∃ (g : X ⟶ T.obj₁), f = g ≫ T.mor₁ :=
+begin
+  obtain ⟨a, ⟨ha₁, ha₂⟩⟩ := pretriangulated.complete_distinguished_triangle_morphism₁ _ T
+    (pretriangulated.contractible_distinguished X) hT f 0 (by { dsimp, rw [zero_comp, hf]}),
+  dsimp at ha₁,
+  exact ⟨a, by simpa only [id_comp] using ha₁⟩,
+end
+
 
 end triangulated
 

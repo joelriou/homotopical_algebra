@@ -1,5 +1,6 @@
 import for_mathlib.category_theory.localization.triangulated
 import for_mathlib.category_theory.triangulated.pretriangulated_misc
+import for_mathlib.category_theory.triangulated.shift_triangle
 
 noncomputable theory
 
@@ -56,6 +57,24 @@ def W : morphism_property C :=
 λ X Y f, ∃ (Z : C) (g : Y ⟶ Z) (h : Z ⟶ (shift_functor C (1 : ℤ)).obj X)
   (H : triangle.mk C f g h ∈ dist_triang C), Z ∈ A.set
 
+def W' : morphism_property C :=
+λ Y Z g, ∃ (X : C) (f : X ⟶ Y) (h : Z ⟶ X⟦(1 : ℤ)⟧) (H : triangle.mk C f g h ∈ dist_triang C),
+    X ∈ A.set
+
+variable {A}
+
+lemma W_eq_W' : W A = W' A :=
+begin
+  ext X Y f,
+  split,
+  { rintro ⟨Z, g, h, H, mem⟩,
+    exact ⟨_, _, _, inv_rot_of_dist_triangle C _ H, subcategory.shift A _ (-1 : ℤ) mem⟩, },
+  { rintro ⟨Z, g, h, H, mem⟩,
+    refine ⟨_, _, _, rot_of_dist_triangle C _ H, subcategory.shift A _ (1 : ℤ) mem⟩, },
+end
+
+variable (A)
+
 instance W_contains_identities : (W A).contains_identities :=
 ⟨λ X, ⟨0, 0, 0, pretriangulated.contractible_distinguished X, subcategory.zero A⟩⟩
 
@@ -100,10 +119,49 @@ instance : left_calculus_of_fractions (W A) :=
       rw [hq, assoc, eq, comp_zero], },
   end, }
 
-instance : right_calculus_of_fractions (W A) := sorry
-instance W_compatible_with_shift : (W A).compatible_with_shift ℤ := sorry
+instance : right_calculus_of_fractions (W A) :=
+{ id := infer_instance,
+  comp := left_calculus_of_fractions.comp (W A),
+  ex := λ X Y Y' s hs u, begin
+    obtain ⟨Z, f, g, H, mem⟩ := hs,
+    obtain ⟨X', f', h', mem'⟩ := pretriangulated.distinguished_cocone_triangle₁ (u ≫ f),
+    obtain ⟨a, ⟨ha₁, ha₂⟩⟩ := pretriangulated.complete_distinguished_triangle_morphism₁ _ _ mem' H u (𝟙 Z)
+      (comp_id _),
+    exact nonempty.intro ⟨X', a, f', ⟨Z, u ≫ f, h', mem', mem⟩, ha₁⟩,
+  end,
+  ext := λ Y Z Z' f₁ f₂ s hs hf₁, begin
+    let f := f₁ - f₂,
+    have hf₂ : f ≫ s = 0 := by { dsimp [f], rw [sub_comp, hf₁, sub_self], },
+    rw W_eq_W' at hs,
+    obtain ⟨X, g, h, H, mem⟩ := hs,
+    obtain ⟨q, hq⟩ := covariant_yoneda_exact₂ _ H f hf₂,
+    dsimp at q hq,
+    obtain ⟨Y', r, t, mem'⟩ := pretriangulated.distinguished_cocone_triangle₁ q,
+    refine ⟨Y', r, _, _⟩,
+    { exact ⟨_, _, _, mem', mem⟩, },
+    { rw [← sub_eq_zero, ← comp_sub],
+    change r ≫ f = 0,
+    have eq := comp_dist_triangle_mor_zero₁₂ C _ mem',
+    dsimp at eq,
+    rw [hq, ← assoc, eq, zero_comp], },
+  end, }
+
+example : ℕ := 42
+
+instance W_compatible_with_shift : (W A).compatible_with_shift ℤ :=
+begin
+  have h : ∀ (X Y : C) (f : X ⟶ Y) (hf : (W A) f) (n : ℤ), (W A) (f⟦n⟧'),
+  { rintro X Y f ⟨Z, g, h, H, mem⟩ n,
+    have h : A.W ((↑((-1 : units ℤ) ^ n) : ℤ) • (shift_functor C n).map f) :=
+      ⟨_, _, _, triangle.shift_distinguished C _ H n, subcategory.shift A Z n mem⟩,
+    sorry, },
+  sorry,
+end
+
 instance W_stable_under_finite_products : (W A).stable_under_finite_products := sorry
+
 instance W_compatible_with_triangulation : (W A).compatible_with_triangulation := sorry
+
 instance W_is_saturated : (W A).is_saturated := sorry
 
 lemma test [has_finite_products C] : pretriangulated (W A).localization := infer_instance
