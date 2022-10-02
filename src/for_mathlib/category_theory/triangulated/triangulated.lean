@@ -10,7 +10,6 @@ open_locale zero_object
 variables (C : Type*) [category C] [preadditive C] [has_zero_object C] [has_shift C ℤ]
   [∀ (n : ℤ), functor.additive (shift_functor C n)] [pretriangulated C]
 
-include C
 class triangulated :=
 (octahedron' : ∀ ⦃X₁ X₂ X₃ Z₁₂ Z₂₃ Z₁₃ : C⦄ ⦃u₁₂ : X₁ ⟶ X₂⦄ ⦃u₂₃ : X₂ ⟶ X₃⦄ ⦃u₁₃ : X₁ ⟶ X₃⦄
   (comm : u₁₂ ≫ u₂₃ = u₁₃)

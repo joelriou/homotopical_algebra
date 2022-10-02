@@ -83,6 +83,16 @@ def W' : morphism_property C :=
 
 variable {A}
 
+def W.mk {T : triangle C} (hT : T ∈ dist_triang C) (h : T.obj₃ ∈ A.set) :
+  (W A) T.mor₁ :=
+⟨T.obj₃, T.mor₂, T.mor₃, (by { cases T, exact hT, }), h⟩
+
+def W'.mk {T : triangle C} (hT : T ∈ dist_triang C) (h : T.obj₁ ∈ A.set) :
+  (W' A) T.mor₂ :=
+⟨T.obj₁, T.mor₁, T.mor₃, (by { cases T, exact hT, }), h⟩
+
+variable (A)
+
 lemma W_eq_W' : W A = W' A :=
 begin
   ext X Y f,
@@ -93,10 +103,16 @@ begin
     refine ⟨_, _, _, rot_of_dist_triangle C _ H, subcategory.shift A _ (1 : ℤ) mem⟩, },
 end
 
-variable (A)
+variable {A}
+
+def W.mk' {T : triangle C} (hT : T ∈ dist_triang C) (h : T.obj₁ ∈ A.set) :
+  (W A) T.mor₂ :=
+by simpa only [W_eq_W'] using W'.mk hT h
 
 instance W_contains_identities : (W A).contains_identities :=
 ⟨λ X, ⟨0, 0, 0, pretriangulated.contractible_distinguished X, subcategory.zero A⟩⟩
+
+variable (A)
 
 lemma W_stable_under_composition : (W A).stable_under_composition :=
 λ X₁ X₂ X₃ u₁₂ u₂₃ h₁₂ h₂₃,
@@ -206,7 +222,29 @@ end⟩
 
 instance W_stable_under_finite_products : (W A).stable_under_finite_products := sorry
 
-instance W_compatible_with_triangulation : (W A).compatible_with_triangulation := sorry
+instance W_compatible_with_triangulation : (W A).compatible_with_triangulation :=
+⟨λ T₁ T₃ hT₁ hT₃ a b ha hb comm, begin
+  let T'₁ := triangle.mk _ T₁.mor₁ T₁.mor₂ T₁.mor₃,
+  let T'₃ := triangle.mk _ T₃.mor₁ T₃.mor₂ T₃.mor₃,
+  have mem₁ : T'₁ ∈ dist_triang C := by { cases T₁, exact hT₁, },
+  have mem₃ : T'₃ ∈ dist_triang C := by { cases T₃, exact hT₃, },
+  rcases pretriangulated.distinguished_cocone_triangle _ _ (T₁.mor₁ ≫ b) with ⟨Z₂, g₂, h₂, mem₂⟩,
+  let T'₂ := triangle.mk _ (T₁.mor₁ ≫ b) g₂ h₂,
+  change T'₂ ∈ dist_triang C at mem₂,
+  rcases hb with ⟨Z₄, g₄, h₄, mem₄, mem₄'⟩,
+  let φ₁₂ : T'₁ ⟶ T'₂ := octahedron.triangle_morphism₁ rfl mem₁ mem₄ mem₂,
+  have hφ₁₂ : (W A) φ₁₂.hom₃ := W.mk (octahedron.triangle_distinguished rfl mem₁ mem₄ mem₂) mem₄',
+  rcases ha with ⟨Z₅, g₅, h₅, mem₅, mem₅'⟩,
+  let φ₂₃ : T'₂ ⟶ T'₃ := octahedron.triangle_morphism₂ comm.symm mem₅ mem₃ mem₂,
+  have hφ₂₃ : (W A) φ₂₃.hom₃ := W.mk' (octahedron.triangle_distinguished comm.symm mem₅ mem₃ mem₂) mem₅',
+  refine ⟨(φ₁₂ ≫ φ₂₃).hom₃, W_stable_under_composition A _ _ hφ₁₂ hφ₂₃, ⟨_, _⟩⟩,
+  { have h := (φ₁₂ ≫ φ₂₃).comm₂,
+    dsimp at h,
+    simpa only [comp_id] using h, },
+  { have h := (φ₁₂ ≫ φ₂₃).comm₃,
+    dsimp at h,
+    simpa only [triangle_category_comp, triangle_morphism.comp_hom₃, id_comp] using h, },
+end⟩
 
 instance W_is_saturated : (W A).is_saturated := sorry
 

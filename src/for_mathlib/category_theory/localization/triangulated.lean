@@ -24,7 +24,8 @@ class morphism_property.compatible_with_triangulation {C : Type*} [category C]
   [∀ (n : ℤ), (shift_functor C n).additive] [pretriangulated C]
   (W : morphism_property C) : Prop :=
 (condition : ∀ (T₁ T₂ : triangle C) (h₁ : T₁ ∈ dist_triang C) (h₂ : T₂ ∈ dist_triang C)
-  (a : T₁.obj₁ ⟶ T₂.obj₁) (b : T₁.obj₂ ⟶ T₂.obj₂) (ha : W a) (hb : W b),
+  (a : T₁.obj₁ ⟶ T₂.obj₁) (b : T₁.obj₂ ⟶ T₂.obj₂) (ha : W a) (hb : W b)
+  (comm : T₁.mor₁ ≫ b = a ≫ T₂.mor₁),
   ∃ (c : T₁.obj₃ ⟶ T₂.obj₃) (hc : W c),
   (T₁.mor₂ ≫ c = b ≫ T₂.mor₂) ∧ (T₁.mor₃ ≫ a⟦1⟧' = c ≫ T₂.mor₃))
 
@@ -410,7 +411,7 @@ begin
   have h₂ : W (sq.s' ≫ zb.s ≫ s) := left_calculus_of_fractions.comp _ _ _ sq.hs'
     (left_calculus_of_fractions.comp _ _ _ zb.hs hs),
   rcases morphism_property.compatible_with_triangulation.condition T'₂ T'₃ hT'₂ H₃
-    za.s (sq.s' ≫ zb.s ≫ s) za.hs h₂ with ⟨α, hα₀, ⟨hα₁, hα₂⟩⟩,
+    za.s (sq.s' ≫ zb.s ≫ s) za.hs h₂ comm with ⟨α, hα₀, ⟨hα₁, hα₂⟩⟩,
   let φ : T'₂ ⟶ T'₃ := triangle_morphism.mk za.s (sq.s' ≫ zb.s ≫ s) α comm hα₁ hα₂,
   let F := (functor L comm_shift),
   haveI := localization.inverts L W _ za.hs,
