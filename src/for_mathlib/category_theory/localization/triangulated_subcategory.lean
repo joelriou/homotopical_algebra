@@ -4,6 +4,8 @@ import for_mathlib.category_theory.triangulated.shift_triangle
 
 noncomputable theory
 
+universes v₁ v₂ u₁ u₂
+
 open_locale zero_object
 
 namespace set
@@ -22,14 +24,14 @@ open limits category preadditive
 namespace functor
 
 @[simps]
-def map_arrow_nat_trans_of_nat_trans {C D : Type*} [category C] [category D]
+def map_arrow_nat_trans_of_nat_trans {C : Type u₁} {D : Type u₂} [category.{v₁} C] [category.{v₂} D]
   {F G : C ⥤ D} (τ : F ⟶ G) : F.map_arrow ⟶ G.map_arrow :=
 { app := λ f,
   { left := τ.app _,
     right := τ.app _, }, }
 
 @[simps]
-def map_arrow_nat_iso_of_nat_iso {C D : Type*} [category C] [category D]
+def map_arrow_nat_iso_of_nat_iso {C : Type u₁} {D : Type u₂} [category.{v₁} C] [category.{v₂} D]
   {F G : C ⥤ D} (e : F ≅ G) : F.map_arrow ≅ G.map_arrow :=
 { hom := map_arrow_nat_trans_of_nat_trans e.hom,
   inv := map_arrow_nat_trans_of_nat_trans e.inv, }
@@ -186,10 +188,9 @@ instance W_compatible_with_shift : (W A).compatible_with_shift ℤ :=
   intro n,
   ext X Y f,
   refine ⟨λ hf, _, λ hf, h _ _ f hf n⟩,
-  sorry,
---  exact ((W_respects_iso A).arrow_mk_iso_iff
---    ((functor.map_arrow_nat_iso_of_nat_iso
---    (shift_functor_comp_shift_functor_neg C n)).app (arrow.mk f))).mp (h _ _ _ hf (-n)),
+   exact ((W_respects_iso A).arrow_mk_iso_iff
+    ((functor.map_arrow_nat_iso_of_nat_iso
+    (shift_functor_comp_shift_functor_neg C n)).app (arrow.mk f))).mp (h _ _ _ hf (-n)),
 end⟩
 
 instance W_stable_under_finite_products : (W A).stable_under_finite_products := sorry
