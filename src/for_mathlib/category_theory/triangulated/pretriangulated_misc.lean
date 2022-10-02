@@ -76,7 +76,20 @@ lemma pretriangulated.complete_distinguished_triangle_morphism₂ (T₁ T₂ : t
   (c : T₁.obj₃ ⟶ T₂.obj₃) (comm : T₁.mor₃ ≫ (shift_functor C (1 : ℤ)).map a = c ≫ T₂.mor₃) :
   ∃ (b : T₁.obj₂ ⟶ T₂.obj₂), T₁.mor₁ ≫ b = a ≫ T₂.mor₁ ∧ T₁.mor₂ ≫ c = b ≫ T₂.mor₂ :=
 begin
-  sorry,
+  obtain ⟨a, ⟨ha₁, ha₂⟩⟩ := pretriangulated.complete_distinguished_triangle_morphism _ _
+    (inv_rot_of_dist_triangle _ _ hT₁) (inv_rot_of_dist_triangle _ _ hT₂)
+      ((shift_functor C (-1 : ℤ)).map c) a begin
+    dsimp only [triangle.inv_rotate, triangle.mk],
+    simp only [neg_comp, comp_neg, neg_inj, assoc, ← functor.map_comp_assoc, ← comm,
+      iso.app_hom, unit_of_tensor_iso_unit_hom_app, discrete.functor_map_id,
+      nat_trans.id_app, id_comp, assoc, functor.map_comp, μ_naturality_assoc,
+      nat_trans.naturality, functor.id_map],
+  end,
+  refine ⟨a, ⟨ha₁, _⟩⟩,
+  dsimp at ha₂,
+  erw [assoc, ← nat_trans.naturality, functor.id_map] at ha₂,
+  simp only [← cancel_mono ((shift_functor_neg_comp_shift_functor C (1 : ℤ)).inv.app T₂.obj₃),
+    assoc, ha₂],
 end
 
 lemma pretriangulated.contractible_distinguished₁ (X : C) : triangle.mk C (0 : 0 ⟶ X) (𝟙 X) 0 ∈ dist_triang C :=
