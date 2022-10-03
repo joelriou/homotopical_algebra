@@ -107,6 +107,7 @@ variable (C)
 lemma has_finite_products_of_has_binary_products
   [has_terminal C] [has_binary_products C] : has_finite_products C :=
 begin
+/- to be refactored using for_mathlib/category_theory/limits/products.lean -/
   suffices : ∀ (n : ℕ), has_limits_of_shape (discrete (fin n)) C,
   { constructor,
     introsI J hJ,
