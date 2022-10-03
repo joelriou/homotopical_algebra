@@ -235,7 +235,8 @@ instance W_compatible_with_shift : (W A).compatible_with_shift ℤ :=
 end⟩
 
 lemma binary_product_stable (X₁ X₂ : C) (hX₁ : X₁ ∈ A.set)
-  (hX₂ : X₂ ∈ A.set) : (X₁ ⨯ X₂) ∈ A.set := sorry
+  (hX₂ : X₂ ∈ A.set) : (X₁ ⨯ X₂) ∈ A.set :=
+A.ext₂ _ (binary_product_triangle_distinguished X₁ X₂) hX₁ hX₂
 
 lemma pi_finite_stable {J : Type} [finite J]
   (X : J → C) (hX : ∀ j, X j ∈ A.set) : (∏ X) ∈ A.set :=

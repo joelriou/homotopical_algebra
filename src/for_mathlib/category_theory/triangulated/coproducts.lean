@@ -83,6 +83,49 @@ instance : has_finite_products C := by apply has_finite_products_of_has_binary_p
 
 instance : has_finite_coproducts C := by apply has_finite_coproducts_of_has_binary_coproducts
 
+lemma exists_iso_binary_product_of_dist_triang (T : triangle C) (hT : T ∈ dist_triang C)
+  (zero : T.mor₃ = 0) :
+  ∃ (e : T.obj₂ ≅ T.obj₁ ⨯ T.obj₃), T.mor₁ ≫ e.hom = prod.lift (𝟙 _) 0 ∧
+    T.mor₂ = e.hom ≫ limits.prod.snd :=
+begin
+  haveI : mono T.mor₁ := mono_of_dist_triang₁ T hT zero,
+  obtain ⟨i₂, hi₂⟩ := covariant_yoneda_exact₃ T hT (𝟙 T.obj₃) (by rw [zero, comp_zero]),
+  obtain ⟨p₁, hp₁⟩ := covariant_yoneda_exact₂ T hT (𝟙 T.obj₂ - T.mor₂ ≫ i₂)
+    (by rw [sub_comp, id_comp, assoc, ← hi₂, comp_id, sub_self]),
+  let e : T.obj₂ ≅ T.obj₁ ⨯ T.obj₃ :=
+  { hom := prod.lift p₁ T.mor₂,
+    inv := limits.prod.fst ≫ T.mor₁ + limits.prod.snd ≫ i₂,
+    hom_inv_id' :=  by simp only [comp_add, prod.lift_fst_assoc, prod.lift_snd_assoc,
+      ← hp₁, ← hi₂, sub_add_cancel],
+    inv_hom_id' := begin
+      ext,
+      { simp only [← cancel_mono T.mor₁, add_comp, assoc, prod.lift_fst, id_comp, ← hp₁,
+          comp_sub, comp_id, T.comp_zero₁₂_assoc hT, zero_comp, comp_zero, sub_zero],
+        rw [← reassoc_of hi₂, sub_self, add_zero], },
+      { simp only [add_comp, assoc, prod.lift_snd, id_comp, T.comp_zero₁₂ hT, comp_zero,
+          zero_add, ← hi₂, comp_id], },
+    end, },
+  refine ⟨e, _, by simp only [prod.lift_snd]⟩,
+  { rw [← cancel_mono e.inv, assoc, e.hom_inv_id, comp_id],
+    simp only [comp_add, prod.lift_fst_assoc, id_comp, prod.lift_snd_assoc, zero_comp, add_zero], },
+end
+
+lemma binary_product_triangle_distinguished (X₁ X₂ : C) :
+  triangle.mk C (prod.lift (𝟙 X₁) (0 : X₁ ⟶ X₂)) limits.prod.snd 0 ∈ dist_triang C :=
+begin
+  obtain ⟨Y, g, h, mem⟩ := pretriangulated.distinguished_cocone_triangle₂ (0 : X₂ ⟶ X₁⟦(1 : ℤ)⟧),
+  obtain ⟨e, ⟨he₁, he₂⟩⟩ := exists_iso_binary_product_of_dist_triang _ mem rfl,
+  refine pretriangulated.isomorphic_distinguished _ mem _ _,
+  symmetry,
+  dsimp at he₁ he₂,
+  refine triangle.mk_iso _ _ (iso.refl _) e (iso.refl _) _ _ _,
+  { dsimp,
+    simp only [prod.comp_lift, comp_id, comp_zero, id_comp, he₁], },
+  { dsimp,
+    rw [comp_id, he₂], },
+  { simp only [triangle.mk_mor₃, zero_comp, comp_zero], },
+end
+
 @[simps]
 def triangle.coproduct {I : Type*} (T : I → triangle C) [has_coproduct (λ i, (T i).obj₁)]
   [has_coproduct (λ i, (T i).obj₂)] [has_coproduct (λ i, (T i).obj₃)]
