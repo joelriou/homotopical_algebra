@@ -4,6 +4,7 @@ import for_mathlib.category_theory.triangulated.shift_triangle
 import for_mathlib.category_theory.triangulated.triangulated
 import for_mathlib.category_theory.preadditive_subcategory
 import for_mathlib.category_theory.triangulated.coproducts
+import for_mathlib.category_theory.limits.products
 
 noncomputable theory
 
@@ -233,8 +234,41 @@ instance W_compatible_with_shift : (W A).compatible_with_shift ℤ :=
     (shift_functor_comp_shift_functor_neg C n)).app (arrow.mk f))).mp (h _ _ _ hf (-n)),
 end⟩
 
-lemma pi_finite_stable {J : Type*} [finite J] (X : J → C) (hX : ∀ j, X j ∈ A.set)
-  [has_product X] : (∏ X) ∈ A.set := sorry
+lemma binary_product_stable (X₁ X₂ : C) (hX₁ : X₁ ∈ A.set)
+  (hX₂ : X₂ ∈ A.set) : (X₁ ⨯ X₂) ∈ A.set := sorry
+
+lemma pi_finite_stable {J : Type} [finite J]
+  (X : J → C) (hX : ∀ j, X j ∈ A.set) : (∏ X) ∈ A.set :=
+begin
+  revert hX X,
+  let P : Type → Prop := λ J,
+    ∀ [hJ : finite J] (X : J → C) (hX : ∀ j, X j ∈ A.set),
+      by { haveI := hJ, exact (∏ X) ∈ A.set, },
+  suffices : P J,
+  { exact this, },
+  refine finite.induction_empty_option _ _ _ J,
+  { intros J₁ J₂ e hJ₁, introI, intros X hX,
+    haveI : finite J₁ := finite.of_equiv _ e.symm,
+    haveI := has_product_of_equiv X e,
+    have pouf := hJ₁ (X ∘ e) (λ j₁, hX _),
+    exact (subcategory.respects_iso A).condition (product_iso_of_equiv X e)
+      (hJ₁ (X ∘ e) (λ j₁, hX _)), },
+  { introI, intros X hX,
+    refine (subcategory.respects_iso A).condition _ A.zero,
+    refine (limits.is_zero.iso_zero _).symm,
+    haveI : mono (0 : ∏ X ⟶ 0),
+    { constructor,
+      intros Z f₁ f₂ hf,
+      ext,
+      discrete_cases,
+      induction j, },
+    exact limits.is_zero.of_mono (0 : ∏ X ⟶ 0) (is_zero_zero C), },
+  { intro J,
+    introI,
+    intros hJ hJ' X hX,
+    exact (subcategory.respects_iso A).condition (product_iso_option X).symm
+      (binary_product_stable A _ _ (hJ (λ j, X (some j)) (λ j, hX _)) (hX none)), },
+end
 
 instance W_stable_under_finite_products : (W A).stable_under_finite_products :=
 ⟨λ J, begin
