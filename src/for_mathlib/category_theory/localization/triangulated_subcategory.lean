@@ -2,6 +2,7 @@ import for_mathlib.category_theory.localization.triangulated
 import for_mathlib.category_theory.triangulated.pretriangulated_misc
 import for_mathlib.category_theory.triangulated.shift_triangle
 import for_mathlib.category_theory.triangulated.triangulated
+import for_mathlib.category_theory.preadditive_subcategory
 
 noncomputable theory
 
@@ -249,6 +250,15 @@ end⟩
 instance W_is_saturated : (W A).is_saturated := sorry
 
 lemma test [has_finite_products C] : pretriangulated (W A).localization := infer_instance
+
+@[protected, derive category, derive preadditive]
+def category := full_subcategory A.set
+
+instance : preadditive (subcategory.category A) := infer_instance
+
+instance : has_zero_object (subcategory.category A) :=
+⟨⟨⟨0, A.zero⟩, ⟨λ X, nonempty.intro (unique_of_subsingleton 0),
+  λ X, nonempty.intro (unique_of_subsingleton 0)⟩⟩⟩
 
 end subcategory
 
