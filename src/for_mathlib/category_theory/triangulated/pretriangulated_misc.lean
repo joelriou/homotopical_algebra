@@ -13,6 +13,26 @@ open pretriangulated
 variables {C : Type*} [category C] [preadditive C] [has_zero_object C] [has_shift C ℤ]
   [∀ (n : ℤ), functor.additive (shift_functor C n)] [pretriangulated C]
 
+@[reassoc]
+lemma triangle.comp_zero₁₂ (T : triangle C) (hT : T ∈ dist_triang C) : T.mor₁ ≫ T.mor₂ = 0 :=
+begin
+  obtain ⟨c, ⟨hc₁, hc₂⟩⟩ := complete_distinguished_triangle_morphism _ _
+    (contractible_distinguished T.obj₁) hT (𝟙 T.obj₁) T.mor₁ rfl,
+  dsimp at hc₁,
+  rw [← hc₁, zero_comp],
+end
+
+@[reassoc]
+lemma triangle.comp_zero₂₃ (T : triangle C) (hT : T ∈ dist_triang C) : T.mor₂ ≫ T.mor₃ = 0 :=
+triangle.comp_zero₁₂ _ (rot_of_dist_triangle _ _ hT)
+
+@[reassoc]
+lemma triangle.comp_zero₃₁ (T : triangle C) (hT : T ∈ dist_triang C) : T.mor₃ ≫ T.mor₁⟦1⟧' = 0 :=
+begin
+  rw [← neg_inj, ← comp_neg, neg_zero],
+  exact triangle.comp_zero₁₂ _ (rot_of_dist_triangle _ _ (rot_of_dist_triangle _ _ hT)),
+end
+
 lemma pretriangulated.distinguished_cocone_triangle₂ {Z X : C} (h : Z ⟶ X⟦(1 : ℤ)⟧) :
   ∃ (Y : C) (f : X ⟶ Y) (g : Y ⟶ Z), triangle.mk C f g h ∈ dist_triang C :=
 begin
@@ -117,6 +137,14 @@ begin
   exact ⟨a, by simpa only [id_comp] using ha₁⟩,
 end
 
+lemma covariant_yoneda_exact₁ (T : triangle C) (hT : T ∈ dist_triang C) {X : C} (f : X ⟶ T.obj₁⟦(1 : ℤ)⟧)
+  (hf : f ≫ T.mor₁⟦1⟧' = 0) : ∃ (g : X ⟶ T.obj₃), f = g ≫ T.mor₃ :=
+covariant_yoneda_exact₂ _ (rot_of_dist_triangle _ _
+  (rot_of_dist_triangle _ _ hT)) f (by { dsimp, rw [comp_neg, hf, neg_zero], })
+
+lemma covariant_yoneda_exact₃ (T : triangle C) (hT : T ∈ dist_triang C) {X : C} (f : X ⟶ T.obj₃)
+  (hf : f ≫ T.mor₃ = 0) : ∃ (g : X ⟶ T.obj₂), f = g ≫ T.mor₂ :=
+covariant_yoneda_exact₂ _ (rot_of_dist_triangle _ _ hT) f hf
 
 end triangulated
 

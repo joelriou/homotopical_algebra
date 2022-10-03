@@ -3,6 +3,7 @@ import for_mathlib.category_theory.triangulated.pretriangulated_misc
 import for_mathlib.category_theory.triangulated.shift_triangle
 import for_mathlib.category_theory.triangulated.triangulated
 import for_mathlib.category_theory.preadditive_subcategory
+import for_mathlib.category_theory.triangulated.coproducts
 
 noncomputable theory
 
@@ -59,6 +60,7 @@ variable {C}
 namespace subcategory
 
 variable (A : subcategory C)
+
 lemma respects_iso : A.set.respects_iso :=
 ⟨λ X Y e hX, A.ext₂ _ (pretriangulated.isomorphic_distinguished _
   (pretriangulated.contractible_distinguished X) (triangle.mk C e.hom (0 : Y ⟶ 0) 0)
@@ -91,6 +93,16 @@ def W.mk {T : triangle C} (hT : T ∈ dist_triang C) (h : T.obj₃ ∈ A.set) :
 def W'.mk {T : triangle C} (hT : T ∈ dist_triang C) (h : T.obj₁ ∈ A.set) :
   (W' A) T.mor₂ :=
 ⟨T.obj₁, T.mor₁, T.mor₃, (by { cases T, exact hT, }), h⟩
+
+def W.triangle {X Y : C} (f : X ⟶ Y) (hf : (W A) f) : triangle C :=
+triangle.mk C f hf.some_spec.some hf.some_spec.some_spec.some
+
+lemma W.triangle_distinguished {X Y : C} (f : X ⟶ Y) (hf : (W A) f) :
+  W.triangle f hf ∈ dist_triang C := hf.some_spec.some_spec.some_spec.some
+
+lemma W.triangle_obj₃_mem {X Y : C} (f : X ⟶ Y) (hf : (W A) f) :
+  (W.triangle f hf).obj₃ ∈ A.set :=
+hf.some_spec.some_spec.some_spec.some_spec
 
 variable (A)
 
@@ -221,7 +233,18 @@ instance W_compatible_with_shift : (W A).compatible_with_shift ℤ :=
     (shift_functor_comp_shift_functor_neg C n)).app (arrow.mk f))).mp (h _ _ _ hf (-n)),
 end⟩
 
-instance W_stable_under_finite_products : (W A).stable_under_finite_products := sorry
+lemma pi_finite_stable {J : Type*} [finite J] (X : J → C) (hX : ∀ j, X j ∈ A.set)
+  [has_product X] : (∏ X) ∈ A.set := sorry
+
+instance W_stable_under_finite_products : (W A).stable_under_finite_products :=
+⟨λ J, begin
+  introI,
+  refine morphism_property.stable_under_products_of_shape.mk _ _ (W_respects_iso A) _,
+  intros X₁ X₂ f hf,
+  let T := λ j, W.triangle _ (hf j),
+  exact W.mk (triangle.product_distinghished T (λ j, W.triangle_distinguished _ (hf j)))
+    (pi_finite_stable A (λ j, (T j).obj₃) (λ j, W.triangle_obj₃_mem _ (hf j))),
+end⟩
 
 instance W_compatible_with_triangulation : (W A).compatible_with_triangulation :=
 ⟨λ T₁ T₃ hT₁ hT₃ a b ha hb comm, begin

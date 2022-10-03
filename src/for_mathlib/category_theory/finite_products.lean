@@ -2,6 +2,7 @@ import category_theory.limits.shapes.finite_products
 import category_theory.products.basic
 import for_mathlib.category_theory.functor_misc
 import for_mathlib.category_theory.limits
+import category_theory.limits.opposites
 
 noncomputable theory
 
@@ -160,6 +161,11 @@ begin
     exact has_limit.mk ⟨c, hc⟩, },
 end
 
+lemma has_finite_coproducts_of_has_binary_coproducts
+  [has_initial C] [has_binary_coproducts C] : has_finite_coproducts C :=
+begin
+  sorry,
+end
 
 end limits
 

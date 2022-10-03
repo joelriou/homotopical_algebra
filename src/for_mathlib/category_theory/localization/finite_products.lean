@@ -47,6 +47,11 @@ def stable_under_limits_of_shape (W : morphism_property C) (J : Type*) [category
 abbreviation stable_under_products_of_shape (W : morphism_property C) (J : Type*) : Prop :=
 W.stable_under_limits_of_shape (discrete J)
 
+def stable_under_products_of_shape.mk (W : morphism_property C) (J : Type*)
+  (hW₀ : W.respects_iso) [has_products_of_shape J C]
+  (hW : ∀ (X₁ X₂ : J → C) (f : Π j, X₁ j ⟶ X₂ j) (hf : Π (j : J), W (f j)),
+    W (pi.map f)) : W.stable_under_products_of_shape J := sorry
+
 class stable_under_finite_products (W : morphism_property C) : Prop :=
 (condition [] : ∀ (J : Type) [finite J], stable_under_products_of_shape W J)
 
