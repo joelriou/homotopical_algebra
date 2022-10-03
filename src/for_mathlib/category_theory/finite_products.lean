@@ -3,6 +3,7 @@ import category_theory.products.basic
 import for_mathlib.category_theory.functor_misc
 import for_mathlib.category_theory.limits
 import category_theory.limits.opposites
+import category_theory.adjunction.limits
 
 noncomputable theory
 
@@ -161,11 +162,27 @@ begin
     exact has_limit.mk ⟨c, hc⟩, },
 end
 
+local attribute [instance] has_limits_of_shape_op_of_has_colimits_of_shape
+
+lemma has_binary_products_opposite [has_binary_coproducts C] : has_binary_products Cᵒᵖ :=
+begin
+  resetI,
+  haveI : has_colimits_of_shape (discrete walking_pair)ᵒᵖ C :=
+    has_colimits_of_shape_of_equivalence (discrete.opposite _).symm,
+  apply_instance,
+end
+
 lemma has_finite_coproducts_of_has_binary_coproducts
   [has_initial C] [has_binary_coproducts C] : has_finite_coproducts C :=
-begin
-  sorry,
-end
+⟨λ J, begin
+  introI,
+  suffices : has_finite_products Cᵒᵖ,
+  { haveI := this,
+    exact adjunction.has_colimits_of_shape_of_equivalence (op_op_equivalence C).inverse, },
+  haveI : has_terminal Cᵒᵖ := infer_instance,
+  haveI : has_binary_products Cᵒᵖ := has_binary_products_opposite _,
+  exact has_finite_products_of_has_binary_products Cᵒᵖ,
+end⟩
 
 end limits
 
