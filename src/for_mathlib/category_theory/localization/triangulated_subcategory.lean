@@ -305,9 +305,12 @@ instance W_compatible_with_triangulation : (W A).compatible_with_triangulation :
     simpa only [triangle_category_comp, triangle_morphism.comp_hom₃, id_comp] using h, },
 end⟩
 
-instance W_is_saturated : (W A).is_saturated := sorry
+class saturated : Prop :=
+(condition : ∀ (X Y : C) (i : Y ⟶ X) (p : X ⟶ Y) (hip : i ≫ p = 𝟙 Y) (hX : X ∈ A.set), Y ∈ A.set)
 
-lemma test [has_finite_products C] : pretriangulated (W A).localization := infer_instance
+instance W_is_saturated [A.saturated] : (W A).is_saturated := sorry
+
+lemma test : pretriangulated (W A).localization := infer_instance
 
 @[protected, derive category, derive preadditive]
 def category := full_subcategory A.set
