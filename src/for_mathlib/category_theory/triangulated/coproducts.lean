@@ -158,7 +158,10 @@ lemma triangle.product_distinghished {I : Type*} (T : I → triangle C)
   [has_product (λ i, (T i).obj₁)]
   [has_product (λ i, (T i).obj₂)] [has_product (λ i, (T i).obj₃)]
   [has_product (λ i, (shift_functor C (1 : ℤ)).obj (T i).obj₁)]
-  (hT : ∀ i, (T i) ∈ dist_triang C) : triangle.product T ∈ dist_triang C := sorry
+  (hT : ∀ i, (T i) ∈ dist_triang C) : triangle.product T ∈ dist_triang C :=
+begin
+  sorry,
+end
 
 @[simps]
 def triangle.coprod (T₁ T₂ : triangle C) [has_binary_product T₁.obj₁ T₂.obj₁]
