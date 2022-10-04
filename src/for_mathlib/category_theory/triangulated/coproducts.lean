@@ -137,11 +137,11 @@ def triangle.coproduct {I : Type*} (T : I → triangle C) [has_coproduct (λ i, 
   mor₂ := limits.sigma.map (λ i, (T i).mor₂),
   mor₃ := limits.sigma.map (λ i, (T i).mor₃) ≫ sigma_comparison _ _, }
 
-lemma triangle.coproduct_distinghished {I : Type*} (T : I → triangle C)
+/-lemma triangle.coproduct_distinghished {I : Type*} (T : I → triangle C)
   [has_coproduct (λ i, (T i).obj₁)]
   [has_coproduct (λ i, (T i).obj₂)] [has_coproduct (λ i, (T i).obj₃)]
   [has_coproduct (λ i, (shift_functor C (1 : ℤ)).obj (T i).obj₁)]
-  (hT : ∀ i, (T i) ∈ dist_triang C) : triangle.coproduct T ∈ dist_triang C := sorry
+  (hT : ∀ i, (T i) ∈ dist_triang C) : triangle.coproduct T ∈ dist_triang C := sorry-/
 
 @[simps]
 def triangle.product {I : Type*} (T : I → triangle C) [has_product (λ i, (T i).obj₁)]
@@ -181,6 +181,7 @@ def coprod_iso_coproduct {D : Type*} [category D] (X : walking_pair → D)
   hom_inv_id' := by tidy,
   inv_hom_id' := by { ext j, discrete_cases, cases j, tidy, }, }
 
+/-
 lemma triangle.coprod_distinguished {I : Type*} (T₁ T₂ : triangle C)
   (hT₁ : T₁ ∈ dist_triang C) (hT₂ : T₂ ∈ dist_triang C) :
   triangle.coprod T₁ T₂ ∈ dist_triang C :=
@@ -200,7 +201,7 @@ begin
     simp only [assoc, coprod.inr_map_assoc, coprod_comparison_inr_assoc, coprod.desc_comp_assoc,
       ι_colim_map, discrete.nat_trans_app, coprod.desc_comp, ι_comp_sigma_comparison,
       coprod.inr_desc, ι_colim_map_assoc, ← functor.map_comp], },
-end
+end-/
 
 end triangulated
 
