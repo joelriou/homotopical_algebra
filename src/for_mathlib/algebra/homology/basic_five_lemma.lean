@@ -1,11 +1,54 @@
 import category_theory.preadditive.additive_functor
 import algebra.category.Group.preadditive
+import algebra.category.Group.limits
 
 noncomputable theory
 
-universe u
+universes v u
 
 open category_theory category_theory.category
+
+namespace AddCommGroup
+
+open category_theory.limits
+
+variables
+
+def pi' {I : Type v} (X : I → AddCommGroup.{u}) := (AddCommGroup.of (Π i, (X i).α))
+
+@[simps]
+def cone_pi {I : Type} (X : I → AddCommGroup.{u}) : fan X := fan.mk (pi' X) (λ i,
+  { to_fun := λ x, x i,
+    map_zero' := by tidy,
+    map_add' := by tidy, })
+
+lemma cone_pi_is_limit {I : Type} (X : I → AddCommGroup.{u}) : is_limit (cone_pi X) :=
+mk_fan_limit _
+  (λ s,
+    { to_fun := λ x i, s.proj i x,
+      map_zero' := by tidy,
+      map_add' := by tidy}) (by tidy)
+  (λ s m hm, begin
+    ext x i,
+    dsimp,
+    simpa only [← hm],
+  end)
+
+def pi_iso_pi' {I : Type} (X : I → AddCommGroup.{u}) : ∏ X ≅ pi' X :=
+is_limit.cone_point_unique_up_to_iso (limit.is_limit _) (cone_pi_is_limit X)
+
+variables {I : Type v} {X Y Z : I → AddCommGroup.{u}} (f : Π i, X i ⟶ Y i) (g : Π i, Y i ⟶ Z i)
+
+@[simps]
+def pi'_map : pi' X ⟶ pi' Y :=
+{ to_fun := λ x i, f i (x i),
+  map_zero' := by tidy,
+  map_add' := by tidy, }
+
+@[simp, reassoc]
+lemma pi'_map_comp : pi'_map (λ i, f i ≫ g i) = pi'_map f ≫ pi'_map g := rfl
+
+end AddCommGroup
 
 namespace algebra
 
@@ -36,10 +79,19 @@ begin
     rw [map_sub, hx, sub_self], },
 end
 
+lemma concrete_exact.pi' {I : Type v} {X₁ X₂ X₃ : I → AddCommGroup.{u}}
+  (f₁ : Π i, X₁ i ⟶ X₂ i) (f₂ : Π i, X₂ i ⟶ X₃ i) (h : ∀ i, concrete_exact (f₁ i) (f₂ i)) :
+  concrete_exact (AddCommGroup.pi'_map f₁) (AddCommGroup.pi'_map f₂) :=
+begin
+  intros x₂ hx₂,
+  have h : ∀ (i : I), ∃ (x₁ : X₁ i), (f₁ i) x₁ = x₂ i := λ i, h i (x₂ i) (congr_fun hx₂ i),
+  exact ⟨λ i, (h i).some, by { ext i, exact (h i).some_spec, }⟩,
+end
+
 variables (A : Type*) [category A] [preadditive A]
 
 structure five_complex :=
-(X₁ X₂ X₃ X₄ X₅: A)
+(X₁ X₂ X₃ X₄ X₅ : A)
 (f₁ : X₁ ⟶ X₂)
 (f₂ : X₂ ⟶ X₃)
 (f₃ : X₃ ⟶ X₄)
@@ -95,7 +147,6 @@ by simp only [← comp_apply, φ.comm₃]
 lemma concrete_comm₄ {E E' : five_complex (AddCommGroup.{u})} (φ : E ⟶ E')
   (x₄ : E.X₄) : φ.τ₅ (E.f₄ x₄) = E'.f₄ (φ.τ₄ x₄) :=
 by simp only [← comp_apply, φ.comm₄]
-
 
 lemma five_lemma_injective {E E' : five_complex (AddCommGroup.{u})} (φ : E ⟶ E')
   (hE : E.exact) (hE' : E'.exact)
@@ -156,6 +207,54 @@ lemma five_lemma_bijective {E E' : five_complex (AddCommGroup.{u})} (φ : E ⟶ 
   (h₅ : function.bijective φ.τ₅) :
   function.bijective φ.τ₃ :=
 ⟨five_lemma_injective φ hE hE' h₁.2 h₂.1 h₄.1, five_lemma_surjective φ hE hE' h₂.2 h₄.2 h₅.1⟩
+
+@[simps]
+def pi {I : Type} (E : I → five_complex AddCommGroup.{u}) : five_complex AddCommGroup.{u} :=
+{ X₁ := ∏ (λ i, (E i).X₁),
+  X₂ := ∏ (λ i, (E i).X₂),
+  X₃ := ∏ (λ i, (E i).X₃),
+  X₄ := ∏ (λ i, (E i).X₄),
+  X₅ := ∏ (λ i, (E i).X₅),
+  f₁ := limits.pi.map (λ i, (E i).f₁),
+  f₂ := limits.pi.map (λ i, (E i).f₂),
+  f₃ := limits.pi.map (λ i, (E i).f₃),
+  f₄ := limits.pi.map (λ i, (E i).f₄),
+  h₁₂ := limits.limit.hom_ext begin
+    rintro ⟨i⟩,
+    simp only [assoc, limits.lim_map_π, discrete.nat_trans_app, limits.lim_map_π_assoc,
+      limits.zero_comp, (E i).h₁₂, limits.comp_zero],
+  end,
+  h₂₃ := limits.limit.hom_ext begin
+    rintro ⟨i⟩,
+    simp only [assoc, limits.lim_map_π, discrete.nat_trans_app, limits.lim_map_π_assoc,
+      limits.zero_comp, (E i).h₂₃, limits.comp_zero],
+  end,
+  h₃₄ := limits.limit.hom_ext begin
+    rintro ⟨i⟩,
+    simp only [assoc, limits.lim_map_π, discrete.nat_trans_app, limits.lim_map_π_assoc,
+      limits.zero_comp, (E i).h₃₄, limits.comp_zero],
+  end, }
+
+def pi' {I : Type v} (E : I → five_complex AddCommGroup.{u}) :
+  five_complex AddCommGroup.{max u v} :=
+{ X₁ := AddCommGroup.pi'.{v u} (λ i, (E i).X₁),
+  X₂ := AddCommGroup.pi'.{v u} (λ i, (E i).X₂),
+  X₃ := AddCommGroup.pi'.{v u} (λ i, (E i).X₃),
+  X₄ := AddCommGroup.pi'.{v u} (λ i, (E i).X₄),
+  X₅ := AddCommGroup.pi'.{v u} (λ i, (E i).X₅),
+  f₁ := AddCommGroup.pi'_map (λ i, (E i).f₁),
+  f₂ := AddCommGroup.pi'_map (λ i, (E i).f₂),
+  f₃ := AddCommGroup.pi'_map (λ i, (E i).f₃),
+  f₄ := AddCommGroup.pi'_map (λ i, (E i).f₄),
+  h₁₂ := by simpa only [← AddCommGroup.pi'_map_comp, (E _).h₁₂],
+  h₂₃ := by simpa only [← AddCommGroup.pi'_map_comp, (E _).h₂₃],
+  h₃₄ := by simpa only [← AddCommGroup.pi'_map_comp, (E _).h₃₄], }
+
+lemma pi'_exact {I : Type v} (E : I → five_complex AddCommGroup.{u})
+  (h : ∀ i, (E i).exact) : (pi' E).exact :=
+⟨concrete_exact.pi' _ _ (λ i, (h i).ex₂),
+  concrete_exact.pi' _ _ (λ i, (h i).ex₃),
+  concrete_exact.pi' _ _ (λ i, (h i).ex₄)⟩
 
 end five_complex
 
