@@ -19,7 +19,7 @@ begin
   exact yoneda.is_iso f,
 end
 
-lemma yoneda_bijective_of_is_iso {C : Type*} [category C] {X Y : C} (f : X ⟶ Y) [is_iso f]
+lemma yoneda_bijective_of_is_iso {C : Type*} [category C] {X Y : C} (f : X ⟶ Y) (hf : is_iso f)
   (A : C) : function.bijective (λ (x : A ⟶ X), x ≫ f) :=
 begin
   have h : is_iso ((yoneda.map f).app (opposite.op A)) := infer_instance,
@@ -58,6 +58,8 @@ def candidate_triangle.of_distinguished (T : triangle C) (hT : T ∈ dist_triang
   candidate_triangle C := ⟨T, triangle.comp_eq_zero.of_distinguished T hT⟩
 
 variable (C)
+
+@[simps]
 def candidate_triangle.to_five_complex : candidate_triangle C ⥤ five_complex C :=
 { obj := λ T,
   { X₁ := T.1.obj₁,
@@ -85,11 +87,53 @@ def candidate_triangle.to_five_complex : candidate_triangle C ⥤ five_complex C
   map_id' := λ T, by { ext; try { refl, }; apply functor.map_id, },
   map_comp' := λ T T' T'' φ ψ, by { ext; try { refl, }; apply functor.map_comp, }, }
 
+variable {C}
+
 lemma candidate_triangle.coyoneda_exact_of_distinguished (T : triangle C) (hT : T ∈ dist_triang C)
-  (A : C) : five_complex.exact (((candidate_triangle.to_five_complex C) ⋙ (preadditive_coyoneda.obj (opposite.op A)).map_five_complex).obj (candidate_triangle.of_distinguished T hT)) :=
+  (A : C) : five_complex.exact (((candidate_triangle.to_five_complex C) ⋙
+    (preadditive_coyoneda.obj (opposite.op A)).map_five_complex).obj
+      (candidate_triangle.of_distinguished T hT)) :=
 { ex₂ := λ x₂ hx₂, ⟨_, (covariant_yoneda_exact₂ T hT x₂ hx₂).some_spec.symm⟩,
   ex₃ := λ x₃ hx₃, ⟨_, (covariant_yoneda_exact₃ T hT x₃ hx₃).some_spec.symm⟩,
   ex₄ := λ x₁ hx₁, ⟨_, (covariant_yoneda_exact₁ T hT x₁ hx₁).some_spec.symm⟩, }
+
+lemma is_iso_hom₃_of_distinguished {T T' : triangle C} (φ : T ⟶ T') [is_iso φ.hom₁]
+  [is_iso φ.hom₂] (hT : T ∈ dist_triang C) (hT' : T' ∈ dist_triang C) : is_iso φ.hom₃ :=
+is_iso_of_yoneda_bijective _ (λ A, begin
+  let ψ : candidate_triangle.of_distinguished T hT ⟶
+    candidate_triangle.of_distinguished T' hT' := φ,
+  refine five_complex.five_lemma_bijective ((preadditive_coyoneda.obj
+      (opposite.op A)).map_five_complex.map ((candidate_triangle.to_five_complex C).map ψ))
+    (candidate_triangle.coyoneda_exact_of_distinguished _ _ _)
+    (candidate_triangle.coyoneda_exact_of_distinguished _ _ _)
+    (yoneda_bijective_of_is_iso _ _ _)
+    (yoneda_bijective_of_is_iso _ _ _)
+    (yoneda_bijective_of_is_iso _ _ _)
+    (yoneda_bijective_of_is_iso _ _ _),
+  all_goals { dsimp, apply_instance, },
+end)
+
+lemma is_iso_hom₂_of_distinguished {T T' : triangle C} (φ : T ⟶ T') [is_iso φ.hom₁]
+  [is_iso φ.hom₃] (hT : T ∈ dist_triang C) (hT' : T' ∈ dist_triang C) : is_iso φ.hom₂ :=
+begin
+  haveI : is_iso ((inv_rotate C).map φ).hom₁,
+  { dsimp, apply_instance, },
+  haveI : is_iso ((inv_rotate C).map φ).hom₂,
+  { dsimp, apply_instance, },
+  exact is_iso_hom₃_of_distinguished ((inv_rotate C).map φ) (pretriangulated.inv_rot_of_dist_triangle _ _ hT)
+    (pretriangulated.inv_rot_of_dist_triangle _ _ hT'),
+end
+
+lemma is_iso_hom₁_of_distinguished {T T' : triangle C} (φ : T ⟶ T') [is_iso φ.hom₂]
+  [is_iso φ.hom₃] (hT : T ∈ dist_triang C) (hT' : T' ∈ dist_triang C) : is_iso φ.hom₁ :=
+begin
+  haveI : is_iso ((rotate C).map φ).hom₁ := by { dsimp, apply_instance, },
+  haveI : is_iso ((rotate C).map φ).hom₂ := by { dsimp, apply_instance, },
+  haveI : is_iso ((shift_functor C (1 : ℤ)).map φ.hom₁) := is_iso_hom₃_of_distinguished
+    ((rotate C).map φ) (pretriangulated.rot_of_dist_triangle _ _ hT)
+    (pretriangulated.rot_of_dist_triangle _ _ hT'),
+  exact is_iso_of_reflects_iso φ.hom₁ (shift_functor C (1 : ℤ)),
+end
 
 end triangulated
 
