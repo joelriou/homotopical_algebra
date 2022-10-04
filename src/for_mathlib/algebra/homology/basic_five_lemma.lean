@@ -1,3 +1,4 @@
+import category_theory.preadditive.additive_functor
 import algebra.category.Group.preadditive
 
 noncomputable theory
@@ -63,6 +64,7 @@ structure hom (E E' : five_complex A) :=
 (comm₃ : E.f₃ ≫ τ₄ = τ₃ ≫ E'.f₃)
 (comm₄ : E.f₄ ≫ τ₅ = τ₄ ≫ E'.f₄)
 
+@[simps]
 instance : category (five_complex A) :=
 { hom := hom,
   id := λ E, hom.mk (𝟙 _) (𝟙 _) (𝟙 _) (𝟙 _) (𝟙 _) (by rw [id_comp,comp_id])
@@ -73,13 +75,10 @@ instance : category (five_complex A) :=
     (by rw [assoc, reassoc_of (φ.comm₃), φ'.comm₃])
     (by rw [assoc, reassoc_of (φ.comm₄), φ'.comm₄]), }
 
-example : ℕ := 42
-
 structure exact (E : five_complex (AddCommGroup.{u})) : Prop :=
 (ex₂ : concrete_exact E.f₁ E.f₂)
 (ex₃ : concrete_exact E.f₂ E.f₃)
 (ex₄ : concrete_exact E.f₃ E.f₄)
-
 
 lemma concrete_comm₁ {E E' : five_complex (AddCommGroup.{u})} (φ : E ⟶ E')
   (x₁ : E.X₁) : φ.τ₂ (E.f₁ x₁) = E'.f₁ (φ.τ₁ x₁) :=
@@ -163,3 +162,41 @@ end five_complex
 end homology
 
 end algebra
+
+namespace category_theory
+
+namespace functor
+
+open algebra.homology
+
+@[simps]
+def map_five_complex {C D : Type*} [category C] [category D] [preadditive C]
+  [preadditive D] (F : C ⥤ D) [F.additive] :
+  five_complex C ⥤ five_complex D :=
+{ obj := λ E,
+  { X₁ := F.obj E.X₁,
+    X₂ := F.obj E.X₂,
+    X₃ := F.obj E.X₃,
+    X₄ := F.obj E.X₄,
+    X₅ := F.obj E.X₅,
+    f₁ := F.map E.f₁,
+    f₂ := F.map E.f₂,
+    f₃ := F.map E.f₃,
+    f₄ := F.map E.f₄,
+    h₁₂ := by { rw [← F.map_comp, E.h₁₂, F.map_zero], },
+    h₂₃ := by { rw [← F.map_comp, E.h₂₃, F.map_zero], },
+    h₃₄ := by { rw [← F.map_comp, E.h₃₄, F.map_zero], }, },
+  map := λ E E' φ,
+  { τ₁ := F.map φ.τ₁,
+    τ₂ := F.map φ.τ₂,
+    τ₃ := F.map φ.τ₃,
+    τ₄ := F.map φ.τ₄,
+    τ₅ := F.map φ.τ₅,
+    comm₁ := by simp only [← F.map_comp, φ.comm₁],
+    comm₂ := by simp only [← F.map_comp, φ.comm₂],
+    comm₃ := by simp only [← F.map_comp, φ.comm₃],
+    comm₄ := by simp only [← F.map_comp, φ.comm₄], }, }
+
+end functor
+
+end category_theory
