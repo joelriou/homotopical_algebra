@@ -232,9 +232,7 @@ begin
     erw [(T i).2.3, comp_zero], },
 end
 
-example : ℕ := 42
-
-
+@[simps]
 def candidate_triangle.pi.π {I : Type} (T : I → candidate_triangle C)
   [has_product (λ i, (T i).1.obj₁)]
   [has_product (λ i, (T i).1.obj₂)] [has_product (λ i, (T i).1.obj₃)]
@@ -245,22 +243,84 @@ def candidate_triangle.pi.π {I : Type} (T : I → candidate_triangle C)
 { hom₁ := limits.pi.π _ i,
   hom₂ := limits.pi.π _ i,
   hom₃ := limits.pi.π _ i,
-  comm₁' := sorry,
-  comm₂' := sorry,
-  comm₃' := sorry, }
+  comm₁' := by tidy,
+  comm₂' := by tidy,
+  comm₃' := begin
+    dsimp,
+    rw [← pi_comparison_comp_π, assoc, is_iso.inv_hom_id_assoc, lim_map_π,
+      discrete.nat_trans_app],
+  end, }
+
+lemma function_bijective_product_coyoneda' {I : Type} (X : I → C) (s : fan X) (hs : is_limit s)
+  (A : C) : function.bijective (λ (f : A ⟶ s.X), λ i, f ≫ s.proj i) :=
+begin
+  split,
+  { intros f₁ f₂ h,
+    dsimp at h,
+    apply hs.hom_ext,
+    intro i,
+    discrete_cases,
+    convert congr_fun h i, },
+  { intro g,
+    refine ⟨hs.lift (fan.mk _ g), _⟩,
+    ext i,
+    apply hs.fac, },
+end
+
+lemma function_bijective_product_coyoneda {I : Type} (X : I → C) [has_product X] (A : C) :
+  function.bijective (λ (f : A ⟶ ∏ X), λ i, f ≫ pi.π _ i) :=
+function_bijective_product_coyoneda' X _ (limit.is_limit _) A
+
+lemma function_bijective_product_coyoneda_equivalence {I : Type} (X : I → C) [has_product X]
+  (F : C ⥤ C) [is_equivalence F] [has_product (λ i, F.obj (X i))] (A : C) :
+  function.bijective (λ (f : A ⟶ F.obj (∏ X)), λ i, (f ≫ pi_comparison F X) ≫ pi.π _ i) :=
+begin
+  have h₁ : function.bijective (λ (f : A ⟶ F.obj (∏ X)), f ≫ pi_comparison F X),
+  { split,
+    { intros f₁ f₂ h,
+      dsimp at h,
+      simpa only [cancel_mono] using h, },
+    { intro g,
+      refine ⟨g ≫ inv (pi_comparison F X), _⟩,
+      dsimp,
+      rw [assoc, is_iso.inv_hom_id, comp_id], }, },
+  have h₂ : function.bijective (λ (f : A ⟶ ∏ (λ i, F.obj (X i))), λ i, f ≫ pi.π _ i) :=
+    by apply function_bijective_product_coyoneda,
+  exact h₂.comp h₁,
+end
 
 lemma candidate_triangle.pi_coyoneda_exact {I : Type} (T : I → candidate_triangle C)
   [has_product (λ i, (T i).1.obj₁)]
   [has_product (λ i, (T i).1.obj₂)] [has_product (λ i, (T i).1.obj₃)]
   [has_product (λ i, (shift_functor C (1 : ℤ)).obj (T i).1.obj₁)]
-  [has_product (λ i, (shift_functor C (1 : ℤ)).obj (T i).1.obj₂)] (A : C)
+  [has_product (λ i, (shift_functor C (1 : ℤ)).obj (T i).1.obj₂)]
+  (A : C)
   (hT : ∀ (i : I), ((preadditive_coyoneda.obj (opposite.op A)).map_five_complex.obj ((candidate_triangle.to_five_complex C).obj (T i))).exact) :
   ((preadditive_coyoneda.obj (opposite.op A)).map_five_complex.obj ((candidate_triangle.to_five_complex C).obj (candidate_triangle.pi T))).exact :=
 begin
   refine five_complex.exact.of_iso _ _ (five_complex.pi'_exact _ hT),
   refine five_complex.pi'_lift (λ i, _),
   refine (preadditive_coyoneda.obj (opposite.op A)).map_five_complex.map ((candidate_triangle.to_five_complex C).map (candidate_triangle.pi.π T i)),
-  all_goals { sorry, },
+  have is_iso_of_bijective : ∀ {X Y : AddCommGroup} (φ : X ⟶ Y) (hφ : function.bijective φ), is_iso φ,
+  { intros X Y φ hφ,
+    haveI : is_iso ((forget AddCommGroup).map φ),
+    { rw is_iso_iff_bijective,
+      exact hφ, },
+    exact is_iso_of_reflects_iso φ (forget AddCommGroup), },
+  apply five_complex.is_iso_of_isos,
+  any_goals { apply is_iso_of_bijective, apply function_bijective_product_coyoneda, },
+  { apply is_iso_of_bijective,
+    convert function_bijective_product_coyoneda_equivalence
+      (λ i, (T i).1.obj₁) (shift_functor C (1 : ℤ)) A,
+    ext x i,
+    dsimp at x ⊢,
+    simp only [pi_comparison_comp_π, assoc], },
+  { apply is_iso_of_bijective,
+    convert function_bijective_product_coyoneda_equivalence
+      (λ i, (T i).1.obj₂) (shift_functor C (1 : ℤ)) A,
+    ext x i,
+    dsimp at x ⊢,
+    simp only [pi_comparison_comp_π, assoc], },
 end
 
 end triangulated

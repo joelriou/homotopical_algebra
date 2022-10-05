@@ -177,6 +177,28 @@ def eval₅ : five_complex A ⥤ A :=
 { obj := λ E, E.X₅,
   map := λ E E' φ, φ.τ₅, }
 
+
+lemma is_iso_of_isos {E E' : five_complex A} (φ : E ⟶ E') (h₁ : is_iso φ.τ₁)
+  (h₂ : is_iso φ.τ₂) (h₃ : is_iso φ.τ₃) (h₄ : is_iso φ.τ₄) (h₅ : is_iso φ.τ₅) :
+  is_iso φ :=
+begin
+  let ψ : E' ⟶ E :=
+  { τ₁ := inv φ.τ₁,
+    τ₂ := inv φ.τ₂,
+    τ₃ := inv φ.τ₃,
+    τ₄ := inv φ.τ₄,
+    τ₅ := inv φ.τ₅,
+    comm₁ := by { simp only [← cancel_mono (φ.τ₂), φ.comm₁, assoc, is_iso.inv_hom_id, comp_id,
+      is_iso.inv_hom_id_assoc], },
+    comm₂ := by { simp only [← cancel_mono (φ.τ₃), φ.comm₂, assoc, is_iso.inv_hom_id, comp_id,
+      is_iso.inv_hom_id_assoc], },
+    comm₃ := by { simp only [← cancel_mono (φ.τ₄), φ.comm₃, assoc, is_iso.inv_hom_id, comp_id,
+      is_iso.inv_hom_id_assoc], },
+    comm₄ := by { simp only [← cancel_mono (φ.τ₅), φ.comm₄, assoc, is_iso.inv_hom_id, comp_id,
+      is_iso.inv_hom_id_assoc], }, },
+  exact ⟨⟨ψ, ⟨by tidy, by tidy⟩⟩⟩,
+end
+
 variable {A}
 
 structure exact (E : five_complex (AddCommGroup.{u})) : Prop :=
