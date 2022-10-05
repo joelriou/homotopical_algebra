@@ -66,6 +66,22 @@ lemma concrete_exact.lift_spec {X₁ X₂ X₃ : AddCommGroup.{u}} {f₁ : X₁ 
   (h : concrete_exact f₁ f₂) {x₂ : X₂} (zero : f₂ x₂ = 0) :
   f₁ (h.lift zero) = x₂ := (h x₂ zero).some_spec
 
+lemma concrete_exact.of_iso {X₁ Y₁ X₂ Y₂ X₃ Y₃ : AddCommGroup.{u}} {g₁ : Y₁ ⟶ Y₂} {g₂ : Y₂ ⟶ Y₃}
+  (h : concrete_exact g₁ g₂) (f₁ : X₁ ⟶ X₂) (f₂ : X₂ ⟶ X₃) (e₁ : X₁ ≅ Y₁) (e₂ : X₂ ≅ Y₂)
+  (e₃ : X₃ ≅ Y₃) (comm₁ : f₁ ≫ e₂.hom = e₁.hom ≫ g₁) (comm₂ : f₂ ≫ e₃.hom = e₂.hom ≫ g₂) :
+  concrete_exact f₁ f₂ :=
+begin
+  intros x₂ hx₂,
+  have hy₂ : g₂ (e₂.hom x₂) = 0,
+  { rw [← comp_apply, ← comm₂, comp_apply, hx₂, map_zero], },
+  obtain ⟨y₁, hy₁⟩ := h _ hy₂,
+  refine ⟨e₁.inv y₁, _⟩,
+  have comm₁' : e₁.inv ≫ f₁ = g₁ ≫ e₂.inv,
+  { rw [← cancel_mono e₂.hom, ← cancel_epi e₁.hom, assoc, assoc, e₂.inv_hom_id, comp_id,
+      e₁.hom_inv_id_assoc, comm₁], },
+  rw [← comp_apply, comm₁', comp_apply, hy₁, ← comp_apply, e₂.hom_inv_id, id_apply],
+end
+
 lemma injective_iff {X₁ X₂ : AddCommGroup.{u}} (f : X₁ ⟶ X₂) :
   function.injective f ↔ ∀ (x₁ : X₁) (h : f x₁ = 0), x₁ = 0 :=
 begin
@@ -127,6 +143,35 @@ instance : category (five_complex A) :=
     (by rw [assoc, reassoc_of (φ.comm₃), φ'.comm₃])
     (by rw [assoc, reassoc_of (φ.comm₄), φ'.comm₄]), }
 
+variable (A)
+
+@[simps]
+def eval₁ : five_complex A ⥤ A :=
+{ obj := λ E, E.X₁,
+  map := λ E E' φ, φ.τ₁, }
+
+@[simps]
+def eval₂ : five_complex A ⥤ A :=
+{ obj := λ E, E.X₂,
+  map := λ E E' φ, φ.τ₂, }
+
+@[simps]
+def eval₃ : five_complex A ⥤ A :=
+{ obj := λ E, E.X₃,
+  map := λ E E' φ, φ.τ₃, }
+
+@[simps]
+def eval₄ : five_complex A ⥤ A :=
+{ obj := λ E, E.X₄,
+  map := λ E E' φ, φ.τ₄, }
+
+@[simps]
+def eval₅ : five_complex A ⥤ A :=
+{ obj := λ E, E.X₅,
+  map := λ E E' φ, φ.τ₅, }
+
+variable {A}
+
 structure exact (E : five_complex (AddCommGroup.{u})) : Prop :=
 (ex₂ : concrete_exact E.f₁ E.f₂)
 (ex₃ : concrete_exact E.f₂ E.f₃)
@@ -147,6 +192,19 @@ by simp only [← comp_apply, φ.comm₃]
 lemma concrete_comm₄ {E E' : five_complex (AddCommGroup.{u})} (φ : E ⟶ E')
   (x₄ : E.X₄) : φ.τ₅ (E.f₄ x₄) = E'.f₄ (φ.τ₄ x₄) :=
 by simp only [← comp_apply, φ.comm₄]
+
+lemma exact.of_iso {E E' : five_complex AddCommGroup.{u}} (φ : E ⟶ E') (hφ : is_iso φ)
+  (hE' : E'.exact) : E.exact :=
+begin
+  let e := as_iso φ,
+  constructor,
+  { exact concrete_exact.of_iso hE'.ex₂ E.f₁ E.f₂ ((eval₁ _).map_iso e)
+      ((eval₂ _).map_iso e) ((eval₃ _).map_iso e) φ.comm₁ φ.comm₂, },
+  { exact concrete_exact.of_iso hE'.ex₃ E.f₂ E.f₃ ((eval₂ _).map_iso e)
+      ((eval₃ _).map_iso e) ((eval₄ _).map_iso e) φ.comm₂ φ.comm₃, },
+  { exact concrete_exact.of_iso hE'.ex₄ E.f₃ E.f₄ ((eval₃ _).map_iso e)
+      ((eval₄ _).map_iso e) ((eval₅ _).map_iso e) φ.comm₃ φ.comm₄, },
+end
 
 lemma five_lemma_injective {E E' : five_complex (AddCommGroup.{u})} (φ : E ⟶ E')
   (hE : E.exact) (hE' : E'.exact)

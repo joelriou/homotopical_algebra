@@ -144,51 +144,7 @@ def triangle.coproduct {I : Type*} (T : I → triangle C) [has_coproduct (λ i, 
   [has_coproduct (λ i, (shift_functor C (1 : ℤ)).obj (T i).obj₁)]
   (hT : ∀ i, (T i) ∈ dist_triang C) : triangle.coproduct T ∈ dist_triang C := sorry-/
 
-@[simps]
-def triangle.product {I : Type*} (T : I → triangle C) [has_product (λ i, (T i).obj₁)]
-  [has_product (λ i, (T i).obj₂)] [has_product (λ i, (T i).obj₃)]
-  [has_product (λ i, (shift_functor C (1 : ℤ)).obj (T i).obj₁)] : triangle C :=
-{ obj₁ := ∏ (λ i, (T i).obj₁),
-  obj₂ := ∏ (λ i, (T i).obj₂),
-  obj₃ := ∏ (λ i, (T i).obj₃),
-  mor₁ := limits.pi.map (λ i, (T i).mor₁),
-  mor₂ := limits.pi.map (λ i, (T i).mor₂),
-  mor₃ := limits.pi.map (λ i, (T i).mor₃) ≫ inv (pi_comparison _ _), }
-
-@[simps]
-def triangle.product.lift {I : Type*} {T' : triangle C}
-  {T : I → triangle C} [has_product (λ i, (T i).obj₁)]
-  [has_product (λ i, (T i).obj₂)] [has_product (λ i, (T i).obj₃)]
-  [has_product (λ i, (shift_functor C (1 : ℤ)).obj (T i).obj₁)]
-  (f : Π i, T' ⟶ T i) :
-  T' ⟶ triangle.product T :=
-{ hom₁ := pi.lift (λ i, (f i).hom₁),
-  hom₂ := pi.lift (λ i, (f i).hom₂),
-  hom₃ := pi.lift (λ i, (f i).hom₃),
-  comm₃' := begin
-    simp only [triangle.product_mor₃,
-      ← cancel_mono (pi_comparison (shift_functor C (1 : ℤ)) (λ (i : I), (T i).obj₁)),
-      assoc, is_iso.inv_hom_id, comp_id],
-    ext j,
-    discrete_cases,
-    simp only [map_lift_pi_comparison, assoc, limit.lift_π, fan.mk_π_app,
-      triangle_morphism.comm₃, limit.lift_map, cones.postcompose_obj_π,
-      nat_trans.comp_app, discrete.nat_trans_app],
-  end, }
-
 open algebra.homology
-
-lemma map_pi_map_pi_comparison {C D I : Type*} [category C] [category D]
-  {X : I → C} {Y : I → C} (f : Π i, X i ⟶ Y i) (F : C ⥤ D) [has_product X]
-  [has_product Y] [has_product (λ i, F.obj (X i))] [has_product (λ i, F.obj (Y i))] :
-  F.map (pi.map f) ≫ pi_comparison F Y =
-    pi_comparison F X ≫ pi.map (λ i, F.map (f i) : Π i, F.obj (X i) ⟶ F.obj (Y i)) :=
-begin
-  ext i,
-  discrete_cases,
-  simp only [assoc, pi_comparison_comp_π, lim_map_π, discrete.nat_trans_app,
-    pi_comparison_comp_π_assoc, ← F.map_comp],
-end
 
 lemma triangle.product_distinghished {I : Type*} (T : I → triangle C)
   [has_product (λ i, (T i).obj₁)]
@@ -232,34 +188,35 @@ begin
     { exact triangle.is_iso_of_is_iso_homs _ infer_instance infer_instance infer_instance, },
     exact pretriangulated.isomorphic_distinguished _ hT' _ (as_iso φ').symm, },
   refine is_iso_of_yoneda_bijective _ (λ A, _),
-  let S' := candidate_triangle.of_distinguished T' hT',
-  let S : candidate_triangle C := begin
-    refine ⟨triangle.product T, ⟨_, _, _⟩⟩,
-    { ext i,
-      discrete_cases,
-      simp only [triangle.product_mor₁, triangle.product_mor₂, assoc, lim_map_π,
-        discrete.nat_trans_app, lim_map_π_assoc, zero_comp,
-        pretriangulated.comp_dist_triangle_mor_zero₁₂ _ _ (hT i), comp_zero], },
-    { simp only [triangle.product_mor₂, triangle.product_mor₃,
-        ← cancel_mono (pi_comparison (shift_functor C (1 : ℤ)) (λ (i : I), (T i).obj₁)),
-        is_iso.inv_hom_id, comp_id, zero_comp, assoc],
-      ext i,
-      discrete_cases,
-      simp only [assoc, lim_map_π, discrete.nat_trans_app, lim_map_π_assoc, zero_comp,
-        pretriangulated.comp_dist_triangle_mor_zero₂₃ _ _ (hT i), comp_zero], },
-    { simp only [triangle.product_mor₃, triangle.product_mor₁, assoc],
-      rw [← cancel_mono (pi_comparison (shift_functor C (1 : ℤ)) (λ (i : I), (T i).obj₂)),
-        assoc, assoc, zero_comp, map_pi_map_pi_comparison, is_iso.inv_hom_id_assoc],
-      ext i,
-      discrete_cases,
-      simp only [assoc, lim_map_π, discrete.nat_trans_app, lim_map_π_assoc, zero_comp],
-      erw [pretriangulated.comp_dist_triangle_mor_zero₃₁ _ _ (hT i), comp_zero], },
-  end,
-  let ψ : S' ⟶ S := φ',
-  -- five_complex.five_lemma_bijective,
-  -- ((preadditive_coyoneda.obj
-   --   (opposite.op A)).map_five_complex.map ((candidate_triangle.to_five_complex C).map ψ)),
-  all_goals { sorry, },
+  let T'' := λ i, candidate_triangle.of_distinguished _ (hT i),
+  haveI : has_product (λ i, (T'' i).1.obj₁),
+  { dsimp, apply_instance, },
+  haveI : has_product (λ i, (T'' i).1.obj₂),
+  { dsimp, apply_instance, },
+  haveI : has_product (λ i, (T'' i).1.obj₃),
+  { dsimp, apply_instance, },
+  haveI : has_product (λ i, (shift_functor C (1 : ℤ)).obj (T'' i).1.obj₁),
+  { dsimp, apply_instance, },
+  haveI : has_product (λ i, (shift_functor C (1 : ℤ)).obj (T'' i).1.obj₂),
+  { dsimp, apply_instance, },
+  let ψ : candidate_triangle.of_distinguished T' hT' ⟶ candidate_triangle.pi T'' := φ',
+  have hψ₁ : ((candidate_triangle.to_five_complex C).map ψ).τ₁ = 𝟙 _,
+  { ext i, discrete_cases, dsimp, simp only [limit.lift_π, fan.mk_π_app, id_comp], },
+  have hψ₂ : ((candidate_triangle.to_five_complex C).map ψ).τ₂ = 𝟙 _,
+  { ext i, discrete_cases, dsimp, simp only [limit.lift_π, fan.mk_π_app, id_comp], },
+  have hψ₄ : ((candidate_triangle.to_five_complex C).map ψ).τ₄ = 𝟙 _,
+  { dsimp, convert functor.map_id _ _, },
+  have hψ₅ : ((candidate_triangle.to_five_complex C).map ψ).τ₅ = 𝟙 _,
+  { dsimp, convert functor.map_id _ _, },
+  refine five_complex.five_lemma_bijective ((preadditive_coyoneda.obj
+    (opposite.op A)).map_five_complex.map ((candidate_triangle.to_five_complex C).map ψ))
+    (candidate_triangle.coyoneda_exact_of_distinguished _ _ _) _
+    (yoneda_bijective_of_is_iso _ (by { rw hψ₁, apply_instance, }) _)
+    (yoneda_bijective_of_is_iso _ (by { rw hψ₂, apply_instance, }) _)
+    (yoneda_bijective_of_is_iso _ (by { rw hψ₄, apply_instance, }) _)
+    (yoneda_bijective_of_is_iso _ (by { rw hψ₅, apply_instance, }) _),
+  exact candidate_triangle.pi_coyoneda_exact _ _
+    (λ i, candidate_triangle.coyoneda_exact_of_distinguished _ _ _),
 end
 
 @[simps]
