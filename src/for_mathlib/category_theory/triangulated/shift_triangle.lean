@@ -25,7 +25,6 @@ begin
   simp only [iso.symm_hom, nat_trans.comp_app, eq_to_hom_app],
 end
 
-
 @[simp]
 lemma shift_functor_add_comm_eq_refl (a : A) :
   shift_functor_add_comm C a a = iso.refl _ :=
