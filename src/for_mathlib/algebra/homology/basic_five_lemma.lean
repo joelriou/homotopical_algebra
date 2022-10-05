@@ -48,6 +48,13 @@ def pi'_map : pi' X ⟶ pi' Y :=
 @[simp, reassoc]
 lemma pi'_map_comp : pi'_map (λ i, f i ≫ g i) = pi'_map f ≫ pi'_map g := rfl
 
+@[simps]
+def pi'_lift {I : Type} {X : AddCommGroup.{u}} {Y : I → AddCommGroup.{u}} (φ : Π i, X ⟶ Y i) :
+  X ⟶ pi' Y :=
+{ to_fun := λ x i, φ i x,
+  map_zero' := by tidy,
+  map_add' := by tidy, }
+
 end AddCommGroup
 
 namespace algebra
@@ -293,6 +300,7 @@ def pi {I : Type} (E : I → five_complex AddCommGroup.{u}) : five_complex AddCo
       limits.zero_comp, (E i).h₃₄, limits.comp_zero],
   end, }
 
+@[simps]
 def pi' {I : Type v} (E : I → five_complex AddCommGroup.{u}) :
   five_complex AddCommGroup.{max u v} :=
 { X₁ := AddCommGroup.pi'.{v u} (λ i, (E i).X₁),
@@ -313,6 +321,36 @@ lemma pi'_exact {I : Type v} (E : I → five_complex AddCommGroup.{u})
 ⟨concrete_exact.pi' _ _ (λ i, (h i).ex₂),
   concrete_exact.pi' _ _ (λ i, (h i).ex₃),
   concrete_exact.pi' _ _ (λ i, (h i).ex₄)⟩
+
+@[simps]
+def pi'_lift {I : Type} {E : five_complex AddCommGroup.{u}}
+  {E' : I → five_complex AddCommGroup.{u}} (φ : Π i, E ⟶ E' i) :
+  E ⟶ pi' E' :=
+{ τ₁ := AddCommGroup.pi'_lift (λ i, (φ i).τ₁),
+  τ₂ := AddCommGroup.pi'_lift (λ i, (φ i).τ₂),
+  τ₃ := AddCommGroup.pi'_lift (λ i, (φ i).τ₃),
+  τ₄ := AddCommGroup.pi'_lift (λ i, (φ i).τ₄),
+  τ₅ := AddCommGroup.pi'_lift (λ i, (φ i).τ₅),
+  comm₁ := begin
+    ext x i,
+    simp only [comp_apply, AddCommGroup.pi'_lift_apply, pi'_f₁, AddCommGroup.pi'_map_apply],
+    simp only [← comp_apply, (φ i).comm₁],
+  end,
+  comm₂ := begin
+    ext x i,
+    simp only [comp_apply, AddCommGroup.pi'_lift_apply, pi'_f₂, AddCommGroup.pi'_map_apply],
+    simp only [← comp_apply, (φ i).comm₂],
+  end,
+  comm₃ := begin
+    ext x i,
+    simp only [comp_apply, AddCommGroup.pi'_lift_apply, pi'_f₃, AddCommGroup.pi'_map_apply],
+    simp only [← comp_apply, (φ i).comm₃],
+  end,
+  comm₄ := begin
+    ext x i,
+    simp only [comp_apply, AddCommGroup.pi'_lift_apply, pi'_f₄, AddCommGroup.pi'_map_apply],
+    simp only [← comp_apply, (φ i).comm₄],
+  end, }
 
 end five_complex
 

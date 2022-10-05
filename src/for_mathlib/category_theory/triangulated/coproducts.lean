@@ -146,7 +146,7 @@ def triangle.coproduct {I : Type*} (T : I → triangle C) [has_coproduct (λ i, 
 
 open algebra.homology
 
-lemma triangle.product_distinghished {I : Type*} (T : I → triangle C)
+lemma triangle.product_distinghished {I : Type} (T : I → triangle C)
   [has_product (λ i, (T i).obj₁)]
   [has_product (λ i, (T i).obj₂)] [has_product (λ i, (T i).obj₃)]
   [has_product (λ i, (shift_functor C (1 : ℤ)).obj (T i).obj₁)]

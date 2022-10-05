@@ -203,6 +203,7 @@ begin
     pi_comparison_comp_π_assoc, ← F.map_comp],
 end
 
+@[simps]
 def candidate_triangle.pi {I : Type*} (T : I → candidate_triangle C)
   [has_product (λ i, (T i).1.obj₁)]
   [has_product (λ i, (T i).1.obj₂)] [has_product (λ i, (T i).1.obj₃)]
@@ -231,7 +232,24 @@ begin
     erw [(T i).2.3, comp_zero], },
 end
 
-lemma candidate_triangle.pi_coyoneda_exact {I : Type*} (T : I → candidate_triangle C)
+example : ℕ := 42
+
+
+def candidate_triangle.pi.π {I : Type} (T : I → candidate_triangle C)
+  [has_product (λ i, (T i).1.obj₁)]
+  [has_product (λ i, (T i).1.obj₂)] [has_product (λ i, (T i).1.obj₃)]
+  [has_product (λ i, (shift_functor C (1 : ℤ)).obj (T i).1.obj₁)]
+  [has_product (λ i, (shift_functor C (1 : ℤ)).obj (T i).1.obj₂)]
+   (i : I) :
+  candidate_triangle.pi T ⟶ T i :=
+{ hom₁ := limits.pi.π _ i,
+  hom₂ := limits.pi.π _ i,
+  hom₃ := limits.pi.π _ i,
+  comm₁' := sorry,
+  comm₂' := sorry,
+  comm₃' := sorry, }
+
+lemma candidate_triangle.pi_coyoneda_exact {I : Type} (T : I → candidate_triangle C)
   [has_product (λ i, (T i).1.obj₁)]
   [has_product (λ i, (T i).1.obj₂)] [has_product (λ i, (T i).1.obj₃)]
   [has_product (λ i, (shift_functor C (1 : ℤ)).obj (T i).1.obj₁)]
@@ -239,7 +257,10 @@ lemma candidate_triangle.pi_coyoneda_exact {I : Type*} (T : I → candidate_tria
   (hT : ∀ (i : I), ((preadditive_coyoneda.obj (opposite.op A)).map_five_complex.obj ((candidate_triangle.to_five_complex C).obj (T i))).exact) :
   ((preadditive_coyoneda.obj (opposite.op A)).map_five_complex.obj ((candidate_triangle.to_five_complex C).obj (candidate_triangle.pi T))).exact :=
 begin
-  sorry,
+  refine five_complex.exact.of_iso _ _ (five_complex.pi'_exact _ hT),
+  refine five_complex.pi'_lift (λ i, _),
+  refine (preadditive_coyoneda.obj (opposite.op A)).map_five_complex.map ((candidate_triangle.to_five_complex C).map (candidate_triangle.pi.π T i)),
+  all_goals { sorry, },
 end
 
 end triangulated
