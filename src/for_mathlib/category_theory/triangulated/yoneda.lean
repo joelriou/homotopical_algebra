@@ -135,6 +135,25 @@ begin
   exact is_iso_of_reflects_iso φ.hom₁ (shift_functor C (1 : ℤ)),
 end
 
+@[simps hom_hom₁ hom_hom₂ inv_hom₁ inv_hom₂]
+noncomputable
+def iso_triangle_of_distinguished_of_is_iso₁₂ (T T' : triangle C) (hT : T ∈ dist_triang C)
+  (hT' : T' ∈ dist_triang C) (e₁ : T.obj₁ ≅ T'.obj₁) (e₂ : T.obj₂ ≅ T'.obj₂)
+  (comm : T.mor₁ ≫ e₂.hom = e₁.hom ≫ T'.mor₁) : T ≅ T' :=
+begin
+  let h := pretriangulated.complete_distinguished_triangle_morphism
+    T T' hT hT' e₁.hom e₂.hom comm,
+  let φ : T ⟶ T' :=
+  { hom₁ := e₁.hom,
+    hom₂ := e₂.hom,
+    hom₃ := h.some,
+    comm₁' := comm,
+    comm₂' := h.some_spec.1,
+    comm₃' := h.some_spec.2, },
+  haveI : is_iso φ.hom₃ := is_iso_hom₃_of_distinguished φ hT hT',
+  exact triangle.mk_iso _ _ e₁ e₂ (as_iso φ.hom₃) φ.comm₁ φ.comm₂ φ.comm₃,
+end
+
 end triangulated
 
 end category_theory
