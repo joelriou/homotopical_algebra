@@ -159,6 +159,7 @@ end shift
 
 namespace triangulated
 
+
 open pretriangulated
 
 section
@@ -438,7 +439,15 @@ end localization
 
 include hW₆
 
-def localization : pretriangulated D :=
+@[derive category, derive preadditive, derive has_zero_object]
+def localization := D
+
+instance : has_shift (localization L W comm_shift) ℤ := (infer_instance : has_shift D ℤ)
+
+instance (n : ℤ) : functor.additive (shift_functor (localization L W comm_shift) n) :=
+by { dsimp [localization], apply_instance, }
+
+instance : pretriangulated (localization L W comm_shift) :=
 { distinguished_triangles := localization.distinguished_triangles L comm_shift,
   isomorphic_distinguished := λ T₁ hT₁ T₂ e,
     localization.isomorphic_distinguished L comm_shift e hT₁,
@@ -450,8 +459,7 @@ def localization : pretriangulated D :=
 
 include W
 
-def localization_functor :
-  @triangulated_functor C _ _ _ _ _ D _ _ _ _ _ _ (triangulated.localization L W comm_shift) :=
+def localization_functor : triangulated_functor C (localization L W comm_shift) :=
 { map_distinguished' := λ T hT, ⟨T, iso.refl _, hT⟩,
   .. localization.functor L comm_shift }
 
@@ -460,10 +468,12 @@ variables [morphism_property.stable_under_finite_products W] [has_finite_product
 omit comm_shift L
 include hC
 
-instance (n : ℤ) : functor.additive (shift_functor W.localization n) := infer_instance
+instance additive_shift_localization (n : ℤ) :
+  functor.additive (shift_functor W.localization n) := infer_instance
 
 instance localization_pretriangulated : pretriangulated W.localization :=
-triangulated.localization W.Q W (shift.localization_comm_shift W.Q W (1 : ℤ))
+(infer_instance : pretriangulated (localization W.Q W
+  (shift.localization_comm_shift W.Q W (1 : ℤ))))
 
 end triangulated
 
