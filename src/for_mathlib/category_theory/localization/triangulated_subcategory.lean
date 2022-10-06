@@ -374,6 +374,13 @@ instance : has_zero_object (subcategory.category A) :=
 ⟨⟨⟨0, A.zero⟩, ⟨λ X, nonempty.intro (unique_of_subsingleton 0),
   λ X, nonempty.intro (unique_of_subsingleton 0)⟩⟩⟩
 
+def Q : triangulated_functor C A.W.localization :=
+triangulated.localization_functor (W A).Q (W A)
+  (shift.localization_comm_shift (W A).Q (W A) (1 : ℤ))
+
+lemma is_iso_map_iff [A.saturated] {X Y : C} (f : X ⟶ Y) : is_iso (A.Q.map f) ↔ A.W f :=
+by convert localization.is_iso_map_iff_of_calculus_of_fractions (W A).Q (W A) f
+
 end subcategory
 
 end triangulated

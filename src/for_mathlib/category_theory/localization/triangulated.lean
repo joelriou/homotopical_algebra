@@ -453,7 +453,7 @@ include W
 def localization_functor :
   @triangulated_functor C _ _ _ _ _ D _ _ _ _ _ _ (triangulated.localization L W comm_shift) :=
 { map_distinguished' := λ T hT, ⟨T, iso.refl _, hT⟩,
-  .. localization.functor L comm_shift}
+  .. localization.functor L comm_shift }
 
 variables [morphism_property.stable_under_finite_products W] [has_finite_products C]
 
