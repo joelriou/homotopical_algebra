@@ -5,6 +5,7 @@ import for_mathlib.category_theory.triangulated.triangulated
 import for_mathlib.category_theory.preadditive_subcategory
 import for_mathlib.category_theory.triangulated.coproducts
 import for_mathlib.category_theory.limits.products
+import for_mathlib.algebra.homology.basic_five_lemma
 
 noncomputable theory
 
@@ -381,6 +382,9 @@ begin
   exact F,
 end
 
+instance Q_to_functor_is_localization : A.Q.to_functor.is_localization A.W :=
+(infer_instance : A.W.Q.is_localization A.W)
+
 lemma is_iso_map_iff [A.saturated] {X Y : C} (f : X ⟶ Y) : is_iso (A.Q.map f) ↔ A.W f :=
 by convert localization.is_iso_map_iff_of_calculus_of_fractions (W A).Q (W A) f
 
@@ -414,6 +418,73 @@ begin
     exact saturated.condition i mem, },
   { exact λ h, ⟨X, 𝟙 X, infer_instance, h⟩, },
 end
+
+def left_orthogonal : subcategory C :=
+{ set := λ X, ∀ ⦃Y : C⦄ (f : X ⟶ Y) (hY : Y ∈ A.set), f = 0,
+  zero := by tidy,
+  shift := λ X n h Y f hY, begin
+    let adj : shift_functor C n ⊣ shift_functor C (-n) :=
+      (add_neg_equiv (shift_monoidal_functor C ℤ) n).to_adjunction,
+    apply (adj.hom_equiv _ _).injective,
+    rw [(h _ (A.shift Y (-n) hY) : adj.hom_equiv _ _ f = 0),
+      adjunction.hom_equiv_unit, functor.map_zero, comp_zero],
+  end,
+  ext₂ := λ T hT h₁ h₃ Y f hY, begin
+    obtain ⟨g, hg⟩ := contravariant_yoneda_exact₂ T hT f (h₁ _ hY),
+    rw [hg, h₃ g hY, comp_zero],
+  end, }
+
+instance left_orthogonal_saturated : A.left_orthogonal.saturated :=
+⟨λ X Y i hi hX Z f hZ, begin
+  haveI := hi,
+  have pif := retraction i,
+  rw [← cancel_epi (retraction i), comp_zero],
+  exact hX _ hZ,
+end⟩
+
+lemma left_orthogonal_comp_W_bijective (X : C) (hX : X ∈ A.left_orthogonal.set)
+  {Y Z : C} (w : Y ⟶ Z) (hw : A.W w) :
+  function.bijective (λ (f : X ⟶ Y), f ≫ w) :=
+begin
+  rw W_eq_W' at hw,
+  obtain ⟨U, f, g, H, mem⟩ := hw,
+  split,
+  { intros y₁ y₂ hy,
+    let y := y₁ - y₂,
+    suffices : y = 0,
+    { rw ← sub_eq_zero,
+      exact this, },
+    dsimp at hy,
+    obtain ⟨u, hu⟩ := covariant_yoneda_exact₂ _ H y
+      (by { dsimp [y], rw [sub_comp, hy, sub_self], }),
+    rw [hu, hX u mem, zero_comp], },
+  { intro z,
+    obtain ⟨y, hy⟩ := covariant_yoneda_exact₃ _ H z (hX _ (A.shift _ 1 mem)),
+    exact ⟨y, hy.symm⟩, },
+end
+
+lemma left_orthogonal_bijective_L_map {D : Type*} [category D]
+  (L : C ⥤ D) [L.is_localization A.W] (X Y : C) (hX : X ∈ A.left_orthogonal.set) :
+  function.bijective (λ (f : X ⟶ Y), L.map f) :=
+begin
+  split,
+  { intros f₁ f₂ hf,
+    dsimp at hf,
+    rw left_calculus_of_fractions.L_map_eq_iff L A.W at hf,
+    rcases hf with ⟨Z, s, hs, eq⟩,
+    exact (A.left_orthogonal_comp_W_bijective _ hX s hs).1 eq, },
+  { intro g,
+    obtain ⟨z, hz⟩ := left_calculus_of_fractions.L_map_fac L A.W g,
+    dsimp [left_calculus_of_fractions.map_zigzag] at hz,
+    obtain ⟨f, hf⟩ := (A.left_orthogonal_comp_W_bijective _ hX z.s z.hs).2 z.f,
+    refine ⟨f, _⟩,
+    dsimp at hf ⊢,
+    rw [hz, ← hf, L.map_comp, assoc, is_iso.hom_inv_id, comp_id], },
+end
+
+lemma left_orthogonal_bijective_Q_map (X Y : C) (hX : X ∈ A.left_orthogonal.set) :
+  function.bijective (λ (f : X ⟶ Y), A.Q.map f) :=
+A.left_orthogonal_bijective_L_map A.W.Q _ _ hX
 
 end subcategory
 
