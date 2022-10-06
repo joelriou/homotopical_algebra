@@ -1,5 +1,5 @@
 import category_theory.triangulated.pretriangulated
-import for_mathlib.category_theory.localization.triangulated
+--import for_mathlib.category_theory.localization.triangulated
 
 namespace category_theory
 
@@ -11,7 +11,73 @@ namespace triangulated
 open pretriangulated
 
 variables {C : Type*} [category C] [preadditive C] [has_zero_object C] [has_shift C ℤ]
-  [∀ (n : ℤ), functor.additive (shift_functor C n)] [pretriangulated C]
+
+@[simps]
+def triangle.mk_iso (T T' : triangle C) (e₁ : T.obj₁ ≅ T'.obj₁) (e₂ : T.obj₂ ≅ T'.obj₂)
+  (e₃ : T.obj₃ ≅ T'.obj₃)
+  (comm₁ : T.mor₁ ≫ e₂.hom = e₁.hom ≫ T'.mor₁)
+  (comm₂ : T.mor₂ ≫ e₃.hom = e₂.hom ≫ T'.mor₂)
+  (comm₃ : T.mor₃ ≫ (shift_functor C 1).map e₁.hom = e₃.hom ≫ T'.mor₃) : T ≅ T' :=
+{ hom :=
+  { hom₁ := e₁.hom,
+    hom₂ := e₂.hom,
+    hom₃ := e₃.hom,
+    comm₁' := comm₁,
+    comm₂' := comm₂,
+    comm₃' := comm₃, },
+  inv :=
+  { hom₁ := e₁.inv,
+    hom₂ := e₂.inv,
+    hom₃ := e₃.inv,
+    comm₁' := by rw [← cancel_mono e₂.hom, assoc, e₂.inv_hom_id, comp_id, assoc, comm₁, e₁.inv_hom_id_assoc],
+    comm₂' := by { rw [← cancel_mono e₃.hom, assoc, e₃.inv_hom_id, comp_id, assoc, comm₂, e₂.inv_hom_id_assoc], },
+    comm₃' := by { rw [← cancel_epi e₃.hom, ← assoc, ← comm₃, assoc, ← functor.map_comp, e₁.hom_inv_id, functor.map_id, comp_id, e₃.hom_inv_id_assoc], }, },
+  hom_inv_id' := by { ext; apply iso.hom_inv_id, },
+  inv_hom_id' := by { ext; apply iso.inv_hom_id, }, }
+
+@[simp, reassoc]
+lemma triangle.hom_inv_id_hom₁ {T T' : triangle C} (e : T ≅ T') :
+  e.hom.hom₁ ≫ e.inv.hom₁ = 𝟙 _ :=
+by { change (e.hom ≫ e.inv).hom₁ = _, simpa only [e.hom_inv_id], }
+
+@[simp, reassoc]
+lemma triangle.inv_hom_id_hom₁ {T T' : triangle C} (e : T ≅ T') :
+  e.inv.hom₁ ≫ e.hom.hom₁ = 𝟙 _ :=
+by { change (e.inv ≫ e.hom).hom₁ = _, simpa only [e.inv_hom_id], }
+
+@[simp, reassoc]
+lemma triangle.hom_inv_id_hom₂ {T T' : triangle C} (e : T ≅ T') :
+  e.hom.hom₂ ≫ e.inv.hom₂ = 𝟙 _ :=
+by { change (e.hom ≫ e.inv).hom₂ = _, simpa only [e.hom_inv_id], }
+
+@[simp, reassoc]
+lemma triangle.inv_hom_id_hom₂ {T T' : triangle C} (e : T ≅ T') :
+  e.inv.hom₂ ≫ e.hom.hom₂ = 𝟙 _ :=
+by { change (e.inv ≫ e.hom).hom₂ = _, simpa only [e.inv_hom_id], }
+@[simp, reassoc]
+
+lemma triangle.hom_inv_id_hom₃ {T T' : triangle C} (e : T ≅ T') :
+  e.hom.hom₃ ≫ e.inv.hom₃ = 𝟙 _ :=
+by { change (e.hom ≫ e.inv).hom₃ = _, simpa only [e.hom_inv_id], }
+
+@[simp, reassoc]
+lemma triangle.inv_hom_id_hom₃ {T T' : triangle C} (e : T ≅ T') :
+  e.inv.hom₃ ≫ e.hom.hom₃ = 𝟙 _ :=
+by { change (e.inv ≫ e.hom).hom₃ = _, simpa only [e.inv_hom_id], }
+
+lemma triangle.is_iso_of_is_iso_homs {T T' : triangle C} (f : T ⟶ T')
+  (h₁ : is_iso f.hom₁) (h₂ : is_iso f.hom₂) (h₃ : is_iso f.hom₃) : is_iso f :=
+begin
+  haveI := h₁,
+  haveI := h₂,
+  haveI := h₃,
+  convert is_iso.of_iso (triangle.mk_iso T T' (as_iso f.hom₁) (as_iso f.hom₂) (as_iso f.hom₃)
+    f.comm₁ f.comm₂ f.comm₃),
+  ext; refl,
+end
+
+variables [∀ (n : ℤ), functor.additive (shift_functor C n)] [pretriangulated C]
+
 
 @[reassoc]
 lemma triangle.comp_zero₁₂ (T : triangle C) (hT : T ∈ dist_triang C) : T.mor₁ ≫ T.mor₂ = 0 :=

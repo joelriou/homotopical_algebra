@@ -5,7 +5,6 @@ import for_mathlib.category_theory.triangulated.triangulated
 import for_mathlib.category_theory.preadditive_subcategory
 import for_mathlib.category_theory.triangulated.coproducts
 import for_mathlib.category_theory.limits.products
-import for_mathlib.algebra.homology.basic_five_lemma
 
 noncomputable theory
 

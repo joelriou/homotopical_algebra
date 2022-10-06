@@ -2,6 +2,7 @@ import for_mathlib.category_theory.localization.preadditive
 import category_theory.triangulated.pretriangulated
 import for_mathlib.category_theory.localization.calculus_of_fractions
 import for_mathlib.category_theory.preadditive.equivalence
+import for_mathlib.category_theory.triangulated.triangulated
 
 noncomputable theory
 
@@ -175,71 +176,6 @@ def contractible_triangle_functor : C ⥤ triangle C :=
     hom₃ := 0, }, }
 
 variable {C}
-
-@[simps]
-def triangle.mk_iso (T T' : triangle C) (e₁ : T.obj₁ ≅ T'.obj₁) (e₂ : T.obj₂ ≅ T'.obj₂)
-  (e₃ : T.obj₃ ≅ T'.obj₃)
-  (comm₁ : T.mor₁ ≫ e₂.hom = e₁.hom ≫ T'.mor₁)
-  (comm₂ : T.mor₂ ≫ e₃.hom = e₂.hom ≫ T'.mor₂)
-  (comm₃ : T.mor₃ ≫ (shift_functor C 1).map e₁.hom = e₃.hom ≫ T'.mor₃) : T ≅ T' :=
-{ hom :=
-  { hom₁ := e₁.hom,
-    hom₂ := e₂.hom,
-    hom₃ := e₃.hom,
-    comm₁' := comm₁,
-    comm₂' := comm₂,
-    comm₃' := comm₃, },
-  inv :=
-  { hom₁ := e₁.inv,
-    hom₂ := e₂.inv,
-    hom₃ := e₃.inv,
-    comm₁' := by rw [← cancel_mono e₂.hom, assoc, e₂.inv_hom_id, comp_id, assoc, comm₁, e₁.inv_hom_id_assoc],
-    comm₂' := by { rw [← cancel_mono e₃.hom, assoc, e₃.inv_hom_id, comp_id, assoc, comm₂, e₂.inv_hom_id_assoc], },
-    comm₃' := by { rw [← cancel_epi e₃.hom, ← assoc, ← comm₃, assoc, ← functor.map_comp, e₁.hom_inv_id, functor.map_id, comp_id, e₃.hom_inv_id_assoc], }, },
-  hom_inv_id' := by { ext; apply iso.hom_inv_id, },
-  inv_hom_id' := by { ext; apply iso.inv_hom_id, }, }
-
-@[simp, reassoc]
-lemma triangle.hom_inv_id_hom₁ {T T' : triangle C} (e : T ≅ T') :
-  e.hom.hom₁ ≫ e.inv.hom₁ = 𝟙 _ :=
-by { change (e.hom ≫ e.inv).hom₁ = _, simpa only [e.hom_inv_id], }
-
-@[simp, reassoc]
-lemma triangle.inv_hom_id_hom₁ {T T' : triangle C} (e : T ≅ T') :
-  e.inv.hom₁ ≫ e.hom.hom₁ = 𝟙 _ :=
-by { change (e.inv ≫ e.hom).hom₁ = _, simpa only [e.inv_hom_id], }
-
-@[simp, reassoc]
-lemma triangle.hom_inv_id_hom₂ {T T' : triangle C} (e : T ≅ T') :
-  e.hom.hom₂ ≫ e.inv.hom₂ = 𝟙 _ :=
-by { change (e.hom ≫ e.inv).hom₂ = _, simpa only [e.hom_inv_id], }
-
-@[simp, reassoc]
-lemma triangle.inv_hom_id_hom₂ {T T' : triangle C} (e : T ≅ T') :
-  e.inv.hom₂ ≫ e.hom.hom₂ = 𝟙 _ :=
-by { change (e.inv ≫ e.hom).hom₂ = _, simpa only [e.inv_hom_id], }
-@[simp, reassoc]
-
-lemma triangle.hom_inv_id_hom₃ {T T' : triangle C} (e : T ≅ T') :
-  e.hom.hom₃ ≫ e.inv.hom₃ = 𝟙 _ :=
-by { change (e.hom ≫ e.inv).hom₃ = _, simpa only [e.hom_inv_id], }
-
-@[simp, reassoc]
-lemma triangle.inv_hom_id_hom₃ {T T' : triangle C} (e : T ≅ T') :
-  e.inv.hom₃ ≫ e.hom.hom₃ = 𝟙 _ :=
-by { change (e.inv ≫ e.hom).hom₃ = _, simpa only [e.inv_hom_id], }
-
-lemma triangle.is_iso_of_is_iso_homs {T T' : triangle C} (f : T ⟶ T')
-  (h₁ : is_iso f.hom₁) (h₂ : is_iso f.hom₂) (h₃ : is_iso f.hom₃) : is_iso f :=
-begin
-  haveI := h₁,
-  haveI := h₂,
-  haveI := h₃,
-  convert is_iso.of_iso (triangle.mk_iso T T' (as_iso f.hom₁) (as_iso f.hom₂) (as_iso f.hom₃)
-    f.comm₁ f.comm₂ f.comm₃),
-  ext; refl,
-end
-
 @[simps]
 def map_triangle_rotate [preadditive C] [∀ n : ℤ, functor.additive (shift_functor C n)]
   {D : Type*} [category D] [has_zero_object D] [preadditive D] [has_shift D ℤ]
@@ -457,6 +393,64 @@ instance : pretriangulated (localization L W comm_shift) :=
   complete_distinguished_triangle_morphism :=
     localization.complete_distinguished_triangle_morphism L W comm_shift, }
 
+instance [triangulated C] : triangulated (localization L W comm_shift) :=
+triangulated.mk'
+(λ X₁' X₂' X₃' u₁₂' u₂₃', begin
+  haveI := localization.ess_surj L W,
+  let Y₁' := L.obj_preimage X₁',
+  let X₂ := L.obj_preimage X₂',
+  let Y₃' := L.obj_preimage X₃',
+  let e₁ : L.obj Y₁' ≅ X₁' := functor.obj_obj_preimage_iso L X₁',
+  let e₂ : L.obj X₂ ≅ X₂' := functor.obj_obj_preimage_iso L X₂',
+  let e₃ : L.obj Y₃' ≅ X₃' := functor.obj_obj_preimage_iso L X₃',
+  let y₁₂' : L.obj Y₁' ⟶ L.obj X₂ := e₁.hom ≫ u₁₂' ≫ e₂.inv,
+  let y₂₃' : L.obj X₂ ⟶ L.obj Y₃' := e₂.hom ≫ u₂₃' ≫ e₃.inv,
+  obtain ⟨⟨X₁, s₁, u₁₂, hs₁⟩, hz₁⟩ := right_calculus_of_fractions.L_map_fac L W y₁₂',
+  obtain ⟨⟨X₃, u₂₃, s₂, hs₂⟩, hz₂⟩ := left_calculus_of_fractions.L_map_fac L W y₂₃',
+  haveI := localization.inverts L W _ hs₁,
+  haveI := localization.inverts L W _ hs₂,
+  dsimp [right_calculus_of_fractions.map_zigzag] at hz₁,
+  dsimp [left_calculus_of_fractions.map_zigzag] at hz₂,
+  obtain ⟨Z₁₂, v₁₂, w₁₂, h₁₂⟩ := pretriangulated.distinguished_cocone_triangle _ _ u₁₂,
+  obtain ⟨Z₂₃, v₂₃, w₂₃, h₂₃⟩ := pretriangulated.distinguished_cocone_triangle _ _ u₂₃,
+  obtain ⟨Z₁₃, v₁₃, w₁₃, h₁₃⟩ := pretriangulated.distinguished_cocone_triangle _ _ (u₁₂ ≫ u₂₃),
+  let H := octahedron rfl h₁₂ h₂₃ h₁₃,
+  refine ⟨L.obj X₁, L.obj X₂, L.obj X₃, L.obj Z₁₂, L.obj Z₂₃, L.obj Z₁₃,
+    L.map u₁₂, L.map u₂₃, e₁.symm ≪≫ (as_iso (L.map s₁)).symm, e₂.symm,
+    e₃.symm ≪≫ (as_iso (L.map s₂)), _, _, _, _, ⟨_, by refl, h₁₂⟩,
+    _, _, ⟨_, by refl, h₂₃⟩,
+    L.map v₁₃, L.map w₁₃ ≫ comm_shift.hom.app X₁,
+      ⟨_, _, h₁₃⟩, _⟩,
+  { dsimp,
+    rw [assoc, ← hz₁, e₁.inv_hom_id_assoc], },
+  { dsimp,
+    rw [← cancel_mono (inv (L.map s₂)), assoc, assoc, assoc, is_iso.hom_inv_id, comp_id, ← hz₂,
+      e₂.inv_hom_id_assoc], },
+  { refine triangle.mk_iso _ _ (iso.refl _) (iso.refl _) (iso.refl _) _ _ _,
+    { dsimp, simp only [comp_id, functor.map_comp, id_comp], },
+    { dsimp, simp only [comp_id, id_comp], },
+    { dsimp, simp only [functor.map_id, comp_id, id_comp], }, },
+  have comm₁₂ := congr_arg (λ (f : _ ⟶ _), L.map f) H.triangle_morphism₁.comm₂,
+  have comm₁₃ := congr_arg (λ (f : _ ⟶ _), L.map f) H.triangle_morphism₁.comm₃,
+  have comm₂₂ := congr_arg (λ (f : _ ⟶ _), L.map f) H.triangle_morphism₂.comm₂,
+  have comm₂₃ := congr_arg (λ (f : _ ⟶ _), L.map f) H.triangle_morphism₂.comm₃,
+  dsimp at comm₁₂ comm₁₃ comm₂₂ comm₂₃,
+  simp only [L.map_comp, functor.map_id, id_comp, comp_id] at comm₁₂ comm₁₃ comm₂₂ comm₂₃,
+  refine ⟨L.map H.m₁, L.map H.m₃, comm₁₂, _, comm₂₂, _, _⟩,
+  { dsimp,
+    rw reassoc_of comm₁₃, },
+  { dsimp,
+    rw [← reassoc_of comm₂₃, assoc],
+    erw ← nat_trans.naturality,
+    refl, },
+  refine ⟨_, _, H.triangle_distinguished⟩,
+  refine triangle.mk_iso _ _ (iso.refl _) (iso.refl _) (iso.refl _) _ _ _,
+  { dsimp, simp only [comp_id, id_comp], },
+  { dsimp, simp only [comp_id, id_comp], },
+  { dsimp, simp only [assoc, functor.map_id, comp_id, functor.map_comp, id_comp],
+    erw ← nat_trans.naturality, refl, },
+end)
+
 include W
 
 def localization_functor : triangulated_functor C (localization L W comm_shift) :=
@@ -473,6 +467,10 @@ instance additive_shift_localization (n : ℤ) :
 
 instance localization_pretriangulated : pretriangulated W.localization :=
 (infer_instance : pretriangulated (localization W.Q W
+  (shift.localization_comm_shift W.Q W (1 : ℤ))))
+
+instance localization_triangulated [triangulated C] : triangulated W.localization :=
+(infer_instance : triangulated (localization W.Q W
   (shift.localization_comm_shift W.Q W (1 : ℤ))))
 
 end triangulated
