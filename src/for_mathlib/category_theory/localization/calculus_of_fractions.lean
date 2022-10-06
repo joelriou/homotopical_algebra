@@ -807,6 +807,24 @@ begin
   exact ⟨λ h, quiver.hom.unop_inj h, λ h, quiver.hom.op_inj h⟩,
 end
 
+lemma L_map_eq_iff {D : Type*} [category D] (L : C ⥤ D) (W : morphism_property C)
+  [right_calculus_of_fractions W] [L.is_localization W] {Y Z : C} (f₁ f₂ : Y ⟶ Z) :
+  L.map f₁ = L.map f₂ ↔ ∃ (X : C) (s : X ⟶ Y) (hs : W s), s ≫ f₁ = s ≫ f₂ :=
+begin
+  split,
+  { intro h,
+    rcases (L_map_zigzag_eq_iff L
+      (zigzag.mk Y (𝟙 Y) f₁ (morphism_property.contains_identities.id W Y))
+      (zigzag.mk Y (𝟙 Y) f₂ (morphism_property.contains_identities.id W Y))).mp
+      (by { dsimp [map_zigzag], rw h, }) with ⟨Z, t₁, t₂, hts, htf, ht⟩,
+    dsimp at t₁ t₂ ht hts htf,
+    simp only [comp_id] at ht hts,
+    exact ⟨Z, t₁, ht, by rw [htf, hts]⟩, },
+  { rintro ⟨Z, s, hs, eq⟩,
+    haveI := localization.inverts L W s hs,
+    simp only [← cancel_epi (L.map s), ← L.map_comp, eq], },
+end
+
 end right_calculus_of_fractions
 
 variable (W)

@@ -381,6 +381,38 @@ triangulated.localization_functor (W A).Q (W A)
 lemma is_iso_map_iff [A.saturated] {X Y : C} (f : X ⟶ Y) : is_iso (A.Q.map f) ↔ A.W f :=
 by convert localization.is_iso_map_iff_of_calculus_of_fractions (W A).Q (W A) f
 
+lemma is_zero_obj_iff' (X : C) : is_zero (A.Q.obj X) ↔ ∃ (Y : C) (i : X ⟶ Y) [is_split_mono i], Y ∈ A.set :=
+begin
+  rw limits.is_zero.iff_id_eq_zero,
+  split,
+  { intro h,
+    have h' : A.W.Q.map (𝟙 X) = A.W.Q.map 0 :=
+      by simpa only [functor.map_id, functor.map_zero] using h,
+    rw right_calculus_of_fractions.L_map_eq_iff A.W.Q A.W at h',
+    obtain ⟨Z, s, hs, eq⟩ := h',
+    rw [comp_id, comp_zero] at eq,
+    obtain ⟨Y, i, p, H, mem⟩ := hs,
+    haveI : mono i := mono_of_dist_triang₂ _ H eq,
+    exact ⟨Y, i, is_split_mono_of_mono i, mem⟩, },
+  { rintro ⟨Y, i, hi, mem⟩,
+    haveI : is_iso (A.W.Q.map (0 : Y ⟶ 0)) := localization.inverts A.W.Q A.W _
+      (W.mk' (contractible_distinguished Y) mem),
+    rw [← cancel_mono (A.W.Q.map i), id_comp, zero_comp,
+      ← cancel_mono (A.W.Q.map (0 : Y ⟶ 0)), functor.map_zero, comp_zero, comp_zero], },
+end
+
+lemma is_zero_obj_iff [A.saturated] (X : C) : is_zero (A.Q.obj X) ↔ X ∈ A.set :=
+begin
+  rw is_zero_obj_iff',
+  split,
+  { intro h,
+    obtain ⟨Y, i, hi, mem⟩ := h,
+    haveI := hi,
+    exact saturated.condition i mem, },
+  { exact λ h, ⟨X, 𝟙 X, infer_instance, h⟩, },
+end
+
+
 end subcategory
 
 end triangulated
