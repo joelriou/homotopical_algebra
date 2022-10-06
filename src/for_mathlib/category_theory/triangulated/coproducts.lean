@@ -111,6 +111,17 @@ begin
     simp only [comp_add, prod.lift_fst_assoc, id_comp, prod.lift_snd_assoc, zero_comp, add_zero], },
 end
 
+instance : split_mono_category C :=
+⟨λ X Y i, begin
+  introI,
+  constructor,
+  obtain ⟨Z, z, p, mem⟩ := distinguished_cocone_triangle₁ i,
+  have zero : z ≫ i = 0 := triangle.comp_zero₁₂ _ mem,
+  have hz : z = 0 := by rw [← cancel_mono i, zero, zero_comp],
+  obtain ⟨r, hr⟩ := contravariant_yoneda_exact₂ _ mem (𝟙 X) (by { dsimp, rw [hz, zero_comp], }),
+  exact nonempty.intro ⟨r, hr.symm⟩,
+end⟩
+
 lemma binary_product_triangle_distinguished (X₁ X₂ : C) :
   triangle.mk C (prod.lift (𝟙 X₁) (0 : X₁ ⟶ X₂)) limits.prod.snd 0 ∈ dist_triang C :=
 begin

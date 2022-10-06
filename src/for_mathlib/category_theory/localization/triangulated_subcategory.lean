@@ -77,6 +77,16 @@ lemma ext₃
   T.obj₃ ∈ A.set :=
 A.ext₂ T.rotate (pretriangulated.rot_of_dist_triangle C T hT) h₂ (A.shift _ (1 : ℤ) h₁)
 
+lemma shift_iff (X : C) (n : ℤ) : X ∈ A.set ↔ (shift_functor C n).obj X ∈ A.set :=
+begin
+  split,
+  { intro h,
+    exact A.shift X n h, },
+  { intro h,
+    refine (respects_iso A).condition
+      ((add_neg_equiv (shift_monoidal_functor C ℤ) n).unit_iso.symm.app X) (A.shift _ (-n) h), },
+end
+
 def W : morphism_property C :=
 λ X Y f, ∃ (Z : C) (g : Y ⟶ Z) (h : Z ⟶ (shift_functor C (1 : ℤ)).obj X)
   (H : triangle.mk C f g h ∈ dist_triang C), Z ∈ A.set
@@ -234,6 +244,18 @@ instance W_compatible_with_shift : (W A).compatible_with_shift ℤ :=
     (shift_functor_comp_shift_functor_neg C n)).app (arrow.mk f))).mp (h _ _ _ hf (-n)),
 end⟩
 
+variable {A}
+
+lemma W.shift {X₁ X₂ : C} {f : X₁ ⟶ X₂} (hf : (W A) f) (n : ℤ) :
+  (W A) ((shift_functor C n).map f) :=
+by simpa only [(morphism_property.compatible_with_shift.iff (W A) f n)] using hf
+
+lemma W.unshift {X₁ X₂ : C} {f : X₁ ⟶ X₂} (n : ℤ) (hf : (W A) ((shift_functor C n).map f)) :
+  (W A) f :=
+by simpa only [← (morphism_property.compatible_with_shift.iff (W A) f n)] using hf
+
+variable (A)
+
 lemma binary_product_stable (X₁ X₂ : C) (hX₁ : X₁ ∈ A.set)
   (hX₂ : X₂ ∈ A.set) : (X₁ ⨯ X₂) ∈ A.set :=
 A.ext₂ _ (binary_product_triangle_distinguished X₁ X₂) hX₁ hX₂
@@ -306,9 +328,40 @@ instance W_compatible_with_triangulation : (W A).compatible_with_triangulation :
 end⟩
 
 class saturated : Prop :=
-(condition : ∀ (X Y : C) (i : Y ⟶ X) (p : X ⟶ Y) (hip : i ≫ p = 𝟙 Y) (hX : X ∈ A.set), Y ∈ A.set)
+(condition : ∀ ⦃X Y : C⦄ (i : Y ⟶ X) [hi : is_split_mono i] (hX : X ∈ A.set), Y ∈ A.set)
 
-instance W_is_saturated [A.saturated] : (W A).is_saturated := sorry
+instance W_is_saturated [A.saturated] : (W A).is_saturated :=
+⟨λ X₁ X₂ X₃ X₄ f₁₂ f₂₃ f₃₄ h₁₃ h₂₄, begin
+  obtain ⟨Y₁₃, g₁₃, h₁₃, H₁₃, mem₁₃⟩ := h₁₃,
+  obtain ⟨Y₂₄, g₂₄, h₂₄, H₂₄, mem₂₄⟩ := h₂₄,
+  obtain ⟨Y₁₂, g₁₂, h₁₂, H₁₂⟩ := pretriangulated.distinguished_cocone_triangle _ _ f₁₂,
+  obtain ⟨Y₂₃, g₂₃, h₂₃, H₂₃⟩ := pretriangulated.distinguished_cocone_triangle _ _ f₂₃,
+  obtain ⟨Y₃₄, g₃₄, h₃₄, H₃₄⟩ := pretriangulated.distinguished_cocone_triangle _ _ f₃₄,
+  refine ⟨Y₂₃, g₂₃, h₂₃, H₂₃, _⟩,
+  have H₁₂₃ := triangulated.octahedron rfl H₁₂ H₂₃ H₁₃,
+  have H₂₃₄ := triangulated.octahedron rfl H₂₃ H₃₄ H₂₄,
+  let s := h₂₃ ≫ g₁₂⟦1⟧',
+  let t := h₃₄ ≫ g₂₃⟦1⟧',
+  have hs : (W A) s := W.mk (rot_of_dist_triangle _ _
+    (rot_of_dist_triangle _ _ H₁₂₃.triangle_distinguished)) (A.shift _ 1 mem₁₃),
+  have ht : (W A) t := W.mk (rot_of_dist_triangle _ _
+    (rot_of_dist_triangle _ _ H₂₃₄.triangle_distinguished)) (A.shift _ 1 mem₂₄),
+  let st := t ≫ s⟦1⟧',
+  have hst : st = 0,
+  { dsimp [st],
+    have eq : g₂₃ ≫ h₂₃ = 0 := triangle.comp_zero₂₃ _ H₂₃,
+    simp only [assoc, ← functor.map_comp, reassoc_of eq,
+      zero_comp, functor.map_zero, comp_zero], },
+  have hst' := W_stable_under_composition A t (s⟦1⟧') ht (hs.shift 1),
+  obtain ⟨Z, g, h, H, mem⟩ := hst',
+  let i := (triangle.mk C (t ≫ (shift_functor C 1).map s) g h).mor₂,
+  haveI : mono i :=  mono_of_dist_triang₂ _ H hst,
+  haveI : is_split_mono i := is_split_mono_of_mono i,
+  have mem₁₂ := subcategory.saturated.condition i mem,
+  dsimp [triangle.mk] at mem₁₂,
+  rw [← A.shift_iff, ← A.shift_iff] at mem₁₂,
+  exact A.ext₃ _ H₁₂₃.triangle_distinguished mem₁₂ mem₁₃,
+end⟩
 
 lemma test : pretriangulated (W A).localization := infer_instance
 
