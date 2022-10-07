@@ -1,40 +1,10 @@
 import for_mathlib.category_theory.localization.triangulated
 import tactic.linarith
+import for_mathlib.category_theory.triangulated.shift_compatibility
 
 noncomputable theory
 
 namespace category_theory
-
-section
-open category
-
-variables (C : Type*) [category C] {A : Type*} [add_comm_monoid A]
-  [has_shift C A]
-
-def shift_functor_add_comm (a₁ a₂ : A) :
-  shift_functor C a₁ ⋙ shift_functor C a₂ ≅
-  shift_functor C a₂ ⋙ shift_functor C a₁ :=
-(shift_functor_add C a₁ a₂).symm ≪≫ eq_to_iso (by rw add_comm a₁ a₂) ≪≫ (shift_functor_add C a₂ a₁)
-
-@[simp]
-lemma shift_functor_add_comm_hom_app (a₁ a₂ : A) (X : C) :
-  (shift_functor_add_comm C a₁ a₂).hom.app X  = (shift_functor_add C a₁ a₂).inv.app X ≫
-  eq_to_hom (by rw add_comm a₁ a₂) ≫ (shift_functor_add C a₂ a₁).hom.app X :=
-begin
-  dsimp only [shift_functor_add_comm, iso.trans, eq_to_iso],
-  simp only [iso.symm_hom, nat_trans.comp_app, eq_to_hom_app],
-end
-
-@[simp]
-lemma shift_functor_add_comm_eq_refl (a : A) :
-  shift_functor_add_comm C a a = iso.refl _ :=
-begin
-  ext X,
-  dsimp only [shift_functor_add_comm, iso.trans, eq_to_iso, iso.symm, iso.refl],
-  rw [eq_to_hom_refl, id_comp, iso.inv_hom_id],
-end
-
-end
 
 open limits
 
@@ -117,7 +87,7 @@ nat_iso.of_components (λ T, begin
     simp only [functor.map_comp, assoc],
     erw ← nat_trans.naturality_assoc,
     congr' 1,
-    sorry, },
+    apply shift_compatibility, },
 end)
 (λ T T' f, by ext; apply nat_trans.naturality)
 
