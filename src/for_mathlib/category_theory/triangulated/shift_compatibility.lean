@@ -25,6 +25,28 @@ begin
   apply F.associativity
 end
 
+lemma apply_α (X Y Z : C) : F.map (α_ X Y Z).hom =
+  (F.μ_iso (X ⊗ Y) Z).inv ≫ ((F.μ_iso X Y).inv ⊗ 𝟙 (F.obj Z)) ≫
+  (α_ (F.obj X) (F.obj Y) (F.obj Z)).hom ≫
+  (𝟙 (F.obj X) ⊗ (F.μ_iso Y Z).hom) ≫ (F.μ_iso X (Y ⊗ Z)).hom :=
+by simpa only [← cancel_epi ((F.μ_iso (X ⊗ Y) Z).hom),
+    ← cancel_epi ((F.μ_iso X Y).hom ⊗ 𝟙 (F.obj Z)),
+    iso.hom_inv_id_assoc, assoc, ← monoidal_category.tensor_comp_assoc,
+    iso.hom_inv_id, id_comp, monoidal_category.tensor_id]
+    using F.associativity X Y Z
+
+lemma apply_α_inv (X Y Z : C) : F.map (α_ X Y Z).inv =
+  (F.μ_iso X (Y ⊗ Z)).inv ≫ (𝟙 (F.obj X) ⊗ (F.μ_iso Y Z).inv) ≫
+  (α_ (F.obj X) (F.obj Y) (F.obj Z)).inv ≫
+  ((F.μ_iso X Y).hom ⊗ 𝟙 (F.obj Z)) ≫
+  (F.μ_iso (X ⊗ Y) Z).hom :=
+begin
+  rw [← cancel_mono (F.map (α_ X Y Z).hom), ← F.map_comp, iso.inv_hom_id, F.map_id, apply_α],
+  simp only [assoc, iso.hom_inv_id_assoc, ← monoidal_category.tensor_comp_assoc,
+      iso.hom_inv_id, comp_id, monoidal_category.tensor_id, id_comp,
+      iso.inv_hom_id_assoc, iso.inv_hom_id],
+end
+
 def comm' (X Y : C) : F.obj X ⊗ F.obj Y ≅ F.obj Y ⊗ F.obj X :=
 F.μ_iso X Y ≪≫ F.map_iso (comm X Y) ≪≫ (F.μ_iso Y X).symm
 
@@ -38,7 +60,32 @@ lemma compatibility (X Y Z : C) :
     (F.comm' comm Z X ⊗ iso.refl (F.obj Y)) ≪≫ α_ _ _ _ ≪≫
     (iso.refl (F.obj X) ⊗ F.comm' comm Z Y) :=
 begin
-  sorry,
+  ext,
+  have eq := (F.μ_iso Z (X ⊗ Y)).hom ≫=
+    F.congr_map (congr_arg iso.hom (commσ X Y Z)),
+  dsimp only [iso.trans, iso.symm, iso.refl, comm', functor.map_iso,
+    tensor_iso_hom] at ⊢ eq,
+  simp only [F.map_comp, assoc] at eq ⊢,
+  simp only [F.apply_α X Y Z, ← cancel_mono ((F.μ_iso X (Y ⊗ Z)).inv), assoc,
+    iso.hom_inv_id, comp_id,
+    ← cancel_mono ((𝟙 (F.to_lax_monoidal_functor.to_functor.obj X) ⊗ (F.μ_iso Y Z).inv)),
+    ← monoidal_category.tensor_comp, monoidal_category.tensor_id] at eq,
+  rw eq, clear eq,
+  rw F.apply_α_inv,
+  simp only [assoc],
+  erw iso.hom_inv_id_assoc,
+  congr' 2,
+  simp only [monoidal_category.comp_tensor_id, monoidal_category.id_tensor_comp, assoc],
+  congr' 1,
+  rw F.apply_α,
+  simp only [← assoc],
+  congr' 1,
+  simp only [assoc],
+  conv_lhs { rw [← assoc, ← assoc, ← assoc], },
+  conv_rhs { rw ← assoc, },
+  congr' 3,
+  { simp only [μ_iso_hom, assoc, ← F.μ_natural_assoc, functor.map_id, μ_hom_inv_id, comp_id], },
+  { simp only [μ_iso_hom, ← F.μ_natural_assoc, functor.map_id, μ_hom_inv_id, comp_id], },
 end
 
 end monoidal_functor

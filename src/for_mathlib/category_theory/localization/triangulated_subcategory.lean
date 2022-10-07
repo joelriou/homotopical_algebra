@@ -381,6 +381,15 @@ begin
   exact F,
 end
 
+/- TODO :
+1) define the shift on `A.category` using `has_shift_of_fully_faithful`,
+and define a (pre)triangulated structure.
+
+2) show a universal property for the triangulated functor `L` : if
+`G : D ⥤ E` is a functor which lifts a triangulated functor `F : C ⥤ E`
+then `G` is a triangulated functor.
+ -/
+
 instance Q_to_functor_is_localization : A.Q.to_functor.is_localization A.W :=
 (infer_instance : A.W.Q.is_localization A.W)
 
