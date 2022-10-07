@@ -368,8 +368,6 @@ lemma test : pretriangulated (W A).localization := infer_instance
 @[protected, derive category, derive preadditive]
 def category := full_subcategory A.set
 
-instance : preadditive (subcategory.category A) := infer_instance
-
 instance : has_zero_object (subcategory.category A) :=
 ⟨⟨⟨0, A.zero⟩, ⟨λ X, nonempty.intro (unique_of_subsingleton 0),
   λ X, nonempty.intro (unique_of_subsingleton 0)⟩⟩⟩
