@@ -5,6 +5,7 @@ import for_mathlib.category_theory.triangulated.triangulated
 import for_mathlib.category_theory.preadditive_subcategory
 import for_mathlib.category_theory.triangulated.coproducts
 import for_mathlib.category_theory.limits.products
+import category_theory.limits.full_subcategory
 
 noncomputable theory
 
@@ -372,6 +373,137 @@ instance : has_zero_object (subcategory.category A) :=
 ⟨⟨⟨0, A.zero⟩, ⟨λ X, nonempty.intro (unique_of_subsingleton 0),
   λ X, nonempty.intro (unique_of_subsingleton 0)⟩⟩⟩
 
+@[simps]
+def category.shift_functor (n : ℤ) : A.category ⥤ A.category :=
+full_subcategory.lift A.set (full_subcategory_inclusion A.set ⋙ shift_functor C n)
+  (λ X, (A.shift_iff X.obj n).mp X.property)
+
+@[simps]
+def category.comm_shift (n : ℤ) :
+  category.shift_functor A n ⋙ full_subcategory_inclusion A.set ≅
+    full_subcategory_inclusion A.set ⋙ shift_functor C n :=
+    full_subcategory.lift_comp_inclusion _ _ _
+
+@[simps]
+instance : has_shift A.category ℤ := has_shift_of_fully_faithful
+  (full_subcategory_inclusion A.set) (category.shift_functor A)
+  (category.comm_shift A)
+
+lemma category_closed_under_finite_products (J : Type) [finite J] :
+  closed_under_limits_of_shape (discrete J) A.set :=
+λ F c hc mem, begin
+  let X := λ j, F.obj ⟨j⟩,
+  refine A.respects_iso.condition _ (A.pi_finite_stable X (λ j, mem ⟨j⟩)),
+  exact
+  { hom := hc.lift (cone.mk (∏ X) (discrete.nat_trans (by { rintro ⟨i⟩, exact pi.π _ i,}))),
+    inv := pi.lift (λ i, c.π.app ⟨i⟩),
+    hom_inv_id' := begin
+      ext i,
+      discrete_cases,
+      simp only [assoc, limit.lift_π, fan.mk_π_app, is_limit.fac, discrete.nat_trans_app, id_comp],
+    end,
+    inv_hom_id' := hc.hom_ext begin
+      rintro ⟨i⟩,
+      simp only [assoc, is_limit.fac, discrete.nat_trans_app, limit.lift_π, fan.mk_π_app, id_comp],
+    end, },
+end
+
+instance category_has_finite_products : has_finite_products (A.category) :=
+⟨λ J, begin
+  introI,
+  exact has_limits_of_shape_of_closed_under_limits (category_closed_under_finite_products A J),
+end⟩
+
+instance shift_functor_additive (n : ℤ) : (shift_functor A.category n).additive := infer_instance
+
+@[simps]
+def category_inclusion' : triangulated_functor_struct A.category C :=
+{ comm_shift := category.comm_shift A 1,
+  .. full_subcategory_inclusion A.set }
+
+instance category_inclusion_additive : (category_inclusion' A).additive := { }
+
+namespace category_pretriangulated
+
+@[simp]
+def distinguished_triangles : _root_.set (triangle A.category) :=
+λ T, A.category_inclusion'.map_triangle.obj T ∈ dist_triang C
+
+variable {A}
+
+lemma isomorphic_distinguished (T₁ : triangle A.category)
+  (hT₁ : T₁ ∈ distinguished_triangles A) (T₂ : triangle A.category) (e : T₂ ≅ T₁) :
+  T₂ ∈ distinguished_triangles A :=
+pretriangulated.isomorphic_distinguished _ hT₁ _
+      (A.category_inclusion'.map_triangle.map_iso e)
+
+lemma contractible_distinguished (X : A.category) :
+  triangle.mk A.category (𝟙 X) (0 : X ⟶ 0) 0 ∈ distinguished_triangles A :=
+begin
+  refine pretriangulated.isomorphic_distinguished _
+    (pretriangulated.contractible_distinguished (A.category_inclusion'.obj X)) _ _,
+  refine triangle.mk_iso _ _ (iso.refl _) (iso.refl _) A.category_inclusion'.map_zero_object _ _ _,
+  tidy,
+end
+
+lemma distinguished_cocone_triangle (X Y : A.category) (f : X ⟶ Y) :
+  ∃ (Z : A.category) (g : Y ⟶ Z) (h : Z ⟶ (shift_functor A.category 1).obj X),
+  triangle.mk A.category f g h ∈ category_pretriangulated.distinguished_triangles A :=
+begin
+  obtain ⟨Z, g, h, mem⟩ := pretriangulated.distinguished_cocone_triangle
+    _ _ ((category_inclusion' A).map f),
+  refine ⟨⟨Z, A.ext₃ _ mem X.2 Y.2,⟩, g, h,
+    pretriangulated.isomorphic_distinguished _ mem _ _⟩,
+  refine triangle.mk_iso _ _ (iso.refl _) (iso.refl _) (iso.refl _) (by tidy) (by tidy) _,
+  dsimp,
+  simp only [functor.map_id, comp_id, id_comp],
+  apply comp_id,
+end
+
+lemma rotate_distinguished_triangle (T : triangle A.category) :
+  T ∈ category_pretriangulated.distinguished_triangles A ↔
+    T.rotate ∈ category_pretriangulated.distinguished_triangles A :=
+begin
+  change (A.category_inclusion'.map_triangle.obj T ∈ dist_triang C) ↔
+    (A.category_inclusion'.map_triangle.obj T.rotate ∈ dist_triang C),
+  rw pretriangulated.rotate_distinguished_triangle,
+  let e := (map_triangle_rotate A.category_inclusion').app T,
+  split,
+  { exact λ h, pretriangulated.isomorphic_distinguished _ h _ e.symm, },
+  { exact λ h, pretriangulated.isomorphic_distinguished _ h _ e, },
+end
+
+lemma complete_distinguished_triangle_morphism (T₁ T₂ : triangle A.category)
+  (hT₁ : T₁ ∈ distinguished_triangles A) (hT₂ : T₂ ∈ distinguished_triangles A)
+  (a : T₁.obj₁ ⟶ T₂.obj₁) (b : T₁.obj₂ ⟶ T₂.obj₂) (h : T₁.mor₁ ≫ b = a ≫ T₂.mor₁) :
+  ∃ (c : T₁.obj₃ ⟶ T₂.obj₃), T₁.mor₂ ≫ c = b ≫ T₂.mor₂ ∧ T₁.mor₃ ≫
+    (shift_functor A.category 1).map a = c ≫ T₂.mor₃ :=
+begin
+  obtain ⟨c, ⟨hc₁, hc₂⟩⟩ := pretriangulated.complete_distinguished_triangle_morphism
+    (A.category_inclusion'.map_triangle.obj T₁) (A.category_inclusion'.map_triangle.obj T₂)
+    hT₁ hT₂ a b h,
+  refine ⟨c, ⟨hc₁, _⟩⟩,
+  dsimp at hc₂,
+  erw [comp_id, comp_id] at hc₂,
+  exact hc₂,
+end
+
+end category_pretriangulated
+
+instance : pretriangulated A.category :=
+{ distinguished_triangles := category_pretriangulated.distinguished_triangles A,
+  isomorphic_distinguished := category_pretriangulated.isomorphic_distinguished,
+  contractible_distinguished := category_pretriangulated.contractible_distinguished,
+  distinguished_cocone_triangle := category_pretriangulated.distinguished_cocone_triangle,
+  rotate_distinguished_triangle := category_pretriangulated.rotate_distinguished_triangle,
+  complete_distinguished_triangle_morphism :=
+    category_pretriangulated.complete_distinguished_triangle_morphism, }
+
+@[simps]
+def category_inclusion : triangulated_functor A.category C :=
+{ map_distinguished' := λ T hT, hT,
+  ..A.category_inclusion' }
+
 def Q : triangulated_functor C A.W.localization :=
 begin
   let F := triangulated.localization_functor (W A).Q (W A)
@@ -380,10 +512,7 @@ begin
 end
 
 /- TODO :
-1) define the shift on `A.category` using `has_shift_of_fully_faithful`,
-and define a (pre)triangulated structure.
-
-2) show a universal property for the triangulated functor `L` : if
+1) show a universal property for the triangulated functor `L` : if
 `G : D ⥤ E` is a functor which lifts a triangulated functor `F : C ⥤ E`
 then `G` is a triangulated functor.
  -/
