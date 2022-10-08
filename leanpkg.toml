@@ -6,4 +6,4 @@ path = "src"
 
 [dependencies]
 mathlib = {git = "https://github.com/leanprover-community/mathlib", rev = "fdb930f36205c4febd263c2a4a93edaaf5f83454"}
-dold-kan = {git = "https://github.com/joelriou/dold-kan", rev = "90fcacb017b19827983c0d55851c5788211a29fb"}
+dold-kan = {git = "https://github.com/joelriou/dold-kan", rev = "f590f64d85194bc16e670c34c96c6ef4de93339d"}
