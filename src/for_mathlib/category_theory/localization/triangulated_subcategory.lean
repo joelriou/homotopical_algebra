@@ -499,6 +499,41 @@ instance : pretriangulated A.category :=
   complete_distinguished_triangle_morphism :=
     category_pretriangulated.complete_distinguished_triangle_morphism, }
 
+lemma dist_triang_iff {X Y Z : A.category} (f : X ⟶ Y) (g : Y ⟶ Z) (h : Z ⟶ X⟦(1 : ℤ)⟧) :
+  (triangle.mk A.category f g h ∈ dist_triang A.category) ↔
+    (triangle.mk C f g h ∈ dist_triang C) :=
+begin
+  change (_ ∈ dist_triang C) ↔ _,
+  let e : A.category_inclusion'.map_triangle.obj (triangle.mk A.category f g h) ≅
+    triangle.mk C f g h,
+  { refine triangle.mk_iso _ _ (iso.refl _) (iso.refl _) (iso.refl _) (by tidy) (by tidy) _,
+    dsimp,
+    erw [id_comp, functor.map_id, comp_id, comp_id], },
+  split,
+  { exact λ h, pretriangulated.isomorphic_distinguished _ h _ e.symm, },
+  { exact λ h, pretriangulated.isomorphic_distinguished _ h _ e, },
+end
+
+instance : triangulated A.category :=
+⟨λ X₁ X₂ X₃ Z₁₂ Z₂₃ Z₁₃ u₁₂ u₂₃ u₁₃ comm v₁₂ w₁₂ h₁₂ v₂₃ w₂₃ h₂₃ v₁₃ w₁₃ h₁₃, begin
+  have comm' := A.category_inclusion'.congr_map comm,
+  rw [functor.map_comp] at comm',
+  obtain ⟨m₁, m₃, comm₁, comm₂, comm₃, comm₄, H⟩ := octahedron comm' h₁₂ h₂₃ h₁₃,
+  refine ⟨m₁, m₃, comm₁, _, comm₃, _, _⟩,
+  { dsimp at comm₂,
+    erw [comp_id, comp_id] at comm₂,
+    exact comm₂, },
+  { dsimp at comm₄,
+    erw [comp_id, comp_id] at comm₄,
+    exact comm₄, },
+  { rw dist_triang_iff,
+    refine pretriangulated.isomorphic_distinguished _ H _ _,
+    refine triangle.mk_iso _ _ (iso.refl _) (iso.refl _) (iso.refl _) (by tidy) (by tidy) _,
+    dsimp,
+    erw [functor.map_id, comp_id, comp_id, id_comp],
+    refl, },
+end⟩
+
 @[simps]
 def category_inclusion : triangulated_functor A.category C :=
 { map_distinguished' := λ T hT, hT,
@@ -511,7 +546,7 @@ begin
   exact F,
 end
 
-/- TODO :
+/- TODO : -> for triangulated.lean
 1) show a universal property for the triangulated functor `L` : if
 `G : D ⥤ E` is a functor which lifts a triangulated functor `F : C ⥤ E`
 then `G` is a triangulated functor.
