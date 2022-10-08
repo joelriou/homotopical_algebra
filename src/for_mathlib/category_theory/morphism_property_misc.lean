@@ -11,7 +11,7 @@ variables {C : Type u} [category.{v} C] {D : Type*} [category D]
 
 namespace morphism_property
 
-instance : has_subset (morphism_property C) :=
+/-instance : has_subset (morphism_property C) :=
 ⟨λ P₁ P₂, ∀ ⦃X Y : C⦄ (f : X ⟶ Y) (hf : P₁ f), P₂ f⟩
 instance : has_inter (morphism_property C) :=
 ⟨λ P₁ P₂ X Y f, P₁ f ∧ P₂ f⟩
@@ -91,7 +91,7 @@ lemma isomorphisms.infer_property [hf : is_iso f] : (isomorphisms C) f := hf
 lemma monomorphisms.infer_property [hf : mono f] : (monomorphisms C) f := hf
 lemma epimorphisms.infer_property [hf : epi f] : (epimorphisms C) f := hf
 
-end
+end-/
 
 variable (C)
 @[simp]
@@ -129,7 +129,7 @@ by rw [← (epimorphisms C).unop_op, op_epimorphisms]
 namespace stable_under_composition
 
 variable {C}
-
+/-
 lemma op {P : morphism_property C} (h : P.stable_under_composition) :
   P.op.stable_under_composition :=
 λ X Y Z f g hf hg, h g.unop f.unop hg hf
@@ -140,11 +140,11 @@ lemma unop {P : morphism_property Cᵒᵖ} (h : P.stable_under_composition) :
 
 lemma inverse_image {P : morphism_property D} (h : P.stable_under_composition)
   (F : C ⥤ D) : (P.inverse_image F).stable_under_composition :=
-λ X Y Z f g hf hg, by simpa only [← F.map_comp] using h (F.map f) (F.map g) hf hg
+λ X Y Z f g hf hg, by simpa only [← F.map_comp] using h (F.map f) (F.map g) hf hg-/
 
 variable (C)
 
-lemma for_isomorphisms : (isomorphisms C).stable_under_composition :=
+/-lemma for_isomorphisms : (isomorphisms C).stable_under_composition :=
 λ X Y Z f g hf hg, begin
   dsimp [isomorphisms] at hf hg ⊢,
   haveI := hf,
@@ -166,13 +166,13 @@ lemma for_epimorphisms : (epimorphisms C).stable_under_composition :=
   haveI := hf,
   haveI := hg,
   apply epi_comp,
-end
+end-/
 
 end stable_under_composition
 
 namespace respects_iso
 
-lemma op {P : morphism_property C} (h : P.respects_iso) :
+/-lemma op {P : morphism_property C} (h : P.respects_iso) :
   P.op.respects_iso :=
 ⟨λ X Y Z e f, h.2 e.unop f.unop, λ X Y Z e f, h.1 e.unop f.unop⟩
 
@@ -188,7 +188,7 @@ by { split; { intros X Y Z e f, simp only [epimorphisms.iff], introI, apply epi_
 
 lemma for_isomorphisms : (isomorphisms C).respects_iso :=
 by { split; { intros X Y Z e f, simp only [isomorphisms.iff], introI, apply_instance, }, }
-
+-/
 end respects_iso
 
 variable {C}
@@ -261,11 +261,11 @@ begin
 end
 
 end stable_under_coproducts
-
+/-
 lemma is_inverted_by.of_comp {C₁ C₂ C₃ : Type*} [category C₁] [category C₂] [category C₃]
   (W : morphism_property C₁) (F : C₁ ⥤ C₂) (hF : W.is_inverted_by F) (G : C₂ ⥤ C₃) :
   W.is_inverted_by (F ⋙ G) :=
-λ X Y f hf, by { haveI := hF f hf, dsimp, apply_instance, }
+λ X Y f hf, by { haveI := hF f hf, dsimp, apply_instance, }-/
 
 lemma is_inverted_by.iff_of_iso (W : morphism_property C) {F₁ F₂ : C ⥤ D} (e : F₁ ≅ F₂) :
   W.is_inverted_by F₁ ↔ W.is_inverted_by F₂ :=
@@ -275,7 +275,7 @@ begin
     exact λ h X Y f hf, by { rw ← this, exact h f hf, },
     exact λ h X Y f hf, by { rw this, exact h f hf, }, },
   intros X Y f,
-  apply (respects_iso.for_isomorphisms D).arrow_mk_iso_iff,
+  apply (respects_iso.isomorphisms D).arrow_mk_iso_iff,
   exact arrow.iso_mk (e.app X) (e.app Y) (by simp),
 end
 

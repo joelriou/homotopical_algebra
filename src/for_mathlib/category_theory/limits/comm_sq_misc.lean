@@ -9,7 +9,7 @@ variables {C : Type*} [category C]
 namespace is_pushout
 
 variables {Z X Y P : C} {f : Z ⟶ X} {g : Z ⟶ Y} {inl : X ⟶ P} {inr : Y ⟶ P}
-
+/-
 lemma of_horiz_is_iso [is_iso f] [is_iso inr] (sq : comm_sq f g inl inr) :
   is_pushout f g inl inr := of_is_colimit' sq
 begin
@@ -18,7 +18,7 @@ begin
 end
 
 lemma of_vert_is_iso [is_iso g] [is_iso inl] (sq : comm_sq f g inl inr) :
-  is_pushout f g inl inr := (of_horiz_is_iso sq.flip).flip
+  is_pushout f g inl inr := (of_horiz_is_iso sq.flip).flip-/
 
 lemma of_coprod_inl_with_id {A B : C} (f : A ⟶ B) (X : C) [has_binary_coproduct A X]
   [has_binary_coproduct B X] :

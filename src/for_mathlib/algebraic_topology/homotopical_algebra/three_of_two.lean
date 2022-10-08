@@ -118,7 +118,7 @@ lemma for_inverse_image {D : Type*} [category D] (h : three_of_two F) (G : D ⥤
 variable (C)
 
 lemma for_isomorphisms : (isomorphisms C).three_of_two :=
-{ of_comp := stable_under_composition.for_isomorphisms C,
+{ of_comp := stable_under_composition.isomorphisms C,
   of_comp_left := λ X Y Z f g hf hfg, begin
     dsimp [isomorphisms] at hf hfg ⊢,
     haveI := hf,
