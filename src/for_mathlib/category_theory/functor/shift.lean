@@ -3,6 +3,17 @@ import tactic.linarith
 
 noncomputable theory
 
+lemma int.eq_nat_of_zero_le (a : ℤ) (ha : 0 ≤ a) : ∃ (n : ℕ), a = int.of_nat n :=
+begin
+  cases a,
+  { exact ⟨a, rfl⟩, },
+  { exfalso,
+    rw int.neg_succ_of_nat_coe at ha,
+    push_cast at ha,
+    have ha' : (0 : ℤ) ≤ a := nat.cast_nonneg a,
+    linarith, },
+end
+
 namespace category_theory
 
 open category
@@ -78,6 +89,13 @@ calc shift_functor C c ⋙ F ≅ shift_functor C (a + b) ⋙ F :
 ... ≅ _ : functor.associator _ _ _
 ... ≅ _ : iso_whisker_left _ (shift_functor_add D a b).symm
 ... ≅ _ : iso_whisker_left _ (shift_functor_iso_of_eq D h)
+
+lemma comm_shift_iso_add_eq_of_eq (a b b' c : A) (h : a + b = c) (h' : b = b')
+  (e₁ : shift_functor C a ⋙ F ≅ F ⋙ shift_functor D a)
+  (e₂ : shift_functor C b ⋙ F ≅ F ⋙ shift_functor D b) :
+  F.comm_shift_iso_add a b c h e₁ e₂ =
+    F.comm_shift_iso_add a b' c (by rw [← h', h]) e₁ (F.comm_shift_iso_of_eq h' e₂) :=
+by { subst h', simp only [comm_shift_iso_of_eq_refl], }
 
 lemma comm_shift_iso_add_zero {a b : A} (h : a = b)
   (e : shift_functor C a ⋙ F ≅ F ⋙ shift_functor D a) :
@@ -258,24 +276,31 @@ noncomputable def ℤ_mk_iso_pos :
 | 1 := e
 | (n+1) := F.comm_shift_iso_add (n : ℤ) 1 _ rfl (ℤ_mk_iso_pos n) e
 
-lemma ℤ_mk_iso_pos_one : ℤ_mk_iso_pos F e 1 = e := rfl
-
-lemma ℤ_mk_iso_pos_succ (n : ℕ) :
-  ℤ_mk_iso_pos F e (n+1) = F.comm_shift_iso_add (n : ℤ) 1 _ rfl (ℤ_mk_iso_pos F e n) e :=
-begin
-  rcases n with (_|n),
-  { unfold ℤ_mk_iso_pos,
-    simpa only [comm_shift_iso_of_eq_refl] using
-      (comm_shift_iso_zero_add F (rfl : 1 = 1) e).symm, },
-  { unfold ℤ_mk_iso_pos, },
-end
-
 noncomputable
 def ℤ_mk_iso : F.comm_shift_iso ℤ
 | (int.of_nat n) := ℤ_mk_iso_pos F e n
 | (int.neg_succ_of_nat n) := comm_shift_iso_cancel_add F (-[1+n]) (n+1) 0
       (by { simp only [int.neg_succ_of_nat_coe, int.coe_nat_succ], linarith, })
       (F.comm_shift_iso₀ ℤ) (ℤ_mk_iso_pos F e (n+1))
+
+lemma ℤ_mk_iso_one : ℤ_mk_iso F e 1 = e := rfl
+
+lemma ℤ_mk_iso_nat (n : ℕ) : ℤ_mk_iso F e n = ℤ_mk_iso_pos F e n := rfl
+
+lemma ℤ_mk_iso_nonneg_succ (n n' : ℤ) (hn : 0 ≤ n) (h : n + 1 = n'):
+  ℤ_mk_iso F e n' = F.comm_shift_iso_add n 1 n' h (ℤ_mk_iso F e n) e :=
+begin
+  obtain ⟨m, hm⟩ := int.eq_nat_of_zero_le n hn,
+  have hm' : n' = int.of_nat (m+1) := by simp [← h, hm],
+  substs hm hm',
+  unfold ℤ_mk_iso,
+  rcases m with (_|m),
+  { unfold ℤ_mk_iso_pos,
+    convert (F.comm_shift_iso_zero_add rfl e).symm,
+    simp only [comm_shift_iso_of_eq_refl], },
+  { unfold ℤ_mk_iso_pos,
+    refl, },
+end
 
 lemma ℤ_mk_iso_neg_add_self {a b : ℤ} (h : a + b = 0) (hb : 0 ≤ b) :
   F.comm_shift_iso_add _ _ _ h (ℤ_mk_iso F e a) (ℤ_mk_iso F e b) =
@@ -299,13 +324,34 @@ end
 
 lemma ℤ_mk_iso_add_pos (a b : ℤ) (ha : 0 ≤ a) (hb : 0 ≤ b):
   ℤ_mk_iso F e (a + b) = F.comm_shift_iso_add a b _ rfl (ℤ_mk_iso F e a)
-    (ℤ_mk_iso F e b) := sorry
+    (ℤ_mk_iso F e b) :=
+begin
+  suffices : ∀ (b a c : ℕ) (h : a + b = c), ℤ_mk_iso F e c =
+    F.comm_shift_iso_add a b c (by { rw ← h, push_cast, }) (ℤ_mk_iso F e a) (ℤ_mk_iso F e b),
+  { cases a, swap, { exfalso, rw int.neg_succ_of_nat_coe at ha, push_cast at ha, simp at ha, linarith, },
+    cases b, swap, { exfalso, rw int.neg_succ_of_nat_coe at hb, push_cast at hb, simp at hb, linarith, },
+    exact this b a _ rfl, },
+  intro b,
+  induction b with b hb,
+  { intros a c h,
+    rw add_zero at h,
+    subst h,
+    erw comm_shift_iso_add_zero F rfl ,
+    rw comm_shift_iso_eq_of_eq, },
+  { intros a c h,
+    rw ℤ_mk_iso_nonneg_succ F e b b.succ (by simp) rfl,
+    rw ← F.comm_shift_iso_add_assoc (a : ℤ) b 1 (a+b : ℕ) b.succ c
+      (by push_cast) rfl (by { rw [← h], push_cast, rw add_assoc, }),
+    rw ← hb a _ rfl,
+    exact ℤ_mk_iso_nonneg_succ F e (a + b : ℕ) c (nat.cast_nonneg _)
+      (by { rw [← h], push_cast, rw add_assoc, }), },
+end
 
 def ℤ_mk : F.comm_shift ℤ :=
 ℤ_mk' F (ℤ_mk_iso F e) rfl
 (λ n, begin
   cases n,
-  { apply ℤ_mk_iso_pos_succ, },
+  { exact ℤ_mk_iso_nonneg_succ F e (int.of_nat n) _ (by simp) rfl, },
   { apply F.comm_shift_iso_add_injective (-[1+n]+1) n 0
       (by { rw int.neg_succ_of_nat_coe, push_cast, simp, }) (ℤ_mk_iso F e n),
     simp only [ℤ_mk_iso_neg_add_self _ _ _ (nat.cast_nonneg _),
