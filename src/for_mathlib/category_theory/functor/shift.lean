@@ -90,13 +90,6 @@ calc shift_functor C c ⋙ F ≅ shift_functor C (a + b) ⋙ F :
 ... ≅ _ : iso_whisker_left _ (shift_functor_add D a b).symm
 ... ≅ _ : iso_whisker_left _ (shift_functor_iso_of_eq D h)
 
-lemma comm_shift_iso_add_eq_of_eq (a b b' c : A) (h : a + b = c) (h' : b = b')
-  (e₁ : shift_functor C a ⋙ F ≅ F ⋙ shift_functor D a)
-  (e₂ : shift_functor C b ⋙ F ≅ F ⋙ shift_functor D b) :
-  F.comm_shift_iso_add a b c h e₁ e₂ =
-    F.comm_shift_iso_add a b' c (by rw [← h', h]) e₁ (F.comm_shift_iso_of_eq h' e₂) :=
-by { subst h', simp only [comm_shift_iso_of_eq_refl], }
-
 lemma comm_shift_iso_add_zero {a b : A} (h : a = b)
   (e : shift_functor C a ⋙ F ≅ F ⋙ shift_functor D a) :
   F.comm_shift_iso_add a 0 b ((add_zero a).trans h) e (F.comm_shift_iso₀ A) =
