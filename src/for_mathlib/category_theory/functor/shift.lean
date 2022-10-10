@@ -90,10 +90,65 @@ calc shift_functor C c ⋙ F ≅ shift_functor C (a + b) ⋙ F :
 ... ≅ _ : iso_whisker_left _ (shift_functor_add D a b).symm
 ... ≅ _ : iso_whisker_left _ (shift_functor_iso_of_eq D h)
 
+example : ℕ := 42
+local attribute [reducible, instance] endofunctor_monoidal_category
+
+lemma shift_functor_zero_map {X Y : C} (f : X ⟶ Y) :
+  (shift_functor C (0 : A)).map f = (shift_functor_zero C A).hom.app X ≫ f ≫ (shift_functor_zero C A).inv.app Y
+  :=
+begin
+  erw ← nat_trans.naturality_assoc,
+  erw iso.hom_inv_id_app,
+  rw comp_id,
+end
+
 lemma comm_shift_iso_add_zero {a b : A} (h : a = b)
   (e : shift_functor C a ⋙ F ≅ F ⋙ shift_functor D a) :
   F.comm_shift_iso_add a 0 b ((add_zero a).trans h) e (F.comm_shift_iso₀ A) =
-    F.comm_shift_iso_of_eq h e := sorry
+    F.comm_shift_iso_of_eq h e :=
+begin
+  have h' : b = a + 0 := by rw [h, add_zero],
+  subst h',
+  ext X,
+  dsimp [comm_shift_iso_add, shift_functor_iso_of_eq, comm_shift_iso_of_eq, comm_shift_iso₀],
+  simp only [assoc, id_comp, functor.map_id, shift_functor_zero_map, comp_id],
+  conv_lhs { rw [← assoc, ← assoc, ← assoc], },
+  congr' 1,
+  { erw [assoc, assoc],
+    dsimp [monoidal_functor.ε_iso],
+    rw [← nat_trans.comp_app, is_iso.hom_inv_id, nat_trans.id_app],
+    dsimp,
+    rw [comp_id, ← F.map_comp, eq_to_hom_app],
+    congr' 1,
+    dsimp [monoidal_functor.μ_iso],
+    have eq := congr_app ((shift_monoidal_functor C A).right_unitality (discrete.mk a)) X,
+    dsimp at eq,
+    simp only [assoc, functor.map_id, id_comp] at eq,
+    conv_lhs { congr, skip, rw ← comp_id ((category_theory.inv (shift_monoidal_functor C A).to_lax_monoidal_functor.ε).app ((shift_functor C a).obj X)), },
+    erw eq, clear eq,
+    slice_lhs 2 3 { erw ← nat_trans.comp_app, erw is_iso.inv_hom_id, erw nat_trans.id_app, },
+    erw id_comp,
+    slice_lhs 1 2 { erw ← nat_trans.comp_app, erw is_iso.inv_hom_id, erw nat_trans.id_app, },
+    rw id_comp,
+    erw eq_to_hom_map,
+    erw eq_to_hom_app,
+    refl, },
+  { congr' 1,
+    have eq := congr_app ((shift_monoidal_functor D A).right_unitality (discrete.mk a)) (F.obj X),
+    dsimp at eq,
+    simp only [functor.map_id, assoc, comp_id] at eq,
+    rw ← cancel_epi ((shift_monoidal_functor D A).ε_iso.inv.app (((shift_monoidal_functor D A).obj ⟨a⟩).obj (F.obj X))) at eq,
+    erw comp_id at eq,
+    erw iso.inv_hom_id_app_assoc at eq,
+    rw ← cancel_mono (((shift_monoidal_functor D A).to_lax_monoidal_functor.to_functor.map (ρ_ (discrete.mk a)).inv).app (F.obj X)) at eq,
+    rw [assoc, ← nat_trans.comp_app, ← functor.map_comp, iso.hom_inv_id, functor.map_id, nat_trans.id_app, comp_id] at eq,
+    erw ← eq,
+    erw iso.inv_hom_id_app_assoc,
+    erw eq_to_hom_app,
+    erw eq_to_hom_map,
+    erw eq_to_hom_app,
+    refl, },
+end
 
 lemma comm_shift_iso_zero_add {a b : A} (h : a = b)
   (e : shift_functor C a ⋙ F ≅ F ⋙ shift_functor D a) :
