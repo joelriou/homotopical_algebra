@@ -186,7 +186,7 @@ lemma as_localization : L.is_localization W := infer_instance
 lemma inverts : W.is_inverted_by L := (as_localization _ _).inverts
 
 @[simps]
-def iso_of_W {X Y : C} (f : X ⟶ Y) (hf : W f) : L.obj X ≅ L.obj Y :=
+def iso_of_hom {X Y : C} (f : X ⟶ Y) (hf : W f) : L.obj X ≅ L.obj Y :=
 begin
   haveI : is_iso (L.map f) := inverts L W f hf,
   exact as_iso (L.map f),
