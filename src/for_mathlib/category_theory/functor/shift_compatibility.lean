@@ -12,7 +12,7 @@ variables {C₁ C₂ C₃ : Type*} [category C₁] [category C₂] [category C�
   {F F' : C₁ ⥤ C₂} (G : C₂ ⥤ C₃) [full G] [faithful G]
 
 @[simps]
-lemma nat_trans.equiv_hcomp_id_of_fully_faithful :
+def nat_trans.equiv_hcomp_id_of_fully_faithful :
   (F ⟶ F') ≃ (F ⋙ G ⟶ F' ⋙ G) :=
 { to_fun := λ τ, τ ◫ 𝟙 G,
   inv_fun := λ τ,
@@ -135,10 +135,9 @@ begin
   simp only [change_comp, iso.symm_self_id, change_refl],
   ext X,
   dsimp [comp, unit, functor.comp],
-  simp only [id_comp, assoc, obj_ε_app, μ_inv_hom_app_assoc,
+  simp only [id_comp, assoc, obj_ε_app, μ_inv_hom_app_assoc, map_inv_hom_app,
     map_inv_hom_app, comp_id, ← nat_trans.naturality, (S₂.obj a).map_comp,
-    ← F.map_comp_assoc, obj_ε_inv_app, μ_inv_hom_app_assoc,
-    map_inv_hom_app, F.map_id, id_comp],
+    ← F.map_comp_assoc, obj_ε_inv_app, μ_inv_hom_app_assoc, F.map_id, id_comp],
 end
 
 lemma comp_assoc {a b c : C} (e₁ : comm_shift S₁ S₂ F a) (e₂ : comm_shift S₁ S₂ F b)
@@ -171,23 +170,18 @@ def comp_equiv {b : C} (f : comm_shift S₁ S₂ F b) [is_equivalence (S₂.obj 
     apply (nat_iso.equiv_hcomp_refl_of_fully_faithful (S₂.obj b)).injective,
     simp only [comp_cancel, equiv.apply_symm_apply],
     ext X,
-    simp only [nat_iso.hcomp, iso.trans_hom, iso_whisker_left_hom, iso.symm_hom,
-      iso_whisker_right_hom, monoidal_functor.μ_iso_hom,
-      nat_trans.comp_app, functor.associator_hom_app, whisker_left_app,
-      functor.associator_inv_app, whisker_right_app,
-      comp_hom_app, comp_id, assoc, μ_hom_inv_app, id_comp, iso.refl_hom,
-      nat_iso.equiv_hcomp_refl_of_fully_faithful_apply, nat_trans.hcomp_id_app,
-      ← F.map_comp_assoc, F.map_id, f.inv_hom_id_app_assoc],
+    simp only [iso.trans_hom, iso_whisker_left_hom, iso.symm_hom, iso_whisker_right_hom,
+      monoidal_functor.μ_iso_hom, nat_trans.comp_app, functor.associator_hom_app,
+      whisker_left_app, functor.associator_inv_app, whisker_right_app,
+      comp_hom_app, comp_id, assoc, μ_hom_inv_app, id_comp, nat_trans.hcomp_id_app,
+      nat_iso.equiv_hcomp_refl_of_fully_faithful_apply, ← F.map_comp_assoc, F.map_id,
+      f.inv_hom_id_app_assoc, nat_iso.hcomp, iso.refl_hom],
     apply comp_id,
   end,
   right_inv := λ e, begin
     ext X,
-    simp only [comp_hom_app, comp_cancel_hom,  whisker_right_app, id_comp,
-      nat_trans.equiv_hcomp_id_of_fully_faithful_symm_apply_app, nat_trans.comp_app,
-      functor.associator_hom_app, whisker_left_app, functor.associator_inv_app,
-      functor.image_preimage, assoc, μ_inv_hom_app, iso.hom_inv_id_app_assoc,
-      ← F.map_comp_assoc, F.map_id],
-    apply comp_id,
+    simp only [comp_hom_app, comp_cancel_hom_app, functor.image_preimage, assoc, μ_inv_hom_app,
+      comp_id, iso.hom_inv_id_app_assoc, ← F.map_comp_assoc, F.map_id, id_comp],
   end, }
 
 end comm_shift
