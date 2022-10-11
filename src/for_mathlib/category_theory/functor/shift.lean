@@ -4,11 +4,6 @@ import for_mathlib.category_theory.functor.shift_compatibility
 
 noncomputable theory
 
-/-lemma int.eq_int_of_nat_of_zero_le (a : ℤ) (ha : 0 ≤ a) : ∃ (n : ℕ), a = n :=
-begin
-  exact int.eq_coe_of_zero_le ha,
-end-/
-
 namespace category_theory
 
 open category
@@ -114,7 +109,7 @@ lemma add'_sub' {a b c : A} (h : a + b = c) (e : shift_functor C c ⋙ F ≅ F �
   add' h (sub' h e f) f = e :=
 (add'_equiv h f).right_inv e
 
-lemma add'_assoc {a b c ab bc abc : A} (hab : a + b = ab) (hbc : b + c = bc)
+lemma add'_assoc (a b c ab bc abc : A) (hab : a + b = ab) (hbc : b + c = bc)
   (habc : a + b + c = abc)
   (e₁ : shift_functor C a ⋙ F ≅ F ⋙ shift_functor D a)
   (e₂ : shift_functor C b ⋙ F ≅ F ⋙ shift_functor D b)
@@ -207,12 +202,24 @@ def iso_ℕ : Π (n : ℕ), shift_functor C (int.of_nat n) ⋙ F ≅ F ⋙ shift
 @[simp]
 lemma iso_ℕ_zero : iso_ℕ e 0 = unit _ _ := rfl
 
-lemma iso_ℕ_add_one (n : ℕ) : iso_ℕ e (n+1) = add (iso_ℕ e n) e :=
+@[simp]
+lemma iso_ℕ_one : iso_ℕ e 1 = e := rfl
+
+lemma iso_ℕ_add_one (n : ℕ) : add (iso_ℕ e n) e = iso_ℕ e (n+1) :=
 begin
   cases n,
   { unfold iso_ℕ,
     simp only [comm_shift.zero_add, change, eq_to_iso_refl, shift.compatibility.comm_shift.change_refl], },
   { unfold iso_ℕ, },
+end
+
+lemma iso_ℕ_add'_one (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁) :
+  add' (by { simp only [← h, int.of_nat_eq_coe], push_cast, })
+    (iso_ℕ e n₀) e = iso_ℕ e n₁ :=
+begin
+  subst h,
+  erw add'_eq_add,
+  apply iso_ℕ_add_one,
 end
 
 def iso_ℤ : Π (n : ℤ), shift_functor C (n : ℤ) ⋙ F ≅ F ⋙ shift_functor D (n : ℤ)
@@ -223,7 +230,45 @@ def iso_ℤ : Π (n : ℤ), shift_functor C (n : ℤ) ⋙ F ≅ F ⋙ shift_func
 @[simp]
 lemma iso_ℤ_zero : iso_ℤ e 0 = unit _ _ := rfl
 
-lemma iso_ℤ_add_neg (n₁ n₂ : ℤ)(h : n₁ + n₂ = 0) (hn₂ : 0 ≤ n₂):
+@[simp]
+lemma iso_ℤ_one : iso_ℤ e 1 = e := rfl
+
+lemma iso_ℕ_add' (n₁ n₂ n₃ : ℕ) (h : n₁ + n₂ = n₃) :
+  add' (by simp only [← h, int.of_nat_eq_coe, nat.cast_add]) (iso_ℕ e n₁) (iso_ℕ e n₂) =
+    iso_ℕ e n₃ :=
+begin
+  revert h n₃ n₁,
+  induction n₂ with n₂ hn₂,
+  { intros n₁ n₃ h,
+    have h' : n₁ = n₃ := by simpa only [add_zero] using h,
+    subst h',
+    exact add'_zero (iso_ℕ e n₁), },
+  { intros n₁ n₃ h,
+    rw ← iso_ℕ_add_one,
+    rw ← add'_eq_add,
+    conv_lhs { congr, skip, congr, skip, rw ← iso_ℕ_one e, },
+    erw ← add'_assoc (int.of_nat n₁) (int.of_nat n₂) 1 (int.of_nat (n₁ + n₂))
+      (int.of_nat n₂ + 1) n₃ (by simp) (by simp) (by { rw ← h, push_cast, simp, rw add_assoc,}),
+    rw hn₂ _ _ rfl,
+    erw iso_ℕ_add'_one,
+    rw [← h, nat.succ_eq_add_one, add_assoc], },
+end
+
+lemma iso_ℤ_add'_nonneg (n₁ n₂ n₃ : ℤ) (h : n₁ + n₂ = n₃) (hn₁ : 0 ≤ n₁) (hn₂ : 0 ≤ n₂) :
+  add' h (iso_ℤ e n₁) (iso_ℤ e n₂) = iso_ℤ e n₃ :=
+begin
+  have h₁ : ∃ (m₁ : ℕ), n₁ = int.of_nat m₁ := int.eq_coe_of_zero_le hn₁,
+  have h₂ : ∃ (m₂ : ℕ), n₂ = int.of_nat m₂ := int.eq_coe_of_zero_le hn₂,
+  rcases h₁ with ⟨m₁, hm₁⟩,
+  rcases h₂ with ⟨m₂, hm₂⟩,
+  have h₃ : n₃ = int.of_nat (m₁ + m₂),
+  { simp only [← h, hm₁, hm₂, int.of_nat_eq_coe, nat.cast_add], },
+  substs hm₁ hm₂ h₃,
+  unfold iso_ℤ,
+  exact iso_ℕ_add' e _ _ _ rfl,
+end
+
+lemma iso_ℤ_add'_neg (n₁ n₂ : ℤ) (h : n₁ + n₂ = 0) (hn₂ : 0 ≤ n₂):
   add' h (iso_ℤ e n₁) (iso_ℤ e n₂) = unit F ℤ :=
 begin
   cases n₁,
@@ -243,6 +288,28 @@ begin
     apply add'_sub', },
 end
 
+lemma iso_ℤ_add'_one (n₀ n₁ : ℤ) (h : n₀ + 1 = n₁) : add' h (iso_ℤ e n₀) e = iso_ℤ e n₁ :=
+begin
+  cases n₀,
+  { have h₁ : n₁ = int.of_nat (n₀ + 1),
+    { rw ← h, simp, },
+    subst h₁,
+    unfold iso_ℤ,
+    rw ← iso_ℕ_add_one e n₀,
+    apply add'_eq_add, },
+  { have h' := h,
+    rw int.neg_succ_of_nat_coe' at h',
+    apply (add'_bijective (show n₁ + int.of_nat n₀ = 0, by { rw int.of_nat_eq_coe, linarith, })
+      (iso_ℤ e (int.of_nat n₀))).1 _,
+    simp only,
+    rw iso_ℤ_add'_neg e, swap, { apply int.of_nat_nonneg, },
+    rw add'_assoc (-[1+n₀]) 1 (int.of_nat n₀) n₁ (int.of_nat (1+n₀)) 0 h
+      (by simp) (by { rw int.neg_succ_of_nat_coe', simp,}),
+    conv_lhs { congr, skip, congr, rw ← iso_ℤ_one e, },
+    rw iso_ℤ_add'_nonneg e 1 (int.of_nat n₀) (int.of_nat (1+n₀)) (by simp) zero_le_one (int.of_nat_nonneg n₀),
+    apply iso_ℤ_add'_neg,
+    apply int.of_nat_nonneg, },
+end
 
 end mk_ℤ
 
