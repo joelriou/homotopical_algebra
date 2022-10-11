@@ -311,7 +311,70 @@ begin
     apply int.of_nat_nonneg, },
 end
 
+lemma iso_ℤ_add_one (n : ℤ) : add (iso_ℤ e n) (iso_ℤ e 1) = iso_ℤ e (n + 1) :=
+begin
+  rw ← add'_eq_add,
+  apply iso_ℤ_add'_one,
+end
+
 end mk_ℤ
+
+@[simps]
+def mk'_ℤ (iso : Π (a : ℤ), shift_functor C a ⋙ F ≅ F ⋙ shift_functor D a)
+  (iso_zero : iso 0 = comm_shift.unit F ℤ)
+  (iso_add_one : ∀ (a : ℤ), iso (a + 1) = comm_shift.add (iso a) (iso 1)) :
+  comm_shift F ℤ :=
+{ iso := iso,
+  iso_zero := iso_zero,
+  iso_add := begin
+    have iso_add_one' : ∀ (a b : ℤ) (h : a + 1 = b),
+      iso b = comm_shift.add' h (iso a) (iso 1),
+    { intros a b h,
+      subst h,
+      rw add'_eq_add,
+      apply iso_add_one, },
+    suffices : ∀ (a b c : ℤ) (h : a + b = c) (hb : 0 ≤ b),
+      iso c = add' h (iso a) (iso b),
+    { intros a b,
+      by_cases hb : 0 ≤ b,
+      { rw [this a b _ rfl hb, add'_eq_add], },
+      { rw ← add'_eq_add,
+        apply (add'_bijective (show (a+b)+(-b) = a, by linarith) (iso (-b))).1,
+        simp only [← this (a+b) (-b) a (by linarith) (by linarith),
+          add'_assoc a b (-b) (a+b) 0 a rfl (by linarith) (by linarith),
+          ← this b (-b) 0 (by linarith) (by linarith), iso_zero, add'_zero], }, },
+    intros a b c h hb,
+    obtain ⟨b', hb'⟩ := int.eq_coe_of_zero_le hb,
+    subst hb',
+    clear hb,
+    revert a c,
+    induction b' with b hb,
+    { intros a c h,
+      have hc : c = a := by simp only [←h, nat.cast_zero, add_zero],
+      subst hc,
+      erw [iso_zero, add'_zero], },
+    { intros a c h,
+      rw iso_add_one' b b.succ (by push_cast),
+      rw ← add'_assoc a b 1 _ b.succ c rfl (by push_cast)
+        (by { rw ← h, push_cast, rw add_assoc, }),
+      rw ← hb a _ rfl,
+      apply iso_add_one', },
+  end}
+
+@[simps]
+def mk_ℤ (e : shift_functor C (1 : ℤ) ⋙ F ≅ F ⋙ shift_functor D (1 : ℤ)) :
+  comm_shift F ℤ :=
+mk'_ℤ (mk_ℤ.iso_ℤ e) rfl (λ a, (mk_ℤ.iso_ℤ_add_one e a).symm)
+
+variable (F)
+
+@[simps]
+def equiv_ℤ : comm_shift F ℤ ≃
+  (shift_functor C (1 : ℤ) ⋙ F ≅ F ⋙ shift_functor D (1 : ℤ)) :=
+{ to_fun := λ c, c.iso 1,
+  inv_fun := λ e, mk_ℤ e,
+  left_inv := λ c, by { ext, refl, },
+  right_inv := λ e, rfl, }
 
 end comm_shift
 
