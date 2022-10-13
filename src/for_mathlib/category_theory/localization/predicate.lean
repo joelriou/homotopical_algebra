@@ -4,8 +4,9 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Joël Riou
 -/
 
-import for_mathlib.category_theory.localization.construction2
 import for_mathlib.category_theory.functor_misc
+import category_theory.localization.predicate
+import for_mathlib.category_theory.morphism_property_misc
 
 noncomputable theory
 
@@ -75,22 +76,13 @@ by { ext X, simpa only [horiz_comp_iso_hom_app, functor.map_comp, assoc, functor
 
 end Comm_sq
 
-namespace functor
-
-lemma assoc {C₁ C₂ C₃ C₄ : Type*} [category C₁] [category C₂] [category C₃] [category C₄]
-  (F₁ : C₁ ⥤ C₂) (F₂ : C₂ ⥤ C₃) (F₃ : C₃ ⥤ C₄) :
-  (F₁ ⋙ F₂) ⋙ F₃ = F₁ ⋙ F₂ ⋙ F₃ := by refl
-
-end functor
-
-
 variables {C D : Type*} [category C] [category D]
 variables (L : C ⥤ D) (W : morphism_property C)
 variables (E : Type*) [category E]
 
 namespace functor
 
-class is_localization : Prop :=
+/-class is_localization : Prop :=
 (inverts : W.is_inverted_by L)
 (nonempty_is_equivalence : nonempty (is_equivalence (localization.construction.lift L inverts)))
 
@@ -101,13 +93,13 @@ instance Q_is_localization : W.Q.is_localization W :=
     { apply nonempty.intro, rw this, apply_instance, },
     apply localization.construction.uniq,
     simpa only [localization.construction.fac],
-  end, }
+  end, }-/
 
 end functor
 
 namespace localization
 
-structure strict_universal_property_fixed_target :=
+/-structure strict_universal_property_fixed_target :=
 (inverts : W.is_inverted_by L)
 (lift : Π (F : C ⥤ E) (hF : W.is_inverted_by F), D ⥤ E)
 (fac : Π (F : C ⥤ E) (hF : W.is_inverted_by F), L ⋙ lift F hF = F)
@@ -124,12 +116,12 @@ def strict_universal_property_fixed_target.for_id (hW : W ⊆ morphism_property.
 { inverts := λ X Y f hf, hW f hf,
   lift := λ F hF, F,
   fac := λ F hF, by { cases F, refl, },
-  uniq := λ F₁ F₂ eq, by { cases F₁, cases F₂, exact eq, }, }
+  uniq := λ F₁ F₂ eq, by { cases F₁, cases F₂, exact eq, }, }-/
 
 end localization
 
 namespace functor
-
+/-
 variables (h₁ : localization.strict_universal_property_fixed_target L W D)
   (h₂ : localization.strict_universal_property_fixed_target L W W.localization)
 
@@ -173,7 +165,7 @@ lemma is_localization.mk' :
 { inverts := h₁.inverts,
   nonempty_is_equivalence :=
     nonempty.intro (is_equivalence.of_equivalence (is_localization.mk'.equivalence L W h₁ h₂)), }
-
+-/
 end functor
 
 namespace localization
@@ -181,18 +173,16 @@ namespace localization
 variable [L.is_localization W]
 include L W
 
-lemma as_localization : L.is_localization W := infer_instance
-
-lemma inverts : W.is_inverted_by L := (as_localization _ _).inverts
+/-lemma inverts : W.is_inverted_by L := (as_localization _ _).inverts-/
 
 @[simps]
-def iso_of_hom {X Y : C} (f : X ⟶ Y) (hf : W f) : L.obj X ≅ L.obj Y :=
+def iso_of_hom' {X Y : C} (f : X ⟶ Y) (hf : W f) : L.obj X ≅ L.obj Y :=
 begin
   haveI : is_iso (L.map f) := inverts L W f hf,
   exact as_iso (L.map f),
 end
 
-instance : is_equivalence (localization.construction.lift L (inverts L W)) :=
+/-instance : is_equivalence (localization.construction.lift L (inverts L W)) :=
 (as_localization L W).nonempty_is_equivalence.some
 
 def equivalence_from_model : W.localization ≌ D :=
@@ -215,39 +205,34 @@ end
 lemma ess_surj : ess_surj L :=
 ⟨λ X, ⟨(construction.obj_equiv W).inv_fun ((equivalence_from_model L W).inverse.obj X),
     nonempty.intro ((Q_comp_equivalence_from_model_functor_iso L W).symm.app _ ≪≫
-    (equivalence_from_model L W).counit_iso.app X)⟩⟩
+    (equivalence_from_model L W).counit_iso.app X)⟩⟩-/
 
 def whiskering_left_functor : (D ⥤ E) ⥤ W.functors_inverting E :=
 full_subcategory.lift _ ((whiskering_left _ _ E).obj L)
-  (morphism_property.is_inverted_by.of_comp W L (as_localization L W).inverts)
-
-@[simps]
-def functor_equivalence₀ : (D ⥤ E) ≌ (W.functors_inverting E) :=
-(equivalence.congr_left (equivalence_from_model L W).symm).trans
-  (construction.whiskering_left_equivalence W E)
-
-lemma functor_equivalence₀_functor_iso :
-  (functor_equivalence₀ L W E).functor ≅ whiskering_left_functor L W E :=
-nat_iso.of_components (λ F, eq_to_iso begin
-  ext,
-  change (W.Q ⋙ (localization.construction.lift L (inverts L W))) ⋙ F = L ⋙ F,
-  rw construction.fac,
-end)
-begin
-  intros F₁ F₂ τ,
-  ext X,
-  dsimp [whiskering_left_functor, whisker_left],
-  erw [nat_trans.comp_app, nat_trans.comp_app],
-  simp only [functor_equivalence₀_functor_map_app],
-  dsimp [equivalence_from_model, morphism_property.Q],
-  erw [eq_to_hom_app, eq_to_hom_app, eq_to_hom_refl, eq_to_hom_refl, comp_id, id_comp],
-  all_goals
-  { change (W.Q ⋙ (localization.construction.lift L (inverts L W))) ⋙ _ = L ⋙ _,
-    rw construction.fac, },
-end
+  (morphism_property.is_inverted_by.of_comp W L (inverts L W ))
 
 instance : is_equivalence (whiskering_left_functor L W E) :=
-is_equivalence.of_iso (functor_equivalence₀_functor_iso L W E) (is_equivalence.of_equivalence _)
+begin
+  refine is_equivalence.of_iso _ (is_equivalence.of_equivalence
+    ((equivalence.congr_left (equivalence_from_model L W).symm).trans
+    (construction.whiskering_left_equivalence W E))),
+  refine nat_iso.of_components (λ F, eq_to_iso begin
+    ext,
+    change (W.Q ⋙ (localization.construction.lift L (inverts L W))) ⋙ F = L ⋙ F,
+    rw construction.fac,
+  end)
+  (λ F₁ F₂ τ, begin
+    ext X,
+    dsimp [equivalence_from_model, whisker_left, construction.whiskering_left_equivalence,
+      construction.whiskering_left_equivalence.functor, whiskering_left_functor,
+      morphism_property.Q],
+    erw [nat_trans.comp_app, nat_trans.comp_app, eq_to_hom_app, eq_to_hom_app,
+      eq_to_hom_refl, eq_to_hom_refl, comp_id, id_comp],
+    all_goals
+    { change (W.Q ⋙ (localization.construction.lift L (inverts L W))) ⋙ _ = L ⋙ _,
+      rw construction.fac, },
+  end),
+end
 
 def functor_equivalence : (D ⥤ E) ≌ (W.functors_inverting E) :=
 (whiskering_left_functor L W E).as_equivalence
@@ -277,7 +262,6 @@ by { rw whiskering_left_functor'_eq, apply_instance, }
 instance : faithful (whiskering_left_functor' L W E) :=
 by { rw whiskering_left_functor'_eq, apply_instance, }
 
-
 lemma nat_trans_ext {F₁ F₂ : D ⥤ E} (τ τ' : F₁ ⟶ F₂)
   (h : ∀ (X : C), τ.app (L.obj X) = τ'.app (L.obj X)) : τ = τ' :=
 begin
@@ -287,7 +271,7 @@ begin
 end
 
 /-- When `L : C ⥤ D` is a localization functor for `W : morphism_property C` and
-`F : C ⥤ E` is a functor, we shall that `F' : D ⥤ E` lifts `F` if the obvious diagram
+`F : C ⥤ E` is a functor, we shall say that `F' : D ⥤ E` lifts `F` if the obvious diagram
 is commutative up to an isomorphism. -/
 class lifting (F : C ⥤ E) (F' : D ⥤ E) := (iso [] : L ⋙ F' ≅ F)
 
@@ -544,15 +528,15 @@ namespace localization
 lemma id_is_localization (hW : W ⊆ morphism_property.isomorphisms C):
   (𝟭 C).is_localization W :=
 functor.is_localization.mk' _ _
-  (strict_universal_property_fixed_target.for_id _ _ hW)
-  (strict_universal_property_fixed_target.for_id _ _ hW)
+  (strict_universal_property_fixed_target_id _ _ hW)
+  (strict_universal_property_fixed_target_id _ _ hW)
 
 
 instance identity_functor_is_localization' :
   (𝟭 C).is_localization (morphism_property.isomorphisms C) :=
 functor.is_localization.mk' _ _
-  (strict_universal_property_fixed_target.for_id _ _ (λ X Y f hf, hf))
-  (strict_universal_property_fixed_target.for_id _ _ (λ X Y f hf, hf))
+  (strict_universal_property_fixed_target_id _ _ (λ X Y f hf, hf))
+  (strict_universal_property_fixed_target_id _ _ (λ X Y f hf, hf))
 
 end localization
 

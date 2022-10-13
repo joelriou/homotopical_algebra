@@ -137,17 +137,17 @@ def forget_comp_R_iso : bifibrant_object.forget_fib C ⋙ R Lbif ≅ Lbif :=
 begin
   symmetry,
   exact nat_iso.of_components
-    (λ X, localization.iso_of_hom Lbif bifibrant_object.weq (app' X) weak_eq.property)
-    (λ X Y f, by { rw [localization.iso_of_hom_hom, ← Lbif.map_comp, ← fac', Lbif.map_comp], refl, }),
+    (λ X, localization.iso_of_hom' Lbif bifibrant_object.weq (app' X) weak_eq.property)
+    (λ X Y f, by { rw [localization.iso_of_hom'_hom, ← Lbif.map_comp, ← fac', Lbif.map_comp], refl, }),
 end
 
 def R_comp_I'_iso {I' : Hobif ⥤ Hocof} (sq : Comm_sq (bifibrant_object.forget_fib C) Lbif Lcof I') :
   R Lbif ⋙ I' ≅ Lcof :=
 begin
   symmetry,
-  exact nat_iso.of_components (λ X, localization.iso_of_hom Lcof cofibrant_object.weq
+  exact nat_iso.of_components (λ X, localization.iso_of_hom' Lcof cofibrant_object.weq
     (app X) weak_eq.property ≪≫ sq.iso.symm.app _) (λ X Y f, begin
-    simp only [iso.trans_hom, localization.iso_of_hom_hom, iso.app_hom, iso.symm_hom,
+    simp only [iso.trans_hom, localization.iso_of_hom'_hom, iso.app_hom, iso.symm_hom,
       functor.comp_map, assoc, ← Lcof.map_comp_assoc],
     simp only [← fac, functor.map_comp, assoc],
     congr' 1,

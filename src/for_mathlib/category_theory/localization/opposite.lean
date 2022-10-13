@@ -54,8 +54,8 @@ def strict_universal_property_fixed_target.op {E : Type*} [category E]
 
 instance is_localization_op : W.Q.op.is_localization W.op :=
 functor.is_localization.mk' W.Q.op W.op
-  (strict_universal_property_fixed_target.for_Q W _).op
-  (strict_universal_property_fixed_target.for_Q W _).op
+  (strict_universal_property_fixed_target_Q W _).op
+  (strict_universal_property_fixed_target_Q W _).op
 
 end localization
 

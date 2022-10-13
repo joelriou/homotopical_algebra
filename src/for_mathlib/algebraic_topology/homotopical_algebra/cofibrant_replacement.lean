@@ -180,10 +180,10 @@ begin
 end
 
 def forget_comp_R_iso : cofibrant_object.forget C ⋙ R Lcof ≅ Lcof :=
-nat_iso.of_components (λ X, localization.iso_of_hom Lcof cofibrant_object.weq (app' X)
+nat_iso.of_components (λ X, localization.iso_of_hom' Lcof cofibrant_object.weq (app' X)
   (by { dsimp [app'], exact weak_eq.property, }))
 (λ X Y f, begin
-  simp only [functor.comp_map, cofibrant_object.forget_map, localization.iso_of_hom_hom],
+  simp only [functor.comp_map, cofibrant_object.forget_map, localization.iso_of_hom'_hom],
   rw [← Lcof.map_comp, ← fac' f, Lcof.map_comp],
   refl,
 end)
@@ -191,9 +191,9 @@ end)
 def R_comp_I'_iso {I' : Hocof ⥤ Ho} (sq : Comm_sq (cofibrant_object.forget C) Lcof L I') :
   R Lcof ⋙ I' ≅ L :=
 nat_iso.of_components (λ X, sq.iso.app _ ≪≫
-  localization.iso_of_hom L model_category.weq (app X) weak_eq.property)
+  localization.iso_of_hom' L model_category.weq (app X) weak_eq.property)
 (λ X Y f, begin
-  simp only [functor.comp_map, iso.trans_hom, iso.app_hom, localization.iso_of_hom_hom, assoc,
+  simp only [functor.comp_map, iso.trans_hom, iso.app_hom, localization.iso_of_hom'_hom, assoc,
     ← L.map_comp],
   simp only [← fac, L.map_comp, ← assoc],
   congr' 1,
