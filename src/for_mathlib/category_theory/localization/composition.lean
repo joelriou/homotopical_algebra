@@ -86,16 +86,45 @@ begin
   have h₁' : W₁.is_inverted_by L₁' := localization.inverts _ _,
   have h₁₂' : W₁.is_inverted_by (L₁' ⋙ L₂') :=
     morphism_property.is_inverted_by.of_comp W₁ _ h₁' L₂',
+  letI : lifting L₁ W₁ L₁' eq₂.inverse := ⟨comp_equivalence_from_model_inverse_iso _ _⟩,
   let F₁₂' := localization.lift (L₁' ⋙ L₂') h₁₂' L₁,
-  have hF₁₂' : W₂.is_inverted_by F₁₂' := sorry,
+  let e₁₂ : F₁₂' ≅ eq₂.inverse ⋙ L₂' := lift_nat_iso L₁ W₁ (L₁' ⋙ L₂') (L₁' ⋙ L₂') _ _ (iso.refl _),
+  have hF₁₂' : W₂.is_inverted_by F₁₂',
+  { have h := localization.inverts W₂'.Q W₂',
+    rw morphism_property.map_is_inverted_by_iff at h,
+    exact (morphism_property.is_inverted_by.iff_of_iso _ e₁₂.symm).1 h, },
   let G₃ : C₃ ⥤ W₂'.localization := localization.lift F₁₂' hF₁₂' L₂,
-  letI : lifting L₂ W₂ (eq₂.inverse ⋙ W₂'.Q) G₃,
-  { constructor,
-    refine localization.fac F₁₂' hF₁₂' L₂ ≪≫ _,
-    letI : lifting L₁ W₁ (L₁' ⋙ L₂') (eq₂.inverse ⋙ W₂'.Q) := sorry,
-    refine lift_nat_iso L₁ W₁ (L₁' ⋙ L₂') (L₁' ⋙ L₂') _ _ (iso.refl _), },
-  let eq₃ := lifting_equivalence H W₂' W₂ (eq₂.inverse ⋙ W₂'.Q) G₃,
-  all_goals { sorry, },
+  letI : lifting L₂ W₂ (eq₂.inverse ⋙ W₂'.Q) G₃ :=
+    ⟨localization.fac F₁₂' hF₁₂' L₂ ≪≫ lift_nat_iso L₁ W₁
+      (L₁' ⋙ L₂') (L₁' ⋙ L₂') _ _ (iso.refl _)⟩,
+  let e₂ : (eq₂.inverse ⋙ L₂') ⋙ F₃ ≅ L₂ := functor.associator _ _ _ ≪≫
+      iso_whisker_left _ (localization.fac (eq₂.functor ⋙ L₂) h₂ L₂') ≪≫
+      (functor.associator _ _ _).symm ≪≫ iso_whisker_right eq₂.counit_iso _ ≪≫ L₂.left_unitor,
+  let e₃ : eq₂.functor ⋙ eq₂.inverse ⋙ L₂' ≅ L₂' :=
+    (functor.associator _ _ _).symm ≪≫ iso_whisker_right eq₂.unit_iso.symm _ ≪≫ L₂'.left_unitor,
+  letI := lifting_is_equivalence H W₂' W₂ (eq₂.inverse ⋙ L₂') G₃ e₂ e₃,
+  haveI : (L₁' ⋙ L₂').is_localization W₃,
+  { have h₁ : W₃.is_inverted_by (W₁.Q ⋙ W₂'.Q),
+    { suffices : W₃.is_inverted_by (W₁.Q ⋙ W₂'.Q ⋙ F₃),
+      { intros X₁ Y₁ f₁ hf₁,
+        haveI : is_iso (F₃.map ((W₁.Q ⋙ W₂'.Q).map f₁)) := this f₁ hf₁,
+        exact is_iso_of_reflects_iso _ F₃, },
+      refine (morphism_property.is_inverted_by.iff_of_iso W₃ _).1 hW₃,
+      exact iso_whisker_right ((Q_comp_equivalence_from_model_functor_iso L₁ W₁).symm) _ ≪≫
+         functor.associator _ _ _ ≪≫ iso_whisker_left _ (localization.fac _ _ _).symm, },
+    have h₂ : W₂' ⊆ W₃.map W₁.Q,
+    { dsimp only [W₂'],
+      rintros X Y f ⟨X₂, Y₂, f₂, hf₂, ⟨e₂⟩⟩,
+      rcases  hW₃' _ hf₂ with ⟨X₁, Y₁, f₁, hf₁, ⟨e₁⟩⟩,
+      refine ⟨X₁, Y₁, f₁, hf₁, ⟨_⟩⟩,
+      refine arrow.iso_of_nat_iso (comp_equivalence_from_model_inverse_iso L₁ W₁).symm (arrow.mk f₁)
+        ≪≫ eq₂.inverse.map_arrow.map_iso e₁ ≪≫ e₂, },
+    refine functor.is_localization.mk' _ _ _ _,
+    all_goals { exact (strict_universal_property_fixed_target_Q W₁ _).comp
+      (strict_universal_property_fixed_target_Q W₂' _) W₃ h₁ hW₁₃ h₂, }, },
+  apply functor.is_localization.of_equivalence (L₁' ⋙ L₂') W₃ (L₁ ⋙ L₂) F₃.as_equivalence,
+  exact functor.associator _ _ _ ≪≫ iso_whisker_left _ (localization.fac _ _ _) ≪≫
+    (functor.associator _ _ _).symm ≪≫ iso_whisker_right (Q_comp_equivalence_from_model_functor_iso L₁ W₁) _,
 end
 
 end localization
