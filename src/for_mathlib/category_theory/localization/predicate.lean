@@ -205,7 +205,7 @@ end
 lemma ess_surj : ess_surj L :=
 ⟨λ X, ⟨(construction.obj_equiv W).inv_fun ((equivalence_from_model L W).inverse.obj X),
     nonempty.intro ((Q_comp_equivalence_from_model_functor_iso L W).symm.app _ ≪≫
-    (equivalence_from_model L W).counit_iso.app X)⟩⟩-/
+    (equivalence_from_model L W).counit_iso.app X)⟩⟩
 
 def whiskering_left_functor : (D ⥤ E) ⥤ W.functors_inverting E :=
 full_subcategory.lift _ ((whiskering_left _ _ E).obj L)
@@ -235,14 +235,14 @@ begin
 end
 
 def functor_equivalence : (D ⥤ E) ≌ (W.functors_inverting E) :=
-(whiskering_left_functor L W E).as_equivalence
+(whiskering_left_functor L W E).as_equivalence-/
 
 section
 
 variables (E)
 
 --include hL
-@[nolint unused_arguments]
+/-@[nolint unused_arguments]
 def whiskering_left_functor' :
   (D ⥤ E) ⥤ (C ⥤ E) := (whiskering_left C D E).obj L
 
@@ -310,7 +310,9 @@ def lift_nat_iso (F₁ F₂ : C ⥤ E) (F₁' F₂' : D ⥤ E)
 { hom := lift_nat_trans L W F₁ F₂ F₁' F₂' e.hom,
   inv := lift_nat_trans L W F₂ F₁ F₂' F₁' e.inv, }
 
-end
+end-/
+
+variable {E}
 
 namespace lifting
 
@@ -335,7 +337,7 @@ end
 
 variables (L W)
 
-@[simps]
+/-@[simps]
 instance comp_right {E' : Type*} [category E'] (F : C ⥤ E) (F' : D ⥤ E) [lifting L W F F']
   (G : E ⥤ E') : lifting L W (F ⋙ G) (F' ⋙ G) :=
 ⟨iso_whisker_right (iso L W F F') G⟩
@@ -347,7 +349,7 @@ instance id : lifting L W L (𝟭 D) :=
 @[simps]
 def of_isos {F₁ F₂ : C ⥤ E} {F'₁ F'₂ : D ⥤ E} (e : F₁ ≅ F₂) (e' : F'₁ ≅ F'₂)
   [lifting L W F₁ F'₁] : lifting L W F₂ F'₂ :=
-⟨iso_whisker_left L e'.symm ≪≫ iso L W F₁ F'₁ ≪≫ e⟩
+⟨iso_whisker_left L e'.symm ≪≫ iso L W F₁ F'₁ ≪≫ e⟩-/
 
 omit L
 
@@ -447,7 +449,7 @@ end
 
 variables {W E}
 
-def lift (F : C ⥤ E) (hF : W.is_inverted_by F) (L : C ⥤ D) [hL : L.is_localization W] :
+/-def lift (F : C ⥤ E) (hF : W.is_inverted_by F) (L : C ⥤ D) [hL : L.is_localization W] :
   D ⥤ E :=
 (functor_equivalence L W E).inverse.obj ⟨F, hF⟩
 
@@ -458,7 +460,7 @@ instance lift_is_lifting (F : C ⥤ E) (hF : W.is_inverted_by F) (L : C ⥤ D)
 @[simps]
 def fac (F : C ⥤ E) (hF : W.is_inverted_by F) (L : C ⥤ D) [hL : L.is_localization W] :
   L ⋙ lift F hF L ≅ F :=
-lifting.iso _ W _ _
+lifting.iso _ W _ _-/
 
 end
 
