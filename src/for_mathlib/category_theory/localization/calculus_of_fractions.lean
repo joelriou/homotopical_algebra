@@ -34,38 +34,38 @@ namespace left_calculus_of_fractions
 
 variables (W)
 
-structure zigzag (X Y : C) :=
+structure roof (X Y : C) :=
 (Z : C) (f : X ⟶ Z) (s : Y ⟶ Z) (hs : W s)
 
 variable {W}
-def zigzag_rel ⦃X Y : C⦄ (z₁ z₂ : zigzag W X Y) : Prop :=
+def roof_rel ⦃X Y : C⦄ (z₁ z₂ : roof W X Y) : Prop :=
 ∃ (Z₃ : C) (t₁ : z₁.Z ⟶ Z₃) (t₂ : z₂.Z ⟶ Z₃) (hst : z₁.s ≫ t₁ = z₂.s ≫ t₂)
   (hft : z₁.f ≫ t₁ = z₂.f ≫ t₂), W (z₁.s ≫ t₁)
 
 variables [left_calculus_of_fractions W] (W)
 
 @[simps]
-def zigzag.of_hom {X Y : C} (f : X ⟶ Y) : zigzag W X Y :=
+def roof.of_hom {X Y : C} (f : X ⟶ Y) : roof W X Y :=
 ⟨Y, f, 𝟙 Y, morphism_property.contains_identities.id W Y⟩
 
 @[simps]
-def zigzag.id (X : C) := zigzag.of_hom W (𝟙 X)
+def roof.id (X : C) := roof.of_hom W (𝟙 X)
 
-namespace zigzag_rel
+namespace roof_rel
 
 variables {W}
 
-lemma refl {X Y : C} (z : zigzag W X Y) : zigzag_rel z z :=
+lemma refl {X Y : C} (z : roof W X Y) : roof_rel z z :=
 ⟨z.Z, 𝟙 _, 𝟙 _, rfl, rfl, by simpa only [comp_id] using z.hs⟩
 
-lemma symm {X Y : C} {z₁ z₂ : zigzag W X Y} (h : zigzag_rel z₁ z₂) : zigzag_rel z₂ z₁ :=
+lemma symm {X Y : C} {z₁ z₂ : roof W X Y} (h : roof_rel z₁ z₂) : roof_rel z₂ z₁ :=
 begin
   rcases h with ⟨Z₃, t₁, t₂, hst, hft, ht⟩,
   refine ⟨Z₃, t₂, t₁, hst.symm, hft.symm, by simpa only [← hst] using ht⟩,
 end
 
-lemma trans {X Y : C} {z₁ z₂ z₃ : zigzag W X Y} (h₁₂ : zigzag_rel z₁ z₂)
-  (h₂₃ : zigzag_rel z₂ z₃) : zigzag_rel z₁ z₃ :=
+lemma trans {X Y : C} {z₁ z₂ z₃ : roof W X Y} (h₁₂ : roof_rel z₁ z₂)
+  (h₂₃ : roof_rel z₂ z₃) : roof_rel z₁ z₃ :=
 begin
   rcases h₁₂ with ⟨Z₄, t₁, t₂, hst, hft, ht⟩,
   rcases h₂₃ with ⟨Z₅, u₂, u₃, hsu, hfu, hu⟩,
@@ -83,36 +83,36 @@ begin
       (left_calculus_of_fractions.comp _ _ _ hv₅ hw), },
 end
 
-end zigzag_rel
+end roof_rel
 
-instance is_equiv_zigzag_rel (X Y : C) :
-  is_equiv (zigzag W X Y) (λ z₁ z₂, zigzag_rel z₁ z₂) :=
-{ refl := zigzag_rel.refl,
-  symm := λ z₁ z₂, zigzag_rel.symm,
-  trans := λ z₁ z₂ z₃, zigzag_rel.trans, }
+instance is_equiv_roof_rel (X Y : C) :
+  is_equiv (roof W X Y) (λ z₁ z₂, roof_rel z₁ z₂) :=
+{ refl := roof_rel.refl,
+  symm := λ z₁ z₂, roof_rel.symm,
+  trans := λ z₁ z₂ z₃, roof_rel.trans, }
 
 variable {W}
 
-def zigzag.comp₀ {X₁ X₂ X₃ : C} (z₁₂ : zigzag W X₁ X₂) (z₂₃ : zigzag W X₂ X₃)
+def roof.comp₀ {X₁ X₂ X₃ : C} (z₁₂ : roof W X₁ X₂) (z₂₃ : roof W X₂ X₃)
   (sq : to_sq z₁₂.s z₁₂.hs z₂₃.f) :
-  zigzag W X₁ X₃ :=
+  roof W X₁ X₃ :=
 ⟨sq.obj, z₁₂.f ≫ sq.g , z₂₃.s ≫ sq.s', left_calculus_of_fractions.comp _ _ _ z₂₃.hs sq.hs'⟩
 
-lemma zigzag.comp₀_rel {X₁ X₂ X₃ : C} (z₁₂ : zigzag W X₁ X₂) (z₂₃ : zigzag W X₂ X₃)
+lemma roof.comp₀_rel {X₁ X₂ X₃ : C} (z₁₂ : roof W X₁ X₂) (z₂₃ : roof W X₂ X₃)
   (sq sq' : to_sq z₁₂.s z₁₂.hs z₂₃.f) :
-  zigzag_rel (zigzag.comp₀ z₁₂ z₂₃ sq) (zigzag.comp₀ z₁₂ z₂₃ sq') :=
+  roof_rel (roof.comp₀ z₁₂ z₂₃ sq) (roof.comp₀ z₁₂ z₂₃ sq') :=
 begin
   let H := (left_calculus_of_fractions.ex sq.s' sq.hs' sq'.s').some,
   have eq : z₁₂.s ≫ sq.g ≫ H.g = z₁₂.s ≫ sq'.g ≫ H.s',
   { rw [← reassoc_of sq.fac, ← reassoc_of sq'.fac, H.fac], },
   rcases left_calculus_of_fractions.ext _ _ _ (z₁₂.hs) eq with ⟨Y, t, ht, fac⟩,
   refine ⟨Y, H.g ≫ t, H.s' ≫ t, _, _, _⟩,
-  { dsimp [zigzag.comp₀],
+  { dsimp [roof.comp₀],
     simp only [assoc, reassoc_of H.fac], },
-  { dsimp [zigzag.comp₀],
+  { dsimp [roof.comp₀],
     simp only [assoc] at ⊢ fac,
     rw ← fac, },
-  { dsimp [zigzag.comp₀],
+  { dsimp [roof.comp₀],
     simp only [assoc, ← reassoc_of H.fac],
     refine left_calculus_of_fractions.comp _ _ _ z₂₃.hs
       (left_calculus_of_fractions.comp _ _ _ sq'.hs'
@@ -121,27 +121,27 @@ end
 
 variable (W)
 
-def hom (X Y : C) := quot ((λ (z₁ z₂ : zigzag W X Y), zigzag_rel z₁ z₂))
+def hom (X Y : C) := quot ((λ (z₁ z₂ : roof W X Y), roof_rel z₁ z₂))
 
 variable {W}
 
-def zigzag.comp {X₁ X₂ X₃ : C} (z₁₂ : zigzag W X₁ X₂) (z₂₃ : zigzag W X₂ X₃) :
+def roof.comp {X₁ X₂ X₃ : C} (z₁₂ : roof W X₁ X₂) (z₂₃ : roof W X₂ X₃) :
   hom W X₁ X₃ :=
-quot.mk _ (zigzag.comp₀ z₁₂ z₂₃ (left_calculus_of_fractions.ex z₁₂.s z₁₂.hs z₂₃.f).some)
+quot.mk _ (roof.comp₀ z₁₂ z₂₃ (left_calculus_of_fractions.ex z₁₂.s z₁₂.hs z₂₃.f).some)
 
-lemma zigzag.comp_eq {X₁ X₂ X₃ : C} (z₁₂ : zigzag W X₁ X₂) (z₂₃ : zigzag W X₂ X₃)
+lemma roof.comp_eq {X₁ X₂ X₃ : C} (z₁₂ : roof W X₁ X₂) (z₂₃ : roof W X₂ X₃)
   (sq : to_sq z₁₂.s z₁₂.hs z₂₃.f) :
-  zigzag.comp z₁₂ z₂₃ = quot.mk _ (zigzag.comp₀ z₁₂ z₂₃ sq) :=
-quot.sound (zigzag.comp₀_rel z₁₂ z₂₃ _ _)
+  roof.comp z₁₂ z₂₃ = quot.mk _ (roof.comp₀ z₁₂ z₂₃ sq) :=
+quot.sound (roof.comp₀_rel z₁₂ z₂₃ _ _)
 
 def hom.comp {X₁ X₂ X₃ : C} : hom W X₁ X₂ → hom W X₂ X₃ → hom W X₁ X₃ :=
 begin
-  refine quot.lift₂ (λ z₁₂ z₂₃, zigzag.comp z₁₂ z₂₃) (λ z₁₂ z₂₃ z₂₃' h₂₃, _)
+  refine quot.lift₂ (λ z₁₂ z₂₃, roof.comp z₁₂ z₂₃) (λ z₁₂ z₂₃ z₂₃' h₂₃, _)
     (λ z₁₂ z₁₂' z₂₃ h₁₂, _),
   { dsimp,
     let sq := (left_calculus_of_fractions.ex z₁₂.s z₁₂.hs z₂₃.f).some,
     let sq' := (left_calculus_of_fractions.ex z₁₂.s z₁₂.hs z₂₃'.f).some,
-    rw [zigzag.comp_eq _ _ sq, zigzag.comp_eq _ _ sq'],
+    rw [roof.comp_eq _ _ sq, roof.comp_eq _ _ sq'],
     apply quot.sound,
     rcases h₂₃ with ⟨Y, t, t', hst, hft, ht⟩,
     let H₀ := (left_calculus_of_fractions.ex sq.s' sq.hs' t).some,
@@ -155,7 +155,7 @@ begin
         ← reassoc_of H₀'.fac, reassoc_of hft, H₁.fac], },
     rcases left_calculus_of_fractions.ext _ _ _ z₁₂.hs eq with ⟨Z, u, hu, fac⟩,
     simp only [assoc] at fac,
-    refine ⟨Z, H₀.g ≫ H₁.g ≫ u, H₀'.g ≫ H₁.s' ≫ u, _, _, _⟩; dsimp [zigzag.comp₀],
+    refine ⟨Z, H₀.g ≫ H₁.g ≫ u, H₀'.g ≫ H₁.s' ≫ u, _, _, _⟩; dsimp [roof.comp₀],
     { simp only [assoc, ← reassoc_of H₀.fac, ← reassoc_of H₀'.fac,
         reassoc_of hst, reassoc_of H₁.fac], },
     { simp only [assoc, fac], },
@@ -167,26 +167,26 @@ begin
   { dsimp,
     let sq := (left_calculus_of_fractions.ex z₁₂.s z₁₂.hs z₂₃.f).some,
     let sq' := (left_calculus_of_fractions.ex z₁₂'.s z₁₂'.hs z₂₃.f).some,
-    rw [zigzag.comp_eq _ _ sq, zigzag.comp_eq _ _ sq'],
+    rw [roof.comp_eq _ _ sq, roof.comp_eq _ _ sq'],
     apply quot.sound,
     rcases h₁₂ with ⟨Y, t, t', hst, hft, ht⟩,
     let H := (left_calculus_of_fractions.ex (z₁₂.s ≫ t) ht (z₂₃.f ≫ sq.s')).some,
     let H' := (left_calculus_of_fractions.ex (z₁₂'.s ≫ t') (by { rw ← hst, exact ht, })
       (z₂₃.f ≫ sq'.s')).some,
-    let z : zigzag W X₁ X₃ := ⟨H.obj, z₁₂.f ≫ t ≫ H.g, z₂₃.s ≫ sq.s' ≫ H.s',
+    let z : roof W X₁ X₃ := ⟨H.obj, z₁₂.f ≫ t ≫ H.g, z₂₃.s ≫ sq.s' ≫ H.s',
       left_calculus_of_fractions.comp _ _ _ z₂₃.hs
         (left_calculus_of_fractions.comp _ _ _ sq.hs' H.hs')⟩,
-    let z' : zigzag W X₁ X₃ := ⟨H'.obj, z₁₂'.f ≫ t' ≫ H'.g, z₂₃.s ≫ sq'.s' ≫ H'.s',
+    let z' : roof W X₁ X₃ := ⟨H'.obj, z₁₂'.f ≫ t' ≫ H'.g, z₂₃.s ≫ sq'.s' ≫ H'.s',
       left_calculus_of_fractions.comp _ _ _ z₂₃.hs
         (left_calculus_of_fractions.comp _ _ _ sq'.hs' H'.hs')⟩,
-    refine trans _ (trans (_ : zigzag_rel z z') (symm _)),
+    refine trans _ (trans (_ : roof_rel z z') (symm _)),
     { have eq : z₁₂.s ≫ sq.g ≫ H.s' = z₁₂.s ≫ t ≫ H.g,
       { have h := H.fac,
         simp only [assoc] at h,
         rw [← h, reassoc_of sq.fac], },
       rcases left_calculus_of_fractions.ext _ _ _ z₁₂.hs eq with ⟨Z, u, hu, fac⟩,
       simp only [assoc] at fac,
-      refine ⟨Z, H.s' ≫ u, u, _,_, _⟩; dsimp [zigzag.comp₀],
+      refine ⟨Z, H.s' ≫ u, u, _,_, _⟩; dsimp [roof.comp₀],
       { simp only [assoc, comp_id], },
       { simp only [assoc, comp_id, fac], },
       { simp only [assoc],
@@ -217,7 +217,7 @@ begin
         rw [← h, reassoc_of sq'.fac], },
       rcases left_calculus_of_fractions.ext _ _ _ z₁₂'.hs eq with ⟨Z, u, hu, fac⟩,
       simp only [assoc] at fac,
-      refine ⟨Z, H'.s' ≫ u, u, _,_, _⟩; dsimp [zigzag.comp₀],
+      refine ⟨Z, H'.s' ≫ u, u, _,_, _⟩; dsimp [roof.comp₀],
       { simp only [assoc, comp_id], },
       { simp only [assoc, comp_id, fac], },
       { simp only [assoc],
@@ -226,13 +226,13 @@ begin
           (left_calculus_of_fractions.comp _ _ _ H'.hs' hu)), }, }, },
 end
 
-lemma hom.comp_eq {X₁ X₂ X₃ : C} (z₁₂ : zigzag W X₁ X₂) (z₂₃ : zigzag W X₂ X₃)
+lemma hom.comp_eq {X₁ X₂ X₃ : C} (z₁₂ : roof W X₁ X₂) (z₂₃ : roof W X₂ X₃)
   (sq : to_sq z₁₂.s z₁₂.hs z₂₃.f) : hom.comp (quot.mk _ z₁₂) (quot.mk _ z₂₃) =
-  quot.mk _ (zigzag.comp₀ z₁₂ z₂₃ sq) :=
+  quot.mk _ (roof.comp₀ z₁₂ z₂₃ sq) :=
 begin
   let sq' := (left_calculus_of_fractions.ex z₁₂.s z₁₂.hs z₂₃.f).some,
   have eq : (quot.mk _ (z₁₂.comp₀ z₂₃ sq) : hom W _ _) = quot.mk _ (z₁₂.comp₀ z₂₃ sq'),
-  { rw [← zigzag.comp_eq, ← zigzag.comp_eq], },
+  { rw [← roof.comp_eq, ← roof.comp_eq], },
   simpa only [eq],
 end
 
@@ -245,7 +245,7 @@ structure localization :=
 
 instance : category (localization W) :=
 { hom := λ X Y, hom W X.obj Y.obj,
-  id := λ X, quot.mk _ (zigzag.id W X.obj),
+  id := λ X, quot.mk _ (roof.id W X.obj),
   comp := λ X₁ X₂ X₃, hom.comp,
   id_comp' := λ X Y f, begin
     cases surjective_quot_mk _ f with g hg,
@@ -253,9 +253,9 @@ instance : category (localization W) :=
     dsimp [hom.comp],
     let sq : to_sq (𝟙 X.obj) (morphism_property.contains_identities.id W X.obj) g.f :=
       ⟨g.Z, g.f, 𝟙 g.Z, morphism_property.contains_identities.id W g.Z, by rw [id_comp, comp_id]⟩,
-    rw zigzag.comp_eq (zigzag.id W X.obj) g sq,
+    rw roof.comp_eq (roof.id W X.obj) g sq,
     congr' 1,
-    dsimp [zigzag.comp₀],
+    dsimp [roof.comp₀],
     cases g,
     tidy,
   end,
@@ -264,9 +264,9 @@ instance : category (localization W) :=
     subst hg,
     dsimp [hom.comp],
     let sq : to_sq g.s g.hs (𝟙 Y.obj) := ⟨g.Z, 𝟙 g.Z, g.s, g.hs, by rw [id_comp, comp_id]⟩,
-    rw zigzag.comp_eq g (zigzag.id W Y.obj) sq,
+    rw roof.comp_eq g (roof.id W Y.obj) sq,
     congr' 1,
-    dsimp [zigzag.comp₀],
+    dsimp [roof.comp₀],
     cases g,
     tidy,
   end,
@@ -280,34 +280,34 @@ instance : category (localization W) :=
     let H := (left_calculus_of_fractions.ex sq₁₃.s' sq₁₃.hs' sq₂₄.g).some,
     let sq : to_sq (z₁₂.comp₀ z₂₃ sq₁₃).s (z₁₂.comp₀ z₂₃ sq₁₃).hs z₃₄.f := begin
       refine ⟨H.obj, H.g, sq₂₄.s' ≫ H.s', left_calculus_of_fractions.comp _ _ _ sq₂₄.hs' H.hs', _⟩,
-      dsimp [zigzag.comp₀],
+      dsimp [roof.comp₀],
       rw [assoc, ← H.fac, reassoc_of sq₂₄.fac],
     end,
     let sq' : to_sq z₁₂.s z₁₂.hs (z₂₃.comp₀ z₃₄ sq₂₄).f := begin
       refine ⟨H.obj, sq₁₃.g ≫ H.g, H.s', H.hs', _⟩,
-      dsimp [zigzag.comp₀],
+      dsimp [roof.comp₀],
       rw [assoc, H.fac, reassoc_of sq₁₃.fac],
     end,
     simp only [← h₁₂, ← h₂₃, ← h₃₄],
     rw [hom.comp_eq z₁₂ z₂₃ sq₁₃, hom.comp_eq z₂₃ z₃₄ sq₂₄,
       hom.comp_eq (z₁₂.comp₀ z₂₃ sq₁₃) z₃₄ sq, hom.comp_eq z₁₂ (z₂₃.comp₀ z₃₄ sq₂₄) sq'],
     congr' 1,
-    dsimp [zigzag.comp₀],
+    dsimp [roof.comp₀],
     tidy,
   end, }
 
 variable {W}
 
-def zigzag.hom {X Y : localization W} (z : zigzag W X.obj Y.obj) : X ⟶ Y := quot.mk _ z
+def roof.hom {X Y : localization W} (z : roof W X.obj Y.obj) : X ⟶ Y := quot.mk _ z
 
-def map_zigzag {D : Type*} [category D] (F : C ⥤ D) (hF : W.is_inverted_by F)
-  {X Y : C} (z : zigzag W X Y) : F.obj X ⟶ F.obj Y :=
+def map_roof {D : Type*} [category D] (F : C ⥤ D) (hF : W.is_inverted_by F)
+  {X Y : C} (z : roof W X Y) : F.obj X ⟶ F.obj Y :=
 F.map z.f ≫ by { haveI := hF z.s z.hs, exact inv (F.map z.s), }
 
 namespace localization
 
-lemma comp_eq {X₁ X₂ X₃ : localization W} (z₁₂ : zigzag W X₁.obj X₂.obj) (z₂₃ : zigzag W X₂.obj X₃.obj)
-  (sq : to_sq z₁₂.s z₁₂.hs z₂₃.f) : z₁₂.hom ≫ z₂₃.hom = (zigzag.comp₀ z₁₂ z₂₃ sq).hom :=
+lemma comp_eq {X₁ X₂ X₃ : localization W} (z₁₂ : roof W X₁.obj X₂.obj) (z₂₃ : roof W X₂.obj X₃.obj)
+  (sq : to_sq z₁₂.s z₁₂.hs z₂₃.f) : z₁₂.hom ≫ z₂₃.hom = (roof.comp₀ z₁₂ z₂₃ sq).hom :=
 hom.comp_eq z₁₂ z₂₃ sq
 
 variable (W)
@@ -318,12 +318,12 @@ def hom_obj {X Y : C} (f : X ⟶ Y) :
 @[simps]
 def Q : C ⥤ localization W :=
 { obj := λ X, ⟨X⟩,
-  map := λ X Y f, (zigzag.of_hom W (hom_obj W f)).hom,
+  map := λ X Y f, (roof.of_hom W (hom_obj W f)).hom,
   map_comp' := λ X₁ X₂ X₃ f g, begin
     dsimp,
-    rw localization.comp_eq (zigzag.of_hom W (hom_obj W f)) (zigzag.of_hom W (hom_obj W g))
+    rw localization.comp_eq (roof.of_hom W (hom_obj W f)) (roof.of_hom W (hom_obj W g))
       ⟨X₃, g, 𝟙 X₃, morphism_property.contains_identities.id W X₃, by tidy⟩,
-    dsimp [zigzag.of_hom, zigzag.comp₀],
+    dsimp [roof.of_hom, roof.comp₀],
     congr' 1,
     tidy,
   end, }
@@ -331,19 +331,19 @@ def Q : C ⥤ localization W :=
 variable {W}
 
 @[simps]
-def zigzag.inv {X Y : C} (s : X ⟶ Y) (hs : W s) :
-  zigzag W (⟨Y⟩ : localization W).obj (⟨X⟩ : localization W).obj := ⟨Y, 𝟙 Y, s, hs⟩
+def roof.inv {X Y : C} (s : X ⟶ Y) (hs : W s) :
+  roof W (⟨Y⟩ : localization W).obj (⟨X⟩ : localization W).obj := ⟨Y, 𝟙 Y, s, hs⟩
 
 def inv_Q_map {X Y : C} (s : X ⟶ Y) (hs : W s) : (Q W).obj Y ⟶ (Q W).obj X :=
-zigzag.hom (zigzag.inv s hs)
+roof.hom (roof.inv s hs)
 
 lemma comp_inv_Q_map {X Y : C} (s : X ⟶ Y) (hs : W s) :
   (Q W).map s ≫ inv_Q_map s hs = 𝟙 _ :=
 begin
   dsimp only [Q, inv_Q_map],
-  rw localization.comp_eq (zigzag.of_hom W (hom_obj W s)) (zigzag.inv s hs)
+  rw localization.comp_eq (roof.of_hom W (hom_obj W s)) (roof.inv s hs)
     ⟨Y, 𝟙 Y, 𝟙 Y, morphism_property.contains_identities.id W Y, rfl⟩,
-  dsimp [zigzag.comp₀],
+  dsimp [roof.comp₀],
   exact quot.sound ⟨Y, 𝟙 Y, s, by tidy, by tidy, by tidy⟩,
 end
 
@@ -351,9 +351,9 @@ lemma inv_Q_map_comp {X Y : C} (s : X ⟶ Y) (hs : W s) :
    inv_Q_map s hs ≫ (Q W).map s = 𝟙 _ :=
 begin
   dsimp [Q, inv_Q_map],
-  rw localization.comp_eq (zigzag.inv s hs) (zigzag.of_hom W (hom_obj W s))
+  rw localization.comp_eq (roof.inv s hs) (roof.of_hom W (hom_obj W s))
     ⟨Y, 𝟙 Y, 𝟙 Y, morphism_property.contains_identities.id W Y, rfl⟩,
-  dsimp [zigzag.comp₀],
+  dsimp [roof.comp₀],
   exact quot.sound ⟨Y, 𝟙 Y, 𝟙 Y, by tidy, by tidy,
     by { dsimp, simp only [comp_id], exact morphism_property.contains_identities.id W _, }⟩,
 end
@@ -376,21 +376,21 @@ by { rw inv_Q_map_eq, apply_instance, }
 variables {W}
 
 @[simp]
-lemma id_eq (X : localization W) : 𝟙 X = quot.mk _ (zigzag.id W X.obj) := rfl
+lemma id_eq (X : localization W) : 𝟙 X = quot.mk _ (roof.id W X.obj) := rfl
 
-instance {X Y : C} (z : zigzag W X Y) : is_iso ((Q W).map z.s) :=
+instance {X Y : C} (z : roof W X Y) : is_iso ((Q W).map z.s) :=
 Q_inverts_W W z.s z.hs
 
 
-lemma map_zigzag_eq {X Y : C} (z : zigzag W X Y) :
-  map_zigzag (localization.Q W) (Q_inverts_W W) z = quot.mk _ z :=
+lemma map_roof_eq {X Y : C} (z : roof W X Y) :
+  map_roof (localization.Q W) (Q_inverts_W W) z = quot.mk _ z :=
 begin
-  dsimp only [map_zigzag],
+  dsimp only [map_roof],
   rw ← inv_Q_map_eq W z.s z.hs,
   dsimp only [Q, inv_Q_map],
-  rw comp_eq (zigzag.of_hom W (hom_obj W z.f)) (zigzag.inv z.s z.hs)
+  rw comp_eq (roof.of_hom W (hom_obj W z.f)) (roof.inv z.s z.hs)
     ⟨z.Z, 𝟙 _, 𝟙 _, morphism_property.contains_identities.id W _, rfl⟩,
-  dsimp [zigzag.of_hom, zigzag.comp₀, hom_obj, zigzag.hom],
+  dsimp [roof.of_hom, roof.comp₀, hom_obj, roof.hom],
   simp only [comp_id],
   cases z,
   refl,
@@ -398,11 +398,11 @@ end
 
 variable (W)
 lemma hom_fac {X Y : C} (f : (Q W).obj X ⟶ (Q W).obj Y) :
-  ∃ (z : zigzag W X Y), f = map_zigzag (Q W) (Q_inverts_W W) z :=
+  ∃ (z : roof W X Y), f = map_roof (Q W) (Q_inverts_W W) z :=
 begin
   cases surjective_quot_mk _ f with z hz,
   subst hz,
-  exact ⟨z, (map_zigzag_eq z).symm⟩,
+  exact ⟨z, (map_roof_eq z).symm⟩,
 end
 
 variable {W}
@@ -410,9 +410,9 @@ variable {W}
 def lift {D : Type*} [category D] (F : C ⥤ D) (hF : W.is_inverted_by F) :
   localization W ⥤ D :=
 { obj := λ X, F.obj X.obj,
-  map := λ X Y, quot.lift (λ (f : zigzag W X.obj Y.obj),
+  map := λ X Y, quot.lift (λ (f : roof W X.obj Y.obj),
     by { haveI := hF f.s f.hs, exact F.map f.f ≫ inv (F.map f.s)})
-    (λ z z' (h : zigzag_rel z z'), begin
+    (λ z z' (h : roof_rel z z'), begin
       dsimp,
       rcases h with ⟨Y, t₁, t₂, hst, hft, ht⟩,
       haveI := hF _ ht,
@@ -428,7 +428,7 @@ def lift {D : Type*} [category D] (F : C ⥤ D) (hF : W.is_inverted_by F) :
     substs h₁ h₂,
     let sq := (left_calculus_of_fractions.ex g₁.s g₁.hs g₂.f).some,
     erw comp_eq g₁ g₂ sq,
-    dsimp [zigzag.comp₀, zigzag.hom],
+    dsimp [roof.comp₀, roof.hom],
     simp only [functor.map_comp, assoc],
     haveI := hF g₁.s g₁.hs,
     haveI := hF g₂.s g₂.hs,
@@ -442,7 +442,7 @@ def lift {D : Type*} [category D] (F : C ⥤ D) (hF : W.is_inverted_by F) :
 lemma fac {D : Type*} [category D] (F : C ⥤ D) (hF : W.is_inverted_by F) :
   Q W ⋙ lift F hF = F :=
 functor.ext (λ X, rfl) (λ X Y f, begin
-  dsimp [lift, zigzag.hom, hom_obj],
+  dsimp [lift, roof.hom, hom_obj],
   simp only [functor.map_id, is_iso.inv_id, id_comp],
 end)
 
@@ -462,7 +462,7 @@ begin
   have eq₁ := functor.congr_map_conjugate h φ.f,
   have eq₂ := functor.congr_map_conjugate h φ.s,
   dsimp only [functor.comp_map] at eq₁ eq₂,
-  dsimp only [map_zigzag],
+  dsimp only [map_roof],
   simpa only [functor.map_comp, functor.map_inv, eq₁, eq₂, assoc, is_iso.inv_comp,
     inv_eq_to_hom, eq_to_hom_trans_assoc, eq_to_hom_refl, id_comp],
 end
@@ -479,12 +479,12 @@ functor.is_localization.mk' (Q W) W (universal_property _) (universal_property _
 
 end localization
 
-lemma map_zigzag_compatibility {D E : Type*} [category D] [category E]
+lemma map_roof_compatibility {D E : Type*} [category D] [category E]
   (L₁ : C ⥤ D) (hL₁ : W.is_inverted_by L₁) (L₂ : C ⥤ E) (hL₂ : W.is_inverted_by L₂)
-  (M : D ⥤ E) (e : L₁ ⋙ M ≅ L₂) {X Y : C} (z : zigzag W X Y) :
-  map_zigzag L₂ hL₂ z = e.inv.app X ≫ M.map (map_zigzag L₁ hL₁ z) ≫ e.hom.app Y :=
+  (M : D ⥤ E) (e : L₁ ⋙ M ≅ L₂) {X Y : C} (z : roof W X Y) :
+  map_roof L₂ hL₂ z = e.inv.app X ≫ M.map (map_roof L₁ hL₁ z) ≫ e.hom.app Y :=
 begin
-  dsimp [map_zigzag],
+  dsimp [map_roof],
   simp only [M.map_comp, assoc],
   erw ← e.inv.naturality_assoc,
   congr' 1,
@@ -494,16 +494,16 @@ begin
   apply e.hom.naturality,
 end
 
-lemma map_zigzag_compatibility_imp {D E : Type*} [category D] [category E]
+lemma map_roof_compatibility_imp {D E : Type*} [category D] [category E]
   (L₁ : C ⥤ D) (hL₁ : W.is_inverted_by L₁) (L₂ : C ⥤ E) (hL₂ : W.is_inverted_by L₂)
-  (M : D ⥤ E) (e : L₁ ⋙ M ≅ L₂) {X Y : C} (z z' : zigzag W X Y)
-  (eq : map_zigzag L₁ hL₁ z = map_zigzag L₁ hL₁ z') :
-  map_zigzag L₂ hL₂ z = map_zigzag L₂ hL₂ z' :=
-by simp only [map_zigzag_compatibility L₁ hL₁ L₂ hL₂ M e, eq]
+  (M : D ⥤ E) (e : L₁ ⋙ M ≅ L₂) {X Y : C} (z z' : roof W X Y)
+  (eq : map_roof L₁ hL₁ z = map_roof L₁ hL₁ z') :
+  map_roof L₂ hL₂ z = map_roof L₂ hL₂ z' :=
+by simp only [map_roof_compatibility L₁ hL₁ L₂ hL₂ M e, eq]
 
 lemma L_map_fac {D : Type*} [category D] (L : C ⥤ D) (W : morphism_property C)
   [left_calculus_of_fractions W] [L.is_localization W] {X Y : C} (f : L.obj X ⟶ L.obj Y) :
-  ∃ (z : zigzag W X Y), f = map_zigzag L (localization.inverts L W) z :=
+  ∃ (z : roof W X Y), f = map_roof L (localization.inverts L W) z :=
 begin
   let E := (localization.uniq_equivalence W (localization.Q W) L),
   let e : localization.Q W ⋙ E.functor ≅ L :=
@@ -511,33 +511,33 @@ begin
   let f' := e.hom.app X ≫ f ≫ e.inv.app Y,
   cases localization.hom_fac W (E.functor.preimage f') with z hz,
   change E.functor.preimage f' =
-    map_zigzag (localization.Q W) (localization.inverts _ W) z at hz,
+    map_roof (localization.Q W) (localization.inverts _ W) z at hz,
   replace hz := congr_arg E.functor.map hz,
   refine ⟨z, _⟩,
-  simp only [map_zigzag_compatibility (localization.Q W) (localization.inverts _ W)
+  simp only [map_roof_compatibility (localization.Q W) (localization.inverts _ W)
     L (localization.inverts _ W) E.functor e, ← hz, functor.image_preimage, assoc,
     iso.inv_hom_id_app, comp_id, iso.inv_hom_id_app_assoc],
 end
 
-lemma L_map_zigzag_eq_iff {D : Type*} [category D] (L : C ⥤ D) {W : morphism_property C}
-  [left_calculus_of_fractions W] [L.is_localization W] {X Y : C} (z₁ z₂ : zigzag W X Y) :
-  map_zigzag L (localization.inverts L W) z₁ =
-    map_zigzag L (localization.inverts L W) z₂ ↔ zigzag_rel z₁ z₂ :=
+lemma L_map_roof_eq_iff {D : Type*} [category D] (L : C ⥤ D) {W : morphism_property C}
+  [left_calculus_of_fractions W] [L.is_localization W] {X Y : C} (z₁ z₂ : roof W X Y) :
+  map_roof L (localization.inverts L W) z₁ =
+    map_roof L (localization.inverts L W) z₂ ↔ roof_rel z₁ z₂ :=
 begin
-  have eq : map_zigzag L (localization.inverts _ W) z₁ =
-      map_zigzag L (localization.inverts _ W) z₂ ↔
-    map_zigzag (localization.Q W) (localization.inverts _ W) z₁ =
-      map_zigzag (localization.Q W) (localization.inverts _ W) z₂,
+  have eq : map_roof L (localization.inverts _ W) z₁ =
+      map_roof L (localization.inverts _ W) z₂ ↔
+    map_roof (localization.Q W) (localization.inverts _ W) z₁ =
+      map_roof (localization.Q W) (localization.inverts _ W) z₂,
   { split,
-    all_goals { exact map_zigzag_compatibility_imp _ _ _ _ _
+    all_goals { exact map_roof_compatibility_imp _ _ _ _ _
       (localization.comp_uniq_equivalence_functor_iso W _ _)  _ _, }, },
-  simp only [eq, localization.map_zigzag_eq],
+  simp only [eq, localization.map_roof_eq],
   split,
   { rw quot.eq,
     clear eq,
     intro h,
     induction h with s₁ s₂ h s s₁ s₂ h' h s₁ s₂ s₃ h'₁ h'₂ h₁ h₂,
-    exacts [h, zigzag_rel.refl _, h.symm, h₁.trans h₂], },
+    exacts [h, roof_rel.refl _, h.symm, h₁.trans h₂], },
   { exact quot.sound, },
 end
 
@@ -547,10 +547,10 @@ lemma L_map_eq_iff {D : Type*} [category D] (L : C ⥤ D) (W : morphism_property
 begin
   split,
   { intro h,
-    rcases (L_map_zigzag_eq_iff L
-      (zigzag.mk Y f₁ (𝟙 Y) (morphism_property.contains_identities.id W Y))
-      (zigzag.mk Y f₂ (𝟙 Y) (morphism_property.contains_identities.id W Y))).mp
-      (by { dsimp [map_zigzag], rw h, }) with ⟨Z, t₁, t₂, hst, hft, ht⟩,
+    rcases (L_map_roof_eq_iff L
+      (roof.mk Y f₁ (𝟙 Y) (morphism_property.contains_identities.id W Y))
+      (roof.mk Y f₂ (𝟙 Y) (morphism_property.contains_identities.id W Y))).mp
+      (by { dsimp [map_roof], rw h, }) with ⟨Z, t₁, t₂, hst, hft, ht⟩,
     dsimp at t₁ t₂ ht hst hft,
     simp only [id_comp] at ht hst,
     refine ⟨Z, t₁, ht, by rw [hft, hst]⟩, },
@@ -577,7 +577,7 @@ begin
   refine ⟨arrow.mk z.f, nonempty.intro _⟩,
   haveI := localization.inverts L W' z.s z.hs,
   refine arrow.iso_mk e₁.symm (e₂.symm ≪≫ as_iso (L.map z.s)) _,
-  dsimp [map_zigzag] at hz ⊢,
+  dsimp [map_roof] at hz ⊢,
   simp only [← cancel_mono (inv (L.map z.s)), assoc, ← hz, is_iso.hom_inv_id, comp_id,
     ← cancel_epi e₁.hom, e₁.hom_inv_id_assoc],
 end
@@ -700,21 +700,21 @@ namespace right_calculus_of_fractions
 
 variables (W)
 
-structure zigzag (X Y : C) :=
+structure roof (X Y : C) :=
 (Z : C) (s : Z ⟶ X) (f : Z ⟶ Y) (hs : W s)
 
 variable {W}
 
-def zigzag.op {X Y : C} (z : zigzag W X Y) :
-  left_calculus_of_fractions.zigzag W.op (opposite.op Y) (opposite.op X) :=
+def roof.op {X Y : C} (z : roof W X Y) :
+  left_calculus_of_fractions.roof W.op (opposite.op Y) (opposite.op X) :=
 ⟨opposite.op z.Z, z.f.op, z.s.op, z.hs⟩
 
-def zigzag_rel ⦃X Y : C⦄ (z₁ z₂ : zigzag W X Y) : Prop :=
+def roof_rel ⦃X Y : C⦄ (z₁ z₂ : roof W X Y) : Prop :=
 ∃ (Z₃ : C) (t₁ : Z₃ ⟶ z₁.Z) (t₂ : Z₃ ⟶ z₂.Z) (hts : t₁ ≫ z₁.s = t₂ ≫ z₂.s)
   (htf : t₁ ≫ z₁.f = t₂ ≫ z₂.f), W (t₁ ≫ z₁.s)
 
-lemma zigzag_rel.iff_op {X Y : C} (z₁ z₂ : zigzag W X Y) :
-  zigzag_rel z₁ z₂ ↔ left_calculus_of_fractions.zigzag_rel z₁.op z₂.op :=
+lemma roof_rel.iff_op {X Y : C} (z₁ z₂ : roof W X Y) :
+  roof_rel z₁ z₂ ↔ left_calculus_of_fractions.roof_rel z₁.op z₂.op :=
 begin
   split,
   { intro h,
@@ -728,33 +728,33 @@ end
 variables (W) [right_calculus_of_fractions W]
 
 @[simps]
-def zigzag.of_hom {X Y : C} (f : X ⟶ Y) : zigzag W X Y :=
+def roof.of_hom {X Y : C} (f : X ⟶ Y) : roof W X Y :=
 ⟨X, 𝟙 X, f, morphism_property.contains_identities.id W X⟩
 
 @[simps]
-def zigzag.id (X : C) := zigzag.of_hom W (𝟙 X)
+def roof.id (X : C) := roof.of_hom W (𝟙 X)
 
-namespace zigzag_rel
+namespace roof_rel
 
 variables {W}
 
-lemma refl {X Y : C} (z : zigzag W X Y) : zigzag_rel z z :=
-by { rw zigzag_rel.iff_op, apply left_calculus_of_fractions.zigzag_rel.refl, }
+lemma refl {X Y : C} (z : roof W X Y) : roof_rel z z :=
+by { rw roof_rel.iff_op, apply left_calculus_of_fractions.roof_rel.refl, }
 
-lemma symm {X Y : C} {z₁ z₂ : zigzag W X Y} (h : zigzag_rel z₁ z₂) : zigzag_rel z₂ z₁ :=
-by { rw zigzag_rel.iff_op at h ⊢, exact h.symm, }
+lemma symm {X Y : C} {z₁ z₂ : roof W X Y} (h : roof_rel z₁ z₂) : roof_rel z₂ z₁ :=
+by { rw roof_rel.iff_op at h ⊢, exact h.symm, }
 
-lemma trans {X Y : C} {z₁ z₂ z₃ : zigzag W X Y} (h₁₂ : zigzag_rel z₁ z₂)
-  (h₂₃ : zigzag_rel z₂ z₃) : zigzag_rel z₁ z₃ :=
-by { rw zigzag_rel.iff_op at h₁₂ h₂₃ ⊢, exact h₁₂.trans h₂₃, }
+lemma trans {X Y : C} {z₁ z₂ z₃ : roof W X Y} (h₁₂ : roof_rel z₁ z₂)
+  (h₂₃ : roof_rel z₂ z₃) : roof_rel z₁ z₃ :=
+by { rw roof_rel.iff_op at h₁₂ h₂₃ ⊢, exact h₁₂.trans h₂₃, }
 
-end zigzag_rel
+end roof_rel
 
-instance is_equiv_zigzag_rel (X Y : C) :
-  is_equiv (zigzag W X Y) (λ z₁ z₂, zigzag_rel z₁ z₂) :=
-{ refl := zigzag_rel.refl,
-  symm := λ z₁ z₂, zigzag_rel.symm,
-  trans := λ z₁ z₂ z₃, zigzag_rel.trans, }
+instance is_equiv_roof_rel (X Y : C) :
+  is_equiv (roof W X Y) (λ z₁ z₂, roof_rel z₁ z₂) :=
+{ refl := roof_rel.refl,
+  symm := λ z₁ z₂, roof_rel.symm,
+  trans := λ z₁ z₂ z₃, roof_rel.trans, }
 
 end right_calculus_of_fractions
 
@@ -762,8 +762,8 @@ namespace left_calculus_of_fractions
 
 variables {W} [morphism_property.contains_identities W] [right_calculus_of_fractions W]
 
-def zigzag.unop {X Y : C} (z : zigzag W.op (opposite.op X) (opposite.op Y)) :
-  right_calculus_of_fractions.zigzag W Y X :=
+def roof.unop {X Y : C} (z : roof W.op (opposite.op X) (opposite.op Y)) :
+  right_calculus_of_fractions.roof W Y X :=
 ⟨opposite.unop z.Z, z.s.unop, z.f.unop, z.hs⟩
 
 end left_calculus_of_fractions
@@ -772,38 +772,38 @@ namespace right_calculus_of_fractions
 
 variables {W} [morphism_property.contains_identities W] [right_calculus_of_fractions W]
 
-def map_zigzag {D : Type*} [category D] (F : C ⥤ D) (hF : W.is_inverted_by F)
-  {X Y : C} (z : zigzag W X Y) : F.obj X ⟶ F.obj Y :=
+def map_roof {D : Type*} [category D] (F : C ⥤ D) (hF : W.is_inverted_by F)
+  {X Y : C} (z : roof W X Y) : F.obj X ⟶ F.obj Y :=
 by { haveI := hF z.s z.hs, exact inv (F.map z.s), } ≫ F.map z.f
 
-lemma map_zigzag_eq_unop_map_zigzag_op {D : Type*} [category D] (F : C ⥤ D)
-  (hF : W.is_inverted_by F) {X Y : C} (z : zigzag W X Y) :
-  map_zigzag F hF z = (left_calculus_of_fractions.map_zigzag F.op hF.op z.op).unop :=
+lemma map_roof_eq_unop_map_roof_op {D : Type*} [category D] (F : C ⥤ D)
+  (hF : W.is_inverted_by F) {X Y : C} (z : roof W X Y) :
+  map_roof F hF z = (left_calculus_of_fractions.map_roof F.op hF.op z.op).unop :=
 begin
-  dsimp [left_calculus_of_fractions.map_zigzag, map_zigzag, zigzag.op],
+  dsimp [left_calculus_of_fractions.map_roof, map_roof, roof.op],
   simp only [quiver.hom.unop_op, unop_inv],
 end
 
 lemma L_map_fac {D : Type*} [category D] (L : C ⥤ D) (W : morphism_property C)
   [right_calculus_of_fractions W]
   [L.is_localization W] {X Y : C} (f : L.obj X ⟶ L.obj Y) :
-  ∃ (z : zigzag W X Y), f = map_zigzag L (localization.inverts L W) z :=
+  ∃ (z : roof W X Y), f = map_roof L (localization.inverts L W) z :=
 begin
   let f' : L.op.obj (opposite.op Y) ⟶ L.op.obj (opposite.op X) := f.op,
   rcases left_calculus_of_fractions.L_map_fac L.op W.op f' with ⟨z, hz⟩,
   refine ⟨z.unop, _⟩,
   change f'.unop = _,
-  simpa only [hz, map_zigzag_eq_unop_map_zigzag_op],
+  simpa only [hz, map_roof_eq_unop_map_roof_op],
 end
 
-lemma L_map_zigzag_eq_iff {D : Type*} [category D] (L : C ⥤ D) {W : morphism_property C}
+lemma L_map_roof_eq_iff {D : Type*} [category D] (L : C ⥤ D) {W : morphism_property C}
   [right_calculus_of_fractions W] [L.is_localization W]
-  {X Y : C} (z₁ z₂ : zigzag W X Y) :
-  map_zigzag L (localization.inverts L W) z₁ =
-    map_zigzag L (localization.inverts L W) z₂ ↔ zigzag_rel z₁ z₂ :=
+  {X Y : C} (z₁ z₂ : roof W X Y) :
+  map_roof L (localization.inverts L W) z₁ =
+    map_roof L (localization.inverts L W) z₂ ↔ roof_rel z₁ z₂ :=
 begin
-  simp only [zigzag_rel.iff_op, ← left_calculus_of_fractions.L_map_zigzag_eq_iff L.op z₁.op,
-    map_zigzag_eq_unop_map_zigzag_op],
+  simp only [roof_rel.iff_op, ← left_calculus_of_fractions.L_map_roof_eq_iff L.op z₁.op,
+    map_roof_eq_unop_map_roof_op],
   exact ⟨λ h, quiver.hom.unop_inj h, λ h, quiver.hom.op_inj h⟩,
 end
 
@@ -813,10 +813,10 @@ lemma L_map_eq_iff {D : Type*} [category D] (L : C ⥤ D) (W : morphism_property
 begin
   split,
   { intro h,
-    rcases (L_map_zigzag_eq_iff L
-      (zigzag.mk Y (𝟙 Y) f₁ (morphism_property.contains_identities.id W Y))
-      (zigzag.mk Y (𝟙 Y) f₂ (morphism_property.contains_identities.id W Y))).mp
-      (by { dsimp [map_zigzag], rw h, }) with ⟨Z, t₁, t₂, hts, htf, ht⟩,
+    rcases (L_map_roof_eq_iff L
+      (roof.mk Y (𝟙 Y) f₁ (morphism_property.contains_identities.id W Y))
+      (roof.mk Y (𝟙 Y) f₂ (morphism_property.contains_identities.id W Y))).mp
+      (by { dsimp [map_roof], rw h, }) with ⟨Z, t₁, t₂, hts, htf, ht⟩,
     dsimp at t₁ t₂ ht hts htf,
     simp only [comp_id] at ht hts,
     exact ⟨Z, t₁, ht, by rw [htf, hts]⟩, },
@@ -849,18 +849,18 @@ begin
   introI,
   rcases left_calculus_of_fractions.L_map_fac L W (inv (L.map f)) with ⟨z₁, h₁⟩,
   rcases right_calculus_of_fractions.L_map_fac L W (inv (L.map f)) with ⟨z₂, h₂⟩,
-  dsimp [left_calculus_of_fractions.map_zigzag] at h₁,
-  dsimp [right_calculus_of_fractions.map_zigzag] at h₂,
-  rcases (left_calculus_of_fractions.L_map_zigzag_eq_iff L
-    (left_calculus_of_fractions.zigzag.mk _ (f ≫ z₁.f) z₁.s z₁.hs)
-    (left_calculus_of_fractions.zigzag.id W X)).mp begin
-      dsimp [left_calculus_of_fractions.map_zigzag],
+  dsimp [left_calculus_of_fractions.map_roof] at h₁,
+  dsimp [right_calculus_of_fractions.map_roof] at h₂,
+  rcases (left_calculus_of_fractions.L_map_roof_eq_iff L
+    (left_calculus_of_fractions.roof.mk _ (f ≫ z₁.f) z₁.s z₁.hs)
+    (left_calculus_of_fractions.roof.id W X)).mp begin
+      dsimp [left_calculus_of_fractions.map_roof],
       simp only [L.map_comp, assoc, ← h₁, is_iso.hom_inv_id],
     end with ⟨Z, t₁, t₁', hst, hft, H₁⟩,
-  rcases (right_calculus_of_fractions.L_map_zigzag_eq_iff L
-    (right_calculus_of_fractions.zigzag.mk _ z₂.s (z₂.f ≫ f) z₂.hs)
-    (right_calculus_of_fractions.zigzag.id W Y)).mp begin
-      dsimp [right_calculus_of_fractions.map_zigzag],
+  rcases (right_calculus_of_fractions.L_map_roof_eq_iff L
+    (right_calculus_of_fractions.roof.mk _ z₂.s (z₂.f ≫ f) z₂.hs)
+    (right_calculus_of_fractions.roof.id W Y)).mp begin
+      dsimp [right_calculus_of_fractions.map_roof],
       simp only [L.map_comp, assoc, ← reassoc_of h₂, is_iso.inv_hom_id],
     end with ⟨Z', t₂, t₂', hts, htf, H₂⟩,
   dsimp at t₁ t₁' hst hft H₁ t₂ t₂' hts htf H₂,

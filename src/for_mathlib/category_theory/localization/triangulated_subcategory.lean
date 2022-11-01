@@ -645,7 +645,7 @@ begin
     exact (A.left_orthogonal_comp_W_bijective _ hX s hs).1 eq, },
   { intro g,
     obtain ⟨z, hz⟩ := left_calculus_of_fractions.L_map_fac L A.W g,
-    dsimp [left_calculus_of_fractions.map_zigzag] at hz,
+    dsimp [left_calculus_of_fractions.map_roof] at hz,
     obtain ⟨f, hf⟩ := (A.left_orthogonal_comp_W_bijective _ hX z.s z.hs).2 z.f,
     refine ⟨f, _⟩,
     dsimp at hf ⊢,
