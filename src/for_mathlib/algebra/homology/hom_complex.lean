@@ -26,21 +26,11 @@ structure is_termwise_kernel (i : F ⟶ G) (f : G ⟶ K) :=
 (zero : ∀ n, i.f n ≫ f.f n = 0)
 (is_limit : ∀ n, is_limit (kernel_fork.of_ι (i.f n) (zero n)))
 
-lemma mono_of_is_limit_kernel_fork {D : Type*} [category D] [has_zero_morphisms D]
-  {Y Z : D} {f : Y ⟶ Z} {h : kernel_fork f} (l : is_limit h) : mono h.ι :=
-⟨λ X f₁ f₂ hf, begin
-  have eq := λ (φ : X ⟶ h.X), l.uniq (kernel_fork.of_ι _
-    (show (φ ≫ h.ι) ≫ f = 0, by {rw [assoc, h.condition, comp_zero]}))
-    φ (by { rintro (_|_), tidy, }),
-  rw [eq f₁, eq f₂],
-  congr',
-end⟩
-
 namespace is_termwise_kernel
 
 lemma termwise_mono {i : F ⟶ G} {f : G ⟶ K}
   (h : is_termwise_kernel i f) (q : ℤ) : mono (i.f q) :=
-mono_of_is_limit_kernel_fork (h.is_limit q)
+mono_of_is_limit_fork (h.is_limit q)
 
 end is_termwise_kernel
 
@@ -67,7 +57,8 @@ lemma ε_even (n : ℤ) (hn : even n) : ε n = 1 :=
 begin
   change _ = ↑(1 : units ℤ),
   cases hn with k hk,
-  simp only [ε, ← units.ext_iff, hk, zpow_add, ← mul_zpow, int.units_mul_self],
+  simp only [ε, ← units.ext_iff, hk, zpow_add, ← mul_zpow,
+    mul_neg, mul_one, neg_neg, one_zpow],
 end
 
 lemma ε_odd (n : ℤ) (hn : odd n) : ε n = -1 :=
