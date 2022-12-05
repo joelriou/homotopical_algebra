@@ -29,22 +29,17 @@ section abelian
 
 variables [abelian C] {S : short_complex (cochain_complex C ℤ)} (ex : S.short_exact)
 
+instance (n : ℤ) :
+  preserves_finite_limits (homological_complex.eval C (complex_shape.up ℤ) n) := sorry
+instance (n : ℤ) :
+  preserves_finite_colimits (homological_complex.eval C (complex_shape.up ℤ) n) := sorry
+
 include ex
 
-/-- should be generalised and moved... -/
-lemma degreewise_exact (n : ℤ) : (S.map (homological_complex.eval _ _ n)).short_exact :=
-begin
-  let F := (homological_complex.eval C (complex_shape.up ℤ) n),
-  haveI : preserves_finite_colimits F := sorry,
-  haveI : preserves_finite_limits F := sorry,
-  haveI := ex.mono_f,
-  haveI := ex.epi_g,
-  haveI : mono (S.map F).f := preserves_mono_of_preserves_limit F S.f,
-  haveI : epi (S.map F).g := preserves_epi_of_preserves_colimit F S.g,
-  exact short_complex.short_exact.mk
-    (short_complex.exact_map_of_preserves_homology ex.exact
-      (homological_complex.eval C (complex_shape.up ℤ) n)),
-end
+
+lemma degreewise_exact (n : ℤ) :
+  (S.map (homological_complex.eval C (complex_shape.up ℤ) n)).short_exact :=
+ex.map_of_exact (homological_complex.eval C (complex_shape.up ℤ) n)
 
 def from_mapping_cone_of_ses : mapping_cone S.f ⟶ S.X₃ :=
 hom_complex.cocycle.hom_of
@@ -53,7 +48,10 @@ hom_complex.cocycle.hom_of
       (by simp only [hom_complex.δ_zero, hom_complex.ε_0, hom_complex.cocycle.of_hom_coe,
         one_zsmul, ← hom_complex.cochain.of_hom_comp, S.zero, hom_complex.cochain.of_hom_zero]))
 
-lemma from_mapping_cone_of_ses_quasi_iso : quasi_iso (from_mapping_cone_of_ses ex) := sorry
+lemma from_mapping_cone_of_ses_quasi_iso : quasi_iso (from_mapping_cone_of_ses ex) :=
+⟨λ n, begin
+  sorry,
+end⟩
 
 end abelian
 
