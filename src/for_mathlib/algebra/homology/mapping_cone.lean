@@ -1,5 +1,6 @@
 import for_mathlib.algebra.homology.twist_cocycle
 import algebra.homology.quasi_iso
+import algebra.homology.short_complex.pseudoelements
 
 noncomputable theory
 open category_theory category_theory.category category_theory.limits
@@ -50,7 +51,19 @@ hom_complex.cocycle.hom_of
 
 lemma from_mapping_cone_of_ses_quasi_iso : quasi_iso (from_mapping_cone_of_ses ex) :=
 ⟨λ n, begin
-  sorry,
+  rw is_iso_homology_map_iff_short_complex_quasi_iso'
+    (from_mapping_cone_of_ses ex) (show (n-1)+1=n, by linarith) rfl,
+  change is_iso _,
+  rw is_iso_iff_mono_and_epi,
+  split,
+  { rw short_complex.mono_homology_map_iff,
+    dsimp,
+    intros A x₂ hx₂ y₁ hy₁,
+    sorry, },
+  { rw short_complex.epi_homology_map_iff,
+    dsimp,
+    intros A y₂ hy₂,
+    sorry, },
 end⟩
 
 end abelian
