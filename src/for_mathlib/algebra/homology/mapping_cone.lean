@@ -94,7 +94,6 @@ begin
   tidy,
 end
 
-example : ℕ := 42
 lemma mapping_cone_X_id (n n' : ℤ) (hnn' : n' = n+1) :
   mapping_cone_X_fst φ n n' hnn' ≫ mapping_cone_X_inl φ n n' hnn'
     + mapping_cone_X_snd φ n ≫ mapping_cone_X_inr φ n = 𝟙 _ :=
@@ -160,6 +159,33 @@ hom_complex.cocycle.hom_of
       (by simp only [hom_complex.δ_zero, hom_complex.ε_0, hom_complex.cocycle.of_hom_coe,
         one_zsmul, ← hom_complex.cochain.of_hom_comp, S.zero, hom_complex.cochain.of_hom_zero]))
 
+@[simp, reassoc]
+lemma inr_from_mapping_cone_of_ses (n : ℤ) :
+  mapping_cone_X_inr S.f n ≫ (from_mapping_cone_of_ses ex).f n = S.g.f n :=
+begin
+  dsimp only [mapping_cone_X_inr, from_mapping_cone_of_ses, hom_complex.twist.desc_cocycle],
+  simp only [hom_complex.cocycle.of_hom_coe, hom_complex.cocycle.hom_of_f,
+    hom_complex.cocycle.mk_coe, hom_complex.twist.desc_cochain_eq _ _ _ _ (zero_add 1),
+    zero_add, hom_complex.cochain.comp_zero, hom_complex.twist.snd,
+    hom_complex.cochain.comp_zero_cochain, hom_complex.cochain.mk_v,
+    hom_complex.cochain.of_hom_v, homological_complex.id_f, comp_id, biprod.inr_snd_assoc],
+end
+
+@[simp, reassoc]
+lemma inl_from_mapping_cone_of_ses (n n' : ℤ) (hnn' : n' = n + 1) :
+  mapping_cone_X_inl S.f n n' hnn' ≫ (from_mapping_cone_of_ses ex).f n = 0 :=
+begin
+  have eq := hom_complex.cochain.congr_v
+    (hom_complex.twist.inl_comp_snd (hom_complex.cocycle.of_hom S.f) (neg_add_self 1)) n' n (by linarith),
+  rw hom_complex.cochain.comp_v _ _ _ n' n n (show n = n'+ (-1), by linarith) (add_zero n).symm
+    at eq,
+  dsimp only [mapping_cone_X_inl, from_mapping_cone_of_ses, hom_complex.twist.desc_cocycle],
+  simp only [hom_complex.cocycle.of_hom_coe, hom_complex.cocycle.hom_of_f, hom_complex.cocycle.mk_coe,
+    hom_complex.twist.desc_cochain_eq _ _ _ _ (zero_add 1), zero_add, hom_complex.cochain.comp_zero,
+    hom_complex.cochain.comp_zero_cochain, hom_complex.cochain.of_hom_v, ← assoc, eq,
+    hom_complex.cochain.zero_v, zero_comp],
+end
+
 lemma from_mapping_cone_of_ses_quasi_iso : quasi_iso (from_mapping_cone_of_ses ex) :=
 ⟨λ n, begin
   rw is_iso_homology_map_iff_short_complex_quasi_iso'
@@ -180,6 +206,8 @@ lemma from_mapping_cone_of_ses_quasi_iso : quasi_iso (from_mapping_cone_of_ses e
     simp only [preadditive.add_comp, preadditive.sub_comp, assoc, mapping_cone_X_inr_snd, comp_id,
       mapping_cone_X_inl_snd, comp_zero, sub_zero, zero_comp] at hy,
     clear hxy,
+    simp only [preadditive.add_comp, assoc, inr_from_mapping_cone_of_ses,
+      inl_from_mapping_cone_of_ses, comp_zero, zero_add] at hy₁,
     sorry, },
   { rw short_complex.epi_homology_map_iff,
     dsimp,
