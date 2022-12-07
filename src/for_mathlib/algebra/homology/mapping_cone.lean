@@ -73,6 +73,9 @@ hom_complex.cocycle.hom_of
     (hom_complex.cocycle.of_hom (𝟙 G)) (add_comm 0 1)
     (show (-1 : ℤ) + 1 = 0, by linarith) 1 (zero_add 1) (by simp))
 
+def mapping_cone_δ_as_cocycle : hom_complex.cocycle (mapping_cone φ) F 1 :=
+hom_complex.twist.fst _ (zero_add 1)
+
 @[reassoc]
 def mapping_cone_X_inl_d (n n' n'' : ℤ) (hnn' : n' = n+1) (hnn'' : n'' = n'+1) :
   mapping_cone_X_inl φ n n' hnn' ≫ (mapping_cone φ).d n n' =
