@@ -191,6 +191,8 @@ lemma from_mapping_cone_of_ses_quasi_iso : quasi_iso (from_mapping_cone_of_ses e
   rw is_iso_homology_map_iff_short_complex_quasi_iso'
     (from_mapping_cone_of_ses ex) (show (n-1)+1=n, by linarith) rfl,
   change is_iso _,
+  haveI : ∀ (n : ℤ), mono (S.f.f n) :=
+    λ n, (ex.map_of_exact (homological_complex.eval _ _ n)).mono_f,
   rw is_iso_iff_mono_and_epi,
   split,
   { rw short_complex.mono_homology_map_iff,
@@ -212,8 +214,6 @@ lemma from_mapping_cone_of_ses_quasi_iso : quasi_iso (from_mapping_cone_of_ses e
     obtain ⟨A', π, hπ, z', hz'⟩ := abelian.pseudo_surjective_of_epi' (S.g.f (n-1)) z,
     have ex' := (ex.map_of_exact (homological_complex.eval _ _ n)),
     haveI := ex'.mono_f,
-    haveI : ∀ (n : ℤ), mono (S.f.f n) :=
-      λ n, (ex.map_of_exact (homological_complex.eval _ _ n)).mono_f,
     let w : A' ⟶ S.X₁.X n := ex'.exact.lift (π ≫ y - z' ≫ S.X₂.d _ _) begin
       dsimp,
       simp only [preadditive.sub_comp, assoc, hz, reassoc_of hz',
@@ -234,8 +234,24 @@ lemma from_mapping_cone_of_ses_quasi_iso : quasi_iso (from_mapping_cone_of_ses e
         mapping_cone_X_inr_d, preadditive.sub_comp, sub_zero, sub_add_cancel], }, },
   { rw short_complex.epi_homology_map_iff,
     dsimp,
-    intros A y₂ hy₂,
-    sorry, },
+    intros A z hz,
+    haveI : epi (S.g.f n) := (ex.map_of_exact (homological_complex.eval _ _ _)).epi_g,
+    obtain ⟨A', π, hπ, y, hy⟩ := abelian.pseudo_surjective_of_epi' (S.g.f n) z,
+    have ex' := (ex.map_of_exact (homological_complex.eval _ _ (n+1))),
+    haveI := ex'.mono_f,
+    let x : A' ⟶ S.X₁.X (n+1) := ex'.exact.lift (y ≫ S.X₂.d _ _) begin
+      dsimp,
+      simp only [assoc, ← S.g.comm, ← reassoc_of hy, hz, comp_zero],
+    end,
+    have hx : x ≫ S.f.f (n+1) = _ := ex'.exact.lift_f _ _,
+    have hdx : x ≫ S.X₁.d (n+1) (n+1+1) = 0,
+    { simp only [← cancel_mono (S.f.f (n+1+1)), assoc, zero_comp, ← S.f.comm, reassoc_of hx,
+        homological_complex.d_comp_d, comp_zero], },
+    refine ⟨A', π, hπ, y ≫ mapping_cone_X_inr _ _ - x ≫ mapping_cone_X_inl _ _ _ rfl, _, _⟩,
+    { simp only [mapping_cone_X_inl_d _ _ _ _ _ rfl, reassoc_of hx, preadditive.sub_comp, assoc,
+        mapping_cone_X_inr_d, preadditive.comp_sub, sub_sub_cancel, reassoc_of hdx, zero_comp], },
+    { exact ⟨0, by simp only [hy, preadditive.sub_comp, assoc, inr_from_mapping_cone_of_ses,
+        inl_from_mapping_cone_of_ses, comp_zero, sub_zero, zero_comp, add_zero]⟩, }, },
 end⟩
 
 end abelian
