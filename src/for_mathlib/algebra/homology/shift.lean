@@ -1,15 +1,17 @@
+import tactic.linarith
 import category_theory.shift
 import algebra.homology.homological_complex
 import for_mathlib.algebra.homology.hom_complex
-import tactic.linarith
+import algebra.homology.homotopy_category
+import category_theory.quotient
 
 noncomputable theory
 
 open category_theory category_theory.category category_theory.limits
 
-namespace homological_complex
-
 variables (C : Type*) [category C] [preadditive C]
+
+namespace homological_complex
 
 section
 
@@ -145,3 +147,28 @@ has_shift_mk _ _
   associativity := λ n₁ n₂ n₃ K, by { ext i, dsimp [X_iso_of_eq], simp, }, }
 
 end homological_complex
+
+namespace homotopy_category
+
+def shift_functor (n : ℤ) : homotopy_category C (complex_shape.up ℤ) ⥤
+  homotopy_category C (complex_shape.up ℤ) :=
+category_theory.quotient.lift _
+  (homological_complex.shift_functor C n ⋙ homotopy_category.quotient _ _)
+(λ K L φ₁ φ₂, begin
+  rintro ⟨h⟩,
+  refine eq_of_homotopy _ _ sorry,
+end)
+
+def comm_shift (n : ℤ) :
+  homological_complex.shift_functor C n ⋙ homotopy_category.quotient _ _ ≅
+    homotopy_category.quotient _ _ ⋙ shift_functor C n :=
+(quotient.lift.is_lift _ _ _).symm
+
+def shift_functor_zero' (n : ℤ) (h : n = 0) :
+  shift_functor C n ≅ 𝟭 _ :=
+begin
+--- need general lifting of functors from a quotient category
+  sorry,
+end
+
+end homotopy_category

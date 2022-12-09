@@ -1,9 +1,12 @@
 import for_mathlib.algebra.homology.twist_cocycle
 import algebra.homology.quasi_iso
 import algebra.homology.short_complex.pseudoelements
+import for_mathlib.algebra.homology.hom_complex_shift
+import category_theory.triangulated.triangulated
 
 noncomputable theory
 open category_theory category_theory.category category_theory.limits
+  category_theory.pretriangulated
 
 namespace cochain_complex
 
@@ -76,6 +79,11 @@ hom_complex.cocycle.hom_of
 def mapping_cone_δ_as_cocycle : hom_complex.cocycle (mapping_cone φ) F 1 :=
 hom_complex.twist.fst _ (zero_add 1)
 
+@[simp]
+def mapping_cone_δ : mapping_cone φ ⟶ F⟦(1 : ℤ)⟧ :=
+hom_complex.cocycle.hom_of
+  (hom_complex.cocycle.right_shift (mapping_cone_δ_as_cocycle φ) 1 0 (zero_add 1).symm)
+
 @[reassoc]
 def mapping_cone_X_inl_d (n n' n'' : ℤ) (hnn' : n' = n+1) (hnn'' : n'' = n'+1) :
   mapping_cone_X_inl φ n n' hnn' ≫ (mapping_cone φ).d n n' =
@@ -137,6 +145,12 @@ begin
     simp only [← mapping_cone_X_id _ _ _ h, preadditive.comp_add,
       reassoc_of h₁, reassoc_of h₂], },
 end
+
+variable (φ)
+
+@[simps mor₁ mor₂ mor₃]
+def mapping_cone_triangle : triangle (cochain_complex C ℤ) :=
+triangle.mk φ (ι_mapping_cone φ) (mapping_cone_δ φ)
 
 end preadditive
 
