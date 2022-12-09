@@ -81,6 +81,12 @@ def lift_nat_iso' {F G : C ⥤ D} (e : F ≅ G)
 { hom := lift_nat_trans' r e.hom hF hG,
   inv := lift_nat_trans' r e.inv hG hF, }
 
+lemma lift_map_eq (F : C ⥤ D)
+  (hF : ∀ (X Y : C) (f₁ f₂ : X ⟶ Y) (h : r f₁ f₂), F.map f₁ = F.map f₂)
+  {X Y : C} (f : X ⟶ Y) :
+  (lift r F hF).map ((functor r).map f) = F.map f :=
+by rw [functor_map, lift_map]
+
 end quotient
 
 end category_theory
