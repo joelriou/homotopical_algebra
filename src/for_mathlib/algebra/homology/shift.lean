@@ -3,7 +3,7 @@ import category_theory.shift
 import algebra.homology.homological_complex
 import for_mathlib.algebra.homology.hom_complex
 import algebra.homology.homotopy_category
-import category_theory.quotient
+import for_mathlib.category_theory.quotient_misc
 
 noncomputable theory
 
@@ -166,9 +166,26 @@ def comm_shift (n : ℤ) :
 
 def shift_functor_zero' (n : ℤ) (h : n = 0) :
   shift_functor C n ≅ 𝟭 _ :=
-begin
---- need general lifting of functors from a quotient category
-  sorry,
-end
+quotient.lift_nat_iso _ _ ((comm_shift C n).symm ≪≫
+    iso_whisker_right (homological_complex.shift_functor_zero' C n h) _ ≪≫
+    functor.left_unitor _ ≪≫ (functor.right_unitor _).symm)
+
+def shift_functor_add' (n₁ n₂ n₁₂ : ℤ) (h : n₁₂ = n₁ + n₂) :
+  shift_functor C n₁ ⋙ shift_functor C n₂ ≅ shift_functor C n₁₂ :=
+quotient.lift_nat_iso _ _ ((functor.associator _ _ _).symm ≪≫
+    iso_whisker_right ((comm_shift C n₁).symm) _ ≪≫
+    functor.associator _ _ _ ≪≫
+    iso_whisker_left _ (comm_shift C n₂).symm ≪≫
+    (functor.associator _ _ _).symm ≪≫
+    iso_whisker_right (homological_complex.shift_functor_add' C _ _ _ h) _ ≪≫ comm_shift C n₁₂)
+
+instance : has_shift (homotopy_category C (complex_shape.up ℤ)) ℤ :=
+has_shift_mk _ _
+{ F := shift_functor C,
+  ε := (shift_functor_zero' C _ rfl).symm,
+  μ := λ n₁ n₂, shift_functor_add' C n₁ n₂ _ rfl,
+  associativity := sorry,
+  left_unitality := sorry,
+  right_unitality := sorry, }
 
 end homotopy_category
