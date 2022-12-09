@@ -131,10 +131,19 @@ begin
       exact ⟨-n, by linarith⟩, }, },
 end
 
-end cochain
+variable {n}
+
+lemma δ_right_unshift (i' j j' : ℤ) (hj : j = i + n) (hj' : j' = i' + n) :
+  δ j j' (γ'.right_unshift j hj) = ε n • (δ i i' γ').right_unshift j' hj' :=
+begin
+  conv_rhs { rw ← γ'.right_unshift_shift j hj, },
+  rw [(γ'.right_unshift j hj).δ_right_shift n j' i i' hj hj',
+    right_unshift_smul, cochain.right_shift_unshift, smul_smul,
+    ← ε_add, ε_even _ (even_add_self n), one_smul],
+end
 
 @[simps]
-def cochain_right_shift_equiv (K L : cochain_complex C ℤ) (n i j : ℤ) (h : i = j + n) :
+def right_shift_equiv (K L : cochain_complex C ℤ) (n i j : ℤ) (h : i = j + n) :
   cochain K L i ≃+ cochain K (L⟦n⟧) j :=
 { to_fun := λ γ, γ.right_shift n j h,
   inv_fun := λ γ', γ'.right_unshift i h,
@@ -142,11 +151,43 @@ def cochain_right_shift_equiv (K L : cochain_complex C ℤ) (n i j : ℤ) (h : i
   right_inv := λ γ', γ'.right_unshift_shift _ _,
   map_add' := λ γ₁ γ₂, cochain.right_shift_add γ₁ γ₂ _ _ _, }
 
+end cochain
+
+namespace cocycle
+
+variables {K L : cochain_complex C ℤ} {i : ℤ}
+  (γ : cocycle K L i) (n : ℤ) (γ' : cocycle K (L⟦n⟧) i)
+
+def right_shift (j : ℤ) (hj : i = j + n) : cocycle K (L⟦n⟧) j :=
+⟨γ.1.right_shift n j hj, begin
+  rw [cocycle.mem_iff j (j+1) rfl, γ.1.δ_right_shift n (i+1) j (j+1) hj (by linarith)],
+  simp only [subtype.val_eq_coe, δ_eq_zero, cochain.right_shift_zero, smul_zero],
+end⟩
+
+variable {n}
+
+def right_unshift (j : ℤ) (hj : j = i + n) : cocycle K L j :=
+⟨γ'.1.right_unshift j hj, begin
+  rw [cocycle.mem_iff j (j+1) rfl, γ'.1.δ_right_unshift (i+1) j (j+1) hj (by linarith)],
+  simp only [subtype.val_eq_coe, δ_eq_zero, cochain.right_unshift_zero, smul_zero],
+end⟩
+
+@[simps]
+def right_shift_equiv (K L : cochain_complex C ℤ) (n i j : ℤ) (h : i = j + n) :
+  cocycle K L i ≃+ cocycle K (L⟦n⟧) j :=
+{ to_fun := λ γ, right_shift γ n j h,
+  inv_fun := λ γ', right_unshift γ' i h,
+  left_inv := λ γ, by { ext1, exact γ.1.right_shift_unshift _ _ _, },
+  right_inv := λ γ', by { ext1, exact γ'.1.right_unshift_shift _ _, },
+  map_add' := λ γ₁ γ₂, by { ext1, exact cochain.right_shift_add γ₁.1 γ₂.1 _ _ _, }, }
+
+end cocycle
+
 @[simps]
 def right_shift_iso (K L : cochain_complex C ℤ) (n : ℤ) :
   (hom_complex K L)⟦n⟧ ≅ hom_complex K (L⟦n⟧) :=
 homological_complex.hom.iso_of_components
-  (λ i, add_equiv.to_AddCommGroup_iso (cochain_right_shift_equiv K L n (i+n) i rfl))
+  (λ i, add_equiv.to_AddCommGroup_iso (cochain.right_shift_equiv K L n (i+n) i rfl))
   (λ i j hij, begin
     ext1 γ,
     simp only [comp_apply],
@@ -156,9 +197,6 @@ homological_complex.hom.iso_of_components
     erw [γ.δ_right_shift n (j+n) i j rfl rfl, cochain.right_shift_smul],
   end)
 
-example : ℕ := 42
-
-#check right_shift_iso_hom_f_apply
 end hom_complex
 
 end cochain_complex
