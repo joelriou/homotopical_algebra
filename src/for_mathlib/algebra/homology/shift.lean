@@ -1,5 +1,6 @@
 import category_theory.shift
 import algebra.homology.homological_complex
+import for_mathlib.algebra.homology.hom_complex
 import tactic.linarith
 
 noncomputable theory
@@ -8,7 +9,7 @@ open category_theory category_theory.category category_theory.limits
 
 namespace homological_complex
 
-variables (C : Type*) [category C] [has_zero_morphisms C]
+variables (C : Type*) [category C] [preadditive C]
 
 section
 
@@ -86,9 +87,9 @@ local attribute [simp] X_iso_of_eq_hom_naturality X_iso_of_eq_inv_naturality
 def shift_functor (n : ℤ) : cochain_complex C ℤ ⥤ cochain_complex C ℤ :=
 { obj := λ K,
   { X := λ i, K.X (i+n),
-    d := λ i j, K.d _ _,
+    d := λ i j, cochain_complex.hom_complex.ε n • K.d _ _,
     shape' := λ i j hij, begin
-      rw K.shape,
+      rw [K.shape, smul_zero],
       intro hij',
       apply hij,
       dsimp [complex_shape.up] at hij' ⊢,
@@ -115,19 +116,26 @@ def shift_functor_congr {n n' : ℤ} (h : n = n') :
   shift_functor C n ≅ shift_functor C n' :=
 nat_iso.of_components
   (λ K, hom.iso_of_components (λ i, K.X_iso_of_eq (by subst h))
-  (λ i j hij, by { dsimp, simp, })) (λ K₁ K₂ φ, by { ext, dsimp, simp, })
+  (λ i j hij, by { dsimp, simp [h], })) (λ K₁ K₂ φ, by { ext, dsimp, simp, })
 
 @[simps]
 def shift_functor_zero' (n : ℤ) (h : n = 0) :
   shift_functor C n ≅ 𝟭 _ :=
 nat_iso.of_components (λ K, hom.iso_of_components
-  (λ i, K.shift_functor_obj_X_iso _ _ _ (by linarith)) (by tidy)) (by tidy)
+  (λ i, K.shift_functor_obj_X_iso _ _ _ (by linarith))
+    (by { subst h, tidy, })) (by tidy)
 
 @[simps]
 def shift_functor_add' (n₁ n₂ n₁₂ : ℤ) (h : n₁₂ = n₁ + n₂) :
   shift_functor C n₁ ⋙ shift_functor C n₂ ≅ shift_functor C n₁₂ :=
 nat_iso.of_components
-  (λ K, hom.iso_of_components (λ i, K.X_iso_of_eq (by linarith)) (by tidy)) (by tidy)
+  (λ K, hom.iso_of_components (λ i, K.X_iso_of_eq (by linarith))
+  (λ i j hij, begin
+    subst h,
+    dsimp,
+    simp only [linear.comp_smul, X_iso_of_eq_hom_comp_d, linear.smul_comp,
+      d_comp_X_iso_of_eq_hom, ← mul_smul, ← cochain_complex.hom_complex.ε_add, add_comm n₁],
+  end)) (by tidy)
 
 instance : has_shift (cochain_complex C ℤ) ℤ :=
 has_shift_mk _ _

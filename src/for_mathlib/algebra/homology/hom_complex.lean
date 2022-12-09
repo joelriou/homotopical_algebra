@@ -67,6 +67,48 @@ begin
   rw [hk, ε_add, ε_1, ε_even (2*k) ⟨k, two_mul k⟩, one_mul],
 end
 
+lemma ε_eq_one_iff (n : ℤ) : ε n = 1 ↔ even n :=
+begin
+  split,
+  { intro h,
+    rw int.even_iff_not_odd,
+    intro h',
+    rw ε_odd _ h' at h,
+    linarith, },
+  { intro h,
+    rw ε_even _ h, },
+end
+
+lemma ε_eq_neg_one_iff (n : ℤ) : ε n = -1 ↔ odd n :=
+begin
+  split,
+  { intro h,
+    rw int.odd_iff_not_even,
+    intro h',
+    rw ε_even _ h' at h,
+    linarith, },
+  { intro h,
+    rw ε_odd _ h, },
+end
+
+lemma ε_neg (n : ℤ) : ε (-n) = ε n :=
+begin
+  dsimp [ε],
+  simp only [zpow_neg, ← inv_zpow, inv_neg, inv_one],
+end
+
+lemma ε_eq_iff (n₁ n₂ : ℤ) : ε n₁ = ε n₂ ↔
+  even (n₁ - n₂) :=
+begin
+  by_cases h₂ : even n₂,
+  { rw [ε_even _ h₂, int.even_sub, ε_eq_one_iff],
+    tauto, },
+  { rw [← int.odd_iff_not_even] at h₂,
+    rw [ε_odd _ h₂, int.even_sub, ε_eq_neg_one_iff,
+      int.even_iff_not_odd, int.even_iff_not_odd],
+      tauto, }
+end
+
 structure triplet (n : ℤ) := (p : ℤ) (q : ℤ) (hpq : q=p+n)
 
 variables (F G)
