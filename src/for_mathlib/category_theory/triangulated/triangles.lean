@@ -4,7 +4,7 @@ namespace category_theory
 
 variables (C : Type*) [category C] [has_shift C ℤ]
 
-namespace triangulated
+namespace pretriangulated
 
 namespace triangle
 
@@ -36,11 +36,11 @@ by { change is_iso ((eval₃ C).map φ), apply_instance, }
 
 end triangle
 
-end triangulated
+end pretriangulated
 
 namespace iso
 
-open triangulated
+open pretriangulated
 
 variable {C}
 

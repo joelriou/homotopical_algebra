@@ -148,9 +148,12 @@ end
 
 variable (φ)
 
-@[simps mor₁ mor₂ mor₃]
-def mapping_cone_triangle : triangle (cochain_complex C ℤ) :=
-triangle.mk φ (ι_mapping_cone φ) (mapping_cone_δ φ)
+@[simp]
+def ι_mapping_cone' := (homotopy_category.quotient _ _).map (ι_mapping_cone φ)
+
+def mapping_cone_δ' : (homotopy_category.quotient _ _).obj (mapping_cone φ) ⟶
+  ((homotopy_category.quotient _ _).obj F)⟦(1 : ℤ)⟧ :=
+(homotopy_category.quotient _ _).map (mapping_cone_δ φ)
 
 end preadditive
 

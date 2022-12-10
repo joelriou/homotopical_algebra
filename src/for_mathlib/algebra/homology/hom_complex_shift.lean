@@ -494,4 +494,7 @@ namespace homotopy_category
 noncomputable instance : has_shift (homotopy_category C (complex_shape.up ℤ)) ℤ :=
 quotient.shift (λ n K L f₁ f₂, by { rintro ⟨h⟩, exact ⟨h.shift n⟩, })
 
+lemma quotient_map_shift {K L : cochain_complex C ℤ} (φ : K ⟶ L) (n : ℤ) :
+  (homotopy_category.quotient _ _).map (φ⟦n⟧') = ((homotopy_category.quotient _ _).map φ)⟦n⟧' := rfl
+
 end homotopy_category

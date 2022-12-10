@@ -1,6 +1,10 @@
 import category_theory.quotient
+import category_theory.limits.shapes.zero_morphisms
+import category_theory.preadditive.basic
 
 namespace category_theory
+
+open limits
 
 namespace quotient
 
@@ -86,6 +90,40 @@ lemma lift_map_eq (F : C ⥤ D)
   {X Y : C} (f : X ⟶ Y) :
   (lift r F hF).map ((functor r).map f) = F.map f :=
 by rw [functor_map, lift_map]
+
+open_locale zero_object
+
+lemma is_zero_of_is_zero {X : C} (hX : is_zero X) :
+  is_zero ((functor r).obj X) :=
+begin
+  haveI : has_zero_object C := ⟨⟨_, hX⟩⟩,
+  refine limits.is_zero.of_iso _ ((functor r).map_iso (is_zero.iso_zero hX)),
+  split,
+  { rintro ⟨Y⟩,
+    haveI := (has_zero_object.unique_from Y),
+    refine ⟨⟨⟨(functor r).map default⟩, _⟩⟩,
+    intro f,
+    obtain ⟨g, rfl⟩ := functor_map_surjective _ _ f,
+    rw subsingleton.elim g default, },
+  { rintro ⟨Y⟩,
+    haveI := (has_zero_object.unique_to Y),
+    refine ⟨⟨⟨(functor r).map default⟩, _⟩⟩,
+    intro f,
+    obtain ⟨g, rfl⟩ := functor_map_surjective _ _ f,
+    rw subsingleton.elim g default, },
+end
+
+instance [has_zero_object C] : has_zero_object (quotient r) :=
+⟨⟨_, is_zero_of_is_zero _ (is_zero_zero C)⟩⟩
+
+def preadditive [preadditive C]
+  (add : ∀ ⦃X Y : C⦄ ⦃f₁ g₁ f₂ g₂ : X ⟶ Y⦄ (h₁ : r f₁ g₁) (h₂ : r f₂ g₂),
+    (r (f₁ + f₂) (g₁ + g₂)))
+  (neg : ∀ ⦃X Y : C⦄ ⦃f g : X ⟶ Y⦄ (h : r f g), r (-f) (-g)) :
+  preadditive (quotient r) :=
+begin
+  sorry,
+end
 
 end quotient
 
