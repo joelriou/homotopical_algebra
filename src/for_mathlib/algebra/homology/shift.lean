@@ -1,9 +1,9 @@
 import tactic.linarith
 import category_theory.shift
 import algebra.homology.homological_complex
-import for_mathlib.algebra.homology.hom_complex
 import algebra.homology.homotopy_category
 import for_mathlib.category_theory.quotient_shift
+import for_mathlib.algebra.homology.hom_complex
 
 noncomputable theory
 
@@ -147,15 +147,3 @@ has_shift_mk _ _
   associativity := λ n₁ n₂ n₃ K, by { ext i, dsimp [X_iso_of_eq], simp, }, }
 
 end homological_complex
-
-namespace homotopy_category
-
-instance : has_shift (homotopy_category C (complex_shape.up ℤ)) ℤ :=
-quotient.shift (λ n K L f₁ f₂, begin
-  rintro ⟨h⟩,
-  have γ := (cochain_complex.hom_complex.equiv_homotopy _ _) h,
-  refine ⟨(cochain_complex.hom_complex.equiv_homotopy _ _).symm _⟩,
-  sorry,
-end)
-
-end homotopy_category
