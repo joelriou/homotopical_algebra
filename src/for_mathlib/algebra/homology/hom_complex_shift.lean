@@ -197,6 +197,107 @@ homological_complex.hom.iso_of_components
     erw [γ.δ_right_shift n (j+n) i j rfl rfl, cochain.right_shift_smul],
   end)
 
+namespace cochain
+
+variables {K L : cochain_complex C ℤ} {i : ℤ}
+  (γ γ₂ : cochain K L i) (n : ℤ) (γ' γ'₂: cochain (K⟦n⟧) L i)
+
+def left_shift (j : ℤ) (hj : j = i + n) : cochain (K⟦n⟧) L j :=
+cochain.mk (λ p q hpq,
+  ε (n*j + (n*(n-1)/2)) • (K.shift_functor_obj_X_iso n p (p+n) rfl).hom ≫ γ.v (p+n) q (by { dsimp, linarith, }))
+
+lemma left_shift_v (j : ℤ) (hj : j = i + n) (p q : ℤ) (hpq : q = p + j)
+  (p' : ℤ) (hp' : p' = p + n) :
+  (γ.left_shift n j hj).v p q hpq = ε (n*j + (n*(n-1)/2)) • (K.shift_functor_obj_X_iso n p p' hp').hom ≫
+    γ.v p' q (by rw [hpq, hp', hj, add_assoc, add_comm i]) :=
+by { subst hp', refl, }
+
+@[simp]
+lemma left_shift_zero (j : ℤ) (hj : j = i + n) :
+  (0 : cochain K L i).left_shift n j hj = 0 :=
+by { dsimp [left_shift], tidy, }
+
+@[simp]
+lemma left_shift_smul (j : ℤ) (hj : j = i + n) (a : ℤ) :
+  (a • γ).left_shift n j hj = a • γ.left_shift n j hj :=
+begin
+  ext p q hpq,
+  simp only [left_shift_v _ n j hj p q hpq _ rfl, zsmul_v, linear.comp_smul,
+    ← mul_smul, mul_comm a],
+end
+
+@[simp]
+lemma left_shift_add (j : ℤ) (hj : j = i + n) :
+  (γ + γ₂).left_shift n j hj = γ.left_shift n j hj + γ₂.left_shift n j hj :=
+begin
+  ext p q hpq,
+  simp only [left_shift_v _ n j hj p q hpq _ rfl, add_v, preadditive.comp_add, smul_add],
+end
+
+lemma δ_left_shift (i' j j' : ℤ) (hj : j = i + n) (hj' : j' = i' + n) :
+  δ j j' (γ.left_shift n j hj) = ε (n) • (δ i i' γ).left_shift n j' hj' :=
+begin
+  by_cases h₁ : i+1 = i', swap,
+  { have h₂ : j+1 ≠ j' := λ h₃, by { exfalso, apply h₁, linarith, },
+    simp only [δ_shape _ _ h₁, δ_shape _ _ h₂, left_shift_zero, smul_zero], },
+  { have h₂ : j' = j+1 := by linarith,
+    substs h₁ h₂,
+    ext p q hpq,
+    rw δ_v j _ rfl _ p q hpq (p+j) (p+1) (by linarith) rfl,
+    rw γ.left_shift_v n j hj p _ rfl _ rfl,
+    rw γ.left_shift_v n j hj (p+1) q (by linarith) _ rfl,
+    rw zsmul_v,
+    rw left_shift_v _ n (j+1) hj' p q hpq _ rfl,
+    rw δ_v i _ rfl _ (p+n) q (by linarith) (p+j) (p+1+n) (by linarith) (by linarith),
+    simp only [homological_complex.shift_functor_obj_X_iso, homological_complex.X_iso_of_eq_refl,
+      linear.smul_comp, assoc, ε_succ, linear.comp_smul, neg_smul, preadditive.comp_add,
+      preadditive.comp_neg, smul_add, zsmul_neg', add_right_inj, neg_inj, ← mul_smul],
+    dsimp [iso.refl],
+    erw [homological_complex.shift_functor_obj_d],
+    dsimp,
+    simp only [preadditive.zsmul_comp, ← mul_smul],
+    erw [category.id_comp, category.id_comp, category.id_comp],
+    congr' 2,
+    { simp only [mul_add, ε_add, mul_one, mul_comm _ (ε n)],
+      simp only [← mul_assoc, ← ε_add n n, ε_even _ (even_add_self n)],
+      ring, },
+    { rw [hj],
+      simp only [ε_add, neg_mul, mul_neg, neg_inj, mul_add],
+      ring_nf, }, },
+end
+
+
+@[simps]
+def left_shift_equiv (K L : cochain_complex C ℤ) (n i j : ℤ) (h : j = i + n) :
+  cochain K L i ≃+ cochain (K⟦n⟧) L j :=
+{ to_fun := λ γ, γ.left_shift n j h,
+  inv_fun := sorry,
+  left_inv := sorry,
+  right_inv := sorry,
+  map_add' := sorry, }
+
+@[simps]
+def left_shift_iso (K L : cochain_complex C ℤ) (n : ℤ) :
+  (hom_complex K L)⟦-n⟧ ≅ hom_complex (K⟦n⟧) L :=
+homological_complex.hom.iso_of_components
+  (λ i, add_equiv.to_AddCommGroup_iso (cochain.left_shift_equiv K L n (i-n) i (by linarith)))
+  (λ i j hij, begin
+    ext1 γ,
+    simp only [comp_apply],
+    dsimp [hom_complex, δ_hom],
+    erw homological_complex.shift_functor_obj_d,
+    dsimp,
+    rw left_shift_smul,
+    erw γ.δ_left_shift n (j-n) i j (by { dsimp, linarith, }) (by linarith),
+    dsimp,
+    rw ε_neg,
+    refl,
+  end)
+
+variable {n}
+
+end cochain
+
 end hom_complex
 
 end cochain_complex
