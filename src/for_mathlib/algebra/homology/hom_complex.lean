@@ -419,6 +419,14 @@ lemma comp_assoc_of_third_is_zero_cochain {n₁ n₂ n₁₂ : ℤ}
     cochain.comp z₁ (cochain.comp z₂ z₃ (add_zero n₂).symm) h₁₂ :=
 comp_assoc z₁ z₂ z₃ h₁₂ (add_zero n₂).symm (by linarith)
 
+variable (K)
+
+def of_d : cochain K K 1 := cochain.mk (λ p q hpq, K.d p q)
+
+@[simp]
+def of_d_v (p q : ℤ) (hpq : q=p+1) :
+  (of_d K).v p q hpq = K.d p q := rfl
+
 end cochain
 
 /- Differentials -/
@@ -637,6 +645,13 @@ def equiv_hom : (F ⟶ G) ≃+ cocycle F G 0 :=
       homological_complex.add_f_apply, mk_coe, eq_to_hom_refl, comp_id,
       add_subgroup.coe_add, pi.add_apply],
   end, }
+
+def of_d : cocycle K K 1 :=
+cocycle.mk (cochain.of_d K) 2 rfl begin
+  ext p q hpq,
+  simp only [δ_v 1 2 rfl _ p q hpq _ _ rfl rfl, cochain.of_d_v,
+    homological_complex.d_comp_d, smul_zero, add_zero, cochain.zero_v],
+end
 
 end cocycle
 

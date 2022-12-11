@@ -28,9 +28,17 @@ begin
       (by simpa only [neg_sub_neg] using homotopy.equiv_sub_zero h.symm)⟩, },
 end
 
+instance homotopy_category.quotient_additive :
+  (homotopy_category.quotient C c).additive := quotient.functor_additive _ _ _
+
 lemma is_zero_of_homotopy_id_zero [has_zero_object C] (X : homological_complex C c)
   (h : homotopy (𝟙 X) 0) :
-  is_zero ((homotopy_category.quotient C c).obj X) := sorry
+  is_zero ((homotopy_category.quotient C c).obj X) :=
+begin
+  have eq := homotopy_category.eq_of_homotopy _ _ h,
+  simp only [category_theory.functor.map_id] at eq,
+  simp only [is_zero.iff_id_eq_zero, eq, functor.map_zero],
+end
 
 end
 
@@ -87,6 +95,8 @@ begin
   refine ⟨_, _, 𝟙 X, ⟨_⟩⟩,
   have h : is_zero ((homotopy_category.quotient _ _).obj (mapping_cone (𝟙 X))),
   { refine is_zero_of_homotopy_id_zero _ _,
+    equiv_rw hom_complex.equiv_homotopy _ _,
+    refine ⟨_, sorry⟩,
     sorry, },
   exact triangle.mk_iso _ _ (iso.refl _) (iso.refl _) (is_zero.iso_zero h).symm
     (by tidy) (is_zero.eq_of_tgt h _ _) (by simp only [is_zero.eq_of_src h

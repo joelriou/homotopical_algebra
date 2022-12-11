@@ -1,6 +1,6 @@
 import category_theory.quotient
 import category_theory.limits.shapes.zero_morphisms
-import category_theory.preadditive.basic
+import category_theory.preadditive.additive_functor
 
 namespace category_theory
 
@@ -116,6 +116,7 @@ end
 instance [has_zero_object C] : has_zero_object (quotient r) :=
 ⟨⟨_, is_zero_of_is_zero _ (is_zero_zero C)⟩⟩
 
+@[protected]
 def preadditive [preadditive C]
   (add : ∀ ⦃X Y : C⦄ ⦃f₁ g₁ f₂ g₂ : X ⟶ Y⦄ (h₁ : r f₁ g₁) (h₂ : r f₂ g₂),
     (r (f₁ + f₂) (g₁ + g₂)))
@@ -124,6 +125,12 @@ def preadditive [preadditive C]
 begin
   sorry,
 end
+
+lemma functor_additive [preadditive C]
+  (add : ∀ ⦃X Y : C⦄ ⦃f₁ g₁ f₂ g₂ : X ⟶ Y⦄ (h₁ : r f₁ g₁) (h₂ : r f₂ g₂),
+    (r (f₁ + f₂) (g₁ + g₂)))
+  (neg : ∀ ⦃X Y : C⦄ ⦃f g : X ⟶ Y⦄ (h : r f g), r (-f) (-g)) :
+  @functor.additive C (quotient r) _ _ _ (quotient.preadditive r add neg) (functor r) := sorry
 
 end quotient
 

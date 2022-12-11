@@ -437,6 +437,67 @@ begin
       (show m=m+n₁+(n-1), by linarith), hl, hr], },
 end
 
+lemma of_d_eq (n₁ n₂ n₃ : ℤ) (hn₁ : n + n₁ = 1) (hn₂ : n₂ = n₁+1) (hn₃ : n₃+1=n) : cochain.of_d (twist z) =
+  ε (n+1) • ((fst z hn₁ : cochain (twist z) F n₁).comp (cochain.of_d F) hn₂).comp (inl z hn₃)
+    (by rw [← hn₁, hn₂, ← hn₃, add_comm n₃, add_assoc, add_comm n₃, ← add_assoc, add_comm n₁]) +
+    ((fst z hn₁ : cochain (twist z) F n₁).comp (z : cochain F G n) (show 1 = n₁ + n, by rw [← hn₁, add_comm])).comp
+      (cochain.of_hom (inr z)) (add_zero 1).symm +
+    ((snd z).comp (cochain.of_d G) (zero_add 1).symm).comp (cochain.of_hom (inr z)) (add_zero 1).symm :=
+begin
+  rw cochain_ext z (cochain.of_d (twist z)) _ hn₃ hn₃.symm,
+  split,
+  { simp only [cochain.comp_add, cochain.comp_zsmul],
+    simp only [← cochain.comp_assoc_of_third_is_zero_cochain,
+      ← cochain.comp_assoc_of_second_is_zero_cochain, inl_comp_snd, inl_comp_fst, cochain.id_comp,
+      ← cochain.comp_assoc (inl z hn₃) _ _ (show 1 = n₃+n₂, by linarith) _ (show n = n₃+n₂+n₃, by linarith),
+      ← cochain.comp_assoc (inl z hn₃) _ _ (show 0 = n₃ + n₁, by linarith) _ (show 1 = n₃ + n₁ + 1, by linarith),
+      ← cochain.comp_assoc (inl z hn₃) _ _ (show 0 = n₃ + n₁, by linarith) (show 1 = n₁ + n, by linarith)
+      (show n = n₃+n₁+n, by linarith), cochain.zero_comp, add_zero,
+      cochain_ext' z _ _ hn₁ (show 1 = n+n₁, by linarith)],
+    split,
+    { simp only [cochain.add_comp, cochain.zsmul_comp,
+        cochain.comp_assoc_of_second_is_zero_cochain, inr_comp_fst, cochain.comp_zero, inl_comp_fst,
+        cochain.comp_assoc _ (inl z hn₃) _ (show n = 1+n₃, by linarith) (show 0 = n₃ + n₁, by linarith)
+        (show 1 = 1 + n₃ + n₁, by linarith), add_zero, cochain.comp_id],
+      ext p q hpq,
+      dsimp [inl, fst, cochain.comp],
+      simp only [twist.δ, cochain.of_d_v, twist_d, assoc, biprod.inl_desc, biprod.lift_fst_assoc,
+        linear.smul_comp, cochain.d_comp_of_hom_v, homological_complex.id_f, comp_id,
+        linear.comp_smul, cochain.of_hom_v_comp_d, id_comp], },
+    { simp only [cochain.comp_assoc_of_third_is_zero_cochain, cochain.add_comp, cochain.zsmul_comp,
+        inl_comp_snd, inr_comp_snd, cochain.comp_zero, zsmul_zero, zero_add, cochain.comp_id],
+      ext p q hpq,
+      have hp : ∃ (p' : ℤ), p = p' + 1 -n := ⟨p+n-1, by linarith⟩,
+      obtain ⟨p', hp'⟩ := hp,
+      subst hp',
+      rw cochain.comp_v _ _ hn₃.symm (p'+1-n) p' q (by linarith) (by linarith),
+      dsimp [inl, snd],
+      simp only [cochain.of_hom_v, homological_complex.id_f, id_comp, cochain.comp_zero_cochain,
+        twist.δ, cochain.of_d_v, twist_d, cochain.mk_v, comp_id, biprod.inl_desc_assoc,
+        biprod.lift_snd, dif_pos (show p'+1 = q, by linarith)], }, },
+  { simp only [ε_succ, neg_smul,
+      cochain.comp_add, cochain.comp_neg, cochain.comp_zsmul,
+      ← cochain.comp_assoc_of_first_is_zero_cochain, inr_comp_fst, cochain.zero_comp, zsmul_zero,
+      zero_add, neg_zero, inr_comp_snd, cochain.id_comp,
+      cochain_ext' z _ _ hn₁ (show n₂ = 1 + n₁, by linarith)],
+    split,
+    { rw [cochain.comp_assoc_of_second_is_zero_cochain, inr_comp_fst, cochain.comp_zero],
+      ext p q hpq,
+      simp only [cochain.comp_assoc_of_first_is_zero_cochain, cochain.zero_cochain_comp,
+        cochain.of_hom_v, cochain.zero_v,
+        cochain.comp_v _ _ (show n₂ = 1 + n₁, by linarith) p (p+1) q rfl (by linarith)],
+      dsimp [inr, fst],
+      simp only [twist.δ, cochain.of_d_v, twist_d, biprod.inr_desc_assoc,
+        biprod.lift_fst_assoc, zero_comp], },
+    { rw [cochain.comp_assoc_of_second_is_zero_cochain, inr_comp_snd, cochain.comp_id],
+      ext p q hpq,
+      dsimp [inr, snd],
+      simp only [cochain.comp_assoc_of_third_is_zero_cochain, cochain.zero_cochain_comp,
+        cochain.of_hom_v, cochain.comp_zero_cochain, twist.δ, cochain.of_d_v, twist_d,
+        cochain.mk_v, homological_complex.id_f, comp_id, biprod.inr_desc_assoc,
+        biprod.lift_snd], }, },
+end
+
 end twist
 
 end hom_complex
