@@ -95,9 +95,7 @@ begin
   refine ⟨_, _, 𝟙 X, ⟨_⟩⟩,
   have h : is_zero ((homotopy_category.quotient _ _).obj (mapping_cone (𝟙 X))),
   { refine is_zero_of_homotopy_id_zero _ _,
-    equiv_rw hom_complex.equiv_homotopy _ _,
-    refine ⟨_, sorry⟩,
-    sorry, },
+    exact mapping_cone.desc_homotopy _ _ _ 0 (mapping_cone_inl (𝟙 X)) (by simp) (by simp), },
   exact triangle.mk_iso _ _ (iso.refl _) (iso.refl _) (is_zero.iso_zero h).symm
     (by tidy) (is_zero.eq_of_tgt h _ _) (by simp only [is_zero.eq_of_src h
       ((mapping_cone_triangle' (𝟙 X)).mor₃) 0, contractible_triangle_mor₃, zero_comp, comp_zero]),
@@ -152,12 +150,30 @@ begin
       triangle.hom_inv_id_hom₁_assoc], },
 end
 
+lemma rotate_distinguished_triangle₁ (T : triangle (homotopy_category C (complex_shape.up ℤ)))
+  (hT : T ∈ distinguished_triangles C) : T.rotate ∈ distinguished_triangles C :=
+begin
+  obtain ⟨K, L, φ, ⟨e⟩⟩:= hT,
+  suffices : (mapping_cone_triangle' φ).rotate ∈ distinguished_triangles C,
+  { exact isomorphic_distinguished _ this _ ((rotate _).map_iso e), },
+  refine ⟨_,_, ι_mapping_cone φ, ⟨triangle.mk_iso _ _ (iso.refl _) (iso.refl _) _ (by tidy) _ _⟩⟩,
+  all_goals { sorry, },
+end
+
+lemma rotate_distinguished_triangle (T : triangle (homotopy_category C (complex_shape.up ℤ))) :
+  T ∈ distinguished_triangles C ↔ T.rotate ∈ distinguished_triangles C :=
+begin
+  split,
+  { exact rotate_distinguished_triangle₁ T, },
+  { sorry, },
+end
+
 instance : pretriangulated (homotopy_category C (complex_shape.up ℤ)) :=
 { distinguished_triangles := distinguished_triangles C,
   isomorphic_distinguished := isomorphic_distinguished,
   contractible_distinguished := contractible_distinguished,
   distinguished_cocone_triangle := distinguished_cocone_triangle,
-  rotate_distinguished_triangle := sorry,
+  rotate_distinguished_triangle := rotate_distinguished_triangle,
   complete_distinguished_triangle_morphism :=
     complete_distinguished_triangle_morphism, }
 

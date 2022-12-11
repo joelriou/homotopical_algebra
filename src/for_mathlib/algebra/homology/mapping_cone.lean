@@ -49,6 +49,21 @@ lemma mapping_cone_inl_snd (p q : ℤ) (hpq : q = p+(-1)) :
 by simpa only [cochain.comp_zero_cochain] using
   cochain.congr_v (twist.inl_comp_snd (cocycle.of_hom φ) (neg_add_self 1)) p q hpq
 
+@[simp]
+lemma mapping_cone_inl_comp_fst :
+  (mapping_cone_inl φ).comp (mapping_cone_fst φ : cochain (mapping_cone φ) F 1)
+    (neg_add_self 1).symm = cochain.of_hom (𝟙 _) :=
+begin
+  ext p,
+  simp only [cochain.comp_v _ _ (neg_add_self 1).symm p (p-1) p (by linarith) (by linarith),
+    mapping_cone_inl_fst, cochain.of_hom_v, homological_complex.id_f],
+end
+
+@[simp]
+lemma mapping_cone_inl_comp_snd :
+  (mapping_cone_inl φ).comp (mapping_cone_snd φ) (add_zero _).symm = 0 :=
+by tidy
+
 @[simp, reassoc]
 lemma mapping_cone_inr_snd (p : ℤ) :
   (mapping_cone_inr φ).f p ≫ (mapping_cone_snd φ).v p p (add_zero p).symm = 𝟙 _ :=
@@ -61,6 +76,18 @@ lemma mapping_cone_inr_fst (p q : ℤ) (hpq : q = p+1) :
   (mapping_cone_inr φ).f p ≫ (mapping_cone_fst φ : cochain (mapping_cone φ) F 1).v p q hpq = 0 :=
 by simpa only [cochain.zero_cochain_comp, cochain.of_hom_v, cochain.zero_v]
   using cochain.congr_v (twist.inr_comp_fst (cocycle.of_hom φ) (zero_add 1)) p q hpq
+
+@[simp]
+lemma mapping_cone_inr_comp_fst :
+  (cochain.of_hom (mapping_cone_inr φ)).comp
+    (mapping_cone_fst φ : cochain (mapping_cone φ) F 1) (zero_add 1).symm = 0 :=
+by tidy
+
+@[simp]
+lemma mapping_cone_inr_comp_snd :
+  (cochain.of_hom (mapping_cone_inr φ)).comp
+    (mapping_cone_snd φ : cochain (mapping_cone φ) G 0) (zero_add 0).symm = cochain.of_hom (𝟙 _) :=
+by tidy
 
 def ι_mapping_cone : G ⟶ mapping_cone φ :=
 cocycle.hom_of
@@ -132,7 +159,7 @@ begin
 end
 
 @[simp, reassoc]
-def mapping_cone_inr_d (n n' : ℤ) :
+lemma mapping_cone_inr_d (n n' : ℤ) :
   (mapping_cone_inr φ).f n ≫ (mapping_cone φ).d n n' =
     G.d n n' ≫ (mapping_cone_inr φ).f n' :=
 begin
@@ -162,7 +189,7 @@ end
 
 variable {φ}
 
-def to_mapping_cone_decomposition {A : C} {n : ℤ} (f : A ⟶ (mapping_cone φ).X n)
+lemma to_mapping_cone_decomposition {A : C} {n : ℤ} (f : A ⟶ (mapping_cone φ).X n)
   (n' : ℤ) (h : n' = n+1) :
   ∃ (x : A ⟶ F.X n') (y : A ⟶ G.X n), f = x ≫
     (mapping_cone_inl φ : cochain F (mapping_cone φ) (-1)).v n' n (by rw [h, int.add_neg_one, add_tsub_cancel_right])
@@ -191,6 +218,22 @@ begin
     simp only [← mapping_cone_id _ _ _ h, preadditive.comp_add, reassoc_of h₁, reassoc_of h₂], },
 end
 
+lemma mapping_cone_cochain_ext {K : cochain_complex C ℤ} {m m' : ℤ}
+  (y₁ y₂ : cochain (mapping_cone φ) K m) (hm' : m = m'+1) :
+  y₁ = y₂ ↔ (mapping_cone_inl φ).comp y₁ (show m' = -1+m, by rw [hm', neg_add_cancel_comm_assoc]) =
+    (mapping_cone_inl φ).comp y₂ (show m' = -1+m, by rw [hm', neg_add_cancel_comm_assoc]) ∧
+    (cochain.of_hom (mapping_cone_inr φ)).comp y₁ (zero_add m).symm =
+      (cochain.of_hom (mapping_cone_inr φ)).comp y₂ (zero_add m).symm :=
+hom_complex.twist.cochain_ext _ _ _ _ _
+
+lemma mapping_cone_cochain_ext' {K : cochain_complex C ℤ} {m m' : ℤ}
+  (y₁ y₂ : cochain K (mapping_cone φ) m) (hm' : m' = m+1) :
+  y₁ = y₂ ↔ y₁.comp (mapping_cone_fst φ : cochain (mapping_cone φ) F 1) hm' =
+    y₂.comp (mapping_cone_fst φ : cochain (mapping_cone φ) F 1) hm' ∧
+    y₁.comp (mapping_cone_snd φ) (add_zero m).symm =
+      y₂.comp (mapping_cone_snd φ) (add_zero m).symm :=
+hom_complex.twist.cochain_ext' _ _ _ _ _
+
 variable (φ)
 
 @[simp]
@@ -200,37 +243,55 @@ def mapping_cone_δ' : (homotopy_category.quotient _ _).obj (mapping_cone φ) �
   ((homotopy_category.quotient _ _).obj F)⟦(1 : ℤ)⟧ :=
 (homotopy_category.quotient _ _).map (mapping_cone_δ φ)
 
-def desc_cochain {K : cochain_complex C ℤ} {n m : ℤ} (α : cochain F K m) (β : cochain G K n)
+def mapping_cone.desc_cochain {K : cochain_complex C ℤ} {n m : ℤ} (α : cochain F K m) (β : cochain G K n)
   (h : m+1=n) :
   cochain (mapping_cone φ) K n :=
 twist.desc_cochain _ α β (by linarith)
 
-lemma δ_desc_cochain {K : cochain_complex C ℤ} {n m n' : ℤ} (α : cochain F K m) (β : cochain G K n)
-  (h : m+1=n) (hn' : n+1 = n') : δ n n' (desc_cochain φ α β h) =
+lemma mapping_cone.δ_desc_cochain {K : cochain_complex C ℤ} {n m n' : ℤ} (α : cochain F K m) (β : cochain G K n)
+  (h : m+1=n) (hn' : n+1 = n') : δ n n' (mapping_cone.desc_cochain φ α β h) =
   (mapping_cone_fst φ : cochain (mapping_cone φ) F 1).comp (δ m n α +
     ε (n+1) • (cochain.of_hom φ).comp β (zero_add n).symm) (by rw [← hn', add_comm]) +
     (mapping_cone_snd φ).comp (δ n n' β) (zero_add n').symm :=
 twist.δ_desc_cochain (cocycle.of_hom φ) α β (by linarith) (zero_add 1) h n' hn'
 
-def desc_cocycle {K : cochain_complex C ℤ} {n m : ℤ} (α : cochain F K m) (β : cocycle G K n)
+def mapping_cone.desc_cocycle {K : cochain_complex C ℤ} {n m : ℤ} (α : cochain F K m) (β : cocycle G K n)
   (h : m+1=n) (eq : δ m n α = ε n • (cochain.of_hom φ).comp β.1 (zero_add n).symm) :
   cocycle (mapping_cone φ) K n :=
 twist.desc_cocycle _ α β (by linarith) _ eq
 
-def desc {K : cochain_complex C ℤ} (α : cochain F K (-1)) (β : G ⟶ K)
+def mapping_cone.desc {K : cochain_complex C ℤ} (α : cochain F K (-1)) (β : G ⟶ K)
   (eq : δ (-1) 0 α = cochain.of_hom (φ ≫ β)) :
   mapping_cone φ ⟶ K :=
-cocycle.hom_of (desc_cocycle φ α (cocycle.of_hom β) (neg_add_self 1)
+cocycle.hom_of (mapping_cone.desc_cocycle φ α (cocycle.of_hom β) (neg_add_self 1)
   (by simp only [eq, ε_0, cochain.of_hom_comp, subtype.val_eq_coe, cocycle.of_hom_coe, one_zsmul]))
 
-def desc_homotopy {K : cochain_complex C ℤ} (f₁ f₂ : mapping_cone φ ⟶ K)
-  (γ₁ : cochain F K (-2)) (γ₂ : cochain G K (-1)) :
+def mapping_cone.desc_homotopy {K : cochain_complex C ℤ} (f₁ f₂ : mapping_cone φ ⟶ K)
+  (γ₁ : cochain F K (-2)) (γ₂ : cochain G K (-1))
+  (h₁ : (mapping_cone_inl φ).comp (cochain.of_hom f₁) (add_zero (-1)).symm =
+    δ (-2) (-1) γ₁ + (cochain.of_hom φ).comp γ₂ (zero_add _).symm +
+    (mapping_cone_inl φ).comp (cochain.of_hom f₂) (add_zero (-1)).symm)
+  (h₂ : cochain.of_hom (mapping_cone_inr φ ≫ f₁) =
+    δ (-1) 0 γ₂ + cochain.of_hom (mapping_cone_inr φ ≫ f₂)) :
   homotopy f₁ f₂ :=
 (equiv_homotopy _ _).symm
 begin
-  refine ⟨desc_cochain _ γ₁ γ₂ (by linarith), _⟩,
-  rw δ_desc_cochain φ γ₁ γ₂ (by linarith) (neg_add_self 1),
-  sorry,
+  refine ⟨mapping_cone.desc_cochain _ γ₁ γ₂ (by linarith), _⟩,
+  rw [mapping_cone.δ_desc_cochain φ γ₁ γ₂ (by linarith) (neg_add_self 1),
+    mapping_cone_cochain_ext _ _ (show (0 : ℤ) = -1 +1 , by linarith)],
+  split,
+  { rw [cochain.comp_add, h₁],
+    nth_rewrite 0 cochain.comp_add,
+    simp only [← cochain.comp_assoc_of_second_is_zero_cochain, mapping_cone_inl_comp_snd,
+      add_left_neg, ε_0, one_zsmul, cochain.zero_comp, add_zero,
+      ← cochain.comp_assoc _ _ _ (neg_add_self 1).symm (add_neg_self 1).symm
+        (show (-1 : ℤ) = (-1) +1 + (-1), by linarith),
+      mapping_cone_inl_comp_fst, cochain.id_comp], },
+  { rw [cochain.comp_add, ← cochain.of_hom_comp, ← cochain.of_hom_comp, h₂],
+    nth_rewrite 0 cochain.comp_add,
+    simp only [← hom_complex.cochain.comp_assoc_of_first_is_zero_cochain,
+      mapping_cone_inr_comp_fst, cochain.zero_comp, zero_add, mapping_cone_inr_comp_snd,
+      cochain.id_comp], },
 end
 
 end preadditive
