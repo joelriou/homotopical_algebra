@@ -92,6 +92,7 @@ by tidy
 def ι_mapping_cone : G ⟶ mapping_cone φ :=
 mapping_cone_inr φ
 
+@[simps]
 def mapping_cone_δ_as_cocycle : cocycle (mapping_cone φ) F 1 :=
 -mapping_cone_fst φ
 
@@ -215,6 +216,21 @@ begin
     simp only [← mapping_cone_id _ _ _ h, preadditive.comp_add, reassoc_of h₁, reassoc_of h₂], },
 end
 
+lemma from_mapping_cone_ext_iff {A : C} {n : ℤ} (f g : (mapping_cone φ).X n ⟶ A)
+  (n' : ℤ) (h : n' = n+1) :
+  f = g ↔ (mapping_cone_inl φ).v n' n (by rw [h, int.add_neg_one, add_tsub_cancel_right]) ≫ f =
+    (mapping_cone_inl φ).v n' n (by rw [h, int.add_neg_one, add_tsub_cancel_right]) ≫ g ∧
+    (mapping_cone_inr φ).f n ≫ f = (mapping_cone_inr φ).f n ≫ g :=
+begin
+  split,
+  { intro h,
+    rw h,
+    tauto, },
+  { rintro ⟨h₁, h₂⟩,
+    rw [← cancel_epi (𝟙 ((mapping_cone φ).X n))],
+    simp only [← mapping_cone_id _ _ _ h, preadditive.add_comp, assoc, h₁, h₂], },
+end
+
 lemma mapping_cone_cochain_ext {K : cochain_complex C ℤ} {m m' : ℤ}
   (y₁ y₂ : cochain (mapping_cone φ) K m) (hm' : m = m'+1) :
   y₁ = y₂ ↔ (mapping_cone_inl φ).comp y₁ (show m' = -1+m, by rw [hm', neg_add_cancel_comm_assoc]) =
@@ -268,6 +284,30 @@ lemma mapping_cone.ι_desc {K : cochain_complex C ℤ} (α : cochain F K (-1)) (
   (eq : δ (-1) 0 α = cochain.of_hom (φ ≫ β)) :
   ι_mapping_cone φ ≫ mapping_cone.desc φ α β eq = β :=
 hom_complex.twist.inr_comp_desc _ _ _ (by linarith) (by simp [eq])
+
+@[simp]
+lemma mapping_cone.inl_desc {K : cochain_complex C ℤ} (α : cochain F K (-1)) (β : G ⟶ K)
+  (eq : δ (-1) 0 α = cochain.of_hom (φ ≫ β)) :
+  (mapping_cone_inl φ).comp (cochain.of_hom (mapping_cone.desc φ α β eq)) (add_zero _).symm = α :=
+begin
+  conv_rhs { rw ← hom_complex.twist.inl_comp_desc_cochain (cocycle.of_hom φ) α (cochain.of_hom β)
+    (by linarith) (neg_add_self 1), },
+  congr' 1,
+  tidy,
+end
+
+@[simp, reassoc]
+lemma mapping_cone.inl_desc_v {K : cochain_complex C ℤ} (α : cochain F K (-1)) (β : G ⟶ K)
+  (eq : δ (-1) 0 α = cochain.of_hom (φ ≫ β)) (p q : ℤ) (hpq : q = p + (-1)) :
+  (mapping_cone_inl φ).v p q hpq ≫ (mapping_cone.desc φ α β eq).f q = α.v p q hpq :=
+by simpa only [cochain.comp_zero_cochain, cochain.of_hom_v]
+  using cochain.congr_v (mapping_cone.inl_desc φ α β eq) p q hpq
+
+@[simp, reassoc]
+lemma mapping_cone.inr_desc_f {K : cochain_complex C ℤ} (α : cochain F K (-1)) (β : G ⟶ K)
+  (eq : δ (-1) 0 α = cochain.of_hom (φ ≫ β)) (n : ℤ):
+  (mapping_cone_inr φ).f n ≫ (mapping_cone.desc φ α β eq).f n = β.f n :=
+homological_complex.congr_hom (mapping_cone.ι_desc φ α β eq) n
 
 def mapping_cone.desc_homotopy {K : cochain_complex C ℤ} (f₁ f₂ : mapping_cone φ ⟶ K)
   (γ₁ : cochain F K (-2)) (γ₂ : cochain G K (-1))

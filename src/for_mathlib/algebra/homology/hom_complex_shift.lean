@@ -158,17 +158,19 @@ namespace cocycle
 variables {K L : cochain_complex C ℤ} {i : ℤ}
   (γ : cocycle K L i) (n : ℤ) (γ' : cocycle K (L⟦n⟧) i)
 
+@[simps]
 def right_shift (j : ℤ) (hj : i = j + n) : cocycle K (L⟦n⟧) j :=
-⟨γ.1.right_shift n j hj, begin
-  rw [cocycle.mem_iff j (j+1) rfl, γ.1.δ_right_shift n (i+1) j (j+1) hj (by linarith)],
+⟨(γ : cochain K L i).right_shift n j hj, begin
+  rw [cocycle.mem_iff j (j+1) rfl, cochain.δ_right_shift _ n (i+1) j (j+1) hj (by linarith)],
   simp only [subtype.val_eq_coe, δ_eq_zero, cochain.right_shift_zero, smul_zero],
 end⟩
 
 variable {n}
 
+@[simps]
 def right_unshift (j : ℤ) (hj : j = i + n) : cocycle K L j :=
-⟨γ'.1.right_unshift j hj, begin
-  rw [cocycle.mem_iff j (j+1) rfl, γ'.1.δ_right_unshift (i+1) j (j+1) hj (by linarith)],
+⟨(γ' : cochain K (L⟦n⟧) i).right_unshift j hj, begin
+  rw [cocycle.mem_iff j (j+1) rfl, cochain.δ_right_unshift _ (i+1) j (j+1) hj (by linarith)],
   simp only [subtype.val_eq_coe, δ_eq_zero, cochain.right_unshift_zero, smul_zero],
 end⟩
 
@@ -367,17 +369,19 @@ namespace cocycle
 variables {K L : cochain_complex C ℤ} {i : ℤ}
   (γ : cocycle K L i) (n : ℤ) (γ' : cocycle (K⟦n⟧) L i)
 
+@[simps]
 def left_shift (j : ℤ) (hj : j = i + n) : cocycle (K⟦n⟧) L j :=
-⟨γ.1.left_shift n j hj, begin
-  rw [cocycle.mem_iff j (j+1) rfl, γ.1.δ_left_shift n (i+1) j (j+1) hj (by linarith)],
+⟨(γ : cochain K L i).left_shift n j hj, begin
+  rw [cocycle.mem_iff j (j+1) rfl, cochain.δ_left_shift _ n (i+1) j (j+1) hj (by linarith)],
   simp only [subtype.val_eq_coe, δ_eq_zero, cochain.left_shift_zero, smul_zero],
 end⟩
 
 variable {n}
 
+@[simps]
 def left_unshift (j : ℤ) (hj : i = j + n) : cocycle K L j :=
-⟨γ'.1.left_unshift j hj, begin
-  rw [cocycle.mem_iff j (j+1) rfl, γ'.1.δ_left_unshift (i+1) j (j+1) hj (by linarith)],
+⟨(γ' : cochain (K⟦n⟧) L i).left_unshift j hj, begin
+  rw [cocycle.mem_iff j (j+1) rfl, cochain.δ_left_unshift _ (i+1) j (j+1) hj (by linarith)],
   simp only [subtype.val_eq_coe, δ_eq_zero, cochain.left_unshift_zero, smul_zero],
 end⟩
 
