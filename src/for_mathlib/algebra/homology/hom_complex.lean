@@ -634,6 +634,7 @@ by simpa only [subtype.ext_iff] using of_hom_hom_of_eq_self z
 
 variables (F G)
 
+@[simps]
 def equiv_hom : (F ⟶ G) ≃+ cocycle F G 0 :=
 { to_fun := of_hom,
   inv_fun := hom_of,

@@ -3,7 +3,7 @@ import algebra.homology.additive
 import for_mathlib.category_theory.triangulated.pretriangulated_misc
 
 open category_theory category_theory.pretriangulated category_theory.triangulated
-  category_theory.limits
+  category_theory.limits category_theory.category
 
 noncomputable theory
 
@@ -112,12 +112,41 @@ begin
   exact ⟨_ ,_ ,_ , mapping_cone_triangle'_distinguished φ⟩,
 end
 
+open cochain_complex.hom_complex
+
 lemma complete_distinguished_triangle_morphism'
   {K₁ L₁ K₂ L₂ : cochain_complex C ℤ} (φ₁ : K₁ ⟶ L₁) (φ₂ : K₂ ⟶ L₂)
   (a : K₁ ⟶ K₂) (b : L₁ ⟶ L₂) (hab : homotopy (φ₁ ≫ b) (a ≫ φ₂)) :
   ∃ (c : mapping_cone φ₁ ⟶ mapping_cone φ₂),
     nonempty (homotopy (ι_mapping_cone φ₁ ≫ c) (b ≫ ι_mapping_cone φ₂)) ∧
-      nonempty (homotopy (mapping_cone_δ φ₁ ≫ a⟦1⟧') (c ≫ mapping_cone_δ φ₂)) := sorry
+      nonempty (homotopy (mapping_cone_δ φ₁ ≫ a⟦1⟧') (c ≫ mapping_cone_δ φ₂)) :=
+begin
+  obtain ⟨z, hz⟩ := (equiv_homotopy _ _) hab, clear hab,
+  refine ⟨_, _, _⟩,
+  refine mapping_cone.desc _
+    (z.comp (cochain.of_hom (mapping_cone_inr φ₂)) (add_zero _).symm +
+      (cochain.of_hom a).comp (mapping_cone_inl φ₂) (zero_add _).symm)
+    (b ≫ ι_mapping_cone φ₂) _,
+  { simp only [δ_comp_of_second_is_zero_cochain _ _ _ (neg_add_self 1),
+      cocycle.δ_cochain_of_hom, cochain.comp_zero, zero_add, ← assoc,
+      cochain.of_hom_comp (φ₁ ≫ b), hz, cochain.add_comp, δ_add, ← cochain.of_hom_comp],
+    simpa only [add_zero, add_left_neg, δ_comp_of_first_is_zero_cochain, mapping_cone_δ_inl,
+      cochain.of_hom_comp, cocycle.δ_cochain_of_hom, cochain.zero_comp, smul_zero, assoc], },
+  { refine nonempty.intro (homotopy.of_eq (by simp)), },
+  { refine nonempty.intro (homotopy.of_eq ((cocycle.equiv_hom _ _).injective _)),
+    ext n : 2,
+    simp only [mapping_cone_δ, cochain.of_hom_comp, cocycle.equiv_hom_apply,
+      cocycle.of_hom_coe, cocycle.cochain_of_hom_hom_of_eq_coe,
+      cochain.comp_zero_cochain, cochain.of_hom_v,
+      cocycle.right_shift, mapping_cone_δ_as_cocycle,
+      subtype.val_eq_coe, add_subgroup.coe_neg, add_subgroup.coe_mk,
+      cochain.right_shift_v _ _ _ (zero_add 1).symm n n (add_zero n).symm _ rfl],
+    simp only [cochain.neg_v],
+    simp only [homological_complex.shift_functor_obj_X_iso, assoc, homological_complex.X_iso_of_eq_refl, preadditive.neg_comp,
+  cochain.neg_v, preadditive.comp_neg, neg_inj],
+    sorry,
+   },
+end
 
 lemma complete_distinguished_triangle_morphism
   (T₁ T₂ : triangle (homotopy_category C (complex_shape.up ℤ)))

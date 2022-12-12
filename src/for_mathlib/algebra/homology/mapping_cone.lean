@@ -90,10 +90,7 @@ lemma mapping_cone_inr_comp_snd :
 by tidy
 
 def ι_mapping_cone : G ⟶ mapping_cone φ :=
-cocycle.hom_of
-  (twist.lift_cocycle (cocycle.of_hom φ) 0
-    (cocycle.of_hom (𝟙 G)) (add_comm 0 1)
-    (show (-1 : ℤ) + 1 = 0, by linarith) 1 (zero_add 1) (by simp))
+mapping_cone_inr φ
 
 def mapping_cone_δ_as_cocycle : cocycle (mapping_cone φ) F 1 :=
 -mapping_cone_fst φ
@@ -265,6 +262,12 @@ def mapping_cone.desc {K : cochain_complex C ℤ} (α : cochain F K (-1)) (β : 
   mapping_cone φ ⟶ K :=
 cocycle.hom_of (mapping_cone.desc_cocycle φ α (cocycle.of_hom β) (neg_add_self 1)
   (by simp only [eq, ε_0, cochain.of_hom_comp, subtype.val_eq_coe, cocycle.of_hom_coe, one_zsmul]))
+
+@[simp, reassoc]
+lemma mapping_cone.ι_desc {K : cochain_complex C ℤ} (α : cochain F K (-1)) (β : G ⟶ K)
+  (eq : δ (-1) 0 α = cochain.of_hom (φ ≫ β)) :
+  ι_mapping_cone φ ≫ mapping_cone.desc φ α β eq = β :=
+hom_complex.twist.inr_comp_desc _ _ _ (by linarith) (by simp [eq])
 
 def mapping_cone.desc_homotopy {K : cochain_complex C ℤ} (f₁ f₂ : mapping_cone φ ⟶ K)
   (γ₁ : cochain F K (-2)) (γ₂ : cochain G K (-1))
