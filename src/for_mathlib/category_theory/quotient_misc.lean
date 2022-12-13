@@ -123,36 +123,76 @@ variables [preadditive C] [congruence r]
   (add : ∀ ⦃X Y : C⦄ ⦃f₁ g₁ f₂ g₂ : X ⟶ Y⦄ (h₁ : r f₁ g₁) (h₂ : r f₂ g₂), (r (f₁ + f₂) (g₁ + g₂)))
   (neg : ∀ ⦃X Y : C⦄ ⦃f g : X ⟶ Y⦄ (h : r f g), r (-f) (-g))
 
-def preadditive.kernel (X Y : C) : set (X ⟶ Y) :=
-λ φ, (functor r).map φ = (functor r).map 0
-
-@[simp]
-lemma preadditive.mem_kernel_iff {X Y : C} (φ : X ⟶ Y) :
-  φ ∈ preadditive.kernel r X Y ↔ (functor r).map φ = (functor r).map 0 := by refl
-
-include add neg
-
-def preadditive.kernel_sub_group (X Y : C) : add_subgroup (X ⟶ Y) :=
-add_subgroup.mk (preadditive.kernel r X Y)
-  (λ φ φ' hφ hφ', begin
-    rw [preadditive.mem_kernel_iff, functor_map_eq_iff] at hφ hφ' ⊢,
-    simpa only [add_zero] using add hφ hφ',
-  end)
-  rfl
-  (λ φ hφ, begin
-    rw [preadditive.mem_kernel_iff, functor_map_eq_iff] at hφ ⊢,
-    simpa only [neg_zero] using neg hφ,
-  end)
-
-@[protected]
-def preadditive [preadditive C] :
-  preadditive (quotient r) :=
+lemma comp_closure_eq_self : comp_closure r = r :=
 begin
-  sorry,
+  ext X Y f₁ f₂,
+  split,
+  { intro h,
+    simpa only [← functor_map_eq_iff r] using quot.sound h, },
+  { exact comp_closure.of _ _ _, },
 end
 
+variable {r}
+
+include add
+
+def preadditive.add {X Y : quotient r} (φ φ' : X ⟶ Y) : X ⟶ Y :=
+begin
+  refine quot.lift₂ (λ x y, quot.mk _ (x+y)) _ _ φ φ',
+  { intros x y₁ y₂ h,
+    rw comp_closure_eq_self at h,
+    change (functor r).map (x+y₁) = (functor r).map (x+y₂),
+    rw functor_map_eq_iff,
+    exact add (refl _) h, },
+  { intros x₁ x₂ y h,
+    rw comp_closure_eq_self at h,
+    change (functor r).map (x₁+y) = (functor r).map (x₂+y),
+    rw functor_map_eq_iff,
+    exact add h (refl _), },
+end
+
+omit add
+
+include neg
+
+def preadditive.neg {X Y : quotient r} (φ : X ⟶ Y) : X ⟶ Y :=
+begin
+  refine quot.lift (λ x, quot.mk _ (-x)) _ φ,
+  intros x y h,
+  rw comp_closure_eq_self at h,
+  change (functor r).map (-x) = (functor r).map (-y),
+  rw functor_map_eq_iff,
+  exact neg h,
+end
+
+include add
+variable (r)
+
+def preadditive.hom_group (X Y : quotient r) : add_comm_group (X ⟶ Y) :=
+{ add := preadditive.add add,
+  add_assoc := by { rintros ⟨x⟩ ⟨y⟩ ⟨z⟩, exact (functor r).congr_map (add_assoc x y z), },
+  zero := (functor r).map 0,
+  zero_add := by { rintro ⟨x⟩, exact (functor r).congr_map (zero_add x), },
+  add_zero := by { rintro ⟨x⟩, exact (functor r).congr_map (add_zero x), },
+  neg := preadditive.neg neg,
+  add_left_neg := by { rintro ⟨x⟩, exact (functor r).congr_map (add_left_neg x), },
+  add_comm := by { rintros ⟨x⟩ ⟨y⟩, exact (functor r).congr_map (add_comm x y), }, }
+
+@[protected]
+def preadditive :
+  preadditive (quotient r) :=
+{ hom_group := preadditive.hom_group r add neg,
+  add_comp' := λ X Y Z, begin
+    rintros ⟨x₁⟩ ⟨x₂⟩ ⟨y⟩,
+    exact (functor r).congr_map (preadditive.add_comp _ _ _ x₁ x₂ y),
+  end,
+  comp_add' := λ X Y Z, begin
+    rintros ⟨x⟩ ⟨y₁⟩ ⟨y₂⟩,
+    exact (functor r).congr_map (preadditive.comp_add _ _ _ x y₁ y₂),
+  end, }
+
 lemma functor_additive :
-  @functor.additive C (quotient r) _ _ _ (quotient.preadditive r add neg) (functor r) := sorry
+  @functor.additive C (quotient r) _ _ _ (quotient.preadditive r add neg) (functor r) := { }
 
 end preadditive
 
