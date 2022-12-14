@@ -387,6 +387,29 @@ begin
   tidy,
 end
 
+lemma mapping_cone.lift_desc_f {K L : cochain_complex C ℤ} (α : cocycle K F 1) (β : cochain K G 0)
+  (hαβ : δ 0 1 β + (α : cochain K F 1).comp (cochain.of_hom φ) (add_zero 1).symm = 0)
+  (α' : cochain F L (-1)) (β' : G ⟶ L) (eq : δ (-1) 0 α' = cochain.of_hom (φ ≫ β'))
+  (n n' : ℤ) (hnn' : n' = n+1) :
+  (mapping_cone.lift φ α β hαβ).f n ≫ (mapping_cone.desc φ α' β' eq).f n =
+    (α : cochain K F 1).v n n' hnn' ≫ α'.v n' n (by { rw [hnn', int.add_neg_one, add_tsub_cancel_right], }) +
+      β.v n n (add_zero n).symm ≫ β'.f n :=
+begin
+  dsimp only [mapping_cone.lift, mapping_cone.lift_cocycle,
+    mapping_cone.desc, mapping_cone.desc_cocycle, twist.lift_cocycle,
+    twist.desc_cocycle],
+  simp only [cocycle.hom_of_f, cocycle.mk_coe, cocycle.of_hom_coe,
+    twist.lift_cochain_eq _ _ _ _ (neg_add_self 1), cochain.add_v,
+    ← cochain.comp_v _ _ (zero_add 0).symm n n n (by linarith) (by linarith),
+    hom_complex.cochain.comp_assoc_of_second_is_zero_cochain,
+    hom_complex.cochain.comp_assoc_of_third_is_zero_cochain,
+    preadditive.add_comp,
+    hom_complex.twist.inl_comp_desc_cochain,
+    hom_complex.twist.inr_comp_desc_cochain],
+  simp only [cochain.comp_v _ _ (add_neg_self 1).symm n n' n (hnn') (by linarith),
+    hom_complex.cochain.comp_zero_cochain, cochain.of_hom_v],
+end
+
 -- mapping_cone.lift_homotopy ?
 
 end preadditive

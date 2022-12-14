@@ -193,14 +193,42 @@ begin
   suffices : (mapping_cone_triangle' φ).rotate ∈ distinguished_triangles C,
   { exact isomorphic_distinguished _ this _ ((rotate _).map_iso e), },
   let α : homotopy_equiv (K⟦(1 : ℤ)⟧) (mapping_cone (ι_mapping_cone φ)) :=
-  { hom := mapping_cone.lift _ (cocycle.left_shift (cocycle.of_hom φ) 1 1 (zero_add 1).symm)
-      ((mapping_cone_inl φ).left_shift 1 0 (neg_add_self 1).symm) sorry,
+  { hom := mapping_cone.lift _
+      (-cocycle.left_shift (cocycle.of_hom φ) 1 1 (zero_add 1).symm)
+      (-(mapping_cone_inl φ).left_shift 1 0 (neg_add_self 1).symm)
+      begin
+        simp only [δ_neg, mapping_cone_δ_inl, cochain.δ_left_shift
+          (mapping_cone_inl φ) 1 _ 0 _ (neg_add_self 1).symm (zero_add 1).symm,
+          ε_1, neg_smul, neg_neg, one_smul],
+        ext1 p q hpq,
+        simp only [ι_mapping_cone, cochain.add_v,
+          cochain.left_shift_v _ 1 1 (zero_add 1).symm p _ hpq _ hpq,
+          cochain.comp_zero_cochain, homological_complex.shift_functor_obj_X_iso, add_zero,
+          mul_one, sub_self, mul_zero, euclidean_domain.zero_div, ε_1, neg_smul,
+          homological_complex.X_iso_of_eq_refl, cochain.of_hom_comp, cochain.of_hom_v,
+          one_zsmul, add_subgroup.coe_neg, cocycle.left_shift_coe, cocycle.of_hom_coe,
+          cochain.neg_v, preadditive.neg_comp, cochain.zero_v, neg_neg, assoc,
+          neg_add_self],
+      end,
     inv := mapping_cone.desc _ 0 (mapping_cone_δ φ)
       (by simp only [δ_zero, mapping_cone_ι_δ, cochain.of_hom_zero]),
-    homotopy_hom_inv_id := sorry,
+    homotopy_hom_inv_id := homotopy.of_eq begin
+      ext n : 2,
+      simp only [homological_complex.comp_f, homological_complex.id_f,
+        mapping_cone.lift_desc_f _ _ _ _ _ _ _ _ _ rfl,
+        mapping_cone_δ, mapping_cone_δ_as_cocycle, zero_add, add_subgroup.coe_neg,
+        cochain.neg_v, cochain.zero_v, preadditive.neg_comp, comp_zero,
+        cocycle.hom_of_f, cocycle.right_shift_coe,
+        cochain.left_shift_v _ _ _ (neg_add_self 1).symm n n (by linarith) _ rfl,
+        cochain.right_shift_v _ _ _ (zero_add 1).symm n n (by linarith) _ rfl,
+        zero_add, mul_zero, sub_self, euclidean_domain.zero_div, ε_0, one_zsmul,
+        preadditive.comp_neg, assoc, mapping_cone_inl_fst_assoc, iso.hom_inv_id, neg_neg],
+    end,
     homotopy_inv_hom_id := sorry, },
-  exact ⟨_,_, ι_mapping_cone φ, ⟨triangle.mk_iso _ _ (iso.refl _) (iso.refl _)
-    (iso_of_homotopy_equiv α) (by tidy) sorry sorry⟩⟩,
+  refine ⟨_,_, ι_mapping_cone φ, ⟨triangle.mk_iso _ _ (iso.refl _) (iso.refl _)
+    (iso_of_homotopy_equiv α) (by tidy) _ _⟩⟩,
+  { sorry, },
+  { sorry, },
 end
 
 lemma rotate_distinguished_triangle (T : triangle (homotopy_category C (complex_shape.up ℤ))) :
