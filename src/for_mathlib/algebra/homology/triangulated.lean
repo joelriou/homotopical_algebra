@@ -193,8 +193,10 @@ begin
   suffices : (mapping_cone_triangle' φ).rotate ∈ distinguished_triangles C,
   { exact isomorphic_distinguished _ this _ ((rotate _).map_iso e), },
   let α : homotopy_equiv (K⟦(1 : ℤ)⟧) (mapping_cone (ι_mapping_cone φ)) :=
-  { hom := sorry,
-    inv := sorry,
+  { hom := mapping_cone.lift _ (cocycle.left_shift (cocycle.of_hom φ) 1 1 (zero_add 1).symm)
+      ((mapping_cone_inl φ).left_shift 1 0 (neg_add_self 1).symm) sorry,
+    inv := mapping_cone.desc _ 0 (mapping_cone_δ φ)
+      (by simp only [δ_zero, mapping_cone_ι_δ, cochain.of_hom_zero]),
     homotopy_hom_inv_id := sorry,
     homotopy_inv_hom_id := sorry, },
   exact ⟨_,_, ι_mapping_cone φ, ⟨triangle.mk_iso _ _ (iso.refl _) (iso.refl _)

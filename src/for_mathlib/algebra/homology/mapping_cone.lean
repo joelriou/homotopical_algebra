@@ -96,10 +96,21 @@ mapping_cone_inr φ
 def mapping_cone_δ_as_cocycle : cocycle (mapping_cone φ) F 1 :=
 -mapping_cone_fst φ
 
-@[simp]
 def mapping_cone_δ : mapping_cone φ ⟶ F⟦(1 : ℤ)⟧ :=
 cocycle.hom_of
   (cocycle.right_shift (mapping_cone_δ_as_cocycle φ) 1 0 (zero_add 1).symm)
+
+@[simp, priority 1100]
+lemma mapping_cone_ι_δ : ι_mapping_cone φ ≫ mapping_cone_δ φ = 0 :=
+begin
+  ext n,
+  dsimp only [ι_mapping_cone, mapping_cone_δ],
+  simp only [homological_complex.comp_f, cocycle.hom_of_f,
+    cocycle.right_shift_coe, mapping_cone_δ_as_cocycle_coe,
+    homological_complex.zero_f_apply, mapping_cone_inr_fst_assoc,
+    hom_complex.cochain.right_shift_v _ 1 0 (zero_add 1).symm n n (by linarith) _ rfl,
+    preadditive.neg_comp, preadditive.comp_neg, cochain.neg_v, zero_comp, neg_zero],
+end
 
 lemma ext_to {A : C} {n : ℤ} (f₁ f₂ : A ⟶ (mapping_cone φ).X n) (n' : ℤ) (hn' : n' = n+1)
   (h₁ : f₁ ≫ (mapping_cone_fst φ).1.v n n' hn' = f₂ ≫ (mapping_cone_fst φ).1.v n n' hn')
