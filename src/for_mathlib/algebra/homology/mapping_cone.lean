@@ -337,6 +337,47 @@ begin
       cochain.id_comp], },
 end
 
+def mapping_cone.lift_cochain {K : cochain_complex C ℤ}
+  {n m : ℤ} (α : cochain K F m) (β : cochain K G n) (h : n+1=m) :
+  cochain K (mapping_cone φ) n :=
+twist.lift_cochain _ α β (by linarith)
+
+def mapping_cone.lift_cocycle {K : cochain_complex C ℤ}
+  {n m : ℤ} (α : cocycle K F m) (β : cochain K G n) (h : n+1=m)
+  (hαβ : δ n m β + (α : cochain K F m).comp (cochain.of_hom φ) (add_zero m).symm = 0) :
+  cocycle K (mapping_cone φ) n :=
+twist.lift_cocycle _ α β (by linarith) (neg_add_self 1) _ h hαβ
+
+def mapping_cone.lift {K : cochain_complex C ℤ} (α : cocycle K F 1) (β : cochain K G 0)
+  (hαβ : δ 0 1 β + (α : cochain K F 1).comp (cochain.of_hom φ) (add_zero 1).symm = 0) :
+   K ⟶ mapping_cone φ :=
+cocycle.hom_of (mapping_cone.lift_cocycle φ α β (zero_add 1) hαβ)
+
+lemma mapping_cone.lift_fst {K : cochain_complex C ℤ} (α : cocycle K F 1) (β : cochain K G 0)
+  (hαβ : δ 0 1 β + (α : cochain K F 1).comp (cochain.of_hom φ) (add_zero 1).symm = 0) :
+  (cochain.of_hom (mapping_cone.lift φ α β hαβ)).comp
+    (mapping_cone_fst φ : cochain (mapping_cone φ) F 1) (zero_add 1).symm =
+      (α : cochain K F 1) :=
+begin
+  rw ← hom_complex.twist.lift_cochain_comp_fst (cocycle.of_hom φ)
+    (α : cochain K F 1) β (by linarith) (zero_add 1),
+  congr' 1,
+  tidy,
+end
+
+lemma mapping_cone.lift_snd {K : cochain_complex C ℤ} (α : cocycle K F 1) (β : cochain K G 0)
+  (hαβ : δ 0 1 β + (α : cochain K F 1).comp (cochain.of_hom φ) (add_zero 1).symm = 0) :
+  (cochain.of_hom (mapping_cone.lift φ α β hαβ)).comp
+    (mapping_cone_snd φ) (add_zero 0).symm = β :=
+begin
+  conv_rhs { rw ← hom_complex.twist.lift_cochain_comp_snd (cocycle.of_hom φ)
+    (α : cochain K F 1) β (by linarith), },
+  congr' 1,
+  tidy,
+end
+
+-- mapping_cone.lift_homotopy ?
+
 end preadditive
 
 section abelian
