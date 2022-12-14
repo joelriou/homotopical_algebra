@@ -192,8 +192,13 @@ begin
   obtain ⟨K, L, φ, ⟨e⟩⟩:= hT,
   suffices : (mapping_cone_triangle' φ).rotate ∈ distinguished_triangles C,
   { exact isomorphic_distinguished _ this _ ((rotate _).map_iso e), },
-  refine ⟨_,_, ι_mapping_cone φ, ⟨triangle.mk_iso _ _ (iso.refl _) (iso.refl _) _ (by tidy) _ _⟩⟩,
-  all_goals { sorry, },
+  let α : homotopy_equiv (K⟦(1 : ℤ)⟧) (mapping_cone (ι_mapping_cone φ)) :=
+  { hom := sorry,
+    inv := sorry,
+    homotopy_hom_inv_id := sorry,
+    homotopy_inv_hom_id := sorry, },
+  exact ⟨_,_, ι_mapping_cone φ, ⟨triangle.mk_iso _ _ (iso.refl _) (iso.refl _)
+    (iso_of_homotopy_equiv α) (by tidy) sorry sorry⟩⟩,
 end
 
 lemma rotate_distinguished_triangle (T : triangle (homotopy_category C (complex_shape.up ℤ))) :
