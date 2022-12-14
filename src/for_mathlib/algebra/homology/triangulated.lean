@@ -75,7 +75,7 @@ lemma mapping_cone_triangle'_distinguished :
 ⟨_, _, φ, nonempty.intro (iso.refl _)⟩
 
 instance shift_functor_additive (n : ℤ) :
-  (shift_functor (homotopy_category C (complex_shape.up ℤ)) n).additive := sorry
+  (shift_functor (homotopy_category C (complex_shape.up ℤ)) n).additive := { }
 
 lemma isomorphic_distinguished
   (T₁ : triangle (homotopy_category C (complex_shape.up ℤ)))
