@@ -7,7 +7,7 @@ noncomputable theory
 
 namespace category_theory
 
-open limits category
+open limits category pretriangulated
 
 lemma is_iso_of_yoneda_bijective {C : Type*} [category C] {X Y : C} (f : X ⟶ Y)
   (hf : ∀ (A : C), function.bijective (λ (x : A ⟶ X), x ≫ f)) : is_iso f :=
@@ -28,7 +28,7 @@ begin
   simpa only [is_iso_iff_bijective] using h,
 end
 
-namespace triangulated
+namespace pretriangulated
 
 variables {C : Type*} [category C] [preadditive C] [has_shift C ℤ]
 
@@ -323,6 +323,6 @@ begin
     simp only [pi_comparison_comp_π, assoc], },
 end
 
-end triangulated
+end pretriangulated
 
 end category_theory

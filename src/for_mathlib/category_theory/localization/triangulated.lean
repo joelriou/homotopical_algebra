@@ -1,5 +1,5 @@
 import for_mathlib.category_theory.localization.preadditive
-import category_theory.triangulated.pretriangulated
+import category_theory.triangulated.triangulated
 import for_mathlib.category_theory.localization.calculus_of_fractions
 import for_mathlib.category_theory.preadditive.equivalence
 import for_mathlib.category_theory.triangulated.triangulated
@@ -8,7 +8,7 @@ noncomputable theory
 
 namespace category_theory
 
-open category limits triangulated
+open category limits pretriangulated
 
 class morphism_property.compatible_with_shift {C : Type*} [category C]
   (W : morphism_property C) (A : Type*) [add_monoid A] [has_shift C A] : Prop :=
@@ -158,10 +158,7 @@ def localization_comm_shift (a : A) :
 
 end shift
 
-namespace triangulated
-
-
-open pretriangulated
+namespace pretriangulated
 
 section
 
@@ -169,7 +166,7 @@ variables (C : Type*) [category C] [has_shift C ℤ] [has_zero_object C] [has_ze
 
 @[simps]
 def contractible_triangle_functor : C ⥤ triangle C :=
-{ obj := λ X, contractible_triangle C X,
+{ obj := λ X, contractible_triangle X,
   map := λ X Y f,
   { hom₁ := f,
     hom₂ := f,
@@ -250,12 +247,12 @@ by { rcases h with ⟨T', e', hT'⟩, exact ⟨T', e ≪≫ e',  hT'⟩, }
 
 include W
 
-lemma contractible_distinguished (X : D) : contractible_triangle D X ∈ distinguished_triangles L comm_shift :=
+lemma contractible_distinguished (X : D) : contractible_triangle X ∈ distinguished_triangles L comm_shift :=
 begin
   haveI := localization.ess_surj L W,
   let e := ((contractible_triangle_functor D).map_iso
     (L.obj_obj_preimage_iso X)),
-  refine ⟨contractible_triangle C (L.obj_preimage X), _, contractible_distinguished _⟩,
+  refine ⟨contractible_triangle (L.obj_preimage X), _, contractible_distinguished _⟩,
   { refine e.symm ≪≫ triangle.mk_iso _ _ (iso.refl _) (iso.refl _) L.map_zero_object.symm _ _ _,
     tidy, },
 end
@@ -279,13 +276,13 @@ end
 
 lemma distinguished_cocone_triangle {X Y : D} (f : X ⟶ Y) :
   ∃ (Z : D) (g : Y ⟶ Z) (h : Z ⟶ (shift_functor D (1 : ℤ)).obj X),
-    triangle.mk D f g h ∈ localization.distinguished_triangles L comm_shift :=
+    triangle.mk f g h ∈ localization.distinguished_triangles L comm_shift :=
 begin
   let f' := left_calculus_of_fractions.lift_map L W f,
   rcases pretriangulated.distinguished_cocone_triangle _ _ f' with ⟨Z, g, h, H⟩,
   refine ⟨L.obj Z, (left_calculus_of_fractions.lift_map_iso₂ L W f).hom ≫ L.map g,
     L.map h ≫ comm_shift.hom.app _ ≫ (shift_functor D (1 : ℤ)).map
-      (left_calculus_of_fractions.lift_map_iso₁ L W f).inv, triangle.mk C f' g h, _, H⟩,
+      (left_calculus_of_fractions.lift_map_iso₁ L W f).inv, triangle.mk f' g h, _, H⟩,
   dsimp,
   refine triangle.mk_iso _ _ (left_calculus_of_fractions.lift_map_iso₁ L W f)
     (left_calculus_of_fractions.lift_map_iso₂ L W f) (iso.refl _)
@@ -342,7 +339,7 @@ begin
   simp only [assoc] at fac',
   rcases pretriangulated.distinguished_cocone_triangle _ _ (sq.g ≫ zb.s ≫ s)
     with ⟨Z₃, g₃, h₃, H₃⟩,
-  let T'₃ := triangle.mk C (sq.g ≫ zb.s ≫ s) g₃ h₃,
+  let T'₃ := triangle.mk (sq.g ≫ zb.s ≫ s) g₃ h₃,
   have comm : T'₂.mor₁ ≫ sq.s' ≫ zb.s ≫ s = za.s ≫ sq.g ≫ zb.s ≫ s,
   { dsimp, rw ← reassoc_of sq.fac, },
   have h₂ : W (sq.s' ≫ zb.s ≫ s) := left_calculus_of_fractions.comp _ _ _ sq.hs'
@@ -393,8 +390,8 @@ instance : pretriangulated (localization L W comm_shift) :=
   complete_distinguished_triangle_morphism :=
     localization.complete_distinguished_triangle_morphism L W comm_shift, }
 
-instance [triangulated C] : triangulated (localization L W comm_shift) :=
-triangulated.mk'
+instance [is_triangulated C] : is_triangulated (localization L W comm_shift) :=
+is_triangulated.mk'
 (λ X₁' X₂' X₃' u₁₂' u₂₃', begin
   haveI := localization.ess_surj L W,
   let Y₁' := L.obj_preimage X₁',
@@ -414,7 +411,7 @@ triangulated.mk'
   obtain ⟨Z₁₂, v₁₂, w₁₂, h₁₂⟩ := pretriangulated.distinguished_cocone_triangle _ _ u₁₂,
   obtain ⟨Z₂₃, v₂₃, w₂₃, h₂₃⟩ := pretriangulated.distinguished_cocone_triangle _ _ u₂₃,
   obtain ⟨Z₁₃, v₁₃, w₁₃, h₁₃⟩ := pretriangulated.distinguished_cocone_triangle _ _ (u₁₂ ≫ u₂₃),
-  let H := octahedron rfl h₁₂ h₂₃ h₁₃,
+  let H := (is_triangulated.octahedron_axiom rfl h₁₂ h₂₃ h₁₃).some,
   refine ⟨L.obj X₁, L.obj X₂, L.obj X₃, L.obj Z₁₂, L.obj Z₂₃, L.obj Z₁₃,
     L.map u₁₂, L.map u₂₃, e₁.symm ≪≫ (as_iso (L.map s₁)).symm, e₂.symm,
     e₃.symm ≪≫ (as_iso (L.map s₂)), _, _, _, _, ⟨_, by refl, h₁₂⟩,
@@ -436,14 +433,14 @@ triangulated.mk'
   have comm₂₃ := congr_arg (λ (f : _ ⟶ _), L.map f) H.triangle_morphism₂.comm₃,
   dsimp at comm₁₂ comm₁₃ comm₂₂ comm₂₃,
   simp only [L.map_comp, functor.map_id, id_comp, comp_id] at comm₁₂ comm₁₃ comm₂₂ comm₂₃,
-  refine ⟨L.map H.m₁, L.map H.m₃, comm₁₂, _, comm₂₂, _, _⟩,
+  refine ⟨⟨L.map H.m₁, L.map H.m₃, comm₁₂, _, comm₂₂, _, _⟩⟩,
   { dsimp,
     rw reassoc_of comm₁₃, },
   { dsimp,
     rw [← reassoc_of comm₂₃, assoc],
     erw ← nat_trans.naturality,
     refl, },
-  refine ⟨_, _, H.triangle_distinguished⟩,
+  refine ⟨_, _, H.mem⟩,
   refine triangle.mk_iso _ _ (iso.refl _) (iso.refl _) (iso.refl _) _ _ _,
   { dsimp, simp only [comp_id, id_comp], },
   { dsimp, simp only [comp_id, id_comp], },
@@ -469,10 +466,10 @@ instance localization_pretriangulated : pretriangulated W.localization :=
 (infer_instance : pretriangulated (localization W.Q W
   (shift.localization_comm_shift W.Q W (1 : ℤ))))
 
-instance localization_triangulated [triangulated C] : triangulated W.localization :=
-(infer_instance : triangulated (localization W.Q W
+instance localization_triangulated [is_triangulated C] : is_triangulated W.localization :=
+(infer_instance : is_triangulated (localization W.Q W
   (shift.localization_comm_shift W.Q W (1 : ℤ))))
 
-end triangulated
+end pretriangulated
 
 end category_theory

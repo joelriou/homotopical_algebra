@@ -13,7 +13,7 @@ open limits
 
 namespace pretriangulated
 
-open preadditive category triangulated
+open preadditive category pretriangulated
 
 variables (C : Type*) [category C] [preadditive C] [has_shift C ℤ]
 

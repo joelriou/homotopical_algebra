@@ -507,7 +507,7 @@ begin
     nonempty_is_equivalence := nonempty.intro (is_equivalence.of_iso e infer_instance) },
 end
 
-def of_iso {L₁ L₂ : C ⥤ D} (e : L₁ ≅ L₂) [L₁.is_localization W] : L₂.is_localization W :=
+/-def of_iso {L₁ L₂ : C ⥤ D} (e : L₁ ≅ L₂) [L₁.is_localization W] : L₂.is_localization W :=
 begin
   have h : W.is_inverted_by L₂ := λ X Y f hf,
     by simpa only [is_iso_map_iff_of_nat_iso e.symm] using localization.inverts L₁ W f hf,
@@ -519,7 +519,7 @@ begin
   { inverts := h,
     nonempty_is_equivalence := nonempty.intro
       (is_equivalence.of_iso (localization.lifting.uniq W.Q W L₁ F₁ F₂) infer_instance), },
-end
+end-/
 
 end is_localization
 

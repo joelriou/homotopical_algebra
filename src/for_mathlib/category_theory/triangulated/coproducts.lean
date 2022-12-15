@@ -9,9 +9,7 @@ namespace category_theory
 
 open limits preadditive category
 
-namespace triangulated
-
-open pretriangulated
+namespace pretriangulated
 
 variables {C : Type*} [category C] [has_zero_object C] [has_shift C ℤ] [preadditive C]
   [∀ (n : ℤ), functor.additive (shift_functor C n)] [pretriangulated C]
@@ -115,7 +113,7 @@ instance : split_mono_category C :=
 ⟨λ X Y i, begin
   introI,
   constructor,
-  obtain ⟨Z, z, p, mem⟩ := distinguished_cocone_triangle₁ i,
+  obtain ⟨Z, z, p, mem⟩ := pretriangulated.distinguished_cocone_triangle₁ i,
   have zero : z ≫ i = 0 := triangle.comp_zero₁₂ _ mem,
   have hz : z = 0 := by rw [← cancel_mono i, zero, zero_comp],
   obtain ⟨r, hr⟩ := contravariant_yoneda_exact₂ _ mem (𝟙 X) (by { dsimp, rw [hz, zero_comp], }),
@@ -123,7 +121,7 @@ instance : split_mono_category C :=
 end⟩
 
 lemma binary_product_triangle_distinguished (X₁ X₂ : C) :
-  triangle.mk C (prod.lift (𝟙 X₁) (0 : X₁ ⟶ X₂)) limits.prod.snd 0 ∈ dist_triang C :=
+  triangle.mk (prod.lift (𝟙 X₁) (0 : X₁ ⟶ X₂)) limits.prod.snd 0 ∈ dist_triang C :=
 begin
   obtain ⟨Y, g, h, mem⟩ := pretriangulated.distinguished_cocone_triangle₂ (0 : X₂ ⟶ X₁⟦(1 : ℤ)⟧),
   obtain ⟨e, ⟨he₁, he₂⟩⟩ := exists_iso_binary_product_of_dist_triang _ mem rfl,
@@ -166,7 +164,7 @@ lemma triangle.product_distinghished {I : Type} (T : I → triangle C)
 begin
   let f₁ := pi.map (λ i, (T i).mor₁),
   obtain ⟨Z, f₂, f₃, hT'⟩ := distinguished_cocone_triangle _ _ f₁,
-  let T' := triangle.mk C f₁ f₂ f₃,
+  let T' := triangle.mk f₁ f₂ f₃,
   change T' ∈ dist_triang C at hT',
   have h : ∀ (i : I), ∃ (φ₃ : T'.obj₃ ⟶ (T i).obj₃),
     T'.mor₂ ≫ φ₃ = pi.π _ i ≫ (T i).mor₂ ∧ T'.mor₃ ≫ (pi.π _ i)⟦1⟧' = φ₃ ≫ (T i).mor₃ :=
@@ -273,6 +271,6 @@ begin
       coprod.inr_desc, ι_colim_map_assoc, ← functor.map_comp], },
 end-/
 
-end triangulated
+end pretriangulated
 
 end category_theory

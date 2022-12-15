@@ -6,6 +6,7 @@ import for_mathlib.category_theory.preadditive_subcategory
 import for_mathlib.category_theory.triangulated.coproducts
 import for_mathlib.category_theory.limits.products
 import category_theory.limits.full_subcategory
+import data.int.order.units
 
 noncomputable theory
 
@@ -49,7 +50,7 @@ open pretriangulated
 
 variables (C : Type*) [category C] [has_zero_object C] [has_shift C ℤ]
   [preadditive C] [∀ (n : ℤ), functor.additive (shift_functor C n)]
-  [pretriangulated C] [triangulated C]
+  [pretriangulated C]
 
 structure subcategory :=
 (set : set C)
@@ -65,7 +66,7 @@ variable (A : subcategory C)
 
 lemma respects_iso : A.set.respects_iso :=
 ⟨λ X Y e hX, A.ext₂ _ (pretriangulated.isomorphic_distinguished _
-  (pretriangulated.contractible_distinguished X) (triangle.mk C e.hom (0 : Y ⟶ 0) 0)
+  (pretriangulated.contractible_distinguished X) (triangle.mk e.hom (0 : Y ⟶ 0) 0)
   (triangle.mk_iso _ _ (iso.refl _) e.symm (iso.refl _) (by tidy) (by tidy) (by tidy))) hX A.zero⟩
 
 lemma ext₁
@@ -90,10 +91,10 @@ end
 
 def W : morphism_property C :=
 λ X Y f, ∃ (Z : C) (g : Y ⟶ Z) (h : Z ⟶ (shift_functor C (1 : ℤ)).obj X)
-  (H : triangle.mk C f g h ∈ dist_triang C), Z ∈ A.set
+  (H : triangle.mk f g h ∈ dist_triang C), Z ∈ A.set
 
 def W' : morphism_property C :=
-λ Y Z g, ∃ (X : C) (f : X ⟶ Y) (h : Z ⟶ X⟦(1 : ℤ)⟧) (H : triangle.mk C f g h ∈ dist_triang C),
+λ Y Z g, ∃ (X : C) (f : X ⟶ Y) (h : Z ⟶ X⟦(1 : ℤ)⟧) (H : triangle.mk f g h ∈ dist_triang C),
     X ∈ A.set
 
 variable {A}
@@ -107,7 +108,7 @@ def W'.mk {T : triangle C} (hT : T ∈ dist_triang C) (h : T.obj₁ ∈ A.set) :
 ⟨T.obj₁, T.mor₁, T.mor₃, (by { cases T, exact hT, }), h⟩
 
 def W.triangle {X Y : C} (f : X ⟶ Y) (hf : (W A) f) : triangle C :=
-triangle.mk C f hf.some_spec.some hf.some_spec.some_spec.some
+triangle.mk f hf.some_spec.some hf.some_spec.some_spec.some
 
 lemma W.triangle_distinguished {X Y : C} (f : X ⟶ Y) (hf : (W A) f) :
   W.triangle f hf ∈ dist_triang C := hf.some_spec.some_spec.some_spec.some
@@ -139,14 +140,15 @@ instance W_contains_identities : (W A).contains_identities :=
 
 variable (A)
 
-lemma W_stable_under_composition : (W A).stable_under_composition :=
+lemma W_stable_under_composition [is_triangulated C] : (W A).stable_under_composition :=
 λ X₁ X₂ X₃ u₁₂ u₂₃ h₁₂ h₂₃,
 begin
   rcases h₁₂ with ⟨Z₁₂, v₁₂, w₁₂, H₁₂, mem₁₂⟩,
   rcases h₂₃ with ⟨Z₂₃, v₂₃, w₂₃, H₂₃, mem₂₃⟩,
   rcases pretriangulated.distinguished_cocone_triangle _ _ (u₁₂ ≫ u₂₃) with ⟨Z₁₃, v₁₃, w₁₃, H₁₃⟩,
   refine ⟨_, _, _, H₁₃, _⟩,
-  exact subcategory.ext₂ A _ (octahedron.triangle_distinguished rfl H₁₂ H₂₃ H₁₃) mem₁₂ mem₂₃,
+  exact subcategory.ext₂ A _ (is_triangulated.octahedron_axiom rfl H₁₂ H₂₃ H₁₃).some.mem
+    mem₁₂ mem₂₃,
 end
 
 lemma W_respects_iso : (W A).respects_iso :=
@@ -164,7 +166,7 @@ begin
     refine triangle.mk_iso _ _ (iso.refl _) e.symm (iso.refl _) (by tidy) (by tidy) (by tidy), },
 end
 
-instance : left_calculus_of_fractions (W A) :=
+instance [is_triangulated C] : left_calculus_of_fractions (W A) :=
 { id := infer_instance,
   comp := W_stable_under_composition A,
   ex := λ X' X Y s hs u, begin
@@ -190,7 +192,7 @@ instance : left_calculus_of_fractions (W A) :=
       rw [hq, assoc, eq, comp_zero], },
   end, }
 
-instance : right_calculus_of_fractions (W A) :=
+instance [is_triangulated C] : right_calculus_of_fractions (W A) :=
 { id := infer_instance,
   comp := W_stable_under_composition A,
   ex := λ X Y Y' s hs u, begin
@@ -304,21 +306,24 @@ instance W_stable_under_finite_products : (W A).stable_under_finite_products :=
     (pi_finite_stable A (λ j, (T j).obj₃) (λ j, W.triangle_obj₃_mem _ (hf j))),
 end⟩
 
-instance W_compatible_with_triangulation : (W A).compatible_with_triangulation :=
+instance W_compatible_with_triangulation [is_triangulated C] :
+  (W A).compatible_with_triangulation :=
 ⟨λ T₁ T₃ hT₁ hT₃ a b ha hb comm, begin
-  let T'₁ := triangle.mk _ T₁.mor₁ T₁.mor₂ T₁.mor₃,
-  let T'₃ := triangle.mk _ T₃.mor₁ T₃.mor₂ T₃.mor₃,
+  let T'₁ := triangle.mk T₁.mor₁ T₁.mor₂ T₁.mor₃,
+  let T'₃ := triangle.mk T₃.mor₁ T₃.mor₂ T₃.mor₃,
   have mem₁ : T'₁ ∈ dist_triang C := by { cases T₁, exact hT₁, },
   have mem₃ : T'₃ ∈ dist_triang C := by { cases T₃, exact hT₃, },
   rcases pretriangulated.distinguished_cocone_triangle _ _ (T₁.mor₁ ≫ b) with ⟨Z₂, g₂, h₂, mem₂⟩,
-  let T'₂ := triangle.mk _ (T₁.mor₁ ≫ b) g₂ h₂,
+  let T'₂ := triangle.mk (T₁.mor₁ ≫ b) g₂ h₂,
   change T'₂ ∈ dist_triang C at mem₂,
   rcases hb with ⟨Z₄, g₄, h₄, mem₄, mem₄'⟩,
-  let φ₁₂ : T'₁ ⟶ T'₂ := octahedron.triangle_morphism₁ rfl mem₁ mem₄ mem₂,
-  have hφ₁₂ : (W A) φ₁₂.hom₃ := W.mk (octahedron.triangle_distinguished rfl mem₁ mem₄ mem₂) mem₄',
+  let H := (is_triangulated.octahedron_axiom rfl mem₁ mem₄ mem₂).some,
+  let φ₁₂ : T'₁ ⟶ T'₂ := H.triangle_morphism₁,
+  have hφ₁₂ : (W A) φ₁₂.hom₃ := W.mk H.mem mem₄',
   rcases ha with ⟨Z₅, g₅, h₅, mem₅, mem₅'⟩,
-  let φ₂₃ : T'₂ ⟶ T'₃ := octahedron.triangle_morphism₂ comm.symm mem₅ mem₃ mem₂,
-  have hφ₂₃ : (W A) φ₂₃.hom₃ := W.mk' (octahedron.triangle_distinguished comm.symm mem₅ mem₃ mem₂) mem₅',
+  let H' := (is_triangulated.octahedron_axiom comm.symm mem₅ mem₃ mem₂).some,
+  let φ₂₃ : T'₂ ⟶ T'₃ := H'.triangle_morphism₂,
+  have hφ₂₃ : (W A) φ₂₃.hom₃ := W.mk' H'.mem mem₅',
   refine ⟨(φ₁₂ ≫ φ₂₃).hom₃, W_stable_under_composition A _ _ hφ₁₂ hφ₂₃, ⟨_, _⟩⟩,
   { have h := (φ₁₂ ≫ φ₂₃).comm₂,
     dsimp at h,
@@ -331,7 +336,7 @@ end⟩
 class saturated : Prop :=
 (condition : ∀ ⦃X Y : C⦄ (i : Y ⟶ X) [hi : is_split_mono i] (hX : X ∈ A.set), Y ∈ A.set)
 
-instance W_is_saturated [A.saturated] : (W A).is_saturated :=
+instance W_is_saturated [A.saturated] [is_triangulated C] : (W A).is_saturated :=
 ⟨λ X₁ X₂ X₃ X₄ f₁₂ f₂₃ f₃₄ h₁₃ h₂₄, begin
   obtain ⟨Y₁₃, g₁₃, h₁₃, H₁₃, mem₁₃⟩ := h₁₃,
   obtain ⟨Y₂₄, g₂₄, h₂₄, H₂₄, mem₂₄⟩ := h₂₄,
@@ -339,14 +344,14 @@ instance W_is_saturated [A.saturated] : (W A).is_saturated :=
   obtain ⟨Y₂₃, g₂₃, h₂₃, H₂₃⟩ := pretriangulated.distinguished_cocone_triangle _ _ f₂₃,
   obtain ⟨Y₃₄, g₃₄, h₃₄, H₃₄⟩ := pretriangulated.distinguished_cocone_triangle _ _ f₃₄,
   refine ⟨Y₂₃, g₂₃, h₂₃, H₂₃, _⟩,
-  have H₁₂₃ := triangulated.octahedron rfl H₁₂ H₂₃ H₁₃,
-  have H₂₃₄ := triangulated.octahedron rfl H₂₃ H₃₄ H₂₄,
+  have H₁₂₃ := (is_triangulated.octahedron_axiom rfl H₁₂ H₂₃ H₁₃).some,
+  have H₂₃₄ := (is_triangulated.octahedron_axiom rfl H₂₃ H₃₄ H₂₄).some,
   let s := h₂₃ ≫ g₁₂⟦1⟧',
   let t := h₃₄ ≫ g₂₃⟦1⟧',
   have hs : (W A) s := W.mk (rot_of_dist_triangle _ _
-    (rot_of_dist_triangle _ _ H₁₂₃.triangle_distinguished)) (A.shift _ 1 mem₁₃),
+    (rot_of_dist_triangle _ _ H₁₂₃.mem)) (A.shift _ 1 mem₁₃),
   have ht : (W A) t := W.mk (rot_of_dist_triangle _ _
-    (rot_of_dist_triangle _ _ H₂₃₄.triangle_distinguished)) (A.shift _ 1 mem₂₄),
+    (rot_of_dist_triangle _ _ H₂₃₄.mem)) (A.shift _ 1 mem₂₄),
   let st := t ≫ s⟦1⟧',
   have hst : st = 0,
   { dsimp [st],
@@ -355,16 +360,16 @@ instance W_is_saturated [A.saturated] : (W A).is_saturated :=
       zero_comp, functor.map_zero, comp_zero], },
   have hst' := W_stable_under_composition A t (s⟦1⟧') ht (hs.shift 1),
   obtain ⟨Z, g, h, H, mem⟩ := hst',
-  let i := (triangle.mk C (t ≫ (shift_functor C 1).map s) g h).mor₂,
-  haveI : mono i :=  mono_of_dist_triang₂ _ H hst,
+  let i := (triangle.mk (t ≫ (shift_functor C 1).map s) g h).mor₂,
+  haveI : mono i := mono_of_dist_triang₂ _ H hst,
   haveI : is_split_mono i := is_split_mono_of_mono i,
   have mem₁₂ := subcategory.saturated.condition i mem,
   dsimp [triangle.mk] at mem₁₂,
   rw [← A.shift_iff, ← A.shift_iff] at mem₁₂,
-  exact A.ext₃ _ H₁₂₃.triangle_distinguished mem₁₂ mem₁₃,
+  exact A.ext₃ _ H₁₂₃.mem mem₁₂ mem₁₃,
 end⟩
 
-lemma test : pretriangulated (W A).localization := infer_instance
+lemma test [is_triangulated C] : pretriangulated (W A).localization := infer_instance
 
 @[protected, derive category, derive preadditive]
 def category := full_subcategory A.set
@@ -409,10 +414,7 @@ lemma category_closed_under_finite_products (J : Type) [finite J] :
 end
 
 instance category_has_finite_products : has_finite_products (A.category) :=
-⟨λ J, begin
-  introI,
-  exact has_limits_of_shape_of_closed_under_limits (category_closed_under_finite_products A J),
-end⟩
+⟨λ n, has_limits_of_shape_of_closed_under_limits (category_closed_under_finite_products A _)⟩
 
 instance shift_functor_additive (n : ℤ) : (shift_functor A.category n).additive := infer_instance
 
@@ -438,7 +440,7 @@ pretriangulated.isomorphic_distinguished _ hT₁ _
       (A.category_inclusion'.map_triangle.map_iso e)
 
 lemma contractible_distinguished (X : A.category) :
-  triangle.mk A.category (𝟙 X) (0 : X ⟶ 0) 0 ∈ distinguished_triangles A :=
+  triangle.mk (𝟙 X) (0 : X ⟶ 0) 0 ∈ distinguished_triangles A :=
 begin
   refine pretriangulated.isomorphic_distinguished _
     (pretriangulated.contractible_distinguished (A.category_inclusion'.obj X)) _ _,
@@ -447,8 +449,8 @@ begin
 end
 
 lemma distinguished_cocone_triangle (X Y : A.category) (f : X ⟶ Y) :
-  ∃ (Z : A.category) (g : Y ⟶ Z) (h : Z ⟶ (shift_functor A.category 1).obj X),
-  triangle.mk A.category f g h ∈ category_pretriangulated.distinguished_triangles A :=
+  ∃ (Z : A.category) (g : Y ⟶ Z) (h : Z ⟶ (shift_functor A.category (1 : ℤ)).obj X),
+  triangle.mk f g h ∈ category_pretriangulated.distinguished_triangles A :=
 begin
   obtain ⟨Z, g, h, mem⟩ := pretriangulated.distinguished_cocone_triangle
     _ _ ((category_inclusion' A).map f),
@@ -500,12 +502,12 @@ instance : pretriangulated A.category :=
     category_pretriangulated.complete_distinguished_triangle_morphism, }
 
 lemma dist_triang_iff {X Y Z : A.category} (f : X ⟶ Y) (g : Y ⟶ Z) (h : Z ⟶ X⟦(1 : ℤ)⟧) :
-  (triangle.mk A.category f g h ∈ dist_triang A.category) ↔
-    (triangle.mk C f g h ∈ dist_triang C) :=
+  (triangle.mk f g h ∈ dist_triang A.category) ↔
+    (@triangle.mk C _ _ _ _ _ f g h ∈ dist_triang C) :=
 begin
   change (_ ∈ dist_triang C) ↔ _,
-  let e : A.category_inclusion'.map_triangle.obj (triangle.mk A.category f g h) ≅
-    triangle.mk C f g h,
+  let e : A.category_inclusion'.map_triangle.obj (triangle.mk f g h) ≅
+    @triangle.mk C _ _ _ _ _ f g h,
   { refine triangle.mk_iso _ _ (iso.refl _) (iso.refl _) (iso.refl _) (by tidy) (by tidy) _,
     dsimp,
     erw [id_comp, functor.map_id, comp_id, comp_id], },
@@ -514,24 +516,33 @@ begin
   { exact λ h, pretriangulated.isomorphic_distinguished _ h _ e, },
 end
 
-instance : triangulated A.category :=
+instance [is_triangulated C] : is_triangulated A.category :=
 ⟨λ X₁ X₂ X₃ Z₁₂ Z₂₃ Z₁₃ u₁₂ u₂₃ u₁₃ comm v₁₂ w₁₂ h₁₂ v₂₃ w₂₃ h₂₃ v₁₃ w₁₃ h₁₃, begin
   have comm' := A.category_inclusion'.congr_map comm,
   rw [functor.map_comp] at comm',
-  obtain ⟨m₁, m₃, comm₁, comm₂, comm₃, comm₄, H⟩ := octahedron comm' h₁₂ h₂₃ h₁₃,
-  refine ⟨m₁, m₃, comm₁, _, comm₃, _, _⟩,
-  { dsimp at comm₂,
-    erw [comp_id, comp_id] at comm₂,
-    exact comm₂, },
-  { dsimp at comm₄,
-    erw [comp_id, comp_id] at comm₄,
-    exact comm₄, },
-  { rw dist_triang_iff,
-    refine pretriangulated.isomorphic_distinguished _ H _ _,
-    refine triangle.mk_iso _ _ (iso.refl _) (iso.refl _) (iso.refl _) (by tidy) (by tidy) _,
-    dsimp,
-    erw [functor.map_id, comp_id, comp_id, id_comp],
-    refl, },
+  have H := (is_triangulated.octahedron_axiom comm' h₁₂ h₂₃ h₁₃).some,
+  obtain ⟨m₁, m₃, comm₁, comm₂, comm₃, comm₄, H'⟩ := H,
+  refine nonempty.intro
+  { m₁ := m₁,
+    m₃ := m₃,
+    comm₁ := comm₁,
+    comm₂ := begin
+      erw [comp_id, comp_id] at comm₂,
+      exact comm₂,
+    end,
+    comm₃ := comm₃,
+    comm₄ := begin
+      erw [comp_id, comp_id] at comm₄,
+      exact comm₄,
+    end,
+    mem := begin
+      rw dist_triang_iff,
+      refine pretriangulated.isomorphic_distinguished _ H' _ _,
+      refine triangle.mk_iso _ _ (iso.refl _) (iso.refl _) (iso.refl _) (by tidy) (by tidy) _,
+      dsimp,
+      erw [functor.map_id, comp_id, comp_id, id_comp],
+      refl,
+    end, }
 end⟩
 
 @[simps]
@@ -539,9 +550,9 @@ def category_inclusion : triangulated_functor A.category C :=
 { map_distinguished' := λ T hT, hT,
   ..A.category_inclusion' }
 
-def Q : triangulated_functor C A.W.localization :=
+def Q [is_triangulated C] : triangulated_functor C A.W.localization :=
 begin
-  let F := triangulated.localization_functor (W A).Q (W A)
+  let F := localization_functor (W A).Q (W A)
     (shift.localization_comm_shift (W A).Q (W A) (1 : ℤ)),
   exact F,
 end
@@ -552,13 +563,14 @@ end
 then `G` is a triangulated functor.
  -/
 
-instance Q_to_functor_is_localization : A.Q.to_functor.is_localization A.W :=
+instance Q_to_functor_is_localization [is_triangulated C] : A.Q.to_functor.is_localization A.W :=
 (infer_instance : A.W.Q.is_localization A.W)
 
-lemma is_iso_map_iff [A.saturated] {X Y : C} (f : X ⟶ Y) : is_iso (A.Q.map f) ↔ A.W f :=
+lemma is_iso_map_iff [A.saturated] [is_triangulated C] {X Y : C} (f : X ⟶ Y) : is_iso (A.Q.map f) ↔ A.W f :=
 by convert localization.is_iso_map_iff_of_calculus_of_fractions (W A).Q (W A) f
 
-lemma is_zero_obj_iff' (X : C) : is_zero (A.Q.obj X) ↔ ∃ (Y : C) (i : X ⟶ Y) [is_split_mono i], Y ∈ A.set :=
+lemma is_zero_obj_iff' [is_triangulated C] (X : C) :
+  is_zero (A.Q.obj X) ↔ ∃ (Y : C) (i : X ⟶ Y) [is_split_mono i], Y ∈ A.set :=
 begin
   rw limits.is_zero.iff_id_eq_zero,
   split,
@@ -578,7 +590,7 @@ begin
       ← cancel_mono (A.W.Q.map (0 : Y ⟶ 0)), functor.map_zero, comp_zero, comp_zero], },
 end
 
-lemma is_zero_obj_iff [A.saturated] (X : C) : is_zero (A.Q.obj X) ↔ X ∈ A.set :=
+lemma is_zero_obj_iff [A.saturated] [is_triangulated C] (X : C) : is_zero (A.Q.obj X) ↔ X ∈ A.set :=
 begin
   rw is_zero_obj_iff',
   split,
@@ -633,7 +645,7 @@ begin
     exact ⟨y, hy.symm⟩, },
 end
 
-lemma left_orthogonal_bijective_L_map {D : Type*} [category D]
+lemma left_orthogonal_bijective_L_map [is_triangulated C] {D : Type*} [category D]
   (L : C ⥤ D) [L.is_localization A.W] (X Y : C) (hX : X ∈ A.left_orthogonal.set) :
   function.bijective (λ (f : X ⟶ Y), L.map f) :=
 begin
@@ -652,7 +664,7 @@ begin
     rw [hz, ← hf, L.map_comp, assoc, is_iso.hom_inv_id, comp_id], },
 end
 
-lemma left_orthogonal_bijective_Q_map (X Y : C) (hX : X ∈ A.left_orthogonal.set) :
+lemma left_orthogonal_bijective_Q_map [is_triangulated C] (X Y : C) (hX : X ∈ A.left_orthogonal.set) :
   function.bijective (λ (f : X ⟶ Y), A.Q.map f) :=
 A.left_orthogonal_bijective_L_map A.W.Q _ _ hX
 

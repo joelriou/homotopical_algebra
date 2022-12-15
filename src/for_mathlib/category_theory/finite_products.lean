@@ -107,11 +107,7 @@ variable (C)
 lemma has_finite_products_of_has_binary_products
   [has_terminal C] [has_binary_products C] : has_finite_products C :=
 begin
-/- to be refactored using for_mathlib/category_theory/limits/products.lean -/
-  suffices : ∀ (n : ℕ), has_limits_of_shape (discrete (fin n)) C,
-  { constructor,
-    introsI J hJ,
-    exact has_limits_of_shape_of_equivalence (discrete.equivalence (fintype.equiv_fin J).symm), },
+  constructor,
   intro n,
   induction n with n hn,
   { exact has_limits_of_shape_of_equivalence (discrete.equivalence
@@ -176,7 +172,6 @@ end
 lemma has_finite_coproducts_of_has_binary_coproducts
   [has_initial C] [has_binary_coproducts C] : has_finite_coproducts C :=
 ⟨λ J, begin
-  introI,
   suffices : has_finite_products Cᵒᵖ,
   { haveI := this,
     exact adjunction.has_colimits_of_shape_of_equivalence (op_op_equivalence C).inverse, },
@@ -410,7 +405,7 @@ end⟩
 
 lemma has_finite_products_of_is_left_adjoint_diag
   [Π (J : Type) [fintype J], is_left_adjoint (functor.pi.diag C J)] : has_finite_products C :=
-⟨λ J, by { introI, apply has_limits_of_shape_discrete_of_is_left_adjoint_diag, }⟩
+⟨λ J, by { apply has_limits_of_shape_discrete_of_is_left_adjoint_diag, }⟩
 
 end limits
 

@@ -6,9 +6,7 @@ namespace category_theory
 open limits category preadditive
 open_locale zero_object
 
-namespace triangulated
-
-open pretriangulated
+namespace pretriangulated
 
 variables {C : Type*} [category C] [preadditive C] [has_zero_object C] [has_shift C ℤ]
 
@@ -212,6 +210,6 @@ lemma covariant_yoneda_exact₃ (T : triangle C) (hT : T ∈ dist_triang C) {X :
   (hf : f ≫ T.mor₃ = 0) : ∃ (g : X ⟶ T.obj₂), f = g ≫ T.mor₂ :=
 covariant_yoneda_exact₂ _ (rot_of_dist_triangle _ _ hT) f hf
 
-end triangulated
+end pretriangulated
 
 end category_theory

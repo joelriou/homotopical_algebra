@@ -269,6 +269,7 @@ lemma is_inverted_by.of_comp {C₁ C₂ C₃ : Type*} [category C₁] [category 
 
 /- better as .of_iso rather that iff_of_iso -/
 
+/-
 lemma is_inverted_by.iff_of_iso (W : morphism_property C) {F₁ F₂ : C ⥤ D} (e : F₁ ≅ F₂) :
   W.is_inverted_by F₁ ↔ W.is_inverted_by F₂ :=
 begin
@@ -279,7 +280,7 @@ begin
   intros X Y f,
   apply (respects_iso.isomorphisms D).arrow_mk_iso_iff,
   exact arrow.iso_mk (e.app X) (e.app Y) (by simp),
-end
+end-/
 
 end morphism_property
 

@@ -6,17 +6,11 @@ open category_theory category_theory.category
 
 namespace category_theory
 
-namespace functor
-
-lemma right_op_left_op_eq {C D : Type*} [category C] [category D] (F : Cᵒᵖ ⥤ D) :
-  F.right_op.left_op = F := by { cases F, refl, }
-
-end functor
-
 namespace morphism_property
 
 namespace is_inverted_by
 
+/-
 lemma op {C D : Type*} [category C] [category D]
   {W : morphism_property C} {L : C ⥤ D} (h : W.is_inverted_by L) :
   W.op.is_inverted_by L.op := λ X Y f hf,
@@ -25,7 +19,7 @@ by { haveI := h f.unop hf, dsimp, apply_instance, }
 lemma right_op {C D : Type*} [category C] [category D]
   {W : morphism_property C} {L : Cᵒᵖ ⥤ D} (h : W.op.is_inverted_by L):
   W.is_inverted_by L.right_op := λ X Y f hf,
-by { haveI := h f.op hf, dsimp, apply_instance, }
+by { haveI := h f.op hf, dsimp, apply_instance, }-/
 
 end is_inverted_by
 
@@ -64,7 +58,7 @@ namespace functor
 variables (L W)
 
 instance is_localization.op [h : L.is_localization W] : L.op.is_localization W.op :=
-is_localization.of_equivalence W.Q.op W.op L.op (localization.equivalence_from_model L W).op
+is_localization.of_equivalence_target W.Q.op W.op L.op (localization.equivalence_from_model L W).op
   (nat_iso.op (localization.Q_comp_equivalence_from_model_functor_iso L W).symm)
 
 end functor

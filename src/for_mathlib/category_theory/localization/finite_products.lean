@@ -139,8 +139,8 @@ end
 lemma has_finite_products [W.contains_identities]
   [has_finite_products C] [W.stable_under_finite_products] :
   has_finite_products D :=
-⟨λ J, by { introI, exact localization.has_products_of_shape L W J
-  (morphism_property.stable_under_finite_products.condition W J), }⟩
+⟨λ n, by { exact localization.has_products_of_shape L W (fin n)
+  (morphism_property.stable_under_finite_products.condition W (fin n)), }⟩
 
 @[protected]
 def preserves_products_of_shape (J : Type) [finite J] [W.contains_identities]
