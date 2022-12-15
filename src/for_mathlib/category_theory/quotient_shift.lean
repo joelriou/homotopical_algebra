@@ -6,7 +6,6 @@ noncomputable theory
 namespace category_theory
 
 open category
-#check has_shift
 
 variables {C A : Type*} [category C] [add_monoid A] [has_shift C A] {r : hom_rel C}
   (h : ∀ (a : A) ⦃X Y : C⦄ (f₁ f₂ : X ⟶ Y), r f₁ f₂ → r (f₁⟦a⟧') (f₂⟦a⟧'))
