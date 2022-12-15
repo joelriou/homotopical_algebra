@@ -3,6 +3,7 @@ import tactic.linarith
 import category_theory.triangulated.rotate
 import for_mathlib.category_theory.triangulated.shift_compatibility
 import for_mathlib.category_theory.triangulated.pretriangulated_misc
+import for_mathlib.category_theory.functor.shift
 
 noncomputable theory
 
@@ -155,6 +156,30 @@ begin
       { refine (triangle.shift_functor_iso_of_eq C _).app _,
         simp only [nat.cast_succ, neg_add_rev, int.add_neg_one],
         linarith, }, }, },
+end
+
+def triangle.shift_functor_comm {C D : Type*} [category C] [category D]
+  [preadditive C] [preadditive D] [has_shift C ℤ] [has_shift D ℤ] [has_zero_object C] [has_zero_object D]
+  [∀ (n : ℤ), (shift_functor C n).additive] [∀ (n : ℤ), (shift_functor D n).additive] {F : C ⥤ D}
+  [F.additive]
+  (h : F.comm_shift ℤ) (n : ℤ) :
+  triangle.shift_functor C n ⋙ (triangulated_functor_struct.mk F (h.iso 1)).map_triangle ≅
+  (triangulated_functor_struct.mk F (h.iso 1)).map_triangle ⋙ triangle.shift_functor D n :=
+begin
+  refine nat_iso.of_components (λ T, triangle.mk_iso _ _ ((h.iso n).app _) ((h.iso n).app _) ((h.iso n).app _) _ _ _)
+    (λ T₁ T₂ f, _),
+  { have eq₁ := (h.iso n).hom.naturality T.mor₁,
+    dsimp at ⊢ eq₁,
+    simp only [F.map_zsmul, zsmul_comp, eq₁, comp_zsmul], },
+  { have eq₂ := (h.iso n).hom.naturality T.mor₂,
+    dsimp at ⊢ eq₂,
+    simp only [F.map_zsmul, zsmul_comp, eq₂, comp_zsmul], },
+  { have eq₃ := (h.iso n).hom.naturality T.mor₃,
+    dsimp at ⊢ eq₃,
+    simp only [F.map_zsmul, zsmul_comp, comp_zsmul, functor.map_comp, assoc, ← reassoc_of eq₃],
+    congr' 2,
+    sorry, },
+  { ext; apply (h.iso n).hom.naturality, },
 end
 
 end pretriangulated

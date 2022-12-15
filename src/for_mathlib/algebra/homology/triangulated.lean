@@ -269,6 +269,16 @@ def quotient_triangulated_functor_struct :
 { to_functor := homotopy_category.quotient _ _,
   comm_shift := quotient.comm_shift _ _, }
 
+def quotient_triangulated_functor_struct_map_triangle_mapping_cone_triangle_iso :
+  quotient_triangulated_functor_struct.map_triangle.obj (mapping_cone_triangle φ) ≅
+    mapping_cone_triangle' φ :=
+triangle.mk_iso _ _ (iso.refl _) (iso.refl _) (iso.refl _) (by tidy) (by tidy) begin
+  simp only [iso.refl_hom, category_theory.functor.map_id, comp_id, id_comp],
+  apply eq_of_homotopy,
+  apply homotopy.of_eq,
+  apply comp_id,
+end
+
 lemma shift_distinguished_triangles (T : triangle (homotopy_category C (complex_shape.up ℤ)))
   (hT : T ∈ distinguished_triangles C) (n : ℤ) :
   (triangle.shift_functor _ n).obj T ∈ distinguished_triangles C :=
@@ -284,10 +294,15 @@ begin
     { sorry, },
     { sorry, },
     { sorry, }, },
-  have e' := quotient_triangulated_functor_struct.map_triangle.map_iso e,
-  refine _ ≪≫ quotient_triangulated_functor_struct.map_triangle.map_iso e ≪≫ _,
-  { sorry, },
-  { sorry, },
+  let h : (homotopy_category.quotient C (complex_shape.up ℤ)).comm_shift ℤ :=
+  { iso := quotient.comm_shift _,
+    iso_zero := sorry,
+    iso_add := sorry, },
+  refine (triangle.shift_functor (homotopy_category C (complex_shape.up ℤ)) n).map_iso
+    (quotient_triangulated_functor_struct_map_triangle_mapping_cone_triangle_iso φ).symm ≪≫
+    ((triangle.shift_functor_comm h n).app (mapping_cone_triangle φ)).symm ≪≫
+    quotient_triangulated_functor_struct.map_triangle.map_iso e ≪≫
+    (quotient_triangulated_functor_struct_map_triangle_mapping_cone_triangle_iso _),
 end
 
 lemma rotate_distinguished_triangle (T : triangle (homotopy_category C (complex_shape.up ℤ))) :
