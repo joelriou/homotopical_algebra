@@ -83,6 +83,12 @@ by { substs h h', simp, }
 
 end
 
+end homological_complex
+
+namespace cochain_complex
+
+open homological_complex
+
 local attribute [simp] X_iso_of_eq_hom_naturality X_iso_of_eq_inv_naturality
 
 @[simps obj_d map_f]
@@ -146,4 +152,10 @@ has_shift_mk _ _
   μ := λ n₁ n₂, shift_functor_add' C n₁ n₂ _ rfl,
   associativity := λ n₁ n₂ n₃ K, by { ext i, dsimp [X_iso_of_eq], simp, }, }
 
-end homological_complex
+variable {C}
+
+@[simp]
+lemma shift_functor_map_f' {K L : cochain_complex C ℤ} (φ : K ⟶ L) (n p : ℤ) :
+  ((category_theory.shift_functor (cochain_complex C ℤ) n).map φ).f p = φ.f (p+n) := rfl
+
+end cochain_complex

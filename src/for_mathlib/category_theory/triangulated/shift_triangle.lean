@@ -1,6 +1,8 @@
-import for_mathlib.category_theory.localization.triangulated
+--import for_mathlib.category_theory.localization.triangulated
 import tactic.linarith
+import category_theory.triangulated.rotate
 import for_mathlib.category_theory.triangulated.shift_compatibility
+import for_mathlib.category_theory.triangulated.pretriangulated_misc
 
 noncomputable theory
 
@@ -8,9 +10,9 @@ namespace category_theory
 
 open limits
 
-namespace triangulated
+namespace pretriangulated
 
-open preadditive category pretriangulated
+open preadditive category triangulated
 
 variables (C : Type*) [category C] [preadditive C] [has_shift C ℤ]
 
@@ -18,7 +20,7 @@ variables (C : Type*) [category C] [preadditive C] [has_shift C ℤ]
 def triangle.shift_functor (n : ℤ) : triangle C ⥤ triangle C :=
 { obj := λ T, begin
     let ε : ℤ := ↑((-1 : units ℤ) ^ n),
-    exact triangle.mk C (ε • (shift_functor C n).map T.mor₁)
+    exact triangle.mk (ε • (shift_functor C n).map T.mor₁)
       (ε • (shift_functor C n).map T.mor₂)
       ((ε • (shift_functor C n).map T.mor₃) ≫ (shift_functor_add_comm C 1 n).hom.app _),
   end,
@@ -37,7 +39,7 @@ def triangle.shift_functor (n : ℤ) : triangle C ⥤ triangle C :=
       erw ← nat_trans.naturality,
       refl, }, }, }
 
-variables [has_zero_object C] [∀ (n : ℤ), functor.additive (shift_functor C n)] [pretriangulated C]
+variables [has_zero_object C] [∀ (n : ℤ), functor.additive (shift_functor C n)]
 
 def triangle.shift_functor_one_iso : triangle.shift_functor C 1 ≅ rotate C ⋙ rotate C ⋙ rotate C :=
 nat_iso.of_components
@@ -113,7 +115,8 @@ end
 def triangle.shift_functor_iso_of_eq {a₁ a₂ : ℤ} (h : a₁ = a₂) :
   triangle.shift_functor C a₁ ≅ triangle.shift_functor C a₂ := by subst h
 
-lemma triangle.shift_distinguished (T : triangle C) (hT : T ∈ dist_triang C) (n : ℤ) :
+lemma triangle.shift_distinguished [pretriangulated C]
+  (T : triangle C) (hT : T ∈ dist_triang C) (n : ℤ) :
   (triangle.shift_functor C n).obj T ∈ dist_triang C :=
 begin
   have hpos : ∀ (T' : triangle C) (hT' : T' ∈ dist_triang C),
@@ -154,6 +157,6 @@ begin
         linarith, }, }, },
 end
 
-end triangulated
+end pretriangulated
 
 end category_theory

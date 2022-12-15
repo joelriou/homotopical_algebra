@@ -376,6 +376,16 @@ begin
   tidy,
 end
 
+@[simp, reassoc]
+lemma mapping_cone.lift_fst_f {K : cochain_complex C ℤ} (α : cocycle K F 1) (β : cochain K G 0)
+  (hαβ : δ 0 1 β + (α : cochain K F 1).comp (cochain.of_hom φ) (add_zero 1).symm = 0)
+  (n n' : ℤ) (hnn' : n' = n+1) :
+    (mapping_cone.lift φ α β hαβ).f n ≫
+      (mapping_cone_fst φ : cochain (mapping_cone φ) F 1).v n n' hnn' =
+      (α : cochain K F 1).v n n' hnn' :=
+by simp only [← cochain.congr_v (mapping_cone.lift_fst φ α β hαβ) n n' hnn',
+  cochain.zero_cochain_comp, cochain.of_hom_v]
+
 lemma mapping_cone.lift_snd {K : cochain_complex C ℤ} (α : cocycle K F 1) (β : cochain K G 0)
   (hαβ : δ 0 1 β + (α : cochain K F 1).comp (cochain.of_hom φ) (add_zero 1).symm = 0) :
   (cochain.of_hom (mapping_cone.lift φ α β hαβ)).comp
@@ -386,6 +396,16 @@ begin
   congr' 1,
   tidy,
 end
+
+@[simp, reassoc]
+lemma mapping_cone.lift_snd_f {K : cochain_complex C ℤ} (α : cocycle K F 1) (β : cochain K G 0)
+  (hαβ : δ 0 1 β + (α : cochain K F 1).comp (cochain.of_hom φ) (add_zero 1).symm = 0) (n : ℤ) :
+  (mapping_cone.lift φ α β hαβ).f n ≫ (mapping_cone_snd φ).v n n (add_zero n).symm =
+    β.v n n (add_zero n).symm :=
+by simp only [← cochain.congr_v (mapping_cone.lift_snd φ α β hαβ) n n (by linarith),
+  cochain.comp_zero_cochain, cochain.of_hom_v]
+
+#exit
 
 lemma mapping_cone.lift_desc_f {K L : cochain_complex C ℤ} (α : cocycle K F 1) (β : cochain K G 0)
   (hαβ : δ 0 1 β + (α : cochain K F 1).comp (cochain.of_hom φ) (add_zero 1).symm = 0)

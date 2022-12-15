@@ -1,6 +1,7 @@
 import for_mathlib.algebra.homology.mapping_cone
 import algebra.homology.additive
 import for_mathlib.category_theory.triangulated.pretriangulated_misc
+import for_mathlib.category_theory.triangulated.shift_triangle
 
 open category_theory category_theory.pretriangulated category_theory.triangulated
   category_theory.limits category_theory.category
@@ -75,7 +76,7 @@ lemma mapping_cone_triangle'_distinguished :
 ⟨_, _, φ, nonempty.intro (iso.refl _)⟩
 
 instance shift_functor_additive (n : ℤ) :
-  (shift_functor (homotopy_category C (complex_shape.up ℤ)) n).additive := { }
+  (category_theory.shift_functor (homotopy_category C (complex_shape.up ℤ)) n).additive := { }
 
 lemma isomorphic_distinguished
   (T₁ : triangle (homotopy_category C (complex_shape.up ℤ)))
@@ -141,7 +142,7 @@ begin
     ext1,
     simp only [cochain.comp_zero_cochain, cochain.of_hom_v,
       cochain.right_shift_v _ 1 0 (zero_add 1).symm p p (add_zero p).symm _ rfl,
-      homological_complex.shift_functor_obj_X_iso, assoc, cochain.neg_v,
+      shift_functor_obj_X_iso, assoc, cochain.neg_v,
       homological_complex.X_iso_of_eq_refl, preadditive.neg_comp, preadditive.comp_neg, neg_inj],
     dsimp [iso.refl],
     simp only [comp_id, id_comp, from_mapping_cone_ext_iff _ _ _ rfl],
@@ -149,8 +150,7 @@ begin
     { simp only [zero_add, assoc, mapping_cone.inl_desc_v_assoc, cochain.add_v,
         cochain.comp_zero_cochain, cochain.of_hom_v, cochain.zero_cochain_comp,
         preadditive.add_comp, mapping_cone_inr_fst, comp_zero, mapping_cone_inl_fst, comp_id,
-        mapping_cone_inl_fst_assoc],
-      refl, }, -- could be a simp lemma
+        mapping_cone_inl_fst_assoc], },
     { simp only [mapping_cone_inr_fst_assoc, mapping_cone_inr_fst, zero_comp, comp_zero,
         assoc, mapping_cone.inr_desc_f_assoc, homological_complex.comp_f, ι_mapping_cone], }, },
 end
@@ -196,6 +196,15 @@ begin
   { hom := mapping_cone.lift _
       (-cocycle.left_shift (cocycle.of_hom φ) 1 1 (zero_add 1).symm)
       (-(mapping_cone_inl φ).left_shift 1 0 (neg_add_self 1).symm)
+      sorry,
+    inv := sorry,
+    homotopy_hom_inv_id := sorry,
+    homotopy_inv_hom_id := sorry, },
+    /-
+  let α : homotopy_equiv (K⟦(1 : ℤ)⟧) (mapping_cone (ι_mapping_cone φ)) :=
+  { hom := mapping_cone.lift _
+      (-cocycle.left_shift (cocycle.of_hom φ) 1 1 (zero_add 1).symm)
+      (-(mapping_cone_inl φ).left_shift 1 0 (neg_add_self 1).symm)
       begin
         simp only [δ_neg, mapping_cone_δ_inl, cochain.δ_left_shift
           (mapping_cone_inl φ) 1 _ 0 _ (neg_add_self 1).symm (zero_add 1).symm,
@@ -203,7 +212,7 @@ begin
         ext1 p q hpq,
         simp only [ι_mapping_cone, cochain.add_v,
           cochain.left_shift_v _ 1 1 (zero_add 1).symm p _ hpq _ hpq,
-          cochain.comp_zero_cochain, homological_complex.shift_functor_obj_X_iso, add_zero,
+          cochain.comp_zero_cochain, shift_functor_obj_X_iso, add_zero,
           mul_one, sub_self, mul_zero, euclidean_domain.zero_div, ε_1, neg_smul,
           homological_complex.X_iso_of_eq_refl, cochain.of_hom_comp, cochain.of_hom_v,
           one_zsmul, add_subgroup.coe_neg, cocycle.left_shift_coe, cocycle.of_hom_coe,
@@ -224,9 +233,59 @@ begin
         zero_add, mul_zero, sub_self, euclidean_domain.zero_div, ε_0, one_zsmul,
         preadditive.comp_neg, assoc, mapping_cone_inl_fst_assoc, iso.hom_inv_id, neg_neg],
     end,
-    homotopy_inv_hom_id := sorry, },
+    homotopy_inv_hom_id := sorry, },-/
   refine ⟨_,_, ι_mapping_cone φ, ⟨triangle.mk_iso _ _ (iso.refl _) (iso.refl _)
-    (iso_of_homotopy_equiv α) (by tidy) _ _⟩⟩,
+    (iso_of_homotopy_equiv α) (by tidy) (eq_of_homotopy _ _ _)
+    (eq_of_homotopy _ _ (homotopy.of_eq _))⟩⟩,
+  { rw id_comp,
+    sorry, },
+  { ext n,
+    simp only [category_theory.functor.map_id, preadditive.neg_comp,
+      homological_complex.neg_f_apply, homological_complex.comp_f,
+      cocycle.hom_of_f, cocycle.right_shift_coe, mapping_cone_δ_as_cocycle_coe,
+      shift_functor_map_f', mapping_cone_δ,
+      cochain.right_shift_v _ _ _ (zero_add 1).symm n n (by linarith) _ rfl,
+      shift_functor_obj_X_iso, cochain.neg_v, homological_complex.X_iso_of_eq_refl,
+      preadditive.comp_neg, neg_inj,
+      mapping_cone.lift_fst_f_assoc, add_subgroup.coe_neg,
+      cocycle.left_shift_coe, cocycle.of_hom_coe, cochain.neg_v,
+      cochain.left_shift_v _ _ _ (zero_add 1).symm _ _ rfl _ rfl,
+      mul_one, sub_self, mul_zero, euclidean_domain.zero_div, add_zero, ε_1,
+      homological_complex.X_iso_of_eq_refl, cochain.of_hom_v, neg_smul, one_zsmul, neg_neg],
+    erw [iso.refl_hom, iso.refl_inv, id_comp, comp_id], },
+end
+
+@[simps]
+def triangle_shift (T : triangle (homotopy_category C (complex_shape.up ℤ))) (n : ℤ) :
+  triangle (homotopy_category C (complex_shape.up ℤ)) :=
+triangle.mk (ε n • T.mor₁⟦n⟧') (ε n • T.mor₂⟦n⟧') (ε n • T.mor₃⟦n⟧' ≫ (shift_comm T.obj₁ 1 n).hom)
+
+instance cochain_complex_shift_functor_additive (n : ℤ) :
+  (category_theory.shift_functor (cochain_complex C ℤ) n).additive := { }
+
+@[simps]
+def quotient_triangulated_functor_struct :
+  triangulated_functor_struct (cochain_complex C ℤ) (homotopy_category C (complex_shape.up ℤ)) :=
+{ to_functor := homotopy_category.quotient _ _,
+  comm_shift := quotient.comm_shift _ _, }
+
+lemma shift_distinguished_triangles (T : triangle (homotopy_category C (complex_shape.up ℤ)))
+  (hT : T ∈ distinguished_triangles C) (n : ℤ) :
+  (triangle.shift_functor _ n).obj T ∈ distinguished_triangles C :=
+begin
+  obtain ⟨K, L, φ, ⟨e⟩⟩:= hT,
+  suffices : (triangle.shift_functor _ n).obj (mapping_cone_triangle' φ)
+    ∈ distinguished_triangles C,
+  { exact isomorphic_distinguished _ this _ (functor.map_iso _ e), },
+  refine ⟨K⟦n⟧, L⟦n⟧, ε n • φ⟦n⟧', nonempty.intro _⟩,
+  have e : (triangle.shift_functor (cochain_complex C ℤ) n).obj (mapping_cone_triangle φ) ≅
+    mapping_cone_triangle (ε n • φ⟦n⟧'),
+  { refine triangle.mk_iso _ _ (iso.refl _) (iso.refl _) _ (by tidy) _ _,
+    { sorry, },
+    { sorry, },
+    { sorry, }, },
+  have e' := quotient_triangulated_functor_struct.map_triangle.map_iso e,
+  refine _ ≪≫ quotient_triangulated_functor_struct.map_triangle.map_iso e ≪≫ _,
   { sorry, },
   { sorry, },
 end
@@ -236,7 +295,14 @@ lemma rotate_distinguished_triangle (T : triangle (homotopy_category C (complex_
 begin
   split,
   { exact rotate_distinguished_triangle₁ T, },
-  { sorry, },
+  { intro h,
+    replace h := rotate_distinguished_triangle₁ _ (rotate_distinguished_triangle₁ _ h),
+    replace h := shift_distinguished_triangles _ h (-1),
+    refine isomorphic_distinguished _ h _ _,
+    exact (triangle.shift_functor_zero _).symm.app T ≪≫
+      (triangle.shift_functor_iso_of_eq _ (by linarith)).app T ≪≫
+      (triangle.shift_functor_add _ 1 (-1)).app T ≪≫
+      (triangle.shift_functor _ (-1)).map_iso ((triangle.shift_functor_one_iso _).app T), },
 end
 
 instance : pretriangulated (homotopy_category C (complex_shape.up ℤ)) :=
