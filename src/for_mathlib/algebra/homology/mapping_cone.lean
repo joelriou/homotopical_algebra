@@ -405,8 +405,6 @@ lemma mapping_cone.lift_snd_f {K : cochain_complex C ℤ} (α : cocycle K F 1) (
 by simp only [← cochain.congr_v (mapping_cone.lift_snd φ α β hαβ) n n (by linarith),
   cochain.comp_zero_cochain, cochain.of_hom_v]
 
-#exit
-
 lemma mapping_cone.lift_desc_f {K L : cochain_complex C ℤ} (α : cocycle K F 1) (β : cochain K G 0)
   (hαβ : δ 0 1 β + (α : cochain K F 1).comp (cochain.of_hom φ) (add_zero 1).symm = 0)
   (α' : cochain F L (-1)) (β' : G ⟶ L) (eq : δ (-1) 0 α' = cochain.of_hom (φ ≫ β'))
