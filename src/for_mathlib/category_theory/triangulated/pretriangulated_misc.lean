@@ -1,5 +1,6 @@
 import category_theory.triangulated.pretriangulated
---import for_mathlib.category_theory.localization.triangulated
+
+noncomputable theory
 
 namespace category_theory
 
@@ -74,6 +75,7 @@ begin
   ext; refl,
 end
 
+section
 variables [∀ (n : ℤ), functor.additive (shift_functor C n)] [pretriangulated C]
 
 
@@ -97,7 +99,7 @@ begin
   exact triangle.comp_zero₁₂ _ (rot_of_dist_triangle _ _ (rot_of_dist_triangle _ _ hT)),
 end
 
-lemma pretriangulated.distinguished_cocone_triangle₂ {Z X : C} (h : Z ⟶ X⟦(1 : ℤ)⟧) :
+lemma distinguished_cocone_triangle₂ {Z X : C} (h : Z ⟶ X⟦(1 : ℤ)⟧) :
   ∃ (Y : C) (f : X ⟶ Y) (g : Y ⟶ Z), triangle.mk f g h ∈ dist_triang C :=
 begin
   obtain ⟨Y', f', g', mem⟩ := pretriangulated.distinguished_cocone_triangle _ _ h,
@@ -132,14 +134,14 @@ begin
     (inv_rot_of_dist_triangle _ _ (inv_rot_of_dist_triangle _ _ mem)) _ e₃.symm,
 end
 
-lemma pretriangulated.distinguished_cocone_triangle₁ {Y Z : C} (g : Y ⟶ Z) :
+lemma distinguished_cocone_triangle₁ {Y Z : C} (g : Y ⟶ Z) :
   ∃ (X : C) (f : X ⟶ Y) (h : Z ⟶ X⟦1⟧), triangle.mk f g h ∈ dist_triang C :=
 begin
   obtain ⟨X', f', g', mem⟩ := pretriangulated.distinguished_cocone_triangle _ _ g,
   exact ⟨_, _, _, inv_rot_of_dist_triangle _ _ mem⟩,
 end
 
-lemma pretriangulated.complete_distinguished_triangle_morphism₁ (T₁ T₂ : triangle C)
+lemma complete_distinguished_triangle_morphism₁ (T₁ T₂ : triangle C)
   (hT₁ : T₁ ∈ dist_triang C) (hT₂ : T₂ ∈ dist_triang C) (b : T₁.obj₂ ⟶ T₂.obj₂)
   (c : T₁.obj₃ ⟶ T₂.obj₃) (comm : T₁.mor₂ ≫ c = b ≫ T₂.mor₂) :
   ∃ (a : T₁.obj₁ ⟶ T₂.obj₁), T₁.mor₁ ≫ b = a ≫ T₂.mor₁ ∧
@@ -155,7 +157,7 @@ begin
   { simpa only [functor.image_preimage] using ha₁, },
 end
 
-lemma pretriangulated.complete_distinguished_triangle_morphism₂ (T₁ T₂ : triangle C)
+lemma complete_distinguished_triangle_morphism₂ (T₁ T₂ : triangle C)
   (hT₁ : T₁ ∈ dist_triang C) (hT₂ : T₂ ∈ dist_triang C) (a : T₁.obj₁ ⟶ T₂.obj₁)
   (c : T₁.obj₃ ⟶ T₂.obj₃) (comm : T₁.mor₃ ≫ (shift_functor C (1 : ℤ)).map a = c ≫ T₂.mor₃) :
   ∃ (b : T₁.obj₂ ⟶ T₂.obj₂), T₁.mor₁ ≫ b = a ≫ T₂.mor₁ ∧ T₁.mor₂ ≫ c = b ≫ T₂.mor₂ :=
@@ -176,7 +178,7 @@ begin
     assoc, ha₂],
 end
 
-lemma pretriangulated.contractible_distinguished₁ (X : C) : triangle.mk (0 : 0 ⟶ X) (𝟙 X) 0 ∈ dist_triang C :=
+lemma contractible_distinguished₁ (X : C) : triangle.mk (0 : 0 ⟶ X) (𝟙 X) 0 ∈ dist_triang C :=
 begin
   refine pretriangulated.isomorphic_distinguished _ (inv_rot_of_dist_triangle C _ (pretriangulated.contractible_distinguished X)) _ _,
   refine triangle.mk_iso _ _ (functor.map_zero_object _).symm (iso.refl _) (iso.refl _)
@@ -209,6 +211,59 @@ covariant_yoneda_exact₂ _ (rot_of_dist_triangle _ _
 lemma covariant_yoneda_exact₃ (T : triangle C) (hT : T ∈ dist_triang C) {X : C} (f : X ⟶ T.obj₃)
   (hf : f ≫ T.mor₃ = 0) : ∃ (g : X ⟶ T.obj₂), f = g ≫ T.mor₂ :=
 covariant_yoneda_exact₂ _ (rot_of_dist_triangle _ _ hT) f hf
+
+end
+
+variable (C)
+
+@[simps]
+def contractible_triangle_functor : C ⥤ triangle C :=
+{ obj := λ X, contractible_triangle X,
+  map := λ X Y f,
+  { hom₁ := f,
+    hom₂ := f,
+    hom₃ := 0, }, }
+
+variable {C}
+
+@[simps]
+def map_triangle_rotate [preadditive C] [∀ n : ℤ, functor.additive (shift_functor C n)]
+  {D : Type*} [category D] [has_zero_object D] [preadditive D] [has_shift D ℤ]
+  [∀ n : ℤ, functor.additive (shift_functor D n)]
+  (F : triangulated_functor_struct C D) [functor.additive F.to_functor] :
+  F.map_triangle ⋙ rotate D ≅ rotate C ⋙ F.map_triangle :=
+nat_iso.of_components (λ T, triangle.mk_iso _ _ (iso.refl _) (iso.refl _)
+  (F.comm_shift.app _).symm (by tidy) (by tidy) begin
+    dsimp,
+    simp only [functor.map_id, preadditive.neg_comp, comp_id, functor.map_neg,
+      preadditive.comp_neg, neg_inj],
+    erw F.comm_shift.hom.naturality,
+    rw F.comm_shift.inv_hom_id_app_assoc,
+    refl,
+  end)
+(λ T₁ T₂ f, begin
+  ext,
+  { tidy, },
+  { tidy, },
+  { apply F.comm_shift.inv.naturality, },
+end)
+
+@[simps]
+def map_triangle_inv_rotate [preadditive C] [∀ n : ℤ, functor.additive (shift_functor C n)]
+  {D : Type*} [category D] [has_zero_object D] [preadditive D] [has_shift D ℤ]
+  [∀ n : ℤ, functor.additive (shift_functor D n)]
+  (F : triangulated_functor_struct C D) [functor.additive F.to_functor] :
+  F.map_triangle ⋙ inv_rotate D ≅ inv_rotate C ⋙ F.map_triangle :=
+begin
+  calc F.map_triangle ⋙ inv_rotate D ≅ _ : (functor.left_unitor _).symm
+  ... ≅ _ : iso_whisker_right (triangle_rotation C).counit_iso.symm _
+  ... ≅ _ : functor.associator _ _ _
+  ... ≅ _ : iso_whisker_left _ (functor.associator _ _ _).symm
+  ... ≅ _ : iso_whisker_left _ (iso_whisker_right (map_triangle_rotate F).symm _)
+  ... ≅ _ : iso_whisker_left _ (functor.associator _ _ _)
+  ... ≅ _ : iso_whisker_left _ (iso_whisker_left _ (triangle_rotation D).unit_iso.symm)
+  ... ≅ _: iso_whisker_left _ (functor.right_unitor _),
+end
 
 end pretriangulated
 

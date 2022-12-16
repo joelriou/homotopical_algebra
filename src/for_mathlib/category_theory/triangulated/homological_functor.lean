@@ -37,7 +37,7 @@ is_homological.mk (λ T hT, (short_complex.exact_iff_of_iso
 
 end is_homological
 
-def is_homological_kernel [F.is_homological] : triangulated.subcategory C :=
+def kernel_of_is_homological [F.is_homological] : triangulated.subcategory C :=
 { set := λ K, ∀ (n : ℤ), limits.is_zero (F.obj (K⟦n⟧)),
   zero := λ n, limits.is_zero.of_iso (is_zero_zero D)
     (F.map_iso (shift_functor C n).map_zero_object ≪≫ F.map_zero_object),
@@ -47,7 +47,7 @@ def is_homological_kernel [F.is_homological] : triangulated.subcategory C :=
     (triangle.shift_distinguished _ T hT n)).is_zero_of_both_zeros
     (is_zero.eq_of_src (h₁ _) _ _) (is_zero.eq_of_tgt (h₃ _) _ _), }
 
-instance is_homological_kernel_saturated [F.is_homological] : F.is_homological_kernel.saturated :=
+instance kernel_of_is_homological_saturated [F.is_homological] : F.kernel_of_is_homological.saturated :=
 ⟨λ L K i, begin
   introI,
   intros hL n,
@@ -58,6 +58,18 @@ instance is_homological_kernel_saturated [F.is_homological] : F.is_homological_k
   dsimp only [functor.comp_map] at eq,
   simpa only [functor.map_comp, functor.map_id, hL, zero_comp, comp_zero] using eq,
 end⟩
+
+def W_of_is_homological [F.is_homological] : morphism_property C :=
+λ X Y f, ∀ (n : ℤ), is_iso (F.map (f⟦n⟧'))
+
+lemma kernel_of_is_homological_W [F.is_homological] :
+  F.kernel_of_is_homological.W = F.W_of_is_homological :=
+begin
+  ext X Y f,
+  split,
+  { sorry, },
+  { sorry, },
+end
 
 end functor
 

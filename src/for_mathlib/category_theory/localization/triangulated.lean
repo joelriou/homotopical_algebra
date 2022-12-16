@@ -160,60 +160,6 @@ end shift
 
 namespace pretriangulated
 
-section
-
-variables (C : Type*) [category C] [has_shift C ℤ] [has_zero_object C] [has_zero_morphisms C]
-
-@[simps]
-def contractible_triangle_functor : C ⥤ triangle C :=
-{ obj := λ X, contractible_triangle X,
-  map := λ X Y f,
-  { hom₁ := f,
-    hom₂ := f,
-    hom₃ := 0, }, }
-
-variable {C}
-@[simps]
-def map_triangle_rotate [preadditive C] [∀ n : ℤ, functor.additive (shift_functor C n)]
-  {D : Type*} [category D] [has_zero_object D] [preadditive D] [has_shift D ℤ]
-  [∀ n : ℤ, functor.additive (shift_functor D n)]
-  (F : triangulated_functor_struct C D) [functor.additive F.to_functor] :
-  F.map_triangle ⋙ rotate D ≅ rotate C ⋙ F.map_triangle :=
-nat_iso.of_components (λ T, triangle.mk_iso _ _ (iso.refl _) (iso.refl _)
-  (F.comm_shift.app _).symm (by tidy) (by tidy) begin
-    dsimp,
-    simp only [functor.map_id, preadditive.neg_comp, comp_id, functor.map_neg,
-      preadditive.comp_neg, neg_inj],
-    erw F.comm_shift.hom.naturality,
-    rw F.comm_shift.inv_hom_id_app_assoc,
-    refl,
-  end)
-(λ T₁ T₂ f, begin
-  ext,
-  { tidy, },
-  { tidy, },
-  { apply F.comm_shift.inv.naturality, },
-end)
-
-@[simps]
-def map_triangle_inv_rotate [preadditive C] [∀ n : ℤ, functor.additive (shift_functor C n)]
-  {D : Type*} [category D] [has_zero_object D] [preadditive D] [has_shift D ℤ]
-  [∀ n : ℤ, functor.additive (shift_functor D n)]
-  (F : triangulated_functor_struct C D) [functor.additive F.to_functor] :
-  F.map_triangle ⋙ inv_rotate D ≅ inv_rotate C ⋙ F.map_triangle :=
-begin
-  calc F.map_triangle ⋙ inv_rotate D ≅ _ : (functor.left_unitor _).symm
-  ... ≅ _ : iso_whisker_right (triangle_rotation C).counit_iso.symm _
-  ... ≅ _ : functor.associator _ _ _
-  ... ≅ _ : iso_whisker_left _ (functor.associator _ _ _).symm
-  ... ≅ _ : iso_whisker_left _ (iso_whisker_right (map_triangle_rotate F).symm _)
-  ... ≅ _ : iso_whisker_left _ (functor.associator _ _ _)
-  ... ≅ _ : iso_whisker_left _ (iso_whisker_left _ (triangle_rotation D).unit_iso.symm)
-  ... ≅ _: iso_whisker_left _ (functor.right_unitor _),
-end
-
-end
-
 variables {C D : Type*} [category C] [category D]
   [has_zero_object C] [has_shift C ℤ] [preadditive C]
   [has_zero_object D] [has_shift D ℤ] [preadditive D]
