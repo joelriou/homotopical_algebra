@@ -481,6 +481,16 @@ begin
     cochain.zero_v, zero_comp],
 end
 
+@[simp, reassoc]
+lemma ι_mapping_cone_comp_from_mapping_cone_of_ses :
+  ι_mapping_cone S.f ≫ from_mapping_cone_of_ses ex = S.g :=
+begin
+  ext n : 2,
+  dsimp only [ι_mapping_cone],
+  simp only [homological_complex.comp_f, inr_from_mapping_cone_of_ses],
+end
+
+
 lemma from_mapping_cone_of_ses_quasi_iso : quasi_iso (from_mapping_cone_of_ses ex) :=
 ⟨λ n, begin
   rw is_iso_homology_map_iff_short_complex_quasi_iso'

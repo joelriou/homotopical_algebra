@@ -23,6 +23,12 @@ instance homotopy_category.homology_functor_additive [abelian C] (n : ι) :
 
 variable (C)
 
+def homotopy_category.comm_shift_quotient [preadditive C] (n : ℤ) :
+  shift_functor (cochain_complex C ℤ) n ⋙
+    homotopy_category.quotient _ _ ≅
+  homotopy_category.quotient _ _ ⋙ shift_functor _ n :=
+quotient.comm_shift _ _
+
 namespace cochain_complex
 
 section
@@ -189,6 +195,15 @@ homotopy_category.quotient _ _ ⋙ Qh.to_functor
 instance Q_additive : (Q : _ ⥤ derived_category C).additive :=
 by { dsimp [Q], apply_instance, }
 
+variable (C)
+
+def comm_shift_Q (n : ℤ) :
+  shift_functor (cochain_complex C ℤ) n ⋙ Q ≅
+  Q ⋙ shift_functor _ n :=
+sorry
+
+variable {C}
+
 lemma is_iso_Q_map_iff {K L : cochain_complex C ℤ} (φ : K ⟶ L) :
   is_iso (Q.map φ) ↔ quasi_iso φ :=
 (subcategory.is_iso_map_iff _ _).trans (homotopy_category.map_quotient_W_iff C φ)
@@ -197,6 +212,88 @@ instance {K L : cochain_complex C ℤ} (φ : K ⟶ L) [quasi_iso φ] :
   is_iso (Q.map φ) :=
 by { rw is_iso_Q_map_iff, apply_instance, }
 
+section
+
+variables {K L : cochain_complex C ℤ}
+  (φ : K ⟶ L)
+
+def mapping_cone := Q.obj (cochain_complex.mapping_cone φ)
+
+def ι_mapping_cone : Q.obj L ⟶ mapping_cone φ :=
+Q.map (cochain_complex.ι_mapping_cone φ)
+
+def mapping_cone_δ : mapping_cone φ ⟶ (Q.obj K)⟦(1 : ℤ)⟧ :=
+  Q.map (cochain_complex.mapping_cone_δ φ) ≫ (comm_shift_Q C 1).hom.app K
+
+def mapping_cone_triangle : triangle (derived_category C) :=
+triangle.mk (Q.map φ) (ι_mapping_cone φ) (mapping_cone_δ φ)
+
+lemma Qh_map_mapping_cone_triangle_iso :
+  (Qh.map_triangle.obj (homotopy_category.mapping_cone_triangle' φ) ≅
+    mapping_cone_triangle φ) :=
+begin
+  sorry,
+end
+
+end
+
+def mem_dist_triang_iff' (T : triangle (derived_category C)) :
+  (T ∈ dist_triang (derived_category C)) ↔
+    ∃ (K L : cochain_complex C ℤ) (φ : K ⟶ L),
+      nonempty (T ≅
+        Qh.map_triangle.obj (homotopy_category.mapping_cone_triangle' φ)) :=
+begin
+  split,
+  { rintro ⟨Th, e, ⟨K, L, φ, ⟨e'⟩⟩⟩,
+    exact ⟨K, L, φ, ⟨e ≪≫ Qh.map_triangle.map_iso e'⟩⟩, },
+  { rintro ⟨K, L, φ, ⟨e⟩⟩,
+    exact ⟨_, e, ⟨K, L, φ, ⟨iso.refl _⟩⟩⟩, },
+end
+
+
+def mem_dist_triang_iff (T : triangle (derived_category C)) :
+  (T ∈ dist_triang (derived_category C)) ↔
+    ∃ (K L : cochain_complex C ℤ) (φ : K ⟶ L),
+      nonempty (T ≅ mapping_cone_triangle φ) :=
+begin
+  rw mem_dist_triang_iff',
+  split,
+  { rintro ⟨K, L, φ, ⟨e⟩⟩,
+    exact ⟨K, L, φ, ⟨e ≪≫ Qh_map_mapping_cone_triangle_iso _⟩⟩, },
+  { rintro ⟨K, L, φ, ⟨e⟩⟩,
+    exact ⟨K, L, φ, ⟨e ≪≫ (Qh_map_mapping_cone_triangle_iso _).symm⟩⟩, },
+end
+
+instance is_iso_Q_map_from_mapping_cone_of_ses
+  {S : short_complex (cochain_complex C ℤ)}
+  (ex : S.short_exact) :
+  quasi_iso (cochain_complex.from_mapping_cone_of_ses ex) :=
+cochain_complex.from_mapping_cone_of_ses_quasi_iso ex
+
+def triangle_of_ses_δ {S : short_complex (cochain_complex C ℤ)}
+  (ex : S.short_exact) : Q.obj S.X₃ ⟶ (Q.obj S.X₁)⟦(1 : ℤ)⟧ :=
+inv (Q.map (cochain_complex.from_mapping_cone_of_ses ex)) ≫ (mapping_cone_triangle S.f).mor₃
+
+@[simps]
+def triangle_of_ses {S : short_complex (cochain_complex C ℤ)}
+  (ex : S.short_exact) : triangle (derived_category C) :=
+triangle.mk (Q.map S.f) (Q.map S.g) (triangle_of_ses_δ ex)
+
+lemma triangle_of_ses_dist {S : short_complex (cochain_complex C ℤ)}
+  (ex : S.short_exact) : triangle_of_ses ex ∈ dist_triang (derived_category C) :=
+begin
+  rw mem_dist_triang_iff,
+  refine ⟨_, _, S.f, ⟨_⟩⟩,
+  refine triangle.mk_iso _ _ (iso.refl _) (iso.refl _)
+    (as_iso (Q.map (cochain_complex.from_mapping_cone_of_ses ex))).symm (by tidy) _ _,
+  { dsimp [triangle_of_ses, mapping_cone_triangle, ι_mapping_cone],
+    simp only [← cancel_mono (Q.map (cochain_complex.from_mapping_cone_of_ses ex)),
+      id_comp, assoc, is_iso.inv_hom_id, comp_id, ← Q.map_comp,
+      cochain_complex.ι_mapping_cone_comp_from_mapping_cone_of_ses], },
+  { dsimp [triangle_of_ses, triangle_of_ses_δ],
+    simp only [category_theory.functor.map_id, comp_id], },
+end
+
 variable (C)
 
 def single_functor (n : ℤ) : C ⥤ derived_category C :=
@@ -204,5 +301,6 @@ homological_complex.single _ _ n ⋙ Q
 
 instance single_functor_additive (n : ℤ) : (single_functor C n).additive :=
 by { dsimp [single_functor], apply_instance, }
+
 
 end derived_category
