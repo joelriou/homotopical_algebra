@@ -5,13 +5,14 @@ noncomputable theory
 
 open category_theory category_theory.category category_theory.limits
   category_theory.triangulated category_theory.pretriangulated
+open_locale zero_object
 
 section
 
 variables {C ι : Type*} [category C]
-  (c : complex_shape ι) [decidable_eq ι]
+  (c : complex_shape ι)
 
-instance homological_complex.single_additive [preadditive C] [has_zero_object C] (n : ι) :
+instance homological_complex.single_additive [decidable_eq ι] [preadditive C] [has_zero_object C] (n : ι) :
   (homological_complex.single C c n).additive :=
 ⟨λ X Y f g, by { ext i, dsimp, split_ifs; simp, }⟩
 
@@ -150,6 +151,8 @@ end homotopy_category
   derive has_finite_coproducts]
 def derived_category := (homotopy_category.acyclic C).W.localization
 
+instance : inhabited (derived_category C) := ⟨0⟩
+
 namespace derived_category
 
 variable {C}
@@ -189,6 +192,10 @@ by { dsimp [Q], apply_instance, }
 lemma is_iso_Q_map_iff {K L : cochain_complex C ℤ} (φ : K ⟶ L) :
   is_iso (Q.map φ) ↔ quasi_iso φ :=
 (subcategory.is_iso_map_iff _ _).trans (homotopy_category.map_quotient_W_iff C φ)
+
+instance {K L : cochain_complex C ℤ} (φ : K ⟶ L) [quasi_iso φ] :
+  is_iso (Q.map φ) :=
+by { rw is_iso_Q_map_iff, apply_instance, }
 
 variable (C)
 
