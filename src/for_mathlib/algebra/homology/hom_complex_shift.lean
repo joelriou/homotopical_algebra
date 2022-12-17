@@ -194,8 +194,6 @@ homological_complex.hom.iso_of_components
     ext1 γ,
     simp only [comp_apply],
     dsimp [hom_complex, δ_hom],
-    erw shift_functor_obj_d,
-    dsimp,
     erw [γ.δ_right_shift n (j+n) i j rfl rfl, cochain.right_shift_smul],
   end)
 
@@ -329,8 +327,6 @@ begin
       linear.smul_comp, assoc, ε_succ, linear.comp_smul, neg_smul, preadditive.comp_add,
       preadditive.comp_neg, smul_add, zsmul_neg', add_right_inj, neg_inj, ← mul_smul],
     dsimp [iso.refl],
-    erw [shift_functor_obj_d],
-    dsimp,
     simp only [preadditive.zsmul_comp, ← mul_smul],
     erw [category.id_comp, category.id_comp, category.id_comp],
     congr' 2,
@@ -407,8 +403,6 @@ homological_complex.hom.iso_of_components
     ext1 γ,
     simp only [comp_apply],
     dsimp [hom_complex, δ_hom],
-    erw [shift_functor_obj_d],
-    dsimp,
     rw [γ.δ_left_shift n j (i+n) (j+n) rfl rfl, ← mul_smul, ← ε_add,
       ε_even _ (even_add_self n), one_smul],
   end)

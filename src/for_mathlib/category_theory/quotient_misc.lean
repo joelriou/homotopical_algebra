@@ -194,6 +194,18 @@ def preadditive :
 lemma functor_additive :
   @functor.additive C (quotient r) _ _ _ (quotient.preadditive r add neg) (functor r) := { }
 
+omit add neg
+
+lemma lift_additive {D : Type*} [category D] [preadditive D] [preadditive (quotient r)]
+  [(functor r).additive] (F : C ⥤ D) [F.additive]
+  (H : ∀ (x y : C) (f₁ f₂ : x ⟶ y), r f₁ f₂ → F.map f₁ = F.map f₂) :
+  (lift r F H).additive :=
+⟨begin
+  rintro ⟨X⟩ ⟨Y⟩ ⟨f₁ : X ⟶ Y⟩ ⟨f₂ : X ⟶ Y⟩,
+  change (lift r F H).map ((functor r).map f₁ + (functor r).map f₂) = F.map f₁ + F.map f₂,
+  simpa only [← functor.map_add],
+end⟩
+
 end preadditive
 
 end quotient

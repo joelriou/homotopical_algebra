@@ -158,4 +158,9 @@ variable {C}
 lemma shift_functor_map_f' {K L : cochain_complex C ℤ} (φ : K ⟶ L) (n p : ℤ) :
   ((category_theory.shift_functor (cochain_complex C ℤ) n).map φ).f p = φ.f (p+n) := rfl
 
+@[simp]
+lemma shift_functor_obj_d' (K : cochain_complex C ℤ) (n i j : ℤ) :
+  ((category_theory.shift_functor (cochain_complex C ℤ) n).obj K).d i j =
+    cochain_complex.hom_complex.ε n • K.d _ _ := rfl
+
 end cochain_complex
