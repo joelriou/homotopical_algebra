@@ -1,5 +1,6 @@
 import for_mathlib.algebra.homology.triangulated
 import for_mathlib.category_theory.triangulated.homological_functor
+import for_mathlib.category_theory.shift_misc
 
 noncomputable theory
 
@@ -197,10 +198,11 @@ by { dsimp [Q], apply_instance, }
 
 variable (C)
 
-def comm_shift_Q (n : ℤ) :
-  shift_functor (cochain_complex C ℤ) n ⋙ Q ≅
-  Q ⋙ shift_functor _ n :=
-sorry
+def comm_shift_Q_one :
+  shift_functor (cochain_complex C ℤ) (1 : ℤ) ⋙
+    (Q : cochain_complex _ _ ⥤ derived_category C) ≅
+    Q ⋙ shift_functor (derived_category C) (1 : ℤ) :=
+functor.comm_shift_comp (homotopy_category.quotient_triangulated_functor_struct.comm_shift) Qh.comm_shift
 
 variable {C}
 
@@ -223,7 +225,7 @@ def ι_mapping_cone : Q.obj L ⟶ mapping_cone φ :=
 Q.map (cochain_complex.ι_mapping_cone φ)
 
 def mapping_cone_δ : mapping_cone φ ⟶ (Q.obj K)⟦(1 : ℤ)⟧ :=
-  Q.map (cochain_complex.mapping_cone_δ φ) ≫ (comm_shift_Q C 1).hom.app K
+  Q.map (cochain_complex.mapping_cone_δ φ) ≫ (comm_shift_Q_one C).hom.app K
 
 def mapping_cone_triangle : triangle (derived_category C) :=
 triangle.mk (Q.map φ) (ι_mapping_cone φ) (mapping_cone_δ φ)
@@ -231,8 +233,20 @@ triangle.mk (Q.map φ) (ι_mapping_cone φ) (mapping_cone_δ φ)
 lemma Qh_map_mapping_cone_triangle_iso :
   (Qh.map_triangle.obj (homotopy_category.mapping_cone_triangle' φ) ≅
     mapping_cone_triangle φ) :=
-begin
-  sorry,
+begin -- needs cleaning up...
+  refine triangle.mk_iso _ _ (iso.refl _) (iso.refl _) (iso.refl _) _ _ _,
+  { tidy, },
+  { tidy, },
+  { dsimp [mapping_cone_triangle, mapping_cone_δ,
+      homotopy_category.mapping_cone_triangle',
+      cochain_complex.mapping_cone_δ',
+      comm_shift_Q_one, functor.comm_shift_comp],
+    simp only [category_theory.functor.map_id, comp_id, id_comp],
+    congr' 1,
+    erw id_comp,
+    symmetry,
+    convert id_comp _,
+    convert category_theory.functor.map_id _ _, },
 end
 
 end
@@ -301,6 +315,5 @@ homological_complex.single _ _ n ⋙ Q
 
 instance single_functor_additive (n : ℤ) : (single_functor C n).additive :=
 by { dsimp [single_functor], apply_instance, }
-
 
 end derived_category
