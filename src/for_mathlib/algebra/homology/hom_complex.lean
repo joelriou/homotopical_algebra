@@ -671,6 +671,8 @@ end
 end cochain
 
 variables {F G}
+
+@[simps]
 def equiv_homotopy (φ₁ φ₂ : F ⟶ G) :
   homotopy φ₁ φ₂ ≃
     { z : cochain F G (-1) // cochain.of_hom φ₁ = δ (-1) 0 z + cochain.of_hom φ₂ } :=
@@ -723,6 +725,12 @@ def equiv_homotopy (φ₁ φ₂ : F ⟶ G) :
     dsimp [cochain.mk, cochain.v],
     simpa only [dif_pos (show q+1=p, by linarith)],
   end, }
+
+@[simp]
+def δ_cochain_of_homotopy {φ₁ φ₂ : F ⟶ G} (h : homotopy φ₁ φ₂) :
+  δ (-1) 0 (cochain.of_homotopy h) = cochain.of_hom φ₁ - cochain.of_hom φ₂ :=
+by rw [((equiv_homotopy _ _) h).2, add_sub_cancel,
+  subtype.val_eq_coe, equiv_homotopy_apply_coe]
 
 namespace cochain
 
