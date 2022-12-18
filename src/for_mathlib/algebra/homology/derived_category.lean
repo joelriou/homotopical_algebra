@@ -1,6 +1,8 @@
 import for_mathlib.algebra.homology.triangulated
 import for_mathlib.category_theory.triangulated.homological_functor
 import for_mathlib.category_theory.shift_misc
+import for_mathlib.category_theory.localization.composition
+import for_mathlib.algebra.homology.cylinder
 
 noncomputable theory
 
@@ -29,6 +31,9 @@ def homotopy_category.comm_shift_quotient [preadditive C] (n : ℤ) :
     homotopy_category.quotient _ _ ≅
   homotopy_category.quotient _ _ ⋙ shift_functor _ n :=
 quotient.comm_shift _ _
+
+instance [preadditive C]: full (homotopy_category.quotient C c) :=
+by { dsimp [homotopy_category.quotient], apply_instance, }
 
 namespace cochain_complex
 
@@ -219,6 +224,8 @@ begin
   simpa only [← λ n, nat_iso.is_iso_map_iff (shift_homology_functor_iso C _ _ _ (zero_add n)) φ],
 end
 
+variable {C}
+
 lemma map_quotient_W_iff {K L : cochain_complex C ℤ} (φ : K ⟶ L) :
   (acyclic C).W ((quotient _ _).map φ) ↔ quasi_iso φ :=
 begin
@@ -231,6 +238,23 @@ begin
 end
 
 end homotopy_category
+
+section
+
+variables (D : Type*) [category D] [has_zero_morphisms D] [category_with_homology D]
+  {ι : Type*} (c : complex_shape ι)
+
+def quasi_isomorphisms :
+  morphism_property (homological_complex D c) :=
+λ K L φ, ∀ (i : ι), is_iso (homology_map φ i)
+
+variables {D c}
+
+lemma mem_quasi_isomorphisms_iff {K L : homological_complex D c} (φ : K ⟶ L) :
+  quasi_isomorphisms D c φ ↔ quasi_iso φ :=
+⟨λ h, ⟨h⟩, λ h, h.1⟩
+
+end
 
 @[derive category, derive preadditive, derive has_zero_object, derive has_finite_products,
   derive has_finite_coproducts]
@@ -286,11 +310,43 @@ variable {C}
 
 lemma is_iso_Q_map_iff {K L : cochain_complex C ℤ} (φ : K ⟶ L) :
   is_iso (Q.map φ) ↔ quasi_iso φ :=
-(subcategory.is_iso_map_iff _ _).trans (homotopy_category.map_quotient_W_iff C φ)
+(subcategory.is_iso_map_iff _ _).trans (homotopy_category.map_quotient_W_iff φ)
 
 instance {K L : cochain_complex C ℤ} (φ : K ⟶ L) [quasi_iso φ] :
   is_iso (Q.map φ) :=
 by { rw is_iso_Q_map_iff, apply_instance, }
+
+variable (C)
+
+lemma Q_inverts_quasi_isomorphisms : (quasi_isomorphisms C _).is_inverted_by Q :=
+λ K L φ hφ, begin
+  rw mem_quasi_isomorphisms_iff at hφ,
+  haveI := hφ,
+  apply_instance,
+end
+
+lemma homotopy_equivalences_subset_quasi_isomorphisms :
+  cochain_complex.homotopy_equivalences C ⊆ quasi_isomorphisms C (complex_shape.up ℤ) :=
+begin
+  rintros K L _ ⟨h, rfl⟩,
+  simpa only [mem_quasi_isomorphisms_iff] using h.to_quasi_iso,
+end
+
+instance Q_is_localization : Q.is_localization (quasi_isomorphisms C _) :=
+localization.comp (homotopy_category.quotient _ _) (Qh.to_functor)
+    (cochain_complex.homotopy_equivalences C) (homotopy_category.acyclic C).W
+    (quasi_isomorphisms C _) (Q_inverts_quasi_isomorphisms C)
+    (homotopy_equivalences_subset_quasi_isomorphisms C)
+(begin
+  rintros ⟨K⟩ ⟨L⟩ φ hφ,
+  have hf : ∃ (f : K ⟶ L), (homotopy_category.quotient _ _).map f = φ :=
+    ⟨_, (homotopy_category.quotient C (complex_shape.up ℤ)).image_preimage φ⟩,
+  obtain ⟨f, rfl⟩ := hf,
+  refine ⟨_, _, f, _, ⟨iso.refl _⟩⟩,
+  simpa only [mem_quasi_isomorphisms_iff, ← homotopy_category.map_quotient_W_iff] using hφ,
+end)
+
+variable {C}
 
 section
 
@@ -341,7 +397,6 @@ begin
   { rintro ⟨K, L, φ, ⟨e⟩⟩,
     exact ⟨_, e, ⟨K, L, φ, ⟨iso.refl _⟩⟩⟩, },
 end
-
 
 def mem_dist_triang_iff (T : triangle (derived_category C)) :
   (T ∈ dist_triang (derived_category C)) ↔

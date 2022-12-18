@@ -1,6 +1,6 @@
 import for_mathlib.algebra.homology.mapping_cone
 import for_mathlib.algebra.homology.homological_complex_biprod
-import category_theory.morphism_property
+import category_theory.localization.predicate
 
 noncomputable theory
 
@@ -157,3 +157,37 @@ begin
 end
 
 end cochain_complex
+
+namespace homotopy_category
+
+variable (C)
+
+lemma localization_strict_universal_property (D : Type*) [category D] :
+  localization.strict_universal_property_fixed_target (quotient C (complex_shape.up ℤ))
+    (cochain_complex.homotopy_equivalences C) D :=
+{ inverts := begin
+    rw cochain_complex.homotopy_equivalences_is_inverted_by_iff,
+    exact λ K L, eq_of_homotopy,
+  end,
+  lift := λ F hF, category_theory.quotient.lift _ F (begin
+    rintros K L f₁ f₂ ⟨h⟩,
+    rw cochain_complex.homotopy_equivalences_is_inverted_by_iff at hF,
+    exact hF _ _ _ _ h,
+  end),
+  fac := λ F hF, quotient.lift_spec _ _ _,
+  uniq := λ F₁ F₂ h, begin
+    rw [quotient.lift_unique _ _ _ F₁ rfl, quotient.lift_unique _ _ _ F₂ h.symm],
+    { refl, },
+    { rintros K L f₁ f₂ ⟨h⟩,
+      dsimp,
+      rw eq_of_homotopy _ _ h, },
+  end, }
+
+
+instance is_localization :
+  (homotopy_category.quotient C (complex_shape.up ℤ)).is_localization
+    (cochain_complex.homotopy_equivalences C) :=
+functor.is_localization.mk' _ _ (localization_strict_universal_property _ _)
+  (localization_strict_universal_property _ _)
+
+end homotopy_category
