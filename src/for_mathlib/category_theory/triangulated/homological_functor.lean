@@ -73,16 +73,27 @@ variables {C D A : Type*} [category C] [has_zero_object C] [has_shift C ℤ]
 @[simps]
 def pretriangulated.triangle.short_complex (T : pretriangulated.triangle C)
   (hT : T ∈ dist_triang C) : short_complex C :=
-  short_complex.mk T.mor₁ T.mor₂ (pretriangulated.triangle.comp_zero₁₂ _ hT)
+  (candidate_triangle.of_distinguished T hT).short_complex
 
 namespace functor
 
 @[protected]
 class is_homological : Prop :=
 (map_distinguished [] : ∀ (T : pretriangulated.triangle C) (hT : T ∈ dist_triang C),
-    ((T.short_complex hT).map F).exact)
+  ((T.short_complex hT).map F).exact)
 
 namespace is_homological
+
+lemma mk' (hF : ∀ (T : pretriangulated.triangle C) (hT : T ∈ dist_triang C),
+  ∃ (T' : pretriangulated.triangle C) (hT' : T' ∈ dist_triang C) (e : T ≅ T'),
+    ((T'.short_complex hT').map F).exact) :
+  F.is_homological :=
+⟨λ T hT, begin
+  obtain ⟨T', hT', e, ex'⟩ := hF T hT,
+  refine (short_complex.exact_iff_of_iso (F.map_short_complex.map_iso
+    ((candidate_triangle.to_short_complex_functor C).map_iso _))).2 ex',
+  exact preimage_iso (full_subcategory_inclusion _ : candidate_triangle C ⥤ _) e,
+end⟩
 
 variable {F}
 

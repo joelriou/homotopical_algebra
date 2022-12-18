@@ -92,10 +92,28 @@ def candidate_triangle := full_subcategory (λ (T : triangle C), T.comp_eq_zero)
 variable {C}
 
 @[simps]
+def candidate_triangle.mk (T : triangle C) (hT : T.comp_eq_zero) :
+  candidate_triangle C := ⟨T, hT⟩
+
+@[simps]
 def candidate_triangle.of_distinguished (T : triangle C) (hT : T ∈ dist_triang C) :
   candidate_triangle C := ⟨T, triangle.comp_eq_zero.of_distinguished T hT⟩
 
+@[simps]
+def candidate_triangle.short_complex (T : candidate_triangle C) :
+  short_complex C :=
+short_complex.mk _ _ T.property.zero₁₂
+
 variable (C)
+
+@[simps]
+def candidate_triangle.to_short_complex_functor :
+  candidate_triangle C ⥤ short_complex C :=
+{ obj := candidate_triangle.short_complex,
+  map := λ T₁ T₂ φ,
+  { τ₁ := φ.hom₁,
+    τ₂ := φ.hom₂,
+    τ₃ := φ.hom₃, }, }
 
 @[simps]
 def candidate_triangle.to_five_complex : candidate_triangle C ⥤ five_complex C :=

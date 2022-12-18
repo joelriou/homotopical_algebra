@@ -259,6 +259,36 @@ lemma mapping_cone_cochain_ext' {K : cochain_complex C ℤ} {m m' : ℤ}
       y₂.comp (mapping_cone_snd φ) (add_zero m).symm :=
 hom_complex.twist.cochain_ext' _ _ _ _ _
 
+@[reassoc]
+lemma mapping_cone_d_fst (n₁ n₂ n₃ : ℤ) (h₁₂ : n₂ = n₁ + 1) (h₂₃ : n₃ = n₂ + 1) :
+  (mapping_cone φ).d n₁ n₂ ≫ (mapping_cone_fst φ : cochain (mapping_cone φ) F 1).v n₂ n₃ h₂₃ =
+  -(mapping_cone_fst φ : cochain (mapping_cone φ) F 1).v n₁ n₂ h₁₂ ≫ F.d n₂ n₃ :=
+begin
+  rw from_mapping_cone_ext_iff _ _ _ h₁₂,
+  split,
+  { simp only [mapping_cone_inl_fst_assoc, preadditive.sub_comp, assoc, mapping_cone_inr_fst,
+      mapping_cone_inl_d_assoc φ n₁ n₂ n₃ (by linarith) (by linarith), comp_zero, comp_id,
+      mapping_cone_inl_fst, zero_sub, preadditive.comp_neg, mapping_cone_inl_fst_assoc], },
+  { simp only [mapping_cone_inr_d_assoc, mapping_cone_inr_fst, comp_zero, preadditive.comp_neg,
+      mapping_cone_inr_fst_assoc, zero_comp, neg_zero], },
+end
+
+@[reassoc]
+lemma mapping_cone_d_snd (n₁ n₂ : ℤ) (h₁₂ : n₂ = n₁ + 1) :
+  (mapping_cone φ).d n₁ n₂ ≫ (mapping_cone_snd φ).v n₂ n₂ (add_zero n₂).symm =
+    (mapping_cone_fst φ : cochain (mapping_cone φ) F 1).v n₁ n₂ h₁₂ ≫ φ.f n₂ +
+    (mapping_cone_snd φ).v n₁ n₁ (add_zero n₁).symm ≫ G.d n₁ n₂ :=
+begin
+  rw from_mapping_cone_ext_iff _ _ _ h₁₂,
+  split,
+  { simp only [add_zero, preadditive.comp_add, mapping_cone_inl_fst_assoc, comp_id, comp_zero,
+      mapping_cone_inl_snd_assoc, zero_comp, preadditive.sub_comp, assoc, sub_zero,
+      mapping_cone_inl_d_assoc φ n₁ n₂ (n₂+1) (by linarith) (by linarith),
+      mapping_cone_inr_snd, mapping_cone_inl_snd], },
+  { simp only [mapping_cone_inr_d_assoc, mapping_cone_inr_snd, comp_id, preadditive.comp_add,
+      mapping_cone_inr_fst_assoc, zero_comp, mapping_cone_inr_snd_assoc, zero_add], },
+end
+
 variable (φ)
 
 @[simp]

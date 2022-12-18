@@ -122,10 +122,88 @@ end
 
 variables (C : Type*) [category C] [abelian C]
 
+section
+
+open cochain_complex
+
+lemma homology_functor_comp_ι_mapping_cone {K L : cochain_complex C ℤ} (φ : K ⟶ L) (n : ℤ) :
+  (homology_functor C (complex_shape.up ℤ) n).map (φ ≫ ι_mapping_cone φ) = 0 :=
+begin
+  rw homotopy_category.homology_functor_map_factors,
+  have hφ : homotopy_category.induced_triangle (mapping_cone_triangle φ) ∈ dist_triang _,
+  { rw homotopy_category.triangle_distinguished_iff,
+    exact ⟨_, _, _, ⟨iso.refl _⟩⟩, },
+  simpa only [functor.map_comp, functor.map_zero]
+    using (homotopy_category.homology_functor _ _ n).congr_map
+      ((triangle.comp_eq_zero.of_distinguished _ hφ).zero₁₂),
+end
+
+variable {C}
+
+lemma homology_functor_is_homological_aux {K L : cochain_complex C ℤ} (φ : K ⟶ L) (n : ℤ) :
+  (short_complex.mk ((homology_functor C (complex_shape.up ℤ) n).map φ)
+    ((homology_functor C (complex_shape.up ℤ) n).map (ι_mapping_cone φ))
+    (by rw [← functor.map_comp, homology_functor_comp_ι_mapping_cone])).exact :=
+begin
+  rw short_complex.exact_iff_pseudo_exact',
+  intros A₀ γ₂ hγ₂,
+  dsimp at γ₂ hγ₂,
+  /- the next three operations could be a specialised lemma -/
+  obtain ⟨A₁, π₁, hπ₁, z₂, hz₂⟩ := abelian.pseudo_surjective_of_epi'
+    (short_complex.homology_π _) γ₂,
+  have hz₂' : ∃ z₂' hz₂', z₂ = short_complex.lift_cycles _ z₂' hz₂' :=
+    ⟨z₂ ≫ short_complex.cycles_i _,
+      by simp only [assoc, short_complex.cycles_i_g, comp_zero],
+      by simp only [← cancel_mono ((homological_complex.short_complex_functor C
+        (complex_shape.up ℤ) n).obj L).cycles_i, short_complex.lift_cycles_i]⟩,
+  obtain ⟨z₂, hz₂', rfl⟩ := hz₂',
+  replace hγ₂ := π₁ ≫= hγ₂,
+  rw [reassoc_of hz₂, comp_zero, short_complex.homology_π_naturality, ← assoc,
+    short_complex.comp_homology_π_eq_zero_iff] at hγ₂,
+  obtain ⟨A₂, π₂, hπ₂, c₁, hc₁⟩ := hγ₂,
+  dsimp at c₁ hc₁,
+  replace hc₁ := hc₁ =≫ (short_complex.cycles_i _),
+  simp only [assoc, homological_complex.short_complex_functor_map_τ₂,
+    short_complex.lift_cycles_comp_cycles_map, short_complex.lift_cycles_i,
+    short_complex.to_cycles_i, homological_complex.short_complex_functor_obj_f,
+    @to_mapping_cone_ext_iff _ _ _ _ _ _ φ _ _ _ _ ((complex_shape.up _).next n) (by simp),
+    mapping_cone_d_fst ((complex_shape.up _).prev n) n ((complex_shape.up _).next n) (by simp) (by simp),
+    mapping_cone_d_snd ((complex_shape.up _).prev n) n (by simp),
+    ι_mapping_cone, mapping_cone_inr_fst, comp_zero, preadditive.comp_neg,
+    zero_eq_neg, mapping_cone_inr_snd, preadditive.comp_add] at hc₁,
+  dsimp at hc₁,
+  rw comp_id at hc₁,
+  obtain ⟨hc₁, hc₁'⟩ := hc₁,
+  rw ← assoc at hc₁,
+  haveI := hπ₁,
+  haveI := hπ₂,
+  refine ⟨A₂, π₂ ≫ π₁, epi_comp _ _,
+    ((homological_complex.short_complex_functor C
+      (complex_shape.up ℤ) n).obj K).lift_cycles _ hc₁ ≫ short_complex.homology_π _, _⟩,
+  dsimp,
+  simp only [assoc, hz₂, short_complex.comp_lift_cycles_assoc,
+    homological_complex.short_complex_functor_map_τ₂, short_complex.homology_π_naturality,
+    short_complex.lift_cycles_comp_cycles_map_assoc,
+    short_complex.lift_cycles_comp_homology_π_eq_iff],
+  exact ⟨A₂, 𝟙 A₂, infer_instance,
+    c₁ ≫ (mapping_cone_snd φ).v ((complex_shape.up ℤ).prev n)
+      ((complex_shape.up ℤ).prev n) (add_zero _).symm, by simpa only [id_comp, hc₁', assoc]⟩,
+end
+
+end
+
+variable (C)
+
 namespace homotopy_category
 
 instance homology_functor_is_homological (n : ℤ):
-  (homology_functor C (complex_shape.up ℤ) n).is_homological := sorry
+  (homology_functor C (complex_shape.up ℤ) n).is_homological :=
+functor.is_homological.mk' _ (λ T hT, begin
+  rw triangle_distinguished_iff at hT,
+  obtain ⟨K, L, φ, ⟨e⟩⟩ := hT,
+  refine ⟨_, ⟨_, _, _, ⟨mapping_cone_induced_triangle_iso φ⟩⟩, e,
+    homology_functor_is_homological_aux φ n⟩,
+end)
 
 def acyclic : triangulated.subcategory (homotopy_category C (complex_shape.up ℤ)) :=
 (homology_functor C (complex_shape.up ℤ) 0).kernel_of_is_homological
