@@ -436,10 +436,8 @@ end preadditive
 section abelian
 
 open hom_complex
-variables [abelian C] {S : short_complex (cochain_complex C ℤ)} (ex : S.short_exact)
 
-instance (n : ℤ) :
-  preserves_finite_colimits (homological_complex.eval C (complex_shape.up ℤ) n) := sorry
+variables [abelian C] {S : short_complex (cochain_complex C ℤ)} (ex : S.short_exact)
 
 include ex
 
