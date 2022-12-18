@@ -3,6 +3,7 @@ import algebra.homology.quasi_iso
 import algebra.homology.short_complex.pseudoelements
 import for_mathlib.algebra.homology.hom_complex_shift
 import category_theory.triangulated.triangulated
+import for_mathlib.algebra.homology.homological_complex_limits
 
 noncomputable theory
 open category_theory category_theory.category category_theory.limits
@@ -437,8 +438,6 @@ section abelian
 open hom_complex
 variables [abelian C] {S : short_complex (cochain_complex C ℤ)} (ex : S.short_exact)
 
-instance (n : ℤ) :
-  preserves_finite_limits (homological_complex.eval C (complex_shape.up ℤ) n) := sorry
 instance (n : ℤ) :
   preserves_finite_colimits (homological_complex.eval C (complex_shape.up ℤ) n) := sorry
 
