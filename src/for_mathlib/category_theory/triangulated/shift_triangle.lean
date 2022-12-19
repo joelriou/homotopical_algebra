@@ -158,8 +158,6 @@ begin
         linarith, }, }, },
 end
 
-example : ℕ := 42
-
 def triangle.shift_functor_comm {C D : Type*} [category C] [category D]
   [preadditive C] [preadditive D] [has_shift C ℤ] [has_shift D ℤ] [has_zero_object C] [has_zero_object D]
   [∀ (n : ℤ), (shift_functor C n).additive] [∀ (n : ℤ), (shift_functor D n).additive] {F : C ⥤ D}
