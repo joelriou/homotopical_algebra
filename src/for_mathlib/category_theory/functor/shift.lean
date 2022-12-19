@@ -1,6 +1,7 @@
 import category_theory.shift
 import tactic.linarith
 import for_mathlib.category_theory.functor.shift_compatibility
+import for_mathlib.category_theory.triangulated.shift_compatibility
 
 noncomputable theory
 
@@ -142,7 +143,6 @@ begin
     eq_to_iso_refl, shift.compatibility.comm_shift.change_refl],
 end
 
-
 end comm_shift
 
 variables (F A)
@@ -156,6 +156,10 @@ structure comm_shift :=
 namespace comm_shift
 
 variables {F A}
+
+lemma congr_iso {a b : A} (e : F.comm_shift A) (h : a = b) (X : C) :
+  (e.iso a).hom.app X = eq_to_hom (by rw h) ≫ (e.iso b).hom.app X ≫ eq_to_hom (by rw h) :=
+by { subst h, simp only [eq_to_hom_refl, comp_id, id_comp], }
 
 lemma iso_add_eq_of_iso_eq (e₁ e₂ : F.comm_shift A) (a b : A)
   (ha : e₁.iso a = e₂.iso a) (hb : e₁.iso b = e₂.iso b) :
@@ -375,6 +379,36 @@ def equiv_ℤ : comm_shift F ℤ ≃
   inv_fun := λ e, mk_ℤ e,
   left_inv := λ c, by { ext, refl, },
   right_inv := λ e, rfl, }
+
+lemma iso_add_hom_app {F : C ⥤ D} (h : F.comm_shift ℤ) (p q : ℤ) (X : C) :
+  (h.iso (p+q)).hom.app X = F.map ((shift_functor_add C p q).hom.app X) ≫
+    (h.iso q).hom.app (X⟦p⟧) ≫ ((h.iso p).hom.app X)⟦q⟧' ≫
+    (shift_functor_add D p q).inv.app (F.obj X) :=
+by simp only [h.iso_add, add, shift.compatibility.comm_shift.comp_hom_app, iso.symm_hom,
+  iso.symm_inv, monoidal_functor.μ_iso_hom]
+
+lemma map_shift_functor_add_comm {F : C ⥤ D} (h : F.comm_shift ℤ) (p q : ℤ) (X : C) :
+    F.map ((shift_functor_add_comm C p q).hom.app X) ≫
+      (h.iso p).hom.app (X⟦q⟧) ≫ ((h.iso q).hom.app X)⟦p⟧' =
+    (h.iso q).hom.app (X⟦p⟧) ≫ ((h.iso p).hom.app X)⟦q⟧' ≫
+      (shift_functor_add_comm D p q).hom.app (F.obj X) :=
+begin
+  have eq₁ := h.iso_add_hom_app p q X,
+  simp only [← cancel_mono ((shift_functor_add D p q).hom.app (F.obj X)),
+    assoc, iso.inv_hom_id_app] at eq₁,
+  erw comp_id at eq₁,
+  have eq₂ := h.iso_add_hom_app q p X,
+  simp only [← cancel_epi (F.map ((shift_functor_add C q p).inv.app X)),
+    ← F.map_comp_assoc, iso.inv_hom_id_app, F.map_id, id_comp] at eq₂,
+  simp only [← cancel_epi (F.map ((shift_functor_add C p q).hom.app X)),
+    ← cancel_mono ((shift_functor_add D q p).inv.app (F.obj X)), assoc],
+  slice_rhs 1 3 { rw ← eq₁, },
+  simp only [assoc, ← eq₂], clear eq₁ eq₂,
+  dsimp only [shift_functor_add_comm, iso.symm, iso.trans, nat_trans.comp_app],
+  simpa only [F.map_comp, ← F.map_comp_assoc, assoc, eq_to_iso, eq_to_hom_app, eq_to_hom_map,
+    iso.hom_inv_id_app, iso.hom_inv_id_app_assoc, F.map_id, id_comp, comp_id,
+    h.congr_iso (add_comm p q), assoc, eq_to_hom_trans, eq_to_hom_refl],
+end
 
 end comm_shift
 

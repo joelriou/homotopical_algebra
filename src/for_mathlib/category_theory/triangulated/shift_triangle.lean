@@ -158,6 +158,8 @@ begin
         linarith, }, }, },
 end
 
+example : ℕ := 42
+
 def triangle.shift_functor_comm {C D : Type*} [category C] [category D]
   [preadditive C] [preadditive D] [has_shift C ℤ] [has_shift D ℤ] [has_zero_object C] [has_zero_object D]
   [∀ (n : ℤ), (shift_functor C n).additive] [∀ (n : ℤ), (shift_functor D n).additive] {F : C ⥤ D}
@@ -176,9 +178,8 @@ begin
     simp only [F.map_zsmul, zsmul_comp, eq₂, comp_zsmul], },
   { have eq₃ := (h.iso n).hom.naturality T.mor₃,
     dsimp at ⊢ eq₃,
-    simp only [F.map_zsmul, zsmul_comp, comp_zsmul, functor.map_comp, assoc, ← reassoc_of eq₃],
-    congr' 2,
-    sorry, },
+    simp only [F.map_zsmul, zsmul_comp, comp_zsmul, functor.map_comp, assoc, ← reassoc_of eq₃,
+      h.map_shift_functor_add_comm], },
   { ext; apply (h.iso n).hom.naturality, },
 end
 
