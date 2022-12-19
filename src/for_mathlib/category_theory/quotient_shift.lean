@@ -67,7 +67,7 @@ quotient.nat_trans_ext _ _ (λ X, begin
   dsimp [shift_ε, shift_μ, comm_shift],
   simp only [comp_id, id_comp, eq_to_hom_app],
   erw [functor.map_id, id_comp, id_comp],
-  dsimp [quotient.shift_functor],
+  dsimp [quotient.shift_functor, lift_map],
   erw [← functor_map_eq, ← functor_map_eq, ← functor.map_comp],
   transitivity (functor r).map (eq_to_hom _), swap,
   { rw zero_add, },
