@@ -7,8 +7,15 @@ namespace category_theory
 
 open category
 
-variables {C A : Type*} [category C] [add_monoid A] [has_shift C A] {r : hom_rel C}
+variables {C A : Type*} [category C] (r : hom_rel C)
+
+lemma quotient.functor_map_eq {X Y : C} (f : X ⟶ Y) :
+  (quotient.functor r).map f = quot.mk _ f := rfl
+
+variables [add_monoid A] [has_shift C A]
   (h : ∀ (a : A) ⦃X Y : C⦄ (f₁ f₂ : X ⟶ Y), r f₁ f₂ → r (f₁⟦a⟧') (f₂⟦a⟧'))
+
+variable {r}
 
 namespace quotient
 
@@ -32,31 +39,63 @@ quotient.lift_nat_iso _ _ ((functor.associator _ _ _).symm ≪≫
   iso_whisker_left _ (comm_shift h b).symm ≪≫ (functor.associator _ _ _).symm ≪≫
   iso_whisker_right (shift_functor_add C a b).symm _ ≪≫ comm_shift h (a + b))
 
+--local attribute [instance, reducible] endofunctor_monoidal_category
+local attribute [reducible] discrete.add_monoidal
+local attribute [-simp] lift_map
+
 lemma shift_associativity (a b c : A) :
   (shift_μ h a b).hom ◫ 𝟙 (quotient.shift_functor h c) ≫
     (shift_μ h (a + b) c).hom ≫ eq_to_hom (by rw add_assoc) =
   (functor.associator _ _ _).hom ≫ 𝟙 (quotient.shift_functor h a) ◫ (shift_μ h b c).hom ≫
     (shift_μ h a (b + c)).hom :=
-begin
+quotient.nat_trans_ext _ _ (λ X, begin
+  dsimp only [shift_ε, shift_μ, quotient.shift_functor, comm_shift],
+  simp only [iso.symm_symm_eq, lift_nat_iso_hom, iso.trans_hom, iso.symm_hom,
+    iso_whisker_right_hom, iso_whisker_left_hom, monoidal_functor.μ_iso_hom, nat_trans.comp_app,
+    lift_nat_trans_app, functor.associator_inv_app, whisker_right_app, lift.is_lift_hom,
+    functor.associator_hom_app, whisker_left_app, functor_map, lift.is_lift_inv, comp_id, id_comp,
+    functor.map_comp, eq_to_hom_app, assoc, nat_trans.hcomp_app, nat_trans.id_app, functor.map_id],
+  erw [functor.map_id, functor.map_id, functor.map_id, functor.map_id, comp_id, id_comp,
+    id_comp, id_comp, id_comp, id_comp, id_comp, id_comp, id_comp, id_comp, id_comp, id_comp],
   sorry,
-end
-
---local attribute [instance, reducible] endofunctor_monoidal_category
---local attribute [reducible] discrete.add_monoidal
+end)
 
 lemma shift_left_unitality (a : A) :
   (shift_ε h).hom ◫ 𝟙 (quotient.shift_functor h a) ≫ (shift_μ h 0 a).hom =
     eq_to_hom (congr_arg (quotient.shift_functor h) (zero_add a).symm) :=
 quotient.nat_trans_ext _ _ (λ X, begin
-  sorry,
+  dsimp [shift_ε, shift_μ, comm_shift],
+  simp only [comp_id, id_comp, eq_to_hom_app],
+  erw [functor.map_id, id_comp, id_comp],
+  dsimp [quotient.shift_functor],
+  erw [← functor_map_eq, ← functor_map_eq, ← functor.map_comp],
+  transitivity (functor r).map (eq_to_hom _), swap,
+  { rw zero_add, },
+  { congr' 1,
+    simp only [obj_ε_app, eq_to_iso.inv, assoc, μ_inv_hom_app],
+    erw [comp_id, eq_to_hom_map, eq_to_hom_app], },
+  { apply eq_to_hom_map, },
 end)
 
 lemma shift_right_unitality (a : A) :
   𝟙 (quotient.shift_functor h a) ◫ (shift_ε h).hom ≫ (shift_μ h a 0).hom =
     eq_to_hom (congr_arg (quotient.shift_functor h) (add_zero a).symm) :=
-begin
-  sorry,
-end
+quotient.nat_trans_ext _ _ (λ X, begin
+  dsimp only [shift_ε, shift_μ, iso.trans, nat_trans.hcomp, nat_trans.comp_app,
+    quotient.shift_functor, comm_shift, lift.is_lift],
+  simp only [iso.symm_inv, assoc, iso.symm_hom, iso_whisker_right_hom, lift_nat_iso_hom,
+    nat_trans.id_app, lift_nat_trans_app, nat_trans.comp_app, whisker_right_app, functor.map_id,
+    nat_iso.of_components_hom_app, iso.refl_hom, nat_iso.of_components_inv_app, iso.refl_inv],
+  dsimp,
+  simp only [id_comp, comp_id, eq_to_hom_app],
+  erw [← functor_map_eq, ← functor_map_eq, ← functor.map_comp],
+  transitivity (functor r).map (eq_to_hom _), swap,
+  { rw add_zero, },
+  { congr' 1,
+    simp only [ε_app_obj, eq_to_iso.inv, assoc, μ_inv_hom_app, comp_id,
+      eq_to_hom_map, eq_to_hom_app], },
+  { apply eq_to_hom_map, },
+end)
 
 @[protected]
 def shift : has_shift (quotient r) A :=
