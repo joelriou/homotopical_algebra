@@ -7,7 +7,9 @@ namespace category_theory
 
 open limits category
 
-variables (C : Type*) [category C]
+universes v u
+
+variables (C : Type u) [category.{v} C]
 
 @[derive category]
 def short_exact_sequence [has_zero_morphisms C] :=
@@ -229,6 +231,22 @@ def pull_functor {A A' : C} (π : A' ⟶ A) (B : C) : extension A B ⥤ extensio
   map := λ E₁ E₂ f,
   { τ := pullback.map _ _ _ _ f.τ (𝟙 A') (𝟙 A) (by simp) (by simp), }, }
 
+
+def pull_functor_id (A B : C) : pull_functor (𝟙 A) B ≅ 𝟭 _ :=
+nat_iso.of_components
+  (λ E, as_iso
+    { τ := pullback.fst,
+      commp' := by { dsimp, rw [pullback.condition, comp_id], }, })
+  (by tidy)
+
+def pull_functor_comp {A A' A'' : C} (π : A' ⟶ A) (π' : A'' ⟶ A') (B : C) :
+  pull_functor π B ⋙ pull_functor π' B ≅ pull_functor (π' ≫ π) B :=
+nat_iso.of_components
+  (λ E, as_iso
+    { τ := pullback.lift (pullback.fst ≫ pullback.fst) pullback.snd
+        (by erw [assoc, pullback.condition, pullback.condition_assoc]), })
+  (by tidy)
+
 @[simps]
 def push {B' : C} (E : extension A B) (ι : B ⟶ B') : extension A B' :=
 { X := pushout E.i ι,
@@ -253,7 +271,114 @@ def push_functor (A : C) {B B' : C} (ι : B ⟶ B') : extension A B ⥤ extensio
   map := λ E₁ E₂ f,
   { τ := pushout.map _ _ _ _ f.τ (𝟙 B') (𝟙 B) (by simp) (by simp), }, }
 
+def push_functor_id (A B : C) : push_functor A (𝟙 B) ≅ 𝟭 _ :=
+iso.symm (nat_iso.of_components
+  (λ E, as_iso
+    { τ := pushout.inl,
+      commi' := by { dsimp, rw [pushout.condition, id_comp], }, })
+  (by tidy))
+
+def push_functor_comp (A : C) {B B' B'' : C} (ι : B ⟶ B') (ι' : B' ⟶ B'') :
+  push_functor A ι ⋙ push_functor A ι' ≅ push_functor A (ι ≫ ι') :=
+iso.symm (nat_iso.of_components
+  (λ E, as_iso
+    { τ := pushout.desc (pushout.inl ≫ pushout.inl) pushout.inr
+        (by rw [pushout.condition_assoc, pushout.condition, assoc]), })
+  (by tidy))
+
+def pull_functor_comm_push_functor {A A' B B' : C} (π : A' ⟶ A) (ι : B ⟶ B') :
+  pull_functor π B ⋙ push_functor A' ι ≅
+    push_functor A ι ⋙ pull_functor π B' :=
+nat_iso.of_components
+  (λ E, as_iso
+    { τ := pushout.desc
+        (pullback.map _ _ _ _ pushout.inl (𝟙 A') (𝟙 A) (by tidy) (by simp))
+        (pullback.lift pushout.inr 0
+          (by { dsimp, simp only [pushout.inr_desc, zero_comp], }))
+        begin
+          ext,
+          { dsimp, simp [pushout.condition], },
+          { dsimp, simp, },
+        end, })
+  (by tidy)
+
 end extension
+
+variable [abelian C]
+
+def extensions := quotient (is_isomorphic_setoid (extension A B))
+
+def extensions_map_src {A A' : C} (π : A' ⟶ A) (B : C) : extensions A B → extensions A' B :=
+quot.map (extension.pull_functor π B).obj begin
+  rintro E₁ E₂ ⟨e⟩,
+  exact ⟨(extension.pull_functor π B).map_iso e⟩,
+end
+
+def extensions_map_tgt (A : C) {B B' : C} (ι : B ⟶ B') : extensions A B → extensions A B' :=
+quot.map (extension.push_functor A ι).obj begin
+  rintro E₁ E₂ ⟨e⟩,
+  exact ⟨(extension.push_functor A ι).map_iso e⟩,
+end
+
+lemma extensions_map_src_id (A B : C) :
+  extensions_map_src (𝟙 A) B = id :=
+begin
+  ext E,
+  obtain ⟨E, rfl⟩ := quotient.surjective_quotient_mk' E,
+  exact quot.sound ⟨(extension.pull_functor_id A B).app E⟩,
+end
+
+lemma extensions_map_src_comp {A A' A'' : C} (π' : A'' ⟶ A') (π : A' ⟶ A) (B : C) :
+  extensions_map_src π' B ∘ extensions_map_src π B = extensions_map_src (π' ≫ π) B :=
+begin
+  ext E,
+  obtain ⟨E, rfl⟩ := quotient.surjective_quotient_mk' E,
+  exact quot.sound ⟨(extension.pull_functor_comp π π' B).app E⟩,
+end
+
+lemma extensions_map_tgt_id (A B : C) :
+  extensions_map_tgt A (𝟙 B) = id :=
+begin
+  ext E,
+  obtain ⟨E, rfl⟩ := quotient.surjective_quotient_mk' E,
+  exact quot.sound ⟨(extension.push_functor_id A B).app E⟩,
+end
+
+lemma extensions_map_tgt_comp (A : C) {B B' B'' : C} (ι : B ⟶ B') (ι' : B' ⟶ B'') :
+  extensions_map_tgt A ι' ∘ extensions_map_tgt A ι = extensions_map_tgt A (ι ≫ ι') :=
+begin
+  ext E,
+  obtain ⟨E, rfl⟩ := quotient.surjective_quotient_mk' E,
+  exact quot.sound ⟨(extension.push_functor_comp A ι ι').app E⟩,
+end
+
+lemma extensions_map_tgt_comp_map_src {A A' B B' : C} (π : A' ⟶ A) (ι : B ⟶ B') :
+  extensions_map_tgt A' ι ∘ extensions_map_src π B =
+    extensions_map_src π B' ∘ extensions_map_tgt A ι :=
+begin
+  ext E,
+  obtain ⟨E, rfl⟩ := quotient.surjective_quotient_mk' E,
+  exact quot.sound ⟨(extension.pull_functor_comm_push_functor π ι).app E⟩,
+end
+
+@[simps]
+def extensions_functor : C ⥤ Cᵒᵖ ⥤ Type (max u v) :=
+{ obj := λ B,
+  { obj := λ A, extensions A.unop B,
+    map := λ A A' π, extensions_map_src π.unop B,
+    map_id' := λ A, extensions_map_src_id A.unop B,
+    map_comp' := λ A A' A'' π π', (extensions_map_src_comp π'.unop π.unop B).symm, },
+  map := λ B B' ι,
+  { app := λ A, extensions_map_tgt A.unop ι,
+    naturality' := λ A A' π, extensions_map_tgt_comp_map_src π.unop ι, },
+  map_id' := λ B, begin
+    ext A : 2,
+    exact extensions_map_tgt_id A.unop B,
+  end,
+  map_comp' := λ B B' B'' ι ι', begin
+    ext A : 2,
+    exact (extensions_map_tgt_comp A.unop ι ι').symm,
+  end }
 
 end abelian
 
