@@ -212,12 +212,12 @@ def pull {A' : C} (E : extension A B) (π : A' ⟶ A) : extension A' B :=
   w := pullback.lift_snd _ _ _,
   ex := short_complex.short_exact.of_f_is_kernel begin
     refine limits.kernel_fork.is_limit.of_ι _ _
-      (λ Z x hx, E.ex.lift (x ≫ pullback.fst) (by { dsimp at hx ⊢,
-        rw [assoc, pullback.condition, reassoc_of hx, zero_comp], })) _ _,
+      (λ Z x hx, E.ex.lift (x ≫ pullback.fst)
+        (by { dsimp at hx ⊢, rw [assoc, pullback.condition, reassoc_of hx, zero_comp], })) _ _,
     { intros Z x hx,
       ext,
       { simp only [assoc, pullback.lift_fst, short_complex.short_exact.lift_f], },
-      { simpa only [assoc, pullback.lift_snd, comp_zero] using hx.symm, }, },
+      { simp only [assoc, pullback.lift_snd, comp_zero, hx], }, },
     { intros Z x hx m hm,
       simpa only [← cancel_mono E.i, assoc, short_complex.short_exact.lift_f,
         pullback.lift_fst] using hm =≫ pullback.fst, },
@@ -228,6 +228,30 @@ def pull_functor {A A' : C} (π : A' ⟶ A) (B : C) : extension A B ⥤ extensio
 { obj := λ E, E.pull π,
   map := λ E₁ E₂ f,
   { τ := pullback.map _ _ _ _ f.τ (𝟙 A') (𝟙 A) (by simp) (by simp), }, }
+
+@[simps]
+def push {B' : C} (E : extension A B) (ι : B ⟶ B') : extension A B' :=
+{ X := pushout E.i ι,
+  i := pushout.inr,
+  p := pushout.desc E.p 0 (by simp),
+  w := pushout.inr_desc _ _ _,
+  ex := short_complex.short_exact.of_g_is_cokernel begin
+    refine limits.cokernel_cofork.is_colimit.of_π _ _
+      (λ Z x hx, E.ex.desc (pushout.inl ≫ x)
+      (by { dsimp at hx ⊢, rw [pushout.condition_assoc, hx, comp_zero], })) _ _,
+    { intros A x hx,
+      ext,
+      { simp only [pushout.inl_desc_assoc, E.ex.g_desc (pushout.inl ≫ x)], },
+      { simp only [pushout.inr_desc_assoc, zero_comp, hx], }, },
+    { intros Z x hx m hm,
+      rw [← cancel_epi E.p, E.ex.g_desc (pushout.inl ≫ x), ← hm, pushout.inl_desc_assoc], },
+  end, }
+
+@[simps]
+def push_functor (A : C) {B B' : C} (ι : B ⟶ B') : extension A B ⥤ extension A B' :=
+{ obj := λ E, E.push ι,
+  map := λ E₁ E₂ f,
+  { τ := pushout.map _ _ _ _ f.τ (𝟙 B') (𝟙 B) (by simp) (by simp), }, }
 
 end extension
 
