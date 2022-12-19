@@ -1,5 +1,6 @@
 import category_theory.shift
 import for_mathlib.category_theory.quotient_misc
+import for_mathlib.category_theory.functor.shift
 
 noncomputable theory
 
@@ -27,9 +28,26 @@ def comm_shift (a : A) :
   shift_functor C a ⋙ functor r ≅ functor r ⋙ quotient.shift_functor h a :=
 (quotient.lift.is_lift _ _ _).symm
 
+@[simp]
+lemma comm_shift_hom_app (a : A) (X : C) :
+  (comm_shift h a).hom.app X = 𝟙 _ := rfl
+
+@[simp]
+lemma comm_shift_inv_app (a : A) (X : C) :
+  (comm_shift h a).inv.app X = 𝟙 _ := rfl
+
 def shift_ε : 𝟭 _ ≅ quotient.shift_functor h 0 :=
 quotient.lift_nat_iso _ _ (functor.right_unitor _ ≪≫ (functor.left_unitor _).symm ≪≫
       iso_whisker_right (shift_functor_zero C A).symm _ ≪≫ comm_shift h 0)
+
+@[simp]
+lemma shift_ε_hom_app (X : C) :
+  (shift_ε h).hom.app ((functor r).obj X) =
+    (functor r).map ((shift_functor_zero C A).inv.app X) :=
+begin
+  dsimp [shift_ε],
+  simp only [id_comp, comp_id],
+end
 
 def shift_μ (a b : A) :
   quotient.shift_functor h a ⋙ quotient.shift_functor h b ≅
@@ -38,6 +56,15 @@ quotient.lift_nat_iso _ _ ((functor.associator _ _ _).symm ≪≫
   iso_whisker_right (comm_shift h a).symm _ ≪≫ functor.associator _ _ _ ≪≫
   iso_whisker_left _ (comm_shift h b).symm ≪≫ (functor.associator _ _ _).symm ≪≫
   iso_whisker_right (shift_functor_add C a b).symm _ ≪≫ comm_shift h (a + b))
+
+@[simp]
+lemma shift_μ_hom_app (a b : A) (X : C) :
+  (shift_μ h a b).hom.app ((functor r).obj X) =
+    (functor r).map ((shift_functor_add C a b).inv.app X) :=
+begin
+  dsimp [shift_μ],
+  simpa only [functor.map_id, comp_id, id_comp],
+end
 
 --local attribute [instance, reducible] endofunctor_monoidal_category
 local attribute [reducible] discrete.add_monoidal
@@ -97,7 +124,7 @@ quotient.nat_trans_ext _ _ (λ X, begin
   { apply eq_to_hom_map, },
 end)
 
-@[protected]
+@[protected, simps]
 def shift : has_shift (quotient r) A :=
 has_shift_mk _ _
 { F := quotient.shift_functor h,
@@ -106,6 +133,29 @@ has_shift_mk _ _
   associativity := λ a b c X, by simpa using congr_app (shift_associativity h a b c) X,
   left_unitality := λ a X, by simpa using congr_app (shift_left_unitality h a) X,
   right_unitality := λ a X, by simpa using congr_app (shift_right_unitality h a) X, }
+
+def functor_comm_shift :
+  @functor.comm_shift _ _ _ _ (functor r) A _ _
+    (quotient.shift h) :=
+{ iso := quotient.comm_shift h,
+  iso_add := λ a b, begin
+    ext K,
+    dsimp,
+    simp only [shift.compatibility.comm_shift.comp_hom_app, comm_shift_hom_app, id_comp],
+    erw [functor.map_id, id_comp, id_comp, shift_μ_hom_app, ← functor.map_comp,
+      iso.inv_hom_id_app, functor.map_id],
+  end,
+  iso_zero := begin
+    ext K,
+    simp only [nat_trans.comp_app, lift.is_lift_hom, nat_trans.id_app],
+    dsimp only [functor.comm_shift.unit, shift.compatibility.comm_shift.unit,
+      iso.trans, iso.symm, nat_trans.comp_app, iso_whisker_right, whiskering_right,
+      functor.map_iso, whisker_right, iso_whisker_left, functor.left_unitor,
+      functor.right_unitor, whiskering_left, whisker_left],
+    erw [id_comp, id_comp, id_comp, shift_ε_hom_app, ← functor.map_comp,
+      iso.inv_hom_id_app, functor.map_id],
+    refl,
+  end, }
 
 end quotient
 
