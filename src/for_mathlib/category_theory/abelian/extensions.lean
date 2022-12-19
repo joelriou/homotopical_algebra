@@ -83,22 +83,20 @@ instance (E : extension A B) : epi E.p := E.ex.epi_g
 @[ext]
 structure hom (E₁ E₂ : extension A B) :=
 (τ : E₁.X ⟶ E₂.X)
-(commi : E₁.i ≫ τ = E₂.i)
-(commp : τ ≫ E₂.p = E₁.p)
+(commi' : E₁.i ≫ τ = E₂.i . obviously)
+(commp' : τ ≫ E₂.p = E₁.p . obviously)
 
+restate_axiom hom.commi'
+restate_axiom hom.commp'
 attribute [simp, reassoc] w hom.commi hom.commp
 
 @[simps]
 def hom.id (E : extension A B) : hom E E :=
-{ τ := 𝟙 _,
-  commi := by simp,
-  commp := by simp, }
+{ τ := 𝟙 _, }
 
 @[simps]
 def hom.comp {E₁ E₂ E₃ : extension A B} (φ : hom E₁ E₂) (φ' : hom E₂ E₃) : hom E₁ E₃ :=
-{ τ := φ.τ ≫ φ'.τ,
-  commi := by simp,
-  commp := by simp, }
+{ τ := φ.τ ≫ φ'.τ, }
 
 instance : category (extension A B) :=
 { hom := hom,
@@ -159,9 +157,7 @@ end⟩
 @[simps]
 instance has_vadd : has_vadd (A ⟶ B) (E₁ ⟶ E₂) :=
 { vadd := λ g f,
-  { τ := E₁.p ≫ g ≫ E₂.i + f.τ,
-    commi := by simp,
-    commp := by simp, }, }
+  { τ := E₁.p ≫ g ≫ E₂.i + f.τ, }, }
 
 instance : add_action (A ⟶ B) (E₁ ⟶ E₂) :=
 { zero_vadd := by tidy,
@@ -177,7 +173,7 @@ begin
   exact E₁.ex.desc g₀ begin
     dsimp,
     simp only [← cancel_mono E₂.i, assoc, hg₀, preadditive.comp_sub,
-    hom.commi, sub_self, zero_comp],
+      hom.commi, sub_self, zero_comp],
   end,
 end
 
@@ -207,6 +203,31 @@ end
 lemma vadd_vsub (g : A ⟶ B) (f : E₁ ⟶ E₂) :
   g +ᵥ f -ᵥ f = g :=
 by rw [← cancel_mono E₂.i, ← cancel_epi E₁.p, p_has_vsub_vsub_i, has_vadd_vadd_τ, add_sub_cancel]
+
+@[simps]
+def pull {A' : C} (E : extension A B) (π : A' ⟶ A) : extension A' B :=
+{ X := pullback E.p π,
+  i := pullback.lift E.i 0 (by simp),
+  p := pullback.snd,
+  w := pullback.lift_snd _ _ _,
+  ex := short_complex.short_exact.of_f_is_kernel begin
+    refine limits.kernel_fork.is_limit.of_ι _ _
+      (λ Z x hx, E.ex.lift (x ≫ pullback.fst) (by { dsimp at hx ⊢,
+        rw [assoc, pullback.condition, reassoc_of hx, zero_comp], })) _ _,
+    { intros Z x hx,
+      ext,
+      { simp only [assoc, pullback.lift_fst, short_complex.short_exact.lift_f], },
+      { simpa only [assoc, pullback.lift_snd, comp_zero] using hx.symm, }, },
+    { intros Z x hx m hm,
+      simpa only [← cancel_mono E.i, assoc, short_complex.short_exact.lift_f,
+        pullback.lift_fst] using hm =≫ pullback.fst, },
+  end, }
+
+@[simps]
+def pull_functor {A A' : C} (π : A' ⟶ A) (B : C) : extension A B ⥤ extension A' B :=
+{ obj := λ E, E.pull π,
+  map := λ E₁ E₂ f,
+  { τ := pullback.map _ _ _ _ f.τ (𝟙 A') (𝟙 A) (by simp) (by simp), }, }
 
 end extension
 
