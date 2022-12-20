@@ -425,6 +425,13 @@ begin
     exact ⟨(2*k+1)*(k+1), by ring⟩, },
 end
 
+lemma even_mul_pred (n : ℤ) : even (n * (n-1)) :=
+begin
+  rw mul_comm,
+  convert (even_mul_succ (n-1)),
+  linarith,
+end
+
 lemma mul_pred_div_two_of_even (k : ℤ) : ((k+k)* ((k+k)-1))/2 = k*(2*k-1) :=
 by simp only [show k+k = 2*k, by ring, mul_assoc, int.mul_div_cancel_left, ne.def, bit0_eq_zero,
   one_ne_zero, not_false_iff]
