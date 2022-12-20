@@ -362,6 +362,19 @@ begin
   refl,
 end
 
+lemma lift_cochain_v {m₁ n₀ : ℤ} (y₁ : cochain K F m₁) (y₂ : cochain K G m)
+  (hm : m+1=m₁+n) (hn₀ : n₀+1 = n) (p q : ℤ) (hpq : q = p + m) (p' : ℤ) (hp' : p' = p + m₁):
+  (lift_cochain z y₁ y₂ hm).v p q hpq =
+    y₁.v p p' hp' ≫ (inl z hn₀).v p' q (by rw [hpq, hp', add_assoc, add_right_inj,
+      ← add_left_inj (1 : ℤ), hm, ← hn₀, add_assoc]) +
+    y₂.v p q hpq ≫ (inr z).f q :=
+begin
+  have hn₀' : n₀ = n-1 := by linarith,
+  substs hn₀' hp' hpq,
+  dsimp [lift_cochain, cochain.comp],
+  simp only [cochain.of_hom_v],
+end
+
 @[simp]
 lemma lift_cochain_comp_fst {m₁ n₁ : ℤ} (y₁ : cochain K F m₁) (y₂ : cochain K G m) (hm : m+1=m₁+n)
   (hn₁ : n+n₁=1) : cochain.comp (lift_cochain z y₁ y₂ hm) ↑(fst z hn₁)

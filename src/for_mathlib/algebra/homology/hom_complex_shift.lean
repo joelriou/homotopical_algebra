@@ -415,6 +415,16 @@ lemma δ_shift_iso_hom_f {K L : cochain_complex C ℤ} (n i j : ℤ) (γ : cocha
   δ i j ((shift_iso K L n).hom.f i γ) = (shift_iso K L n).hom.f j (δ i j γ) :=
 congr_hom (((shift_iso K L n).hom.comm i j)) γ
 
+lemma even_mul_succ (n : ℤ) : even (n * (n+1)) :=
+begin
+  by_cases hn : even n,
+  { obtain ⟨k, rfl⟩ := hn,
+    exact ⟨k * (2*k+1), by ring⟩, },
+  { rw ← int.odd_iff_not_even at hn,
+    obtain ⟨k, rfl⟩ := hn,
+    exact ⟨(2*k+1)*(k+1), by ring⟩, },
+end
+
 lemma mul_pred_div_two_of_even (k : ℤ) : ((k+k)* ((k+k)-1))/2 = k*(2*k-1) :=
 by simp only [show k+k = 2*k, by ring, mul_assoc, int.mul_div_cancel_left, ne.def, bit0_eq_zero,
   one_ne_zero, not_false_iff]
@@ -496,3 +506,26 @@ lemma quotient_map_shift {K L : cochain_complex C ℤ} (φ : K ⟶ L) (n : ℤ) 
   (homotopy_category.quotient _ _).map (φ⟦n⟧') = ((homotopy_category.quotient _ _).map φ)⟦n⟧' := rfl
 
 end homotopy_category
+
+namespace cochain_complex
+
+namespace hom_complex
+
+@[simp, reassoc]
+lemma cochain.v_comp_X_iso_of_eq_hom {K L : cochain_complex C ℤ} {n : ℤ}
+  (γ : cochain K L n) (p q q' : ℤ)
+  (hpq : q = p +n) (hq' : q = q'):
+  γ.v p q hpq ≫ (homological_complex.X_iso_of_eq L hq').hom = γ.v p q' (by rw [← hq', hpq]) :=
+by { subst hq', simp only [homological_complex.X_iso_of_eq_refl, iso.refl_hom, comp_id], }
+
+@[simp]
+lemma shift_functor_add_comm_hom_app_f (K : cochain_complex C ℤ) (a b n : ℤ) :
+  ((shift_functor_add_comm (cochain_complex C ℤ) a b).hom.app K : _ ⟶ _).f n =
+    (K.X_iso_of_eq (by { dsimp, simp only [add_assoc, add_comm a], })).hom :=
+begin
+  sorry
+end
+
+end hom_complex
+
+end cochain_complex

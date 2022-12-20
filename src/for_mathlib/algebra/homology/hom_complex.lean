@@ -109,6 +109,24 @@ begin
       tauto, }
 end
 
+@[simp]
+lemma mul_ε_self (n : ℤ) : ε n * ε n = 1 :=
+by simpa only [← ε_add] using ε_even _ (even_add_self n)
+
+@[simp]
+lemma ε_mul_self (n : ℤ) : ε (n * n) = ε n :=
+begin
+  by_cases hn : even n,
+  { rw [ε_even _ hn, ε_even],
+    obtain ⟨k, rfl⟩ := hn,
+    exact ⟨2*k*k, by ring⟩, },
+  { rw [← int.odd_iff_not_even] at hn,
+    rw [ε_odd _ hn],
+    obtain ⟨k, rfl⟩ := hn,
+    rw [ε_odd],
+    exact ⟨2*k*k + 2*k, by ring⟩, },
+end
+
 structure triplet (n : ℤ) := (p : ℤ) (q : ℤ) (hpq : q=p+n)
 
 variables (F G)

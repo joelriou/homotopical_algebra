@@ -137,7 +137,8 @@ end
 
 @[simp]
 lemma mapping_cone_δ_snd :
-  δ 0 1 (mapping_cone_snd φ) = -(mapping_cone_fst φ).1.comp (cochain.of_hom φ) (add_zero 1).symm :=
+  δ 0 1 (mapping_cone_snd φ) = -(mapping_cone_fst φ : cochain (mapping_cone φ) F 1).comp
+    (cochain.of_hom φ) (add_zero 1).symm :=
 twist.δ_snd (cocycle.of_hom φ) (zero_add 1)
 
 lemma mapping_cone_of_d_eq : cochain.of_d (mapping_cone φ) =
@@ -408,6 +409,17 @@ def mapping_cone.lift {K : cochain_complex C ℤ} (α : cocycle K F 1) (β : coc
   (hαβ : δ 0 1 β + (α : cochain K F 1).comp (cochain.of_hom φ) (add_zero 1).symm = 0) :
    K ⟶ mapping_cone φ :=
 cocycle.hom_of (mapping_cone.lift_cocycle φ α β (zero_add 1) hαβ)
+
+lemma mapping_cone.lift_f {K : cochain_complex C ℤ} (α : cocycle K F 1) (β : cochain K G 0)
+  (hαβ : δ 0 1 β + (α : cochain K F 1).comp (cochain.of_hom φ) (add_zero 1).symm = 0) (n n' : ℤ)
+    (hn' : n' = n+1) :
+    (mapping_cone.lift φ α β hαβ).f n = (α : cochain K F 1).v n n' hn' ≫
+      (mapping_cone_inl φ).v n' n (by rw [hn', int.add_neg_one, add_tsub_cancel_right]) +
+    β.v n n (add_zero n).symm ≫ (mapping_cone_inr φ).f n :=
+by simpa only [mapping_cone.lift, cocycle.hom_of_f, mapping_cone.lift_cocycle,
+  twist.lift_cocycle, cocycle.mk_coe,
+  twist.lift_cochain_v (cocycle.of_hom φ) (α : cochain K F 1) β (add_comm 0 1)
+  (neg_add_self 1) n n (by linarith) n' hn']
 
 lemma mapping_cone.lift_fst {K : cochain_complex C ℤ} (α : cocycle K F 1) (β : cochain K G 0)
   (hαβ : δ 0 1 β + (α : cochain K F 1).comp (cochain.of_hom φ) (add_zero 1).symm = 0) :
