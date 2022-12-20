@@ -11,80 +11,6 @@ open category_theory category_theory.category category_theory.limits
 
 variables (C : Type*) [category C] [preadditive C]
 
-namespace homological_complex
-
-section
-
-variables {C} {ι : Type*} {c : complex_shape ι}
-
-def X_iso_of_eq (K : homological_complex C c) {n n' : ι} (h : n = n') :
-  K.X n ≅ K.X n' :=
-eq_to_iso (by congr')
-
-@[simp]
-lemma X_iso_of_eq_refl (K : homological_complex C c) (n : ι) :
-  K.X_iso_of_eq (rfl : n = n) = iso.refl _ :=
-begin
-  dsimp only [X_iso_of_eq],
-  simp,
-end
-
-@[simp, reassoc]
-lemma X_iso_of_eq_hom_comp_d (K : homological_complex C c) {n n' : ι} (h : n = n') (n'' : ι) :
-  (K.X_iso_of_eq h).hom ≫ K.d n' n'' = K.d n n'' :=
-by { subst h, simp, }
-
-@[simp, reassoc]
-lemma X_iso_of_eq_inv_comp_d (K : homological_complex C c) {n n' : ι} (h : n = n') (n'' : ι) :
-  (K.X_iso_of_eq h).inv ≫ K.d n n'' = K.d n' n'' :=
-by { subst h, simp, }
-
-@[simp, reassoc]
-lemma d_comp_X_iso_of_eq_hom (K : homological_complex C c) (n : ι) {n' n'' : ι} (h : n' = n'') :
-  K.d n n' ≫ (K.X_iso_of_eq h).hom = K.d n n'' :=
-by { subst h, simp, }
-
-@[simp, reassoc]
-lemma d_comp_X_iso_of_eq_inv (K : homological_complex C c) (n : ι) {n' n'' : ι} (h : n' = n'') :
-  K.d n n'' ≫ (K.X_iso_of_eq h).inv = K.d n n' :=
-by { subst h, simp, }
-
-@[reassoc]
-lemma X_iso_of_eq_hom_naturality {K L : homological_complex C c} (φ : K ⟶ L) {n n' : ι}
-  (h : n = n') :
-  φ.f n ≫ (L.X_iso_of_eq h).hom = (K.X_iso_of_eq h).hom ≫ φ.f n' :=
-by { subst h, simp, }
-
-@[reassoc]
-lemma X_iso_of_eq_inv_naturality {K L : homological_complex C c} (φ : K ⟶ L) {n n' : ι}
-  (h : n = n') :
-  φ.f n' ≫ (L.X_iso_of_eq h).inv = (K.X_iso_of_eq h).inv ≫ φ.f n :=
-by { subst h, simp, }
-
-@[simp, reassoc]
-lemma X_iso_of_eq_hom_hom (K : homological_complex C c) {n n' n'' : ι} (h : n = n') (h' : n' = n'') :
-  (K.X_iso_of_eq h).hom ≫ (K.X_iso_of_eq h').hom = (K.X_iso_of_eq (h.trans h')).hom :=
-by { substs h h', simp, }
-
-@[simp, reassoc]
-lemma X_iso_of_eq_hom_inv (K : homological_complex C c) {n n' n'' : ι} (h : n = n') (h' : n'' = n') :
-  (K.X_iso_of_eq h).hom ≫ (K.X_iso_of_eq h').inv = (K.X_iso_of_eq (h.trans h'.symm)).hom :=
-by { substs h h', simp, }
-
-@[simp, reassoc]
-lemma X_iso_of_eq_inv_hom (K : homological_complex C c) {n n' n'' : ι} (h : n' = n) (h' : n' = n'') :
-  (K.X_iso_of_eq h).inv ≫ (K.X_iso_of_eq h').hom = (K.X_iso_of_eq (h.symm.trans h')).hom :=
-by { substs h h', simp, }
-
-@[simp, reassoc]
-lemma X_iso_of_eq_inv_inv (K : homological_complex C c) {n n' n'' : ι} (h : n' = n) (h' : n'' = n') :
-  (K.X_iso_of_eq h).inv ≫ (K.X_iso_of_eq h').inv = (K.X_iso_of_eq (h'.trans h)).inv :=
-by { substs h h', simp, }
-
-end
-
-end homological_complex
-
 namespace cochain_complex
 
 open homological_complex
@@ -162,5 +88,32 @@ lemma shift_functor_map_f' {K L : cochain_complex C ℤ} (φ : K ⟶ L) (n p : �
 lemma shift_functor_obj_d' (K : cochain_complex C ℤ) (n i j : ℤ) :
   ((category_theory.shift_functor (cochain_complex C ℤ) n).obj K).d i j =
     cochain_complex.hom_complex.ε n • K.d _ _ := rfl
+
+lemma shift_functor_add_inv_app_f (K : cochain_complex C ℤ) (a b n : ℤ) :
+  ((shift_functor_add (cochain_complex C ℤ) a b).inv.app K : _ ⟶ _).f n =
+    (K.X_iso_of_eq (by { dsimp, rw [add_comm a, add_assoc],})).hom := rfl
+
+lemma shift_functor_add_hom_app_f (K : cochain_complex C ℤ) (a b n : ℤ) :
+  ((shift_functor_add (cochain_complex C ℤ) a b).hom.app K : _ ⟶ _).f n =
+    (K.X_iso_of_eq (by { dsimp, rw [add_comm a, add_assoc],})).inv :=
+begin
+  haveI : is_iso (((shift_functor_add (cochain_complex C ℤ) a b).inv.app K : _ ⟶ _).f n),
+  { rw shift_functor_add_inv_app_f,
+    apply_instance, },
+  rw [← cancel_mono (((shift_functor_add (cochain_complex C ℤ) a b).inv.app K : _ ⟶ _).f n),
+    ← homological_complex.comp_f, iso.hom_inv_id_app, homological_complex.id_f,
+    shift_functor_add_inv_app_f, iso.inv_hom_id],
+end
+
+lemma shift_functor_add_comm_hom_app_f (K : cochain_complex C ℤ) (a b n : ℤ) :
+  ((shift_functor_add_comm (cochain_complex C ℤ) a b).hom.app K : _ ⟶ _).f n =
+    (K.X_iso_of_eq (by { dsimp, simp only [add_assoc, add_comm a], })).hom :=
+begin
+  dsimp only [shift_functor_add_comm, iso.trans, iso.symm],
+  simpa only [nat_trans.comp_app, homological_complex.comp_f,
+    shift_functor_add_hom_app_f, shift_functor_add_inv_app_f,
+    homological_complex.X_iso_of_eq, eq_to_iso.inv, eq_to_iso.hom, eq_to_hom_app,
+    homological_complex.eq_to_hom_f, eq_to_hom_trans],
+end
 
 end cochain_complex

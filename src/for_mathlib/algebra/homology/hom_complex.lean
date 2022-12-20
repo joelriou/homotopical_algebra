@@ -9,6 +9,7 @@ import algebra.homology.additive
 import algebra.category.Group.abelian
 import data.int.parity
 import algebra.homology.short_exact.preadditive
+import for_mathlib.algebra.homology.homological_complex_X_iso_of_eq
 
 noncomputable theory
 
@@ -22,6 +23,7 @@ namespace cochain_complex
 
 variables {F G K L : cochain_complex C ℤ} (n m : ℤ)
 
+/-- should be changed...-/
 structure is_termwise_kernel (i : F ⟶ G) (f : G ⟶ K) :=
 (zero : ∀ n, i.f n ≫ f.f n = 0)
 (is_limit : ∀ n, is_limit (kernel_fork.of_ι (i.f n) (zero n)))
@@ -243,6 +245,13 @@ by simp only [of_hom, d_comp_of_homs_v]
 def of_homotopy {φ₁ φ₂ : F ⟶ G} (ho : homotopy φ₁ φ₂) : cochain F G (-1) :=
 cochain.mk (λ p q hpq, ho.hom p q)
 
+@[simp, reassoc]
+lemma v_comp_X_iso_of_eq_hom {K L : cochain_complex C ℤ} {n : ℤ}
+  (γ : cochain K L n) (p q q' : ℤ)
+  (hpq : q = p + n) (hq' : q = q'):
+  γ.v p q hpq ≫ (homological_complex.X_iso_of_eq L hq').hom = γ.v p q' (by rw [← hq', hpq]) :=
+by { subst hq', simp only [homological_complex.X_iso_of_eq_refl, iso.refl_hom, comp_id], }
+
 def comp {n₁ n₂ n₁₂ : ℤ} (z₁ : cochain F G n₁) (z₂ : cochain G K n₂) (h : n₁₂ = n₁ + n₂) :
   cochain F K n₁₂ :=
 cochain.mk (λ p q hpq, z₁.v p (p+n₁) rfl ≫ z₂.v (p+n₁) q (by linarith))
@@ -442,7 +451,7 @@ variable (K)
 def of_d : cochain K K 1 := cochain.mk (λ p q hpq, K.d p q)
 
 @[simp]
-def of_d_v (p q : ℤ) (hpq : q=p+1) :
+lemma of_d_v (p q : ℤ) (hpq : q=p+1) :
   (of_d K).v p q hpq = K.d p q := rfl
 
 end cochain
@@ -744,8 +753,7 @@ def equiv_homotopy (φ₁ φ₂ : F ⟶ G) :
     simpa only [dif_pos (show q+1=p, by linarith)],
   end, }
 
-@[simp]
-def δ_cochain_of_homotopy {φ₁ φ₂ : F ⟶ G} (h : homotopy φ₁ φ₂) :
+lemma δ_cochain_of_homotopy {φ₁ φ₂ : F ⟶ G} (h : homotopy φ₁ φ₂) :
   δ (-1) 0 (cochain.of_homotopy h) = cochain.of_hom φ₁ - cochain.of_hom φ₂ :=
 by rw [((equiv_homotopy _ _) h).2, add_sub_cancel,
   subtype.val_eq_coe, equiv_homotopy_apply_coe]
@@ -795,7 +803,7 @@ begin
   simp only [cochain.lift_to_kernel_comp, δ_eq_zero],
 end
 
-def lift_to_kernel_comp (z : cocycle L G n) {i : F ⟶ G} {f : G ⟶ K} (hip : is_termwise_kernel i f)
+lemma lift_to_kernel_comp (z : cocycle L G n) {i : F ⟶ G} {f : G ⟶ K} (hip : is_termwise_kernel i f)
   (hz : cochain.comp (z : cochain L G n) (cochain.of_hom f) (add_zero n).symm = 0) :
   cochain.comp (lift_to_kernel z hip hz : cochain L F n) (cochain.of_hom i) (add_zero n).symm =
   (z : cochain L G n) := by apply cochain.lift_to_kernel_comp

@@ -51,7 +51,7 @@ def right_unshift (j : ℤ) (hj : j = i + n) : cochain K L j :=
 cochain.mk (λ p q hpq, γ'.v p (p+i) rfl ≫
   (L.shift_functor_obj_X_iso n (p+i) q (by linarith)).hom)
 
-def right_unshift_v (j : ℤ) (hj : j = i + n) (p q : ℤ) (hpq : q = p + j)
+lemma right_unshift_v (j : ℤ) (hj : j = i + n) (p q : ℤ) (hpq : q = p + j)
   (p' : ℤ) (hp' : p' = p + i):
   (γ'.right_unshift j hj).v p q hpq = γ'.v p p' hp' ≫
     (L.shift_functor_obj_X_iso n p' q (by rw [hp', hpq, hj, add_assoc])).hom :=
@@ -242,7 +242,7 @@ cochain.mk (λ p q hpq,
     γ'.v (p-n) q (by { change _ = _ - _ + _, linarith,}))
 
 
-def left_unshift_v (j : ℤ) (hj : i = j + n) (p q : ℤ) (hpq : q = p + j)
+lemma left_unshift_v (j : ℤ) (hj : i = j + n) (p q : ℤ) (hpq : q = p + j)
   (p' : ℤ) (hp' : p' = p - n):
   (γ'.left_unshift j hj).v p q hpq =
   ε (n*i + (n*(n-1)/2)) • (K.shift_functor_obj_X_iso n p' p (by rw [hp', sub_add_cancel])).inv ≫
@@ -513,26 +513,3 @@ lemma quotient_map_shift {K L : cochain_complex C ℤ} (φ : K ⟶ L) (n : ℤ) 
   (homotopy_category.quotient _ _).map (φ⟦n⟧') = ((homotopy_category.quotient _ _).map φ)⟦n⟧' := rfl
 
 end homotopy_category
-
-namespace cochain_complex
-
-namespace hom_complex
-
-@[simp, reassoc]
-lemma cochain.v_comp_X_iso_of_eq_hom {K L : cochain_complex C ℤ} {n : ℤ}
-  (γ : cochain K L n) (p q q' : ℤ)
-  (hpq : q = p +n) (hq' : q = q'):
-  γ.v p q hpq ≫ (homological_complex.X_iso_of_eq L hq').hom = γ.v p q' (by rw [← hq', hpq]) :=
-by { subst hq', simp only [homological_complex.X_iso_of_eq_refl, iso.refl_hom, comp_id], }
-
-@[simp]
-lemma shift_functor_add_comm_hom_app_f (K : cochain_complex C ℤ) (a b n : ℤ) :
-  ((shift_functor_add_comm (cochain_complex C ℤ) a b).hom.app K : _ ⟶ _).f n =
-    (K.X_iso_of_eq (by { dsimp, simp only [add_assoc, add_comm a], })).hom :=
-begin
-  sorry
-end
-
-end hom_complex
-
-end cochain_complex
