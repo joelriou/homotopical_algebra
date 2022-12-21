@@ -292,6 +292,9 @@ begin
   apply_instance,
 end
 
+instance : ess_surj (Qh.to_functor : _ ⥤ derived_category C) :=
+localization.ess_surj _ (homotopy_category.acyclic C).W
+
 def Q : cochain_complex C ℤ ⥤ derived_category C :=
 homotopy_category.quotient _ _ ⋙ Qh.to_functor
 
@@ -345,6 +348,9 @@ localization.comp (homotopy_category.quotient _ _) (Qh.to_functor)
   refine ⟨_, _, f, _, ⟨iso.refl _⟩⟩,
   simpa only [mem_quasi_isomorphisms_iff, ← homotopy_category.map_quotient_W_iff] using hφ,
 end)
+
+instance : ess_surj (Q : _ ⥤ derived_category C) :=
+localization.ess_surj _ (quasi_isomorphisms C _)
 
 variable {C}
 
@@ -439,6 +445,32 @@ begin
       cochain_complex.ι_mapping_cone_comp_from_mapping_cone_of_ses], },
   { dsimp [triangle_of_ses, triangle_of_ses_δ],
     simp only [category_theory.functor.map_id, comp_id], },
+end
+
+lemma left_factorisation {K L : cochain_complex C ℤ} (φ : Q.obj K ⟶ Q.obj L) :
+  ∃ (L' : cochain_complex C ℤ) (f : K ⟶ L') (s : L ⟶ L') (hs : quasi_iso s),
+    φ = Q.map f ≫ (by { haveI := hs, exact inv (Q.map s), }) :=
+begin
+  obtain ⟨⟨⟨L'⟩, f, s, hs⟩ , hz⟩ :=
+    left_calculus_of_fractions.L_map_fac Qh.to_functor (homotopy_category.acyclic C).W φ,
+  refine ⟨_, (homotopy_category.quotient _ _).preimage f,
+    (homotopy_category.quotient _ _).preimage s, _, _⟩,
+  { simpa only [← homotopy_category.map_quotient_W_iff, functor.image_preimage] using hs, },
+  { dsimp [Q],
+    simpa only [functor.image_preimage] using hz, },
+end
+
+lemma right_factorisation {K L : cochain_complex C ℤ} (φ : Q.obj K ⟶ Q.obj L) :
+  ∃ (K' : cochain_complex C ℤ) (s : K' ⟶ K) (f : K' ⟶ L) (hs : quasi_iso s),
+    φ = (by { haveI := hs, exact inv (Q.map s), }) ≫ Q.map f :=
+begin
+  obtain ⟨⟨⟨L'⟩, s, f, hs⟩ , hz⟩ :=
+    right_calculus_of_fractions.L_map_fac Qh.to_functor (homotopy_category.acyclic C).W φ,
+  refine ⟨_, (homotopy_category.quotient _ _).preimage s,
+    (homotopy_category.quotient _ _).preimage f, _, _⟩,
+  { simpa only [← homotopy_category.map_quotient_W_iff, functor.image_preimage] using hs, },
+  { dsimp [Q],
+    simpa only [functor.image_preimage] using hz, },
 end
 
 variable (C)
