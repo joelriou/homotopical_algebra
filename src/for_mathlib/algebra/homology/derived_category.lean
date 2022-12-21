@@ -1,5 +1,5 @@
 import for_mathlib.algebra.homology.triangulated
-import for_mathlib.category_theory.triangulated.homological_functor
+import for_mathlib.category_theory.triangulated.homological_functor_localization
 import for_mathlib.category_theory.shift_misc
 import for_mathlib.category_theory.localization.composition
 import for_mathlib.algebra.homology.cylinder
@@ -223,6 +223,9 @@ begin
   rw functor.kernel_of_is_homological_W,
   simpa only [← λ n, nat_iso.is_iso_map_iff (shift_homology_functor_iso C _ _ _ (zero_add n)) φ],
 end
+
+lemma homology_functor_is_inverted_by (n : ℤ) :
+  (acyclic C).W.is_inverted_by (homology_functor C (complex_shape.up ℤ) n) := sorry
 
 variable {C}
 
@@ -475,6 +478,73 @@ end
 
 variable (C)
 
+def homology_functor (n : ℤ) : derived_category C ⥤ C :=
+localization.lift (homotopy_category.homology_functor C (complex_shape.up ℤ) n)
+  (homotopy_category.homology_functor_is_inverted_by C n) Qh.to_functor
+
+instance (n : ℤ) : localization.lifting Qh.to_functor (homotopy_category.acyclic C).W
+  (homotopy_category.homology_functor C (complex_shape.up ℤ) n) (homology_functor C n) :=
+localization.lifting_lift _ _ _
+
+def homology_functor_factors_Qh (n : ℤ) :
+  Qh.to_functor ⋙ homology_functor C n ≅
+    homotopy_category.homology_functor C (complex_shape.up ℤ) n :=
+localization.lifting.iso _ (homotopy_category.acyclic C).W _ _
+
+def homology_functor_factors (n : ℤ) :
+  Q ⋙ homology_functor C n ≅ _root_.homology_functor C (complex_shape.up ℤ) n :=
+functor.associator _ _ _ ≪≫ iso_whisker_left _ ((homology_functor_factors_Qh C n)) ≪≫
+  homotopy_category.homology_factors C _ n
+
+instance homology_functor_preserves_zero_morphisms (n : ℤ) :
+  (homology_functor C n).preserves_zero_morphisms :=
+functor.is_homological.localization_lift_preserves_zero_morphisms _ _ _
+
+instance homology_functor_is_homological (n : ℤ) :
+  (homology_functor C n).is_homological :=
+functor.is_homological.localization_lift_is_homological _ _ _
+
+variable {C}
+
+lemma is_iso_iff_is_iso_homology {K L : derived_category C} (φ : K ⟶ L) :
+  is_iso φ ↔ ∀ (n : ℤ), is_iso ((homology_functor C n).map φ) :=
+begin
+  split,
+  { introI,
+    exact λ n, infer_instance, },
+  { suffices : ∀ ⦃K' L' : cochain_complex C ℤ⦄ (φ' : Q.obj K' ⟶ Q.obj L')
+      (hφ' : ∀ (n : ℤ), is_iso ((homology_functor C n).map φ')), is_iso φ',
+    { introI,
+      let ψ := (Q.obj_obj_preimage_iso K).hom ≫ φ ≫ (Q.obj_obj_preimage_iso L).inv,
+      have eq : φ = (Q.obj_obj_preimage_iso K).inv ≫ ψ ≫ (Q.obj_obj_preimage_iso L).hom,
+      { simp only [assoc, iso.inv_hom_id, comp_id, iso.inv_hom_id_assoc], },
+      rw eq,
+      haveI : is_iso ψ := this ψ (λ n, begin
+        dsimp only [ψ],
+        simp only [functor.map_comp],
+        apply_instance,
+      end),
+      apply_instance, },
+    intros K' L' φ' hφ',
+    obtain ⟨L', f, s, hs, eq⟩ := left_factorisation φ',
+    haveI : is_iso (Q.map f),
+    { simp only [eq, functor.map_comp] at hφ',
+      haveI := hφ',
+      haveI : ∀ (n : ℤ), is_iso ((homology_functor C n).map (Q.map f)),
+      { intro n,
+        exact is_iso.of_is_iso_comp_right _ ((homology_functor C n).map (inv (Q.map s))), },
+      haveI : quasi_iso f,
+      { rw ← mem_quasi_isomorphisms_iff,
+        intro n,
+        refine (nat_iso.is_iso_map_iff (homology_functor_factors C n) f).1 _,
+        dsimp,
+        apply_instance, },
+      apply_instance, },
+    rw eq,
+    apply_instance, },
+end
+
+variable (C)
 def single_functor (n : ℤ) : C ⥤ derived_category C :=
 homological_complex.single _ _ n ⋙ Q
 
