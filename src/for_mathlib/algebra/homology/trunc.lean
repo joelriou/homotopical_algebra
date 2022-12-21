@@ -8,6 +8,7 @@ open_locale zero_object
 variables {C : Type*} [category C] [abelian C]
 
 namespace category_theory.short_complex
+/-- should be moved... -/
 
 lemma exact.of_is_zero_X₂ {C : Type*} [category C] [has_zero_morphisms C]
   (S : short_complex C) (h : is_zero S.X₂) : S.exact :=
@@ -16,7 +17,54 @@ begin
   exact h,
 end
 
+lemma quasi_iso.of_cokernel_cofork {C : Type*} [category C] [has_zero_morphisms C]
+  {S₁ S₂ : short_complex C} (φ : S₁ ⟶ S₂) [S₁.has_homology] [S₂.has_homology]
+  [mono φ.τ₃] (hf₂ : S₂.f = 0) (hτ₂ : is_colimit (cokernel_cofork.of_π φ.τ₂
+    (show S₁.f ≫ φ.τ₂ = 0, by rw [← φ.comm₁₂, hf₂, comp_zero]))) :
+  short_complex.quasi_iso φ :=
+begin
+  have w : S₁.f ≫ φ.τ₂ = 0 := by rw [← φ.comm₁₂, hf₂, comp_zero],
+  let h₁ := S₁.some_right_homology_data,
+  let e : S₂.X₂ ≅ h₁.Q := is_colimit.cocone_point_unique_up_to_iso hτ₂ h₁.hp,
+  have he : φ.τ₂ ≫ e.hom = h₁.p :=
+    is_colimit.comp_cocone_point_unique_up_to_iso_hom hτ₂ h₁.hp walking_parallel_pair.one,
+  have wp : S₂.f ≫ e.hom = 0 := by simp only [hf₂, zero_comp],
+  let hp : is_colimit (cokernel_cofork.of_π e.hom wp) :=
+    cokernel_cofork.is_colimit.of_π _ _ (λ A x hx, e.inv ≫ x)
+      (λ A x hx, e.hom_inv_id_assoc _) (λ A x hx b hb, by simp only [←hb, iso.inv_hom_id_assoc]),
+  have comm : e.inv ≫ S₂.g = h₁.g' ≫ φ.τ₃,
+  { rw [← cancel_epi h₁.p, h₁.p_g'_assoc, ← φ.comm₂₃, ← he, assoc, e.hom_inv_id_assoc], },
+  have wι : h₁.ι ≫ e.inv ≫ S₂.g = 0 :=
+    by simp only [comm, right_homology_data.ι_g'_assoc, zero_comp],
+  have hι : is_limit (kernel_fork.of_ι h₁.ι wι) := kernel_fork.is_limit.of_ι _ _
+      (λ A x hx, h₁.hι.lift (kernel_fork.of_ι _
+        (show x ≫ h₁.g' = 0, by rw [← cancel_mono φ.τ₃, assoc, ← comm, hx, zero_comp])))
+      (λ A x hx, fork.is_limit.lift_ι' _ _)
+      (λ A x hx b hb, by { erw [← cancel_mono h₁.ι, hb, fork.is_limit.lift_ι'], refl, }),
+  let h₂ : S₂.right_homology_data :=
+  { Q := h₁.Q,
+    H := h₁.H,
+    p := e.hom,
+    wp := wp,
+    hp := hp,
+    ι := h₁.ι,
+    wι := wι,
+    hι := hι, },
+  let hφ : right_homology_map_data φ h₁ h₂ :=
+  { φQ := 𝟙 _,
+    φH := 𝟙 _,
+    commp' := begin
+      dsimp [h₂],
+      simp only [comp_id, he],
+    end, },
+  rw hφ.quasi_iso_iff,
+  dsimp,
+  apply_instance,
+end
+
 end category_theory.short_complex
+
+open category_theory category_theory.limits category_theory.category
 
 namespace cochain_complex
 
@@ -103,6 +151,14 @@ begin
   apply_instance,
 end
 
+lemma trunc_ge.π_f_eq_zero (n i : ℤ) (hi : i < n) :
+  trunc_ge.π_f K n i = 0 :=
+by { dsimp [trunc_ge.π_f], rw [dif_pos hi], }
+
+lemma trunc_ge.π_f_eq_of_eq (n i : ℤ) (hn : i = n) :
+  trunc_ge.π_f K n i = (K.sc' i).p_cycles_co ≫ (trunc_ge.X_iso_cycles_co K n i hn).inv :=
+by { dsimp [trunc_ge.π_f], rw [dif_neg (show ¬i<n, by linarith), dif_pos hn], }
+
 lemma trunc_ge.π_f_eq_X_iso_X_inv (n i : ℤ) (hi : n < i) :
   trunc_ge.π_f K n i = (trunc_ge.X_iso_X K n i hi).inv :=
 by { dsimp [trunc_ge.π_f], rw [dif_neg, dif_neg]; linarith, }
@@ -133,6 +189,15 @@ begin
   dsimp [trunc_ge.π_f],
   erw [dif_neg (show ¬j<n, by linarith), dif_pos hj, ← assoc,
     (homological_complex.sc' K j).f_cycles_co_p, zero_comp],
+end
+
+def trunc_ge.π_is_cokernel (n i j : ℤ) (hij : i + 1 = j) (hj : j = n) :
+  is_colimit (cokernel_cofork.of_π _ (trunc_ge.d_comp_π_eq_zero K n i j hij hj)) :=
+begin
+  have hij' : i = (complex_shape.up ℤ).prev j := by { rw [prev], linarith, },
+  subst hij',
+  exact is_colimit.of_iso_colimit (homological_complex.sc' K j).cycles_co_is_cokernel
+    (cofork.ext (trunc_ge.X_iso_cycles_co K n j hj).symm (trunc_ge.π_f_eq_of_eq K n j hj).symm),
 end
 
 @[simp, reassoc]
@@ -270,8 +335,6 @@ def trunc_ge.nat_trans_π (n : ℤ) :
     simp only [trunc_ge.π_f_comm_map_f],
   end, }
 
-example : ℕ := 42
-
 variables {C} (K)
 
 lemma trunc_ge.is_zero_homology (n i : ℤ) (hi : i < n) :
@@ -279,24 +342,75 @@ lemma trunc_ge.is_zero_homology (n i : ℤ) (hi : i < n) :
 begin
   dsimp [homology_functor],
   rw ← short_complex.exact_iff_is_zero_homology,
-  exact category_theory.short_complex.exact.of_is_zero_X₂ _ (trunc_ge.is_zero_X K n i hi),
+  exact short_complex.exact.of_is_zero_X₂ _ (trunc_ge.is_zero_X K n i hi),
 end
 
 lemma trunc_ge.is_iso_homology_map_π (n i : ℤ) (hi : n ≤ i) :
   is_iso ((homology_functor C _ i).map (trunc_ge.π K n)) :=
 begin
-  by_cases hn : i = n,
-  { sorry, },
-  { by_cases hn : i = n+1,
-    { sorry, },
-    { let f := (homological_complex.short_complex_functor C
-        (complex_shape.up ℤ) i).map (trunc_ge.π K n),
-      haveI : is_iso f := begin
-        /- short_complex.is_iso_of_is_iso_of_is_iso_of_is_iso
-          more generally short_complex.quasi_iso_of_epi_of_is_iso_of_mono ? -/
-        sorry,
-      end,
-      exact short_complex.quasi_iso_of_iso f, }, },
+  let φ := (homological_complex.short_complex_functor C (complex_shape.up ℤ) i).map
+    (trunc_ge.π K n),
+  haveI : is_iso φ.τ₃ := trunc_ge.is_iso_π_f K n _ (by { rw [next], linarith, }),
+  cases hi.lt_or_eq,
+  { haveI : epi φ.τ₁ := by { dsimp, apply_instance, },
+    haveI : is_iso φ.τ₂ := trunc_ge.is_iso_π_f K n i h,
+    exact short_complex.quasi_iso.of_epi_of_is_iso_of_mono φ, },
+  { exact short_complex.quasi_iso.of_cokernel_cofork φ
+      ((trunc_ge.is_zero_X K n _ (by { rw [prev], linarith, })).eq_of_src _ _)
+      (trunc_ge.π_is_cokernel K n _ i (by { rw [prev], linarith, }) h.symm), },
+end
+
+variables {K L}
+
+lemma trunc_ge.map_homology_iso (φ : K ⟶ L) (n i : ℤ) [is_iso (homology_map φ i)] :
+  is_iso (homology_map ((trunc_ge_functor C n).map φ) i) :=
+begin
+  by_cases hi : n ≤ i,
+  { have eq := (homology_functor C _ i).congr_map ((trunc_ge.nat_trans_π C n).naturality φ),
+    simp only [functor.map_comp, functor.id_map, trunc_ge.nat_trans_π_app] at eq,
+    change homology_map φ i ≫ homology_map (trunc_ge.π L n) i =
+      homology_map (trunc_ge.π K n) i ≫ homology_map _ i at eq,
+    haveI : ∀ (M : cochain_complex C ℤ), is_iso (homology_map (trunc_ge.π M n) i) :=
+      λ M, trunc_ge.is_iso_homology_map_π M n i hi,
+    simp only [← cancel_epi (inv (homology_map (trunc_ge.π K n) i)),
+      is_iso.inv_hom_id_assoc] at eq,
+    rw ← eq,
+    apply_instance, },
+  { simp only [not_le] at hi,
+    exact ⟨⟨0, (trunc_ge.is_zero_homology K n i hi).eq_of_src _ _,
+       (trunc_ge.is_zero_homology L n i hi).eq_of_src _ _⟩⟩, },
+end
+
+instance trunc_ge.map_quasi_iso (φ : K ⟶ L) (n : ℤ) [quasi_iso φ] :
+  quasi_iso ((trunc_ge_functor _ n).map φ) :=
+⟨λ i, trunc_ge.map_homology_iso φ n i⟩
+
+variable (C)
+
+lemma trunc_ge_functor_comp_Q_inverts_quasi_isomorphisms (n : ℤ) :
+  (quasi_isomorphisms _ _).is_inverted_by
+    (cochain_complex.trunc_ge_functor C n ⋙ derived_category.Q) :=
+λ K L φ hφ, begin
+  haveI : quasi_iso φ := by simpa only [← mem_quasi_isomorphisms_iff] using hφ,
+  dsimp,
+  apply_instance,
 end
 
 end cochain_complex
+
+namespace derived_category
+
+variable (C)
+
+def trunc_ge_functor (n : ℤ) : derived_category C ⥤ derived_category C :=
+localization.lift _ (cochain_complex.trunc_ge_functor_comp_Q_inverts_quasi_isomorphisms C n) Q
+
+instance (n : ℤ) : localization.lifting Q (quasi_isomorphisms _ _)
+  (cochain_complex.trunc_ge_functor C n ⋙ derived_category.Q) (trunc_ge_functor C n) :=
+localization.lifting_lift _ _ _
+
+def trunc_ge_functor_iso (n : ℤ) :
+  Q ⋙ trunc_ge_functor C n ≅ (cochain_complex.trunc_ge_functor C n ⋙ derived_category.Q) :=
+localization.lifting.iso _ (quasi_isomorphisms _ _) _ _
+
+end derived_category
