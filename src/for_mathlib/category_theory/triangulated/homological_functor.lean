@@ -3,6 +3,7 @@ import algebra.homology.short_complex.exact
 import for_mathlib.category_theory.localization.triangulated_subcategory
 import for_mathlib.category_theory.shift_misc
 import for_mathlib.category_theory.preadditive.misc
+import category_theory.limits.preserves.shapes.zero
 
 namespace category_theory
 
@@ -55,7 +56,7 @@ variables {C D A : Type*} [category C] [has_zero_object C] [has_shift C ℤ]
   [preadditive C] [∀ (n : ℤ), (shift_functor C n).additive] [pretriangulated C]
   [category D] [has_zero_object D] [has_shift D ℤ]
   [preadditive D] [∀ (n : ℤ), (shift_functor D n).additive] [pretriangulated D]
-  [category A] [abelian A] (F : C ⥤ A) [functor.additive F]
+  [category A] [abelian A] (F : C ⥤ A) [functor.preserves_zero_morphisms F]
 
 @[simps]
 def pretriangulated.triangle.short_complex (T : pretriangulated.triangle C)
@@ -84,7 +85,7 @@ end⟩
 
 variable {F}
 
-lemma of_iso {G : C ⥤ A} [additive G] (e : G ≅ F) [F.is_homological] :
+lemma of_iso {G : C ⥤ A} [G.preserves_zero_morphisms] (e : G ≅ F) [F.is_homological] :
   G.is_homological :=
 is_homological.mk (λ T hT, (short_complex.exact_iff_of_iso
   (short_complex.map_nat_iso _ e)).2 (is_homological.map_distinguished F T hT))
@@ -115,6 +116,8 @@ end⟩
 
 def W_of_is_homological [F.is_homological] : morphism_property C :=
 λ X Y f, ∀ (n : ℤ), is_iso (F.map (f⟦n⟧'))
+
+instance is_homological.additive [F.is_homological] : F.additive := sorry
 
 lemma kernel_of_is_homological_W [F.is_homological] :
   F.kernel_of_is_homological.W = F.W_of_is_homological :=

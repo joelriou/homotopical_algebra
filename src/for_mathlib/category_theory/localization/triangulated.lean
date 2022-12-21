@@ -180,6 +180,10 @@ def functor : triangulated_functor_struct C D :=
 { comm_shift := comm_shift,
   .. L }
 
+@[simps]
+def functor_iso_L : (functor L comm_shift).to_functor ≅ L :=
+nat_iso.of_components (λ X, iso.refl _) (by tidy)
+
 instance : functor.additive (functor L comm_shift).to_functor := { }
 
 include hC
