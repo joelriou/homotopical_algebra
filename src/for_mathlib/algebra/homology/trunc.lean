@@ -288,7 +288,6 @@ begin
     apply_instance, },
 end
 
-#exit
 end cochain_complex
 
 namespace derived_category
