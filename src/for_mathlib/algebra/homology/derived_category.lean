@@ -225,7 +225,12 @@ begin
 end
 
 lemma homology_functor_is_inverted_by (n : ℤ) :
-  (acyclic C).W.is_inverted_by (homology_functor C (complex_shape.up ℤ) n) := sorry
+  (acyclic C).W.is_inverted_by (homology_functor C (complex_shape.up ℤ) n) :=
+begin
+  intros K L φ hφ,
+  rw mem_acyclic_W_iff at hφ,
+  exact hφ n,
+end
 
 variable {C}
 
@@ -545,12 +550,5 @@ begin
 end
 
 abbreviation homology (K : derived_category C) (n : ℤ) := (homology_functor C n).obj K
-
-variable (C)
-def single_functor (n : ℤ) : C ⥤ derived_category C :=
-homological_complex.single _ _ n ⋙ Q
-
-instance single_functor_additive (n : ℤ) : (single_functor C n).additive :=
-by { dsimp [single_functor], apply_instance, }
 
 end derived_category

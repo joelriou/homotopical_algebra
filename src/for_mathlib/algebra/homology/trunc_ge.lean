@@ -645,6 +645,14 @@ begin
       using derived_category.is_ge.is_zero (derived_category.Q.obj _) n i hi⟩, },
 end
 
+instance Q_obj_is_ge_of_is_ge (K : cochain_complex C ℤ) (n : ℤ) [K.is_ge n] :
+  (derived_category.Q.obj K).is_ge n :=
+begin
+  rw ← is_ge_iff_Q_obj_is_ge,
+  apply_instance,
+end
+
+
 lemma is_ge_iff_of_quasi_iso {K L : cochain_complex C ℤ} (φ : K ⟶ L) [quasi_iso φ] (n : ℤ) :
   K.is_ge n ↔ L.is_ge n :=
 begin
@@ -663,6 +671,10 @@ begin
     apply_instance, },
   { apply is_iso.of_is_iso_comp_right, },
 end
+
+instance (K : cochain_complex C ℤ) (n : ℤ) [K.is_ge n] :
+  quasi_iso (trunc_ge.π K n) :=
+by { rw quasi_iso_trunc_ge_π_iff, apply_instance, }
 
 end cochain_complex
 
@@ -688,7 +700,7 @@ end
 
 lemma right_factorisation_of_is_strictly_ge {K L : cochain_complex C ℤ} (φ : Q.obj K ⟶ Q.obj L)
   (n : ℤ) [K.is_strictly_ge n] [L.is_strictly_ge n] :
-  ∃ (K' : cochain_complex C ℤ) (hK' : K'.is_ge n) (s : K' ⟶ K) (f : K' ⟶ L) (hs : quasi_iso s),
+  ∃ (K' : cochain_complex C ℤ) (hK' : K'.is_strictly_ge n) (s : K' ⟶ K) (f : K' ⟶ L) (hs : quasi_iso s),
     φ = (by { haveI := hs, exact inv (Q.map s), }) ≫ Q.map f :=
 begin
   obtain ⟨K', s, f, hs, eq⟩ := right_factorisation φ,
@@ -708,6 +720,19 @@ begin
     is_iso.inv_hom_id_assoc] at comms commf,
   simp only [eq, Q.map_comp, ← commf, ← comms, functor.map_inv, assoc, is_iso.hom_inv_id, comp_id,
     is_iso.hom_inv_id_assoc, is_iso.eq_inv_comp],
+end
+
+lemma exists_iso_Q_obj_of_ge (K : derived_category C) (n : ℤ) [K.is_ge n] :
+  ∃ (K' : cochain_complex C ℤ) (hK' : K'.is_strictly_ge n),
+    nonempty (K ≅ Q.obj K') :=
+begin
+  let K' := Q.obj_preimage K,
+  haveI : K'.is_ge n,
+  { rw [cochain_complex.is_ge_iff_Q_obj_is_ge, is_ge.iff_of_iso (Q.obj_obj_preimage_iso K)],
+    apply_instance, },
+  exact ⟨K'.trunc_ge n, infer_instance, ⟨(Q.obj_obj_preimage_iso K).symm ≪≫
+    (as_iso ((trunc_ge_nat_trans_π C n).app (Q.obj K'))) ≪≫
+    (trunc_ge_functor_iso C n).app K'⟩⟩,
 end
 
 end derived_category

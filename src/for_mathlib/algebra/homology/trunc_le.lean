@@ -602,6 +602,13 @@ begin
       using derived_category.is_le.is_zero (derived_category.Q.obj _) n i hi⟩, },
 end
 
+instance Q_obj_is_le_of_is_le (K : cochain_complex C ℤ) (n : ℤ) [K.is_le n] :
+  (derived_category.Q.obj K).is_le n :=
+begin
+  rw ← is_le_iff_Q_obj_is_le,
+  apply_instance,
+end
+
 lemma is_le_iff_of_quasi_iso {K L : cochain_complex C ℤ} (φ : K ⟶ L) [quasi_iso φ] (n : ℤ) :
   K.is_le n ↔ L.is_le n :=
 begin
@@ -620,6 +627,10 @@ begin
     apply_instance, },
   { apply is_iso.of_is_iso_comp_left, },
 end
+
+instance (K : cochain_complex C ℤ) (n : ℤ) [K.is_le n] :
+  quasi_iso (trunc_le.ι K n) :=
+by { rw quasi_iso_trunc_le_ι_iff, apply_instance, }
 
 end cochain_complex
 
@@ -645,7 +656,7 @@ end
 
 lemma left_factorisation_of_is_strictly_le {K L : cochain_complex C ℤ} (φ : Q.obj K ⟶ Q.obj L)
   (n : ℤ) [K.is_strictly_le n] [L.is_strictly_le n] :
-  ∃ (L' : cochain_complex C ℤ) (hL' : L'.is_le n) (f : K ⟶ L') (s : L ⟶ L') (hs : quasi_iso s),
+  ∃ (L' : cochain_complex C ℤ) (hL' : L'.is_strictly_le n) (f : K ⟶ L') (s : L ⟶ L') (hs : quasi_iso s),
     φ = Q.map f ≫ (by { haveI := hs, exact inv (Q.map s), }) :=
 begin
   obtain ⟨L', f, s, hs, eq⟩ := left_factorisation φ,
@@ -665,6 +676,19 @@ begin
     assoc, is_iso.hom_inv_id, comp_id] at comms commf,
   simp only [comms, commf, eq, functor.map_comp, functor.map_inv, is_iso.inv_hom_id_assoc,
     is_iso.inv_comp, is_iso.inv_inv, assoc],
+end
+
+lemma exists_iso_Q_obj_of_le (K : derived_category C) (n : ℤ) [K.is_le n] :
+  ∃ (K' : cochain_complex C ℤ) (hK' : K'.is_strictly_le n),
+    nonempty (K ≅ Q.obj K') :=
+begin
+  let K' := Q.obj_preimage K,
+  haveI : K'.is_le n,
+  { rw [cochain_complex.is_le_iff_Q_obj_is_le, is_le.iff_of_iso (Q.obj_obj_preimage_iso K)],
+    apply_instance, },
+  exact ⟨K'.trunc_le n, infer_instance, ⟨(Q.obj_obj_preimage_iso K).symm ≪≫
+    (as_iso ((trunc_le_nat_trans_ι C n).app (Q.obj K'))).symm ≪≫
+    (trunc_le_functor_iso C n).app K'⟩⟩,
 end
 
 end derived_category
