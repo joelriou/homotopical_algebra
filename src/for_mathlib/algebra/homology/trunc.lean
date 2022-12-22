@@ -50,8 +50,6 @@ nat_iso.of_components
     refl,
   end)
 
-#exit
-
 end homological_complex
 
 variable {C}
