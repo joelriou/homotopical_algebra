@@ -7,6 +7,53 @@ open_locale zero_object
 
 variables {C : Type*} [category C] [abelian C]
 
+namespace category_theory.short_complex
+
+lemma quasi_iso.of_kernel_fork {C : Type*} [category C] [has_zero_morphisms C]
+  {S₁ S₂ : short_complex C} (φ : S₁ ⟶ S₂) [S₁.has_homology] [S₂.has_homology]
+  [epi φ.τ₁] (hg₁ : S₁.g = 0) (hτ₂ : is_limit (kernel_fork.of_ι φ.τ₂
+    (show φ.τ₂ ≫ S₂.g = 0, by rw [φ.comm₂₃, hg₁, zero_comp]))) :
+  short_complex.quasi_iso φ :=
+begin
+  have w : φ.τ₂ ≫ S₂.g = 0 := by rw [φ.comm₂₃, hg₁, zero_comp],
+  have h₂ := S₂.some_left_homology_data,
+  let e : h₂.K ≅ S₁.X₂ := is_limit.cone_point_unique_up_to_iso h₂.hi hτ₂,
+  have he : e.hom ≫ φ.τ₂ = h₂.i :=
+    is_limit.cone_point_unique_up_to_iso_hom_comp h₂.hi hτ₂ walking_parallel_pair.zero,
+  have wi : e.hom ≫ S₁.g = 0 := by rw [hg₁, comp_zero],
+  let hi : is_limit (kernel_fork.of_ι e.hom wi) := kernel_fork.is_limit.of_ι _ _
+    (λ A x hx, x ≫ e.inv)
+    (λ A x hx, by rw [assoc, e.inv_hom_id, comp_id])
+    (λ A x hx b hb, by rw [← hb, assoc, e.hom_inv_id, comp_id]),
+  have comm : S₁.f ≫ e.inv = φ.τ₁ ≫ h₂.f',
+  { rw [← cancel_mono h₂.i, assoc, assoc, h₂.f'_i, ← he, e.inv_hom_id_assoc, φ.comm₁₂], },
+  have wπ : (S₁.f ≫ e.inv) ≫ h₂.π = 0,
+  { rw [comm, assoc, h₂.f'_π, comp_zero], },
+  have hπ : is_colimit (cokernel_cofork.of_π h₂.π wπ) := cokernel_cofork.is_colimit.of_π _ _
+    (λ A x hx, h₂.hπ.desc (cokernel_cofork.of_π _
+      (show h₂.f' ≫ x = 0, by rw [← cancel_epi φ.τ₁, ← reassoc_of comm, ← assoc, hx, comp_zero])))
+    (λ A x hx, cofork.is_colimit.π_desc h₂.hπ)
+    (λ A x hx b hb, by { erw [← cancel_epi h₂.π, hb, cofork.is_colimit.π_desc h₂.hπ], refl, }),
+  let h₁ : S₁.left_homology_data :=
+  { K := h₂.K,
+    H := h₂.H,
+    i := e.hom,
+    wi := wi,
+    hi := hi,
+    π := h₂.π,
+    wπ := wπ,
+    hπ := hπ, },
+  let hφ : left_homology_map_data φ h₁ h₂ :=
+  { φK := 𝟙 _,
+    φH := 𝟙 _,
+    commi' := by rw [id_comp, he], },
+  rw hφ.quasi_iso_iff,
+  dsimp,
+  apply_instance,
+end
+
+end category_theory.short_complex
+
 namespace cochain_complex
 
 variables (K L : cochain_complex C ℤ)
@@ -290,10 +337,9 @@ begin
   { haveI : mono φ.τ₃ := by { dsimp, apply_instance, },
     haveI : is_iso φ.τ₂ := trunc_le.is_iso_ι_f K n i h,
     exact short_complex.quasi_iso.of_epi_of_is_iso_of_mono φ, },
-  { sorry, --exact short_complex.quasi_iso.of_cokernel_cofork φ
-    --  ((trunc_le.is_zero_X K n _ (by { rw [prev], linarith, })).eq_of_src _ _)
-    --  (trunc_le.π_is_cokernel K n _ i (by { rw [prev], linarith, }) h.symm), },
-  },
+  { exact category_theory.short_complex.quasi_iso.of_kernel_fork φ
+    ((trunc_le.is_zero_X K n _ (by { rw [next], linarith, })).eq_of_tgt _ _)
+      (trunc_le.ι_is_kernel K n i _ (by { rw [next], }) h), },
 end
 
 variables {K L}
