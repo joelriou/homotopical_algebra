@@ -144,7 +144,41 @@ end⟩
 def W_of_is_homological [F.is_homological] : morphism_property C :=
 λ X Y f, ∀ (n : ℤ), is_iso (F.map (f⟦n⟧'))
 
-instance [F.is_homological] : preserves_limits_of_shape (discrete walking_pair) F := sorry
+lemma _root_.category_theory.limits.exists_discrete_walking_pair_exists_iso_pair
+  {C : Type*} [category C] (F : discrete walking_pair ⥤ C) :
+  ∃ (X₁ X₂ : C), nonempty (F ≅ pair X₁ X₂) :=
+⟨F.obj (discrete.mk walking_pair.left), F.obj (discrete.mk walking_pair.right),
+  ⟨discrete.nat_iso_functor ≪≫ eq_to_iso (by { congr' 1, ext j, cases j, tidy, })⟩⟩
+
+instance [F.is_homological] : preserves_limits_of_shape (discrete walking_pair) F :=
+begin
+  suffices : ∀ (X₁ X₂ : C), preserves_limit (pair X₁ X₂) F,
+  { haveI := this,
+    exact ⟨λ X, preserves_limit_of_iso_diagram F
+      (category_theory.limits.exists_discrete_walking_pair_exists_iso_pair X)
+      .some_spec.some_spec.some.symm⟩, },
+  intros X₁ X₂,
+  haveI : mono (F.biprod_comparison X₁ X₂),
+  { rw preadditive.mono_iff_cancel_zero,
+    intros Z f hf,
+    have h₂ : f ≫ F.map biprod.snd = 0,
+    { simpa only [assoc, biprod_comparison_snd, zero_comp] using hf =≫ biprod.snd, },
+    have ex := is_homological.map_distinguished F _
+      (binary_biproduct_triangle_distinguished X₁ X₂),
+    let S := short_complex.mk (F.map (biprod.inl : X₁ ⟶ _)) (F.map (biprod.snd : _ ⟶ X₂))
+      (by { rw ← F.map_comp, simp only [biprod.inl_snd, functor.map_zero]}),
+    have ex : S.short_exact := short_complex.short_exact.mk
+      (is_homological.map_distinguished F _ (binary_biproduct_triangle_distinguished X₁ X₂)),
+    have hf' : ∃ (f₁ : Z ⟶ F.obj X₁), f₁ ≫ F.map biprod.inl = f := ⟨_, ex.lift_f f h₂⟩,
+    obtain ⟨f₁, rfl⟩ := hf',
+    replace hf := hf =≫ biprod.fst,
+    simp only [assoc, biprod_comparison_fst, zero_comp, ← F.map_comp,
+      biprod.inl_fst, F.map_id, comp_id] at hf,
+    rw [hf, zero_comp], },
+  haveI : preserves_binary_biproduct X₁ X₂ F :=
+    limits.preserves_binary_biproduct_of_mono_biprod_comparison F,
+  apply limits.preserves_binary_product_of_preserves_binary_biproduct,
+end
 
 @[priority 100]
 instance is_homological.additive [F.is_homological] : F.additive :=
@@ -217,7 +251,7 @@ instance triangulated_functor_preserves_zero_morphisms (F : triangulated_functor
   simpa only [← F.map_comp, prod.lift_snd] using h,
 end⟩
 
-instance triangulated_functor_preserves_limits_of_shape_empty (F : triangulated_functor C D) :
+instance triangulated_functor_preserves_binary_products (F : triangulated_functor C D) :
   preserves_limits_of_shape (discrete walking_pair) F.to_functor := sorry
 
 instance triangulated_functor_additive (F : triangulated_functor C D) : F.to_functor.additive :=
@@ -230,5 +264,3 @@ lemma is_homological.of_comp (F : triangulated_functor C D) (G : D ⥤ A) [G.add
 end functor
 
 end category_theory
-
-/- todo : localize homological_functor -/

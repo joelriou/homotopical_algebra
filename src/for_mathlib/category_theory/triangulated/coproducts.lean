@@ -136,6 +136,15 @@ begin
   { simp only [triangle.mk_mor₃, zero_comp, comp_zero], },
 end
 
+lemma binary_biproduct_triangle_distinguished (X₁ X₂ : C) :
+  triangle.mk (limits.biprod.inl : X₁ ⟶ _) (limits.biprod.snd : _ ⟶ X₂) 0 ∈ dist_triang C :=
+isomorphic_distinguished _ (binary_product_triangle_distinguished X₁ X₂) _ begin
+  let e : X₁ ⊞ X₂ ≅ prod X₁ X₂ :=
+  { hom := prod.lift biprod.fst biprod.snd,
+    inv := biprod.lift limits.prod.fst limits.prod.snd, },
+  exact triangle.mk_iso _ _ (iso.refl _) e (iso.refl _) (by tidy) (by tidy) (by tidy),
+end
+
 @[simps]
 def triangle.coproduct {I : Type*} (T : I → triangle C) [has_coproduct (λ i, (T i).obj₁)]
   [has_coproduct (λ i, (T i).obj₂)] [has_coproduct (λ i, (T i).obj₃)]
