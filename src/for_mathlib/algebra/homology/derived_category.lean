@@ -544,6 +544,8 @@ begin
     apply_instance, },
 end
 
+abbreviation homology (K : derived_category C) (n : ℤ) := (homology_functor C n).obj K
+
 variable (C)
 def single_functor (n : ℤ) : C ⥤ derived_category C :=
 homological_complex.single _ _ n ⋙ Q

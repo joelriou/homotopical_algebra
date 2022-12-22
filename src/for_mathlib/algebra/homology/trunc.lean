@@ -7,6 +7,24 @@ open_locale zero_object
 
 variables {C : Type*} [category C] [abelian C]
 
+namespace category_theory
+
+lemma iso.is_iso_app_iff {C D : Type*} [category C] [category D] {X Y : C} (e : X ≅ Y)
+  {F G : C ⥤ D} (φ : F ⟶ G) :
+  is_iso (φ.app X) ↔ is_iso (φ.app Y) :=
+begin
+  suffices : ∀ ⦃X Y : C⦄ (e : X ≅ Y) (hX : is_iso (φ.app X)), is_iso (φ.app Y),
+  { exact ⟨this e, this e.symm⟩, },
+  intros X Y e,
+  introI,
+  refine ⟨⟨G.map e.inv ≫ inv (φ.app X) ≫ F.map e.hom,
+    by simp only [← functor.map_comp, nat_iso.naturality_2'_assoc, iso.inv_hom_id, functor.map_id],
+    by simp only [← functor.map_comp, assoc, nat_trans.naturality, is_iso.inv_hom_id_assoc,
+      iso.inv_hom_id, functor.map_id]⟩⟩,
+end
+
+end category_theory
+
 namespace category_theory.short_complex
 /-- should be moved... -/
 
@@ -255,7 +273,8 @@ begin
   { exact (trunc_ge.X_iso_X K n i hi).hom ≫ φ.f i ≫
     (trunc_ge.X_iso_X L n i hi).inv, },
   { by_cases hn : i = n,
-    { exact (trunc_ge.X_iso_cycles_co K n i hn).hom ≫ (homological_complex.short_complex_functor C (complex_shape.up ℤ) i ⋙
+    { exact (trunc_ge.X_iso_cycles_co K n i hn).hom ≫
+        (homological_complex.short_complex_functor C (complex_shape.up ℤ) i ⋙
         short_complex.cycles_co_functor C).map φ ≫ (trunc_ge.X_iso_cycles_co L n i hn).inv, },
     { exact 0, }, },
 end
@@ -396,6 +415,102 @@ lemma trunc_ge_functor_comp_Q_inverts_quasi_isomorphisms (n : ℤ) :
   apply_instance,
 end
 
+variable {C}
+
+class is_strictly_ge (K : cochain_complex C ℤ) (n : ℤ) : Prop :=
+(is_zero' : ∀ (i : ℤ) (hi : i < n), is_zero (K.X i))
+
+lemma is_strictly_ge.is_zero (K : cochain_complex C ℤ) (n i : ℤ) [K.is_strictly_ge n]
+  (hi : i < n) : is_zero (K.X i) :=
+is_strictly_ge.is_zero' i hi
+
+lemma is_strictly_ge_of_le (K : cochain_complex C ℤ) (n m : ℤ) (hnm : n ≤ m)
+  [K.is_strictly_ge m] :
+  K.is_strictly_ge n :=
+⟨λ i hi, is_strictly_ge.is_zero K m i (by linarith)⟩
+
+lemma is_strictly_ge.of_iso {K L : cochain_complex C ℤ} (e : K ≅ L) (n : ℤ)
+  [K.is_strictly_ge n] : L.is_strictly_ge n :=
+⟨λ i hi, is_zero.of_iso (is_strictly_ge.is_zero K n i hi)
+  ((homological_complex.eval _ _ i).map_iso e.symm)⟩
+
+lemma is_strictly_ge.iff_of_iso {K L : cochain_complex C ℤ} (e : K ≅ L) (n : ℤ) :
+  K.is_strictly_ge n ↔ L.is_strictly_ge n :=
+begin
+  split,
+  { introI,
+    exact is_strictly_ge.of_iso e n, },
+  { introI,
+    exact is_strictly_ge.of_iso e.symm n, },
+end
+
+class is_ge (K : cochain_complex C ℤ) (n : ℤ) : Prop :=
+(is_zero' : ∀ (i : ℤ) (hi : i < n ), is_zero (K.homology i))
+
+lemma is_ge.is_zero (K : cochain_complex C ℤ) (n i : ℤ) [K.is_ge n] (hi : i < n) :
+  is_zero (K.homology i) :=
+is_ge.is_zero' i hi
+
+lemma is_ge_of_le (K : cochain_complex C ℤ) (n m : ℤ) (hnm : n ≤ m) [K.is_ge m] : K.is_ge n :=
+⟨λ i hi, is_ge.is_zero K m i (by linarith)⟩
+
+lemma is_ge.of_iso {K L : cochain_complex C ℤ} (e : K ≅ L) (n : ℤ) [K.is_ge n] : L.is_ge n :=
+⟨λ i hi, is_zero.of_iso (is_ge.is_zero K n i hi) ((homology_functor _ _ i).map_iso e.symm)⟩
+
+lemma is_ge.iff_of_iso {K L : cochain_complex C ℤ} (e : K ≅ L) (n : ℤ) :
+  K.is_ge n ↔ L.is_ge n :=
+begin
+  split,
+  { introI,
+    exact is_ge.of_iso e n, },
+  { introI,
+    exact is_ge.of_iso e.symm n, },
+end
+
+@[priority 100]
+instance is_ge_of_is_strictly_ge (K : cochain_complex C ℤ) (n : ℤ)
+  [K.is_strictly_ge n] : K.is_ge n :=
+⟨λ i hi, begin
+  rw ← short_complex.exact_iff_is_zero_homology,
+  exact short_complex.exact.of_is_zero_X₂ _ (is_strictly_ge.is_zero K n i hi),
+end⟩
+
+instance trunc_ge_is_strictly_ge (K : cochain_complex C ℤ) (n : ℤ) :
+  (K.trunc_ge n).is_strictly_ge n :=
+⟨trunc_ge.is_zero_X K n⟩
+
+instance trunc_ge_is_strictly_ge' (K : cochain_complex C ℤ) (n : ℤ) :
+  ((trunc_ge_functor C n).obj K).is_strictly_ge n :=
+(infer_instance : (K.trunc_ge n).is_strictly_ge n)
+
+lemma trunc_ge.is_iso_π_f_iff_d_eq_zero (K : cochain_complex C ℤ) (n i j : ℤ)
+  (hij : i+1 = j) (hj : j = n) :
+  is_iso ((trunc_ge.π K n).f j) ↔ K.d i j = 0 :=
+begin
+  split,
+  { intro h,
+    haveI : is_iso (trunc_ge.π_f K n j) := h,
+    rw [← cancel_mono (trunc_ge.π_f K n j), trunc_ge.d_comp_π_eq_zero K n i j hij hj,
+      zero_comp], },
+  { exact cokernel_cofork.is_colimit.is_iso_π_of_zero _ (trunc_ge.π_is_cokernel K n i j hij hj), },
+end
+
+instance (K : cochain_complex C ℤ) (n : ℤ) [K.is_strictly_ge n] :
+  is_iso (trunc_ge.π K n) :=
+begin
+  haveI : ∀ (i : ℤ), is_iso ((trunc_ge.π K n).f i),
+  { intro i,
+    by_cases hi : n < i,
+    { exact trunc_ge.is_iso_π_f K n i hi, },
+    { cases (not_lt.1 hi).lt_or_eq,
+      { refine ⟨⟨0, (is_strictly_ge.is_zero K n i h).eq_of_src _ _, _⟩⟩,
+        rw ← cancel_epi (trunc_ge.π_f K n i),
+        apply (is_strictly_ge.is_zero K n i h).eq_of_src, },
+      { rw trunc_ge.is_iso_π_f_iff_d_eq_zero K n (i-1) i (by linarith) h,
+        apply (is_strictly_ge.is_zero K n (i-1) (by linarith)).eq_of_src, }, }, },
+  apply homological_complex.hom.is_iso_of_components,
+end
+
 end cochain_complex
 
 namespace derived_category
@@ -413,4 +528,121 @@ def trunc_ge_functor_iso (n : ℤ) :
   Q ⋙ trunc_ge_functor C n ≅ (cochain_complex.trunc_ge_functor C n ⋙ derived_category.Q) :=
 localization.lifting.iso _ (quasi_isomorphisms _ _) _ _
 
+def trunc_ge_nat_trans_π (n : ℤ) : 𝟭 (derived_category C) ⟶ trunc_ge_functor C n :=
+localization.lift_nat_trans Q (quasi_isomorphisms _ _)
+  Q (cochain_complex.trunc_ge_functor C n ⋙ derived_category.Q) _ _
+  (whisker_right (cochain_complex.trunc_ge.nat_trans_π C n) Q)
+
+@[simp]
+lemma trunc_ge_nat_trans_π_app (K : cochain_complex C ℤ) (n : ℤ) :
+  (trunc_ge_nat_trans_π C n).app (Q.obj K) =
+    Q.map (cochain_complex.trunc_ge.π K n) ≫ (trunc_ge_functor_iso C n).inv.app K :=
+begin
+  dsimp only [trunc_ge_nat_trans_π, trunc_ge_functor_iso],
+  simp only [localization.lifting.id_iso, functor.right_unitor_hom_app, whisker_right_app,
+    cochain_complex.trunc_ge.nat_trans_π_app, localization.lift_nat_trans_app],
+  dsimp,
+  rw id_comp,
+end
+
+variable {C}
+
+class is_ge (K : derived_category C) (n : ℤ) : Prop :=
+(is_zero' : ∀ (i : ℤ) (hi : i < n ), is_zero (K.homology i))
+
+lemma is_ge.is_zero (K : derived_category C) (n i : ℤ) [K.is_ge n]
+  (hi : i < n) : is_zero (K.homology i) :=
+is_ge.is_zero' i hi
+
+lemma is_ge_of_le (K : derived_category C) (n m : ℤ) (hnm : n ≤ m) [K.is_ge m] : K.is_ge n :=
+⟨λ i hi, is_ge.is_zero K m i (by linarith)⟩
+
+lemma is_ge.of_iso {K L : derived_category C} (e : K ≅ L) (n : ℤ) [K.is_ge n] : L.is_ge n :=
+⟨λ i hi, is_zero.of_iso (is_ge.is_zero K n i hi) ((homology_functor _ i).map_iso e.symm)⟩
+
+lemma is_ge.iff_of_iso {K L : derived_category C} (e : K ≅ L) (n : ℤ) :
+  K.is_ge n ↔ L.is_ge n :=
+begin
+  split,
+  { introI,
+    exact is_ge.of_iso e n, },
+  { introI,
+    exact is_ge.of_iso e.symm n, },
+end
+
+variable (C)
+
+def Q_comp_trunc_ge_functor_comp_homology_functor_iso (n i : ℤ) :
+  Q ⋙ trunc_ge_functor C n ⋙ homology_functor C i ≅
+    cochain_complex.trunc_ge_functor C n ⋙ _root_.homology_functor _ _ i :=
+(functor.associator _ _ _).symm ≪≫
+  iso_whisker_right (trunc_ge_functor_iso C n) (homology_functor C i) ≪≫
+  functor.associator _ _ _ ≪≫ iso_whisker_left _ (homology_functor_factors C i)
+
+variable {C}
+
+lemma is_zero_homology_trunc_ge_of_lt (K : derived_category C) (n i : ℤ)
+  (hi : i < n) :
+  is_zero (((trunc_ge_functor C n).obj K).homology i) :=
+is_zero.of_iso (cochain_complex.is_ge.is_zero _ n i hi)
+  (((trunc_ge_functor C n ⋙ homology_functor C i).map_iso (Q.obj_obj_preimage_iso K)).symm ≪≫
+    ((Q_comp_trunc_ge_functor_comp_homology_functor_iso C n i).app _))
+
+lemma is_iso_homology_map_trunc_ge_nat_trans_π_of_ge (K : derived_category C) (n i : ℤ)
+  (hi : n ≤ i) :
+  is_iso ((homology_functor C i).map ((trunc_ge_nat_trans_π C n).app K)) :=
+begin
+  erw ← (Q.obj_obj_preimage_iso K).is_iso_app_iff
+    (whisker_right (trunc_ge_nat_trans_π C n) (homology_functor C i)),
+  dsimp,
+  erw [trunc_ge_nat_trans_π_app, functor.map_comp],
+  haveI : ∀ (L : cochain_complex C ℤ), is_iso ((homology_functor C i).map (Q.map
+    (cochain_complex.trunc_ge.π L n))),
+  { intro L,
+    erw nat_iso.is_iso_map_iff (homology_functor_factors C i),
+    exact cochain_complex.trunc_ge.is_iso_homology_map_π L n i hi, },
+  apply_instance,
+end
+
+lemma is_iso_trunc_ge_nat_trans_π_app_iff (K : derived_category C) (n : ℤ) :
+  is_iso ((trunc_ge_nat_trans_π C n).app K) ↔ K.is_ge n :=
+begin
+  rw is_iso_iff_is_iso_homology,
+  split,
+  { introI hK,
+    exact ⟨λ i hi, is_zero.of_iso (is_zero_homology_trunc_ge_of_lt K n i hi)
+      (as_iso ((homology_functor C i).map ((trunc_ge_nat_trans_π C n).app K)))⟩, },
+  { introI,
+    intro i,
+    by_cases hi : n ≤ i,
+    { exact is_iso_homology_map_trunc_ge_nat_trans_π_of_ge K n i hi, },
+    { simp only [not_le] at hi,
+      exact ⟨⟨0, (is_ge.is_zero K n i hi).eq_of_src _ _,
+        (is_zero_homology_trunc_ge_of_lt K n i hi).eq_of_src _ _⟩⟩, }, },
+end
+
+instance (K : derived_category C) (n : ℤ) [K.is_ge n] :
+  is_iso ((trunc_ge_nat_trans_π C n).app K) :=
+by { rw is_iso_trunc_ge_nat_trans_π_app_iff, apply_instance, }
+
 end derived_category
+
+namespace cochain_complex
+
+lemma is_zero_homology_iff_is_zero_homology_Q_obj (K : cochain_complex C ℤ) (n : ℤ) :
+  is_zero (K.homology n) ↔ is_zero ((derived_category.Q.obj K).homology n) :=
+((derived_category.homology_functor_factors C n).app K).symm.is_zero_iff
+
+lemma is_ge_iff_Q_obj_is_ge (K : cochain_complex C ℤ) (n : ℤ) :
+  K.is_ge n ↔ (derived_category.Q.obj K).is_ge n :=
+begin
+  split,
+  { introI,
+    exact ⟨λ i hi, by simpa only [← is_zero_homology_iff_is_zero_homology_Q_obj]
+      using is_ge.is_zero K n i hi⟩, },
+  { introI,
+    exact ⟨λ i hi, by simpa only [is_zero_homology_iff_is_zero_homology_Q_obj]
+      using derived_category.is_ge.is_zero (derived_category.Q.obj _) n i hi⟩, },
+end
+
+end cochain_complex
