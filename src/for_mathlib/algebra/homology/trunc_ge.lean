@@ -645,4 +645,69 @@ begin
       using derived_category.is_ge.is_zero (derived_category.Q.obj _) n i hi⟩, },
 end
 
+lemma is_ge_iff_of_quasi_iso {K L : cochain_complex C ℤ} (φ : K ⟶ L) [quasi_iso φ] (n : ℤ) :
+  K.is_ge n ↔ L.is_ge n :=
+begin
+  simp only [is_ge_iff_Q_obj_is_ge],
+  exact derived_category.is_ge.iff_of_iso (as_iso (derived_category.Q.map φ)) n,
+end
+
+lemma quasi_iso_trunc_ge_π_iff (K : cochain_complex C ℤ) (n : ℤ) :
+  quasi_iso (trunc_ge.π K n) ↔ K.is_ge n :=
+begin
+  rw [is_ge_iff_Q_obj_is_ge, ← derived_category.is_iso_Q_map_iff,
+    ← derived_category.is_iso_trunc_ge_nat_trans_π_app_iff,
+    derived_category.trunc_ge_nat_trans_π_app],
+  split,
+  { introI,
+    apply_instance, },
+  { apply is_iso.of_is_iso_comp_right, },
+end
+
 end cochain_complex
+
+namespace derived_category
+
+lemma left_factorisation_of_is_ge {K L : cochain_complex C ℤ} (φ : Q.obj K ⟶ Q.obj L) (n : ℤ)
+  [L.is_ge n] :
+  ∃ (L' : cochain_complex C ℤ) (hL' : L'.is_strictly_ge n) (f : K ⟶ L') (s : L ⟶ L') (hs : quasi_iso s),
+    φ = Q.map f ≫ (by { haveI := hs, exact inv (Q.map s), }) :=
+begin
+  obtain ⟨L', f, s, hs, eq⟩ := left_factorisation φ,
+  haveI := hs,
+  haveI : quasi_iso ((cochain_complex.trunc_ge.nat_trans_π C n).app L'),
+  { erw cochain_complex.quasi_iso_trunc_ge_π_iff,
+    dsimp,
+    rw ← cochain_complex.is_ge_iff_of_quasi_iso s,
+    apply_instance, },
+  exact ⟨_, infer_instance,
+    f ≫ (cochain_complex.trunc_ge.nat_trans_π _ n).app L',
+    s ≫ (cochain_complex.trunc_ge.nat_trans_π _ n).app L', infer_instance,
+    by simp only [assoc, functor.map_comp, is_iso.inv_comp, is_iso.hom_inv_id_assoc, eq]⟩,
+end
+
+lemma right_factorisation_of_is_strictly_ge {K L : cochain_complex C ℤ} (φ : Q.obj K ⟶ Q.obj L)
+  (n : ℤ) [K.is_strictly_ge n] [L.is_strictly_ge n] :
+  ∃ (K' : cochain_complex C ℤ) (hK' : K'.is_ge n) (s : K' ⟶ K) (f : K' ⟶ L) (hs : quasi_iso s),
+    φ = (by { haveI := hs, exact inv (Q.map s), }) ≫ Q.map f :=
+begin
+  obtain ⟨K', s, f, hs, eq⟩ := right_factorisation φ,
+  haveI := hs,
+  haveI : quasi_iso (cochain_complex.trunc_ge.π K' n),
+  { rw [cochain_complex.quasi_iso_trunc_ge_π_iff, cochain_complex.is_ge_iff_of_quasi_iso s],
+    apply_instance, },
+  refine ⟨(cochain_complex.trunc_ge K' n), infer_instance,
+    (cochain_complex.trunc_ge_functor C n).map s ≫
+      category_theory.inv (cochain_complex.trunc_ge.π K n),
+    (cochain_complex.trunc_ge_functor C n).map f ≫
+      category_theory.inv (cochain_complex.trunc_ge.π L n), infer_instance, _⟩,
+  have comms := Q.congr_map ((cochain_complex.trunc_ge.nat_trans_π C n).naturality s),
+  have commf := Q.congr_map ((cochain_complex.trunc_ge.nat_trans_π C n).naturality f),
+  dsimp at comms commf,
+  simp only [Q.map_comp, ← cancel_epi (inv (Q.map (cochain_complex.trunc_ge.π K' n))),
+    is_iso.inv_hom_id_assoc] at comms commf,
+  simp only [eq, Q.map_comp, ← commf, ← comms, functor.map_inv, assoc, is_iso.hom_inv_id, comp_id,
+    is_iso.hom_inv_id_assoc, is_iso.eq_inv_comp],
+end
+
+end derived_category
