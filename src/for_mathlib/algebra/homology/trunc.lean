@@ -232,7 +232,7 @@ def lift_single {K L : cochain_complex C ℤ} {q : ℤ} (f : K.X q ⟶ L.X q) (p
         { exfalso, exact h hj'.symm, }, }, },
   end, }
 
-def lift_single_f {K L : cochain_complex C ℤ} {q : ℤ} (f : K.X q ⟶ L.X q) (p : ℤ)
+lemma lift_single_f {K L : cochain_complex C ℤ} {q : ℤ} (f : K.X q ⟶ L.X q) (p : ℤ)
   [L.is_strictly_le q] [L.is_strictly_ge q]
   (hpq : p+1=q) (hf : K.d p q ≫ f = 0) :
   (lift_single f p hpq hf).f q = f :=
@@ -249,11 +249,6 @@ def iso_single (K : cochain_complex C ℤ) (n : ℤ)
   inv_hom_id' := from_single_ext _ _ n
     (by simp only [homological_complex.id_f, homological_complex.comp_f,
       desc_single_f, lift_single_f, iso.hom_inv_id]), }
-
-def exists_iso_single (K : cochain_complex C ℤ) (n : ℤ)
-  [K.is_strictly_le n] [K.is_strictly_ge n] :
-  ∃ (A : C), nonempty (K ≅ (homological_complex.single C _ n).obj A) :=
-⟨_, ⟨K.iso_single n⟩⟩
 
 lemma quasi_iso_single_map_iff_is_iso {A B : C} (φ : A ⟶ B) (n : ℤ) :
   quasi_iso ((homological_complex.single C (complex_shape.up ℤ) n).map φ) ↔ is_iso φ :=
@@ -307,7 +302,7 @@ by { dsimp, apply_instance, }
 instance single_functor_additive (n : ℤ) : (single_functor C n).additive :=
 by { dsimp [single_functor], apply_instance, }
 
-lemma single_functor_homology_iso (n : ℤ) :
+def single_functor_homology_iso (n : ℤ) :
   single_functor C n ⋙ homology_functor C n ≅ 𝟭 C :=
 functor.associator _ _ _ ≪≫ iso_whisker_left _ (homology_functor_factors C n) ≪≫
   homological_complex.single_homology_functor_iso C _ n
@@ -322,8 +317,6 @@ instance full_single_functor (n : ℤ) : full (single_functor C n) :=
 functor.full_of_exists _ (λ A B φ, begin
   obtain ⟨K', K'_le, K'_ge, s, f, hs, eq⟩ :=
     right_factorisation_of_is_strictly_le_of_is_strictly_ge φ n n,
-  haveI := K'_le,
-  haveI := K'_ge,
   haveI := hs,
   haveI : is_iso s,
   { rw cochain_complex.is_iso_iff_quasi_iso_of_single s n,

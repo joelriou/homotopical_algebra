@@ -5,10 +5,37 @@ import for_mathlib.category_theory.shift_misc
 import for_mathlib.category_theory.preadditive.misc
 import category_theory.limits.preserves.shapes.zero
 
+noncomputable theory
+
 namespace category_theory
 
 open limits category pretriangulated
+open_locale zero_object
 
+section
+
+variables {C D : Type*} [category C] [category D] [has_zero_morphisms C] [has_zero_morphisms D]
+
+instance preserves_limit_functor_empty (F : C ⥤ D) [F.preserves_zero_morphisms]
+  [has_zero_object C] : preserves_limit (functor.empty.{0} C) F :=
+begin
+  let c : cone (functor.empty.{0} C) := cone.mk 0 { app := λ X, 0, },
+  have hc : is_limit c :=
+  { lift := λ s, 0,
+    fac' := by rintro s ⟨⟨⟩⟩,
+    uniq' := λ s m hm, subsingleton.elim _ _, },
+  refine preserves_limit_of_preserves_limit_cone hc
+  { lift := λ s, 0,
+    fac' := by rintro s ⟨⟨⟩⟩,
+    uniq' := λ s m hm, begin
+      refine is_zero.eq_of_tgt _ _ _,
+      dsimp [functor.map_cone],
+      rw [limits.is_zero.iff_id_eq_zero, ← F.map_id,
+        subsingleton.elim (𝟙 (0 : C)) 0, F.map_zero],
+    end, },
+end
+
+end
 
 section
 /-- should be moved to short_complex.exact -/
@@ -117,7 +144,11 @@ end⟩
 def W_of_is_homological [F.is_homological] : morphism_property C :=
 λ X Y f, ∀ (n : ℤ), is_iso (F.map (f⟦n⟧'))
 
-instance is_homological.additive [F.is_homological] : F.additive := sorry
+instance [F.is_homological] : preserves_limits_of_shape (discrete walking_pair) F := sorry
+
+@[priority 100]
+instance is_homological.additive [F.is_homological] : F.additive :=
+functor.additive_of_preserves_binary_products _
 
 lemma kernel_of_is_homological_W [F.is_homological] :
   F.kernel_of_is_homological.W = F.W_of_is_homological :=
@@ -177,7 +208,20 @@ instance shift_is_homological [F.is_homological] (n : ℤ) :
       units.coe_one], },
 end⟩
 
-instance triangulated_functor_additive (F : triangulated_functor C D) : F.to_functor.additive := sorry
+instance triangulated_functor_preserves_zero_morphisms (F : triangulated_functor C D) :
+  F.to_functor.preserves_zero_morphisms :=
+⟨λ X₁ X₂, begin
+  have h := triangle.comp_zero₁₂ _ (F.map_distinguished _
+    (binary_product_triangle_distinguished X₁ X₂)),
+  dsimp at h,
+  simpa only [← F.map_comp, prod.lift_snd] using h,
+end⟩
+
+instance triangulated_functor_preserves_limits_of_shape_empty (F : triangulated_functor C D) :
+  preserves_limits_of_shape (discrete walking_pair) F.to_functor := sorry
+
+instance triangulated_functor_additive (F : triangulated_functor C D) : F.to_functor.additive :=
+functor.additive_of_preserves_binary_products _
 
 lemma is_homological.of_comp (F : triangulated_functor C D) (G : D ⥤ A) [G.additive]
   [G.is_homological] : (F.to_functor ⋙ G).is_homological :=
