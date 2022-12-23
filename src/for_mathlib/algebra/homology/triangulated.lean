@@ -91,9 +91,41 @@ def mapping_cone_comp_homotopy_equiv :
       mapping_cone_inr_snd_assoc, add_zero, comp_id, mapping_cone.inr_desc_f,
       eq_self_iff_true, and_self],
   end,
-  homotopy_inv_hom_id := sorry, }
-
-example : ℕ := 42
+  homotopy_inv_hom_id := (equiv_homotopy _ _).symm begin
+    refine ⟨-(mapping_cone_snd _).comp
+      (((mapping_cone_fst (f ≫ g)).1.comp (mapping_cone_inl f) (add_neg_self 1).symm).comp
+        (mapping_cone_inl _) (zero_add _).symm) (zero_add (-1)).symm, _⟩,
+    ext1 n,
+    dsimp,
+    simp only [from_mapping_cone_ext_iff _ _ (n+1) rfl,
+      to_mapping_cone_ext_iff _ _ (n+1) rfl,
+      from_mapping_cone_ext_iff _ _ (n+2) (show n+2=n+1+1, by linarith),
+      from_mapping_cone_ext_iff _ _ (n+1) rfl,
+      preadditive.comp_add, preadditive.add_comp,
+      neg_neg, δ_neg, preadditive.comp_neg, preadditive.neg_comp,
+      δ_comp_of_first_is_zero_cochain _ _ _ (neg_add_self 1), mapping_cone_δ_inl,
+      mapping_cone_δ_snd, cochain.of_hom_v, homological_complex.comp_f, assoc,
+      mapping_cone.inl_desc_v_assoc, cochain.zero_cochain_comp,
+      homological_complex.id_f, cochain.add_v, cochain.zsmul_v, ε_neg, ε_1, neg_smul,
+      one_smul, cochain.neg_comp, cochain.neg_v, mapping_cone_inl_snd_assoc,
+      zero_comp, zero_add, comp_id, cochain.comp_assoc_of_second_is_zero_cochain,
+      cochain.comp_v _ _ (add_neg_self 1).symm n (n+1) n rfl (by linarith),
+      mapping_cone_inl_fst_assoc, mapping_cone_inr_snd_assoc,
+      mapping_cone_inr_fst_assoc, add_zero, mapping_cone.inr_desc_f_assoc,
+      δ_comp _ _ (add_neg_self 1).symm 2 0 1 (zero_add 1) (by linarith) (neg_add_self 1),
+      cocycle.δ_eq_zero, cochain.zero_comp, cochain.zero_v, neg_zero,
+      mapping_cone_map, mapping_cone_inl_fst, mapping_cone.lift_fst_f,
+      mapping_cone.desc_cocycle_coe, mapping_cone.inl_desc_cochain_v,
+      cochain.comp_v _ _ (add_neg_self 1).symm (n+1) (n+2) (n+1) (by linarith) (by linarith),
+      mapping_cone.lift_snd_f, comp_zero, mapping_cone_inl_snd, id_comp,
+      ι_mapping_cone, mapping_cone_inr_fst, mapping_cone.inr_desc_cochain_v,
+      neg_add_self, mapping_cone.inl_desc_cochain_v_assoc,
+      mapping_cone.inr_desc_cochain_v_assoc, eq_self_iff_true,
+      add_subgroup.coe_zero, cochain.zero_v],
+    dsimp,
+    erw comp_id,
+    simp only [eq_self_iff_true, and_self],
+  end, }
 
 lemma mapping_cone_comp_homotopy_equiv_comm₁ :
   ι_mapping_cone (mapping_cone_comp_triangle f g).mor₁ ≫
@@ -190,11 +222,10 @@ is_triangulated.mk' (begin
       conv_rhs at eq { congr, skip, erw comp_id, },
       exact eq,
     end _,
-  refine pretriangulated.isomorphic_distinguished _
+  exact pretriangulated.isomorphic_distinguished _
     (mapping_cone_comp_triangle_distinguished u₁₂ u₂₃) _
-    (triangle.mk_iso _ _ (iso.refl _) (iso.refl _) (iso.refl _) (by tidy) (by tidy) _),
-  { dsimp,
-    erw [comp_id, id_comp], },
+    (triangle.mk_iso _ _ (iso.refl _) (iso.refl _) (iso.refl _) (by tidy) (by tidy)
+    (by { dsimp, erw [comp_id, id_comp], })),
 end)
 
 end homotopy_category
