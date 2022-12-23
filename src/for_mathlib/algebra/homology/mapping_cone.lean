@@ -331,6 +331,36 @@ def mapping_cone.desc_cochain {K : cochain_complex C ℤ} {n m : ℤ} (α : coch
   cochain (mapping_cone φ) K n :=
 twist.desc_cochain _ α β (by linarith)
 
+@[simp]
+lemma mapping_cone.inl_desc_cochain {K : cochain_complex C ℤ} {n m : ℤ}
+  (α : cochain F K m) (β : cochain G K n) (h : m+1=n) :
+  (mapping_cone_inl φ).comp (mapping_cone.desc_cochain φ α β h)
+    (show m = -1+n, by rw [← h, neg_add_cancel_comm_assoc]) = α :=
+hom_complex.twist.inl_comp_desc_cochain _ _ _ _ _
+
+@[simp, reassoc]
+lemma mapping_cone.inl_desc_cochain_v {K : cochain_complex C ℤ} {n m : ℤ}
+  (α : cochain F K m) (β : cochain G K n) (h : m+1=n) (p q : ℤ) (hpq : q = p + (-1))
+  (p' : ℤ) (hp' : p' = q + n) :
+  (mapping_cone_inl φ).v p q hpq ≫ (mapping_cone.desc_cochain φ α β h).v q p' hp' =
+  α.v p p' (by simp only [hp', hpq, ← h, int.add_neg_one, sub_add_add_cancel]) :=
+by rw [← cochain.congr_v (mapping_cone.inl_desc_cochain φ α β h) p p' (by linarith),
+    cochain.comp_v _ _ _ p q p']
+
+@[simp]
+lemma mapping_cone.inr_desc_cochain {K : cochain_complex C ℤ} {n m : ℤ}
+  (α : cochain F K m) (β : cochain G K n) (h : m+1=n) :
+  (cochain.of_hom (mapping_cone_inr φ)).comp
+    (mapping_cone.desc_cochain φ α β h) (zero_add n).symm = β  :=
+hom_complex.twist.inr_comp_desc_cochain _ _ _ _
+
+@[simp, reassoc]
+lemma mapping_cone.inr_desc_cochain_v {K : cochain_complex C ℤ} {n m : ℤ}
+  (α : cochain F K m) (β : cochain G K n) (h : m+1=n) (p q : ℤ) (hpq : q = p + n):
+  (mapping_cone_inr φ).f p ≫ (mapping_cone.desc_cochain φ α β h).v p q hpq = β.v p q hpq  :=
+by rw [← cochain.congr_v (mapping_cone.inr_desc_cochain φ α β h) p q hpq,
+  cochain.comp_v _ _ _ _ _ q (add_zero p).symm hpq, cochain.of_hom_v]
+
 lemma mapping_cone.δ_desc_cochain {K : cochain_complex C ℤ} {n m n' : ℤ} (α : cochain F K m) (β : cochain G K n)
   (h : m+1=n) (hn' : n+1 = n') : δ n n' (mapping_cone.desc_cochain φ α β h) =
   (mapping_cone_fst φ : cochain (mapping_cone φ) F 1).comp (δ m n α +
@@ -342,6 +372,12 @@ def mapping_cone.desc_cocycle {K : cochain_complex C ℤ} {n m : ℤ} (α : coch
   (h : m+1=n) (eq : δ m n α = ε n • (cochain.of_hom φ).comp β.1 (zero_add n).symm) :
   cocycle (mapping_cone φ) K n :=
 twist.desc_cocycle _ α β (by linarith) _ eq
+
+@[simp]
+def mapping_cone.desc_cocycle_coe {K : cochain_complex C ℤ} {n m : ℤ} (α : cochain F K m) (β : cocycle G K n)
+  (h : m+1=n) (eq : δ m n α = ε n • (cochain.of_hom φ).comp β.1 (zero_add n).symm) :
+(mapping_cone.desc_cocycle φ α β h eq : cochain (mapping_cone φ) K n) =
+  mapping_cone.desc_cochain φ α β h := rfl
 
 def mapping_cone.desc {K : cochain_complex C ℤ} (α : cochain F K (-1)) (β : G ⟶ K)
   (eq : δ (-1) 0 α = cochain.of_hom (φ ≫ β)) :
