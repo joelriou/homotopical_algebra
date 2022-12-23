@@ -2,6 +2,8 @@ import category_theory.shift
 import for_mathlib.category_theory.quotient_misc
 import for_mathlib.category_theory.functor.shift
 
+import for_mathlib.category_theory.functor.shift_compatibility
+
 noncomputable theory
 
 namespace category_theory
@@ -66,9 +68,24 @@ begin
   simpa only [functor.map_id, comp_id, id_comp],
 end
 
---local attribute [instance, reducible] endofunctor_monoidal_category
+local attribute [instance, reducible] endofunctor_monoidal_category
 local attribute [reducible] discrete.add_monoidal
-local attribute [-simp] lift_map
+
+lemma associativity_compatibility (a b c : A) (X : C) :
+  (shift_functor C c).map ((shift_functor_add C a b).inv.app X) ≫
+    (shift_functor_add C (a + b) c).inv.app X =
+  (shift_functor_add C b c).inv.app ((shift_functor C a).obj X) ≫
+  (shift_functor_add C a (b + c)).inv.app X ≫ eq_to_hom (by rw add_assoc):=
+begin
+  dsimp,
+  have eq := (congr_arg iso.hom (monoidal_functor.associativity_iso_eq
+    (shift_monoidal_functor C A) (discrete.mk a) (discrete.mk b) (discrete.mk c))),
+  replace eq := congr_app eq X,
+  dsimp at eq,
+  simp only [id_comp, functor.map_id, comp_id] at eq,
+  erw ← reassoc_of eq, clear eq,
+  simp only [eq_to_hom_map, eq_to_hom_app, eq_to_hom_trans, eq_to_hom_refl, comp_id],
+end
 
 lemma shift_associativity (a b c : A) :
   (shift_μ h a b).hom ◫ 𝟙 (quotient.shift_functor h c) ≫
@@ -76,15 +93,15 @@ lemma shift_associativity (a b c : A) :
   (functor.associator _ _ _).hom ≫ 𝟙 (quotient.shift_functor h a) ◫ (shift_μ h b c).hom ≫
     (shift_μ h a (b + c)).hom :=
 quotient.nat_trans_ext _ _ (λ X, begin
-  dsimp only [shift_ε, shift_μ, quotient.shift_functor, comm_shift],
-  simp only [iso.symm_symm_eq, lift_nat_iso_hom, iso.trans_hom, iso.symm_hom,
-    iso_whisker_right_hom, iso_whisker_left_hom, monoidal_functor.μ_iso_hom, nat_trans.comp_app,
-    lift_nat_trans_app, functor.associator_inv_app, whisker_right_app, lift.is_lift_hom,
-    functor.associator_hom_app, whisker_left_app, functor_map, lift.is_lift_inv, comp_id, id_comp,
-    functor.map_comp, eq_to_hom_app, assoc, nat_trans.hcomp_app, nat_trans.id_app, functor.map_id],
-  erw [functor.map_id, functor.map_id, functor.map_id, functor.map_id, comp_id, id_comp,
-    id_comp, id_comp, id_comp, id_comp, id_comp, id_comp, id_comp, id_comp, id_comp, id_comp],
-  sorry,
+  dsimp only [functor.associator, nat_trans.comp_app, nat_trans.hcomp_app,
+    nat_trans.id_app, quotient.shift_functor],
+  erw [id_comp, id_comp, shift_μ_hom_app, shift_μ_hom_app, shift_μ_hom_app,
+    shift_μ_hom_app, assoc, functor.map_id, id_comp, lift_map_functor_map],
+  dsimp only ,
+  simp only [functor.comp_map, ← functor.map_comp, ← functor.map_comp_assoc,
+    associativity_compatibility],
+  simpa only [assoc, functor.map_comp, eq_to_hom_app, eq_to_hom_map, eq_to_hom_trans,
+    eq_to_hom_refl, comp_id],
 end)
 
 lemma shift_left_unitality (a : A) :
