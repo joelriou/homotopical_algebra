@@ -252,7 +252,30 @@ instance triangulated_functor_preserves_zero_morphisms (F : triangulated_functor
 end⟩
 
 instance triangulated_functor_preserves_binary_products (F : triangulated_functor C D) :
-  preserves_limits_of_shape (discrete walking_pair) F.to_functor := sorry
+  preserves_limits_of_shape (discrete walking_pair) F.to_functor :=
+begin
+  suffices : ∀ (X₁ X₂ : C), preserves_limit (pair X₁ X₂) F.to_functor,
+  { haveI := this,
+    exact ⟨λ X, preserves_limit_of_iso_diagram F.to_functor
+      (category_theory.limits.exists_discrete_walking_pair_exists_iso_pair X)
+      .some_spec.some_spec.some.symm⟩, },
+  intros X₁ X₂,
+  haveI : mono (F.biprod_comparison X₁ X₂),
+  { rw preadditive.mono_iff_cancel_zero,
+    intros Z f hf,
+    have h₂ : f ≫ F.map biprod.snd = 0,
+    { simpa only [assoc, biprod_comparison_snd, zero_comp] using hf =≫ biprod.snd, },
+    obtain ⟨f₁, rfl⟩ := covariant_yoneda_exact₂ _
+      (F.map_distinguished _ (binary_biproduct_triangle_distinguished X₁ X₂)) f h₂,
+    replace hf := hf =≫ biprod.fst,
+    dsimp [triangulated_functor.map_triangle] at hf,
+    simp only [assoc, biprod_comparison_fst, zero_comp, ← F.map_comp, biprod.inl_fst,
+      F.map_id, comp_id] at hf,
+    rw [hf, zero_comp], },
+  haveI : preserves_binary_biproduct X₁ X₂ F.to_functor :=
+    limits.preserves_binary_biproduct_of_mono_biprod_comparison _,
+  apply limits.preserves_binary_product_of_preserves_binary_biproduct,
+end
 
 instance triangulated_functor_additive (F : triangulated_functor C D) : F.to_functor.additive :=
 functor.additive_of_preserves_binary_products _
