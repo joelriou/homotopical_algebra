@@ -32,9 +32,6 @@ def homotopy_category.comm_shift_quotient [preadditive C] (n : ℤ) :
   homotopy_category.quotient _ _ ⋙ shift_functor _ n :=
 quotient.comm_shift _ _
 
-instance [preadditive C]: full (homotopy_category.quotient C c) :=
-by { dsimp [homotopy_category.quotient], apply_instance, }
-
 namespace cochain_complex
 
 section
