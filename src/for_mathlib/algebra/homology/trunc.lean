@@ -118,7 +118,6 @@ begin
   obtain ⟨K', hK', ⟨eK⟩⟩ := exists_iso_Q_obj_of_le K p,
   obtain ⟨L', hL', ⟨eL⟩⟩ := exists_iso_Q_obj_of_ge L q,
   haveI := hK',
-  haveI := hL',
   have hφ : ∃ (φ' : Q.obj K' ⟶ Q.obj L'), φ = eK.hom ≫ φ' ≫ eL.inv :=
     ⟨eK.inv ≫ φ ≫ eL.hom, by simp only [assoc, iso.hom_inv_id, comp_id, iso.hom_inv_id_assoc]⟩,
   obtain ⟨φ, rfl⟩ := hφ,
