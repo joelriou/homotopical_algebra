@@ -226,6 +226,14 @@ def pull {A' : C} (E : extension A B) (π : A' ⟶ A) : extension A' B :=
   end, }
 
 @[simps]
+def pull_short_complex {A' : C} (E : extension A B) (π : A' ⟶ A) :
+  short_complex.mk _ _ (E.pull π).w ⟶ short_complex.mk _ _ E.w :=
+{ τ₁ := 𝟙 _,
+  τ₂ := pullback.fst,
+  τ₃ := π,
+  comm₂₃' := pullback.condition, }
+
+@[simps]
 def pull_functor {A A' : C} (π : A' ⟶ A) (B : C) : extension A B ⥤ extension A' B :=
 { obj := λ E, E.pull π,
   map := λ E₁ E₂ f,
@@ -264,6 +272,14 @@ def push {B' : C} (E : extension A B) (ι : B ⟶ B') : extension A B' :=
     { intros Z x hx m hm,
       rw [← cancel_epi E.p, E.ex.g_desc (pushout.inl ≫ x), ← hm, pushout.inl_desc_assoc], },
   end, }
+
+@[simps]
+def push_short_complex {B' : C} (E : extension A B) (ι : B ⟶ B') :
+  short_complex.mk _ _ E.w ⟶ short_complex.mk _ _ (E.push ι).w :=
+{ τ₁ := ι,
+  τ₂ := pushout.inl,
+  τ₃ := 𝟙 _,
+  comm₁₂' := pushout.condition.symm, }
 
 @[simps]
 def push_functor (A : C) {B B' : C} (ι : B ⟶ B') : extension A B ⥤ extension A B' :=
@@ -360,6 +376,8 @@ begin
   obtain ⟨E, rfl⟩ := quotient.surjective_quotient_mk' E,
   exact quot.sound ⟨(extension.pull_functor_comm_push_functor π ι).app E⟩,
 end
+
+variable (C)
 
 @[simps]
 def extensions_functor : C ⥤ Cᵒᵖ ⥤ Type (max u v) :=

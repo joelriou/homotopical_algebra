@@ -42,18 +42,24 @@ cochain_complex.double.quasi_iso_σ (neg_add_self 1) e.w e.ex
 instance : quasi_iso e.σ' :=
 cochain_complex.double.quasi_iso_σ' (neg_add_self 1) e.w e.ex
 
-def ext_class : (single_functor C 0).obj A ⟶ (single_functor C (-1)).obj B :=
-inv (Q.map e.σ) ≫ Q.map e.π
+def δ' : (single_functor C 0).obj A ⟶ (single_functor C (-1)).obj B :=
+-inv (Q.map e.σ) ≫ Q.map e.π
 
-lemma ext_class_eq : e.ext_class = inv (Q.map e.σ) ≫ Q.map e.π := rfl
+lemma δ'_eq : e.δ' = -inv (Q.map e.σ) ≫ Q.map e.π := rfl
 
-lemma ext_class_eq' : e.ext_class = -Q.map e.ι ≫ inv (Q.map e.σ') :=
-by simp only [ext_class, ← cancel_epi (Q.map e.σ), ← cancel_mono (Q.map e.σ'), assoc,
+lemma δ'_eq' : e.δ' = Q.map e.ι ≫ inv (Q.map e.σ') :=
+by simp only [δ', ← cancel_epi (Q.map e.σ), ← cancel_mono (Q.map e.σ'), assoc,
   is_iso.hom_inv_id_assoc, preadditive.comp_neg, preadditive.neg_comp, is_iso.inv_hom_id,
   comp_id, ← Q.map_comp, derived_category.Q_map_eq_of_homotopy _ _ e.homotopy_πσ'_σι,
-  functor.map_neg]
+  functor.map_neg, neg_neg]
 
-lemma ext_class_eq'' : e.ext_class = (short_complex.short_exact.extension e.ex).ext_class := rfl
+lemma δ_eq'' : e.δ' = (short_complex.short_exact.extension e.ex).δ' := rfl
+
+def δ : (single_functor C 0).obj A ⟶ ((single_functor C 0).obj B)⟦(1 : ℤ)⟧ :=
+e.δ' ≫ (single_functor_shift_iso C 0 1 (-1) (neg_add_self 1)).symm.hom.app B
+
+def triangle : pretriangulated.triangle (derived_category C) :=
+pretriangulated.triangle.mk ((single_functor C 0).map e.i) ((single_functor C 0).map e.p) e.δ
 
 section naturality
 
@@ -93,19 +99,37 @@ begin
     apply id_comp, },
 end
 
-lemma ext_class_naturality :
-  ex₁.extension.ext_class ≫ (single_functor C (-1)).map φ.τ₁ =
-    (single_functor C 0).map φ.τ₃ ≫ ex₂.extension.ext_class :=
+@[reassoc]
+lemma δ'_naturality :
+  ex₁.extension.δ' ≫ (single_functor C (-1)).map φ.τ₁ =
+    (single_functor C 0).map φ.τ₃ ≫ ex₂.extension.δ' :=
 begin
-  dsimp only [extension.ext_class, single_functor, functor.comp_map],
+  dsimp only [extension.δ', single_functor, functor.comp_map],
   have hσ := Q.congr_map (σ_naturality φ ex₁ ex₂),
   have hπ := Q.congr_map (π_naturality φ ex₁ ex₂),
   simp only [Q.map_comp, ← cancel_mono (inv (Q.map ex₂.extension.σ)), assoc,
     is_iso.hom_inv_id, comp_id] at hσ,
   simp only [Q.map_comp] at hπ,
   simp only [← cancel_epi (Q.map ex₁.extension.σ), assoc, is_iso.hom_inv_id_assoc,
-    hπ, ← hσ],
+    hπ, ← hσ, preadditive.comp_neg, preadditive.neg_comp],
 end
+
+@[reassoc]
+lemma δ_naturality :
+  ex₁.extension.δ ≫ ((single_functor C 0).map φ.τ₁)⟦1⟧' =
+    (single_functor C 0).map φ.τ₃ ≫ ex₂.extension.δ :=
+begin
+  dsimp only [extension.triangle, pretriangulated.triangle.mk, extension.δ, iso.symm],
+  simpa only [← δ'_naturality_assoc φ ex₁ ex₂, assoc, nat_trans.naturality],
+end
+
+lemma triangle_map : ex₁.extension.triangle ⟶ ex₂.extension.triangle :=
+{ hom₁ := (single_functor C 0).map φ.τ₁,
+  hom₂ := (single_functor C 0).map φ.τ₂,
+  hom₃ := (single_functor C 0).map φ.τ₃,
+  comm₁' := by simpa only [functor.map_comp] using (single_functor C 0).congr_map φ.comm₁₂.symm,
+  comm₂' := by simpa only [functor.map_comp] using (single_functor C 0).congr_map φ.comm₂₃.symm,
+  comm₃' := δ_naturality φ ex₁ ex₂, }
 
 end naturality
 
@@ -115,14 +139,40 @@ namespace extensions
 
 variables {A B : C} (e : extension A B)
 
-lemma ext_class : extensions A B → ((single_functor C 0).obj A ⟶ (single_functor C (-1)).obj B) :=
-quot.lift extension.ext_class begin
+def δ : extensions A B → ((single_functor C 0).obj A ⟶
+  ((single_functor C 0).obj B)⟦(1 : ℤ)⟧) :=
+quot.lift extension.δ begin
   rintros E₁ E₂ ⟨e⟩,
-  have eq := extension.ext_class_naturality
+  have eq := extension.δ_naturality
     ((extension.to_short_exact_sequence_functor A B).map e.hom) E₁.ex E₂.ex,
   dsimp at eq,
   simpa only [category_theory.functor.map_id, id_comp, comp_id] using eq,
 end
+
+variable (C)
+
+@[simps]
+def δ_nat_trans : extensions_functor C ⟶
+  ((single_functor C 0).op ⋙ (single_functor C 0 ⋙ shift_functor _ (1 : ℤ) ⋙ yoneda).flip).flip :=
+{ app := λ B,
+  { app := λ A, extensions.δ,
+    naturality' := λ A₁ A₂ π, begin
+      ext e,
+      obtain ⟨E, rfl⟩ := quotient.surjective_quotient_mk' e,
+      have eq := extension.δ_naturality (E.pull_short_complex π.unop)
+        ((E.pull π.unop).ex) E.ex,
+      dsimp at eq,
+      simpa only [category_theory.functor.map_id, comp_id] using eq,
+    end, },
+  naturality' := begin
+    rintro B₁ B₂ ι,
+    ext A e,
+    induction A using opposite.rec,
+    obtain ⟨E, rfl⟩ := quotient.surjective_quotient_mk' e,
+    have eq := extension.δ_naturality (E.push_short_complex ι) E.ex (E.push ι).ex,
+    dsimp at eq,
+    simpa only [category_theory.functor.map_id, id_comp] using eq.symm,
+  end, }
 
 end extensions
 

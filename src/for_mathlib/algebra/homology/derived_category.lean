@@ -308,11 +308,11 @@ by { dsimp [Q], apply_instance, }
 
 variable (C)
 
-def comm_shift_Q_one :
-  shift_functor (cochain_complex C ℤ) (1 : ℤ) ⋙
+def comm_shift_Q (n : ℤ) :
+  shift_functor (cochain_complex C ℤ) n ⋙
     (Q : cochain_complex _ _ ⥤ derived_category C) ≅
-    Q ⋙ shift_functor (derived_category C) (1 : ℤ) :=
-functor.comm_shift_comp (homotopy_category.quotient_triangulated_functor_struct.comm_shift) Qh.comm_shift
+    Q ⋙ shift_functor (derived_category C) n :=
+functor.comm_shift_comp (quotient.comm_shift _ _) (shift.localization_comm_shift _ _ _)
 
 variable {C}
 
@@ -370,7 +370,7 @@ def ι_mapping_cone : Q.obj L ⟶ mapping_cone φ :=
 Q.map (cochain_complex.ι_mapping_cone φ)
 
 def mapping_cone_δ : mapping_cone φ ⟶ (Q.obj K)⟦(1 : ℤ)⟧ :=
-  Q.map (cochain_complex.mapping_cone_δ φ) ≫ (comm_shift_Q_one C).hom.app K
+  Q.map (cochain_complex.mapping_cone_δ φ) ≫ (comm_shift_Q C 1).hom.app K
 
 def mapping_cone_triangle : triangle (derived_category C) :=
 triangle.mk (Q.map φ) (ι_mapping_cone φ) (mapping_cone_δ φ)
@@ -385,7 +385,7 @@ begin -- needs cleaning up...
   { dsimp [mapping_cone_triangle, mapping_cone_δ,
       homotopy_category.mapping_cone_triangle',
       cochain_complex.mapping_cone_δ',
-      comm_shift_Q_one, functor.comm_shift_comp],
+      comm_shift_Q, functor.comm_shift_comp],
     simp only [category_theory.functor.map_id, comp_id, id_comp],
     congr' 1,
     erw id_comp,

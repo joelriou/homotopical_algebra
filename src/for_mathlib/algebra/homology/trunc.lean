@@ -108,6 +108,20 @@ begin
       exact ha, }, },
 end
 
+lemma shift_is_strict_le (K : cochain_complex C ℤ) (a b c : ℤ) (h : a = c + b)
+  [K.is_strictly_le a] : (K⟦b⟧).is_strictly_le c :=
+⟨λ n hn, begin
+  change is_zero (K.X (n+b)),
+  exact is_strictly_le.is_zero K a (n+b) (by linarith),
+end⟩
+
+lemma shift_is_strict_ge (K : cochain_complex C ℤ) (a b c : ℤ) (h : a = c + b)
+  [K.is_strictly_ge a] : (K⟦b⟧).is_strictly_ge c :=
+⟨λ n hn, begin
+  change is_zero (K.X (n+b)),
+  exact is_strictly_ge.is_zero K a (n+b) (by linarith),
+end⟩
+
 end cochain_complex
 
 namespace derived_category
@@ -380,5 +394,75 @@ functor.full_of_exists _ (λ A B φ, begin
     by simp only [eq, single_functor_map, functor.image_preimage,
       functor.map_comp, functor.map_inv]⟩,
 end)
+
+end derived_category
+
+namespace cochain_complex
+
+variables {D : Type*} [category D] [abelian D] [has_zero_object D]
+
+def single_shift_iso_app (A : D) (a b c : ℤ) (h : a = c + b) :
+  ((homological_complex.single D (complex_shape.up ℤ) a).obj A)⟦b⟧ ≅
+    ((homological_complex.single D (complex_shape.up ℤ) c).obj A) :=
+{ hom := lift_single (((shift_functor_obj_X_iso _) _ _ _ h).hom ≫
+      (homological_complex.single_obj_X_self D (complex_shape.up ℤ) a A).hom ≫
+      (homological_complex.single_obj_X_self D (complex_shape.up ℤ) c A).inv)
+      (c-1) (sub_add_cancel c 1) (by simp),
+  inv := desc_single ((homological_complex.single_obj_X_self D (complex_shape.up ℤ) c A).hom ≫
+    (homological_complex.single_obj_X_self D (complex_shape.up ℤ) a A).inv ≫
+    ((shift_functor_obj_X_iso _) _ _ _ h).inv) (c+1) rfl (by simp),
+  hom_inv_id' := begin
+    haveI := shift_is_strict_le ((homological_complex.single D
+      (complex_shape.up ℤ) a).obj A) _ _ _ h,
+    haveI := shift_is_strict_ge ((homological_complex.single D
+      (complex_shape.up ℤ) a).obj A) _ _ _ h,
+    exact to_single_ext _ _ c (by simpa),
+  end,
+  inv_hom_id' := to_single_ext _ _ c (by simp), }
+
+@[simp]
+lemma single_shift_iso_app_hom_f (A : D) (a b c : ℤ) (h : a = c + b) :
+  (single_shift_iso_app A a b c h).hom.f c = ((shift_functor_obj_X_iso _) _ _ _ h).hom ≫
+    (homological_complex.single_obj_X_self D (complex_shape.up ℤ) a A).hom ≫
+    (homological_complex.single_obj_X_self D (complex_shape.up ℤ) c A).inv :=
+lift_single_f _ _ _ _
+
+@[simp]
+lemma single_shift_iso_app_inv_f (A : D) (a b c : ℤ) (h : a = c + b) :
+  (single_shift_iso_app A a b c h).inv.f c =
+    (homological_complex.single_obj_X_self D (complex_shape.up ℤ) c A).hom ≫
+    (homological_complex.single_obj_X_self D (complex_shape.up ℤ) a A).inv ≫
+    ((shift_functor_obj_X_iso _) _ _ _ h).inv :=
+desc_single_f _ _ _ _
+
+variable (D)
+
+def single_shift_iso (a b c : ℤ) (h : a = c + b):
+  (homological_complex.single D (complex_shape.up ℤ) a) ⋙ category_theory.shift_functor _ b ≅
+    (homological_complex.single D (complex_shape.up ℤ) c) :=
+nat_iso.of_components (λ A, single_shift_iso_app A a b c h) (λ A₁ A₂ f, begin
+  subst h,
+  refine to_single_ext _ _ c _,
+  simp only [functor.comp_map, homological_complex.comp_f, shift_functor_map_f',
+    homological_complex.single_map_f_self, homological_complex.single_obj_X_self_hom,
+    homological_complex.single_obj_X_self_inv, shift_functor_obj_X_iso,
+    single_shift_iso_app_hom_f, homological_complex.X_iso_of_eq_refl, eq_to_hom_trans,
+    assoc, eq_to_hom_trans_assoc],
+  dsimp [iso.refl],
+  erw [id_comp, id_comp, eq_to_hom_trans],
+  refl,
+end)
+
+end cochain_complex
+
+namespace derived_category
+
+variable (C)
+
+def single_functor_shift_iso (a b c : ℤ) (h : a = c + b) :
+  (single_functor C a) ⋙ category_theory.shift_functor _ b ≅ (single_functor C c) :=
+functor.associator _ _ _ ≪≫ iso_whisker_left _ (comm_shift_Q C b).symm ≪≫
+  (functor.associator _ _ _).symm ≪≫
+  iso_whisker_right (cochain_complex.single_shift_iso C _ _ _ h) Q
 
 end derived_category
