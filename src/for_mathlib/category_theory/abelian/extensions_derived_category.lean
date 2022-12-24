@@ -56,7 +56,7 @@ by simp only [δ', ← cancel_epi (Q.map e.σ), ← cancel_mono (Q.map e.σ'), a
 lemma δ_eq'' : e.δ' = (short_complex.short_exact.extension e.ex).δ' := rfl
 
 def δ : (single_functor C 0).obj A ⟶ ((single_functor C 0).obj B)⟦(1 : ℤ)⟧ :=
-e.δ' ≫ (single_functor_shift_iso C 0 1 (-1) (neg_add_self 1)).symm.hom.app B
+e.δ' ≫ (single_functor_shift_iso C 0 1 (-1) (neg_add_self 1)).inv.app B
 
 def triangle : pretriangulated.triangle (derived_category C) :=
 pretriangulated.triangle.mk ((single_functor C 0).map e.i) ((single_functor C 0).map e.p) e.δ
@@ -119,11 +119,12 @@ lemma δ_naturality :
   ex₁.extension.δ ≫ ((single_functor C 0).map φ.τ₁)⟦1⟧' =
     (single_functor C 0).map φ.τ₃ ≫ ex₂.extension.δ :=
 begin
-  dsimp only [extension.triangle, pretriangulated.triangle.mk, extension.δ, iso.symm],
+  dsimp only [extension.triangle, pretriangulated.triangle.mk, extension.δ],
   simpa only [← δ'_naturality_assoc φ ex₁ ex₂, assoc, nat_trans.naturality],
 end
 
-lemma triangle_map : ex₁.extension.triangle ⟶ ex₂.extension.triangle :=
+@[simps]
+def triangle_map : ex₁.extension.triangle ⟶ ex₂.extension.triangle :=
 { hom₁ := (single_functor C 0).map φ.τ₁,
   hom₂ := (single_functor C 0).map φ.τ₂,
   hom₃ := (single_functor C 0).map φ.τ₃,
@@ -167,12 +168,99 @@ def δ_nat_trans : extensions_functor C ⟶
   naturality' := begin
     rintro B₁ B₂ ι,
     ext A e,
-    induction A using opposite.rec,
     obtain ⟨E, rfl⟩ := quotient.surjective_quotient_mk' e,
     have eq := extension.δ_naturality (E.push_short_complex ι) E.ex (E.push ι).ex,
     dsimp at eq,
     simpa only [category_theory.functor.map_id, id_comp] using eq.symm,
   end, }
+
+variables {C}
+
+lemma δ_nat_trans_surjective'
+  (φ : (single_functor C 0).obj A ⟶ ((single_functor C 0).obj B)⟦(1 : ℤ)⟧) :
+  ∃ (e : extension A B), φ = e.δ :=
+begin
+  obtain ⟨φ, rfl⟩ : ∃ (φ' : (single_functor C 0).obj A ⟶ (single_functor C (-1)).obj B),
+    φ = φ' ≫ (single_functor_shift_iso C 0 1 (-1) (neg_add_self 1)).inv.app B,
+  { refine ⟨φ ≫ (single_functor_shift_iso C 0 1 (-1) (neg_add_self 1)).hom.app B, _⟩,
+    simp only [assoc, iso.hom_inv_id_app],
+    erw comp_id, },
+  suffices : ∃ (E' A' : C) (f' : A ⟶ A') (i' : B ⟶ E') (p' : E' ⟶ A') (w : i' ≫ p' = 0)
+    (ex : (short_complex.mk _ _ w).short_exact),
+      φ ≫ Q.map ex.extension.σ' = (single_functor C 0).map f' ≫ Q.map ex.extension.ι,
+  { obtain ⟨E', A', f', i', p', w, ex, z⟩ := this,
+    refine ⟨ex.extension.pull f', _⟩,
+    have eq := extension.δ_naturality (ex.extension.pull_short_complex f')
+      (ex.extension.pull f').ex ex.extension.ex,
+    simp only [extension.pull_short_complex, category_theory.functor.map_id, comp_id] at eq,
+    refine trans _ eq.symm,
+    dsimp only [extension.δ],
+    rw ← assoc,
+    congr' 1,
+    erw [extension.δ'_eq', ← cancel_mono (Q.map ex.extension.σ'), assoc, assoc, is_iso.inv_hom_id,
+      comp_id],
+    exact z, },
+  haveI : cochain_complex.is_strictly_le ((homological_complex.single C
+    (complex_shape.up ℤ) (-1)).obj B) 0 :=
+      cochain_complex.is_strictly_le_of_le _ (-1) 0 (by linarith),
+  obtain ⟨E', A', p', f, s, hs, eq⟩ : ∃ (B' E' : C) (i' : B' ⟶ E')
+   (f : (homological_complex.single C _ 0).obj A ⟶ cochain_complex.double (neg_add_self 1) i')
+   (s : (homological_complex.single C _ (-1)).obj B ⟶ cochain_complex.double (neg_add_self 1) i')
+   (hs : quasi_iso s), by { haveI := hs, exact φ = Q.map f ≫ inv (Q.map s), },
+  { obtain ⟨L', L'_le, L'_ge, f, s, hs, hφ⟩ :=
+      left_factorisation_of_is_strictly_le_of_is_strictly_ge φ 0 (-1),
+    haveI := L'_le,
+    obtain ⟨E', A', p', ⟨e⟩⟩ := cochain_complex.exists_iso_double (neg_add_self 1) L',
+    refine ⟨E', A', p', f ≫ e.hom, s ≫ e.hom, infer_instance, _⟩,
+    simp only [hφ, Q.map_comp, is_iso.inv_comp, assoc, is_iso.hom_inv_id_assoc], },
+  obtain ⟨f', hf'⟩ := cochain_complex.single_to_double' f,
+  obtain ⟨i', w, hs'⟩ := cochain_complex.single_to_double s,
+  refine ⟨E', A', f', i', p', w, _, _⟩,
+  { sorry, },
+  { dsimp only [single_functor, functor.comp_map],
+    rw ← Q.map_comp,
+    haveI := hs,
+    simp only [← cancel_mono (Q.map s), assoc, is_iso.inv_hom_id, comp_id, hf', hs'] at eq,
+    convert eq,
+    refine cochain_complex.from_single_ext _ _ 0 _,
+    dsimp [short_complex.short_exact.extension, extension.ι],
+    simp only [eq_self_iff_true, comp_id, id_comp, if_true, cochain_complex.double.lift.f₂,
+      cochain_complex.desc_single_f],
+    erw id_comp, },
+end
+
+lemma δ_nat_trans_injective' (e₁ e₂ : extension A B)
+  (h : e₁.δ = e₂.δ) : nonempty (e₁ ≅ e₂) := sorry
+
+variables (A B)
+
+lemma δ_nat_trans_bijective :
+  function.bijective (@extensions.δ _ _ _ A B) :=
+begin
+  split,
+  { rintros ⟨e₁⟩ ⟨e₂⟩ h,
+    exact quot.sound (δ_nat_trans_injective' _ _ h), },
+  { intro φ,
+    obtain ⟨e, rfl⟩ := δ_nat_trans_surjective' φ,
+    exact ⟨quotient.mk' e, rfl⟩, },
+end
+
+instance : is_iso (δ_nat_trans C) :=
+begin
+  haveI : ∀ (A : C), is_iso ((δ_nat_trans C).app A),
+  { intro A,
+    haveI : ∀ (B : Cᵒᵖ), is_iso (((δ_nat_trans C).app A).app B),
+    { intro B,
+      rw is_iso_iff_bijective,
+      apply δ_nat_trans_bijective, },
+    apply nat_iso.is_iso_of_is_iso_app, },
+  apply nat_iso.is_iso_of_is_iso_app,
+end
+
+variable (C)
+
+@[simps]
+def δ_nat_iso := as_iso (δ_nat_trans C)
 
 end extensions
 

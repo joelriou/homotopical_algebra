@@ -469,6 +469,8 @@ begin
       reassoc_of w, zero_comp], },
 end
 
+omit w
+
 def double.homotopy_πσ'_σι : homotopy (double.π h i ≫ double.σ' h w)
   (-double.σ h w ≫ double.ι h p) :=
 double.homotopy_mk _ _ _ (𝟙 _)
@@ -528,6 +530,58 @@ begin
     dsimp [e, double.σ],
     simp only [lift_single_f, iso.inv_hom_id_assoc], },
 end
+
+lemma double.is_iso_iff {K L : cochain_complex C ℤ} [K.is_strictly_le b] [K.is_strictly_ge a]
+  [L.is_strictly_le b] [L.is_strictly_ge a] (φ : K ⟶ L) :
+  is_iso φ ↔ (is_iso (φ.f a) ∧ is_iso (φ.f b)) :=
+begin
+  split,
+  { introI,
+    split; exact (infer_instance : is_iso ((homological_complex.eval _ _ _).map φ)), },
+  { intro hφ,
+    haveI : ∀ (n : ℤ), is_iso (φ.f n),
+    { intro n,
+      rcases double.four_cases h n with ⟨h' | h'⟩ | ⟨h' | h'⟩,
+      { refine ⟨⟨0, (is_strictly_ge.is_zero K a _ h').eq_of_src _ _,
+          (is_strictly_ge.is_zero L a _ h').eq_of_src _ _⟩⟩, },
+      { refine ⟨⟨0, (is_strictly_le.is_zero K b _ h').eq_of_src _ _,
+          (is_strictly_le.is_zero L b _ h').eq_of_src _ _⟩⟩, },
+      all_goals { unfreezingI { subst h', }, tauto, }, },
+    apply homological_complex.hom.is_iso_of_components, },
+end
+
+lemma exists_iso_double (K : cochain_complex C ℤ) [K.is_strictly_le b] [K.is_strictly_ge a] :
+  ∃ (A B : C) (φ : A ⟶ B), nonempty (K ≅ double h φ) :=
+begin
+  let α := double.lift h (K.d a b) K (𝟙 _) (𝟙 _) (by simp) (show (a-1)+1=a, by linarith)
+      ((is_strictly_ge.is_zero K a (a-1) (by linarith)).eq_of_src _ _),
+  haveI : is_iso α,
+  { simp only [double.is_iso_iff h α, id_comp, double.lift_f, double.lift.f₁, double.lift.f₂],
+    split; apply_instance, },
+  exact ⟨_, _, K.d a b, ⟨as_iso α⟩⟩,
+end
+
+variables {h φ}
+
+lemma single_to_double {Z : C} (f : ((homological_complex.single C _ a).obj Z) ⟶ double h φ) :
+  ∃ (g : Z ⟶ A) (hg : g ≫ φ = 0), f = desc_single ((homological_complex.single_obj_X_self C
+    (complex_shape.up ℤ) a Z).hom ≫ g ≫ (double.X_iso₁ h φ rfl).inv) _ h
+    (by simp [reassoc_of hg]) :=
+⟨(homological_complex.single_obj_X_self C
+  (complex_shape.up ℤ) a Z).inv ≫ f.f a ≫ (double.X_iso₁ h φ rfl).hom,
+  by simpa only [preadditive.is_iso.comp_left_eq_zero, double_d, double.d_eq,
+  homological_complex.single_obj_d, zero_comp,
+  iso.inv_hom_id, comp_id, assoc] using f.comm a b =≫ (double.X_iso₂ h φ rfl).hom,
+  from_single_ext _ _ a (by simp)⟩
+
+lemma single_to_double' {Z : C} (f : ((homological_complex.single C _ b).obj Z) ⟶ double h φ) :
+  ∃ (g : Z ⟶ B), f = desc_single ((homological_complex.single_obj_X_self C
+    (complex_shape.up ℤ) b Z).hom ≫ g ≫ (double.X_iso₂ h φ rfl).inv) (b+1) rfl
+    (is_zero.eq_of_tgt (double.X_is_zero h φ (b+1) (by simp only [← h, add_assoc, ne.def,
+      add_right_eq_self, add_self_eq_zero, one_ne_zero, not_false_iff]) (succ_ne_self b)) _ _) :=
+⟨(homological_complex.single_obj_X_self C
+    (complex_shape.up ℤ) b Z).inv ≫ f.f b ≫ (double.X_iso₂ h φ rfl).hom,
+    from_single_ext _ _ b (by simp)⟩
 
 end abelian
 
