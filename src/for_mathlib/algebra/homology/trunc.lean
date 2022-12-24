@@ -5,6 +5,14 @@ noncomputable theory
 open category_theory category_theory.limits category_theory.category
 open_locale zero_object
 
+lemma int.three_cases (a n : ℤ) :
+  (n<a ∨ a<n) ∨ n = a :=
+begin
+  by_cases h₁ : n < a,
+  { exact or.inl (or.inl h₁), },
+  { cases (not_lt.1 h₁).lt_or_eq; tauto, },
+end
+
 lemma category_theory.nat_iso.map_eq_iff {C D : Type*} [category C] [category D] {F G : C ⥤ D}
   (e : F ≅ G) {X Y : C} (f₁ f₂ : X ⟶ Y) : F.map f₁ = F.map f₂ ↔ G.map f₁ = G.map f₂ :=
 begin
@@ -69,6 +77,36 @@ instance is_strictly_ge_trunc_le (K : cochain_complex C ℤ) (p q : ℤ) [K.is_s
   rw [is_zero.iff_id_eq_zero, ← cancel_mono (trunc_le.ι_f K q i)],
   apply (is_strictly_ge.is_zero K p i hi).eq_of_tgt,
 end⟩
+
+lemma is_le_iff_of_is_le_next (K : cochain_complex C ℤ) {a b : ℤ} (h : a+1=b)
+  [K.is_le b] : K.is_le a ↔ is_zero (K.homology b) :=
+begin
+  split,
+  { introI,
+    exact is_le.is_zero K a b (by linarith), },
+  { refine λ hb, ⟨λ n hn, _⟩,
+    unfreezingI { subst h, },
+    rw ← int.add_one_le_iff at hn,
+    cases hn.lt_or_eq,
+    { exact is_le.is_zero K (a+1) n h, },
+    { subst h,
+      exact hb, }, },
+end
+
+lemma is_ge_iff_of_is_ge_prev (K : cochain_complex C ℤ) {a b : ℤ} (h : a+1=b)
+  [K.is_ge a] : K.is_ge b ↔ is_zero (K.homology a) :=
+begin
+  split,
+  { introI,
+    exact is_ge.is_zero K b a (by linarith), },
+  { refine λ ha, ⟨λ n hn, _⟩,
+    subst h,
+    rw [← int.add_one_le_iff, add_le_add_iff_right] at hn,
+    cases hn.lt_or_eq,
+    { exact is_ge.is_zero K a n h, },
+    { unfreezingI { subst h, },
+      exact ha, }, },
+end
 
 end cochain_complex
 
@@ -232,6 +270,7 @@ def lift_single {K L : cochain_complex C ℤ} {q : ℤ} (f : K.X q ⟶ L.X q) (p
         { exfalso, exact h hj'.symm, }, }, },
   end, }
 
+@[simp]
 lemma lift_single_f {K L : cochain_complex C ℤ} {q : ℤ} (f : K.X q ⟶ L.X q) (p : ℤ)
   [L.is_strictly_le q] [L.is_strictly_ge q]
   (hpq : p+1=q) (hf : K.d p q ≫ f = 0) :
@@ -281,6 +320,22 @@ begin
       apply_instance, },
     rw [show φ = e₁.hom ≫ φ' ≫ e₂.inv, by simp],
     apply_instance, },
+end
+
+lemma quasi_iso_iff_of_is_le_of_is_ge {K L : cochain_complex C ℤ} (φ : K ⟶ L) (n : ℤ)
+  [K.is_le n] [K.is_ge n] [L.is_le n] [L.is_ge n] :
+  quasi_iso φ ↔ is_iso (homology_map φ n) :=
+begin
+  split,
+  { introI,
+    apply_instance, },
+  { introI,
+    refine ⟨λ i, _⟩,
+    rcases int.three_cases n i with ⟨ _ | _ ⟩ | _,
+    { exact ⟨⟨0, (is_ge.is_zero K n i h).eq_of_src _ _, (is_ge.is_zero L n i h).eq_of_src _ _⟩⟩, },
+    { exact ⟨⟨0, (is_le.is_zero K n i h).eq_of_src _ _, (is_le.is_zero L n i h).eq_of_src _ _⟩⟩, },
+    { unfreezingI { subst h, },
+      apply_instance, }, },
 end
 
 end cochain_complex

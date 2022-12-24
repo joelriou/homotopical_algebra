@@ -1,5 +1,4 @@
-import tactic.linarith
-import algebra.homology.single
+import for_mathlib.algebra.homology.trunc
 
 noncomputable theory
 
@@ -7,6 +6,8 @@ open category_theory category_theory.limits category_theory.category
 open_locale zero_object
 
 namespace cochain_complex
+
+section
 
 variables {C : Type*} [category C] {a b : ℤ} (h : a+1=b)
   [has_zero_morphisms C] [has_zero_object C] {A B : C} (φ : A ⟶ B)
@@ -89,8 +90,6 @@ def double : cochain_complex C ℤ :=
       exact λ hj, hij (by linarith), },
     { rw double.d_eq_zero₁ _ _ hi, },
   end, }
-
-example : ℕ := 42
 
 namespace double
 
@@ -194,6 +193,29 @@ def lift : K ⟶ double h φ :=
 
 end lift
 
+section map
+
+variables (φ) {A' B' : C} (φ' : A' ⟶ B') (α : A ⟶ A') (β : B ⟶ B') (comm : φ ≫ β = α ≫ φ')
+
+include comm
+
+def map : double h φ ⟶ double h φ' :=
+double.desc h φ _ (α ≫ (double.X_iso₁ h φ' rfl).inv)
+  (β  ≫ (double.X_iso₂ h φ' rfl).inv) (by tidy) rfl
+  (is_zero.eq_of_tgt (double.X_is_zero h φ' (b+1) (by linarith) (by linarith)) _ _)
+
+@[simp]
+lemma map_f₁ :
+  (map h φ φ' α β comm).f a = (double.X_iso₁ h φ rfl).hom ≫ α ≫ (double.X_iso₁ h φ' rfl).inv :=
+by simp only [map, desc_f, desc.f₁]
+
+@[simp]
+lemma map_f₂ :
+  (map h φ φ' α β comm).f b = (double.X_iso₂ h φ rfl).hom ≫ β ≫ (double.X_iso₂ h φ' rfl).inv :=
+by simp only [map, desc_f, desc.f₂]
+
+end map
+
 variables {h φ}
 
 @[ext]
@@ -270,5 +292,243 @@ begin
 end
 
 end double
+
+end
+
+section preadditive
+
+namespace double
+
+variables {C : Type*} [category C] [preadditive C] [has_zero_object C]
+  {a b : ℤ} (h : a+1=b) {A B A' B' : C} {φ : A ⟶ B} {φ' : A' ⟶ B'}
+
+def homotopy_mk (f₁ f₂ : double h φ ⟶ double h φ') (γ : B ⟶ A')
+  (hγ₁ : f₁.f a = (double h φ).d a b ≫ (X_iso₂ h φ rfl).hom ≫
+    γ ≫ (X_iso₁ h φ' rfl).inv + f₂.f a)
+  (hγ₂ : f₁.f b = ((X_iso₂ h φ rfl).hom ≫ γ ≫ (X_iso₁ h φ' rfl).inv) ≫
+    (double h φ').d a b + f₂.f b) :
+  homotopy f₁ f₂ :=
+{ hom := λ i j, begin
+    by_cases hb : i = b,
+    { by_cases ha : j = a,
+      { exact (X_iso₂ h φ hb).hom ≫ γ ≫ (X_iso₁ h φ' ha).inv, },
+      { exact 0,}, },
+    { exact 0, },
+  end,
+  zero' := λ i j (hij : j+1 ≠ i), begin
+    by_cases hb : i = b,
+    { rw dif_pos hb,
+      by_cases ha : j = a,
+      { exfalso,
+        apply hij,
+        rw [ha, hb, h], },
+      { rw dif_neg ha, }, },
+    { rw dif_neg hb, },
+  end,
+  comm := λ i, begin
+    have h' : (complex_shape.up ℤ).rel a b := h,
+    by_cases ha : i = a,
+    { subst ha,
+      have h'' : (complex_shape.up ℤ).rel (i-1) i := sub_add_cancel i 1,
+      simp only [d_next_eq _ h', prev_d_eq _ h'', dif_pos rfl,
+        dif_neg (show i ≠ b, by linarith), zero_comp, add_zero, hγ₁], },
+    { by_cases hb : i = b,
+      { subst hb,
+        have h'' : (complex_shape.up ℤ).rel i (i+1) := rfl,
+        simp only [prev_d_eq _ h', d_next_eq _ h'', dif_neg (succ_ne_self i), dif_pos rfl,
+          comp_zero, zero_add, hγ₂], },
+      { exact is_zero.eq_of_src (X_is_zero h φ i ha hb) _ _, }, },
+  end, }
+
+/-- should be moved -/
+lemma four_cases {a b : ℤ} (h : a+1=b) (n : ℤ) :
+  (n < a ∨ b < n) ∨ n = a ∨ n = b :=
+begin
+  by_cases h₁ : n < a,
+  { exact or.inl (or.inl h₁), },
+  { by_cases h₂ : b < n,
+    { exact or.inl (or.inr h₂), },
+    { refine or.inr _,
+      simp only [not_lt] at h₁ h₂,
+      cases h₁.lt_or_eq with h₃ h₃,
+      { cases h₂.lt_or_eq with h₄ h₄,
+        { exfalso,
+          linarith, },
+        { exact or.inr h₄, }, },
+      { exact or.inl h₃.symm, }, }, },
+end
+
+end double
+
+end preadditive
+
+section abelian
+
+variables {C : Type*} [category C] [abelian C] {a b : ℤ} (h : a+1=b) {A B E : C} (φ : A ⟶ B)
+  {i : B ⟶ E} {p : E ⟶ A} (w : i ≫ p = 0)
+
+instance double_strictly_le :
+  (double h φ).is_strictly_le b :=
+⟨λ n hn, double.X_is_zero h φ n (by linarith) (by linarith)⟩
+
+instance double_strictly_ge :
+  (double h φ).is_strictly_ge a :=
+⟨λ n hn, double.X_is_zero h φ n (by linarith) (by linarith)⟩
+
+include h
+
+lemma double.is_le_iff_epi : (double h φ).is_le a ↔ epi φ :=
+begin
+  rw [is_le_iff_of_is_le_next (double h φ) h, ← short_complex.exact_iff_is_zero_homology,
+    short_complex.exact_iff_epi],
+  { have ha : a = (complex_shape.up ℤ).prev b := by { rw prev, linarith, },
+    subst ha,
+    change epi (double.d _ _ _ _) ↔ _,
+    rw double.d_eq,
+    split,
+    { intro hφ,
+      haveI := @epi_of_epi _ _ _ _ _ _ _ hφ,
+      have eq := φ ≫= (double.X_iso₂ h φ rfl).inv_hom_id,
+      rw [comp_id, ← assoc] at eq,
+      rw ← eq,
+      apply epi_comp, },
+    { introI,
+      haveI := epi_comp φ (double.X_iso₂ h φ rfl).inv,
+      apply epi_comp, }, },
+  { apply is_zero.eq_of_tgt,
+    exact double.X_is_zero h φ _ (by { rw [next], linarith, })
+      (by simpa only [next] using succ_ne_self b), },
+end
+
+instance double_le [epi φ] :
+  (double h φ).is_le a :=
+by { rw double.is_le_iff_epi, apply_instance, }
+
+lemma double.is_ge_iff_mono : (double h φ).is_ge b ↔ mono φ :=
+begin
+  rw [is_ge_iff_of_is_ge_prev (double h φ) h, ← short_complex.exact_iff_is_zero_homology,
+    short_complex.exact_iff_mono],
+  { have hb : b = (complex_shape.up ℤ).next a := by rw [next, h],
+    subst hb,
+    change mono (double.d _ _ _ _) ↔ _,
+    rw double.d_eq,
+    split,
+    { intro hφ,
+      rw ← assoc at hφ,
+      haveI := @mono_of_mono _ _ _ _ _ _ _ hφ,
+      have eq := (double.X_iso₁ h φ rfl).inv_hom_id =≫ φ,
+      rw [id_comp, assoc] at eq,
+      rw ← eq,
+      apply mono_comp, },
+    { introI,
+      haveI := mono_comp φ (double.X_iso₂ h φ rfl).inv,
+      apply mono_comp, }, },
+  { apply is_zero.eq_of_src,
+    exact double.X_is_zero h φ _ (by simpa only [prev] using pred_ne_self a)
+      (by { rw [prev], linarith, }), },
+end
+
+instance double_ge [mono φ] :
+  (double h φ).is_ge b :=
+by { rw double.is_ge_iff_mono, apply_instance, }
+
+include w
+
+def double.σ : (double h i) ⟶ (homological_complex.single _ (complex_shape.up ℤ) b).obj A :=
+lift_single ((double.X_iso₂ h i rfl).hom ≫ p ≫
+  (homological_complex.single_obj_X_self _ _ _ A).inv) _ h
+begin
+  dsimp,
+  simp only [double.d_eq, assoc, iso.inv_hom_id_assoc, preadditive.is_iso.comp_left_eq_zero,
+    reassoc_of w, zero_comp],
+end
+
+@[simp]
+lemma double.σ_f₁ : (double.σ h w).f a = 0 :=
+begin
+  dsimp [double.σ, lift_single],
+  rw dif_neg (show ¬ a=b, by linarith),
+end
+
+@[simp]
+lemma double.σ_f₂ :
+  (double.σ h w).f b = (double.X_iso₂ h i rfl).hom ≫ p
+    ≫ (homological_complex.single_obj_X_self C (complex_shape.up ℤ) b A).inv :=
+begin
+  dsimp only [double.σ, lift_single],
+  rw dif_pos rfl,
+end
+
+def double.σ' : (homological_complex.single _ (complex_shape.up ℤ) a).obj B ⟶
+  double h p :=
+begin
+  refine desc_single ((homological_complex.single_obj_X_self _ _ _ B).hom ≫ i ≫
+    (double.X_iso₁ h p rfl).inv) _ h _,
+  { dsimp,
+    simp only [double.d_eq, assoc, iso.inv_hom_id_assoc, preadditive.is_iso.comp_left_eq_zero,
+      reassoc_of w, zero_comp], },
+end
+
+def double.homotopy_πσ'_σι : homotopy (double.π h i ≫ double.σ' h w)
+  (-double.σ h w ≫ double.ι h p) :=
+double.homotopy_mk _ _ _ (𝟙 _)
+  (by { dsimp, simp [double.π, double.σ', double.ι], })
+  (by { dsimp, simp [double.π, double.σ, double.ι], })
+
+lemma double.quasi_iso_σ' (ex : (short_complex.mk _ _ w).short_exact) :
+  quasi_iso (double.σ' h w) :=
+begin
+  have hb : b = (complex_shape.up ℤ).next a := by rw [next, h],
+  subst hb,
+  haveI := ex.mono_f,
+  haveI := ex.epi_g,
+  rw quasi_iso_iff_of_is_le_of_is_ge (double.σ' h w) a,
+  apply short_complex.quasi_iso.of_kernel_fork _ _ _,
+  { refine ⟨λ Z f₁ f₂ eq, is_zero.eq_of_src _ _ _⟩,
+    refine double.X_is_zero h p _
+      (by { rw prev, linarith, })
+      (by { rw prev, linarith, }), },
+  { refl, },
+  { let e : parallel_pair p 0 ≅
+      parallel_pair (((double h) p).sc' a).g 0 :=
+      parallel_pair.ext (double.X_iso₁ h p rfl).symm
+        ((double.X_iso₂ h p rfl).symm) (by tidy) (by tidy),
+    equiv_rw (is_limit.postcompose_inv_equiv e _).symm,
+    refine is_limit.of_iso_limit ex.exact.f_is_kernel _,
+    refine fork.ext (homological_complex.single_obj_X_self _ (complex_shape.up ℤ) a B).symm _,
+    dsimp only [cones.postcompose, fork.ι],
+    dsimp [e, double.σ'],
+    simp only [desc_single_f, assoc, iso.inv_hom_id, comp_id, eq_to_hom_trans_assoc,
+      eq_to_hom_refl, id_comp], },
+end
+
+lemma double.quasi_iso_σ (ex : (short_complex.mk _ _ w).short_exact) :
+  quasi_iso (double.σ h w) :=
+begin
+  have ha : a = (complex_shape.up ℤ).prev b := by { rw prev, linarith, },
+  subst ha,
+  haveI := ex.mono_f,
+  haveI := ex.epi_g,
+  rw quasi_iso_iff_of_is_le_of_is_ge (double.σ h w) b,
+  apply short_complex.quasi_iso.of_cokernel_cofork _ _ _,
+  { refine ⟨λ Z f₁ f₂ eq, is_zero.eq_of_tgt _ _ _⟩,
+    refine double.X_is_zero h i _
+      (by { rw [next, prev], linarith, })
+      (by { rw [next], linarith, }), },
+  { refl, },
+  { dsimp [double.σ],
+    let e : parallel_pair i 0 ≅
+      parallel_pair (((double h) i).sc' b).f 0 :=
+      parallel_pair.ext (double.X_iso₁ h i rfl).symm (double.X_iso₂ h i rfl).symm
+        (by tidy) (by tidy),
+    equiv_rw (is_colimit.precompose_hom_equiv e _).symm,
+    refine is_colimit.of_iso_colimit ex.exact.g_is_cokernel _,
+    refine cofork.ext (homological_complex.single_obj_X_self _ (complex_shape.up ℤ) b A).symm _,
+    dsimp only [cocones.precompose, cofork.π],
+    dsimp [e, double.σ],
+    simp only [lift_single_f, iso.inv_hom_id_assoc], },
+end
+
+end abelian
 
 end cochain_complex

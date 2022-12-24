@@ -548,4 +548,11 @@ end
 
 abbreviation homology (K : derived_category C) (n : ℤ) := (homology_functor C n).obj K
 
+lemma Q_map_eq_of_homotopy {K L : cochain_complex C ℤ} (f₁ f₂ : K ⟶ L)
+  (h : homotopy f₁ f₂) : Q.map f₁ = Q.map f₂ :=
+begin
+  dsimp [Q],
+  rw homotopy_category.eq_of_homotopy _ _ h,
+end
+
 end derived_category
