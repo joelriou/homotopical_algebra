@@ -105,6 +105,13 @@ instance : category (extension A B) :=
   id := hom.id,
   comp := λ E₁ E₂ E₃, hom.comp, }
 
+@[simps]
+def hom.mk' {E₁ E₂ : extension A B} (τ : E₁.X ⟶ E₂.X)
+  (commi : E₁.i ≫ τ = E₂.i) (commp : τ ≫ E₂.p = E₁.p) : E₁ ⟶ E₂ :=
+{ τ := τ,
+  commi' := commi,
+  commp' := commp, }
+
 @[simp]
 lemma comp_τ {E₁ E₂ E₃ : extension A B} (φ : E₁ ⟶ E₂) (φ' : E₂ ⟶ E₃) :
   (φ ≫ φ').τ = φ.τ ≫ φ'.τ := rfl

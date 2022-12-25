@@ -61,6 +61,25 @@ e.δ' ≫ (single_functor_shift_iso C 0 1 (-1) (neg_add_self 1)).inv.app B
 def triangle : pretriangulated.triangle (derived_category C) :=
 pretriangulated.triangle.mk ((single_functor C 0).map e.i) ((single_functor C 0).map e.p) e.δ
 
+lemma triangle_distinguished : e.triangle ∈ dist_triang (derived_category C) := sorry
+
+lemma iso_of_triangle_map (e₁ e₂ : extension A B)
+  (φ : e₁.triangle ⟶ e₂.triangle) (hφ₁ : φ.hom₁ = 𝟙 _) (hφ₃ : φ.hom₃ = 𝟙 _) : e₁ ≅ e₂ :=
+as_iso begin
+  have eq₁ := φ.comm₁,
+  have eq₂ := φ.comm₂,
+  dsimp only [triangle] at eq₁ eq₂,
+  simp only [pretriangulated.triangle.mk_mor₁, hφ₁] at eq₁,
+  erw id_comp at eq₁,
+  simp only [pretriangulated.triangle.mk_mor₂, hφ₃] at eq₂,
+  erw comp_id at eq₂,
+  refine extension.hom.mk' ((single_functor C 0).preimage φ.hom₂) _ _,
+  { apply (single_functor C 0).map_injective,
+    rw [functor.map_comp, functor.image_preimage, eq₁], },
+  { apply (single_functor C 0).map_injective,
+    rw [functor.map_comp, functor.image_preimage, eq₂], },
+end
+
 section naturality
 
 variables {S₁ S₂ : short_complex C} (φ : S₁ ⟶ S₂)
@@ -213,14 +232,14 @@ begin
     obtain ⟨E', A', p', ⟨e⟩⟩ := cochain_complex.exists_iso_double (neg_add_self 1) L',
     refine ⟨E', A', p', f ≫ e.hom, s ≫ e.hom, infer_instance, _⟩,
     simp only [hφ, Q.map_comp, is_iso.inv_comp, assoc, is_iso.hom_inv_id_assoc], },
-  obtain ⟨f', hf'⟩ := cochain_complex.single_to_double' f,
-  obtain ⟨i', w, hs'⟩ := cochain_complex.single_to_double s,
+  obtain ⟨f', rfl⟩ := cochain_complex.eq_single_to_double' f,
+  obtain ⟨i', w, hs'⟩ := cochain_complex.eq_single_to_double s,
   refine ⟨E', A', f', i', p', w, _, _⟩,
-  { sorry, },
+  { simpa only [hs', cochain_complex.single_to_double_quasi_iso_iff] using hs, },
   { dsimp only [single_functor, functor.comp_map],
     rw ← Q.map_comp,
     haveI := hs,
-    simp only [← cancel_mono (Q.map s), assoc, is_iso.inv_hom_id, comp_id, hf', hs'] at eq,
+    simp only [← cancel_mono (Q.map s), assoc, is_iso.inv_hom_id, comp_id, hs'] at eq,
     convert eq,
     refine cochain_complex.from_single_ext _ _ 0 _,
     dsimp [short_complex.short_exact.extension, extension.ι],
@@ -230,7 +249,17 @@ begin
 end
 
 lemma δ_nat_trans_injective' (e₁ e₂ : extension A B)
-  (h : e₁.δ = e₂.δ) : nonempty (e₁ ≅ e₂) := sorry
+  (h : e₁.δ = e₂.δ) : nonempty (e₁ ≅ e₂) :=
+begin
+  obtain ⟨β, hβ₁, hβ₂⟩ := pretriangulated.complete_distinguished_triangle_morphism₂ _ _
+    e₁.triangle_distinguished e₂.triangle_distinguished (𝟙 _) (𝟙 _)
+    (by simpa only [category_theory.functor.map_id, comp_id, id_comp] using h),
+  let γ : e₁.triangle ⟶ e₂.triangle :=
+  { hom₁ := 𝟙 _,
+    hom₂ := β,
+    hom₃ := 𝟙 _, },
+  exact ⟨extension.iso_of_triangle_map e₁ e₂ γ rfl rfl⟩,
+end
 
 variables (A B)
 

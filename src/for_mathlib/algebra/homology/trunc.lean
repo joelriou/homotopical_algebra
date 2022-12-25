@@ -225,7 +225,7 @@ begin
       exact h, }, },
 end
 
-def desc_single {K L : cochain_complex C ℤ} {p : ℤ} (f : K.X p ⟶ L.X p) (q : ℤ)
+def desc_single (K L : cochain_complex C ℤ) {p : ℤ} (f : K.X p ⟶ L.X p) (q : ℤ)
   [K.is_strictly_le p] [K.is_strictly_ge p]
   (hpq : p+1=q) (hf : f ≫ L.d p q = 0) : K ⟶ L :=
 { f := λ i, begin
@@ -250,16 +250,16 @@ def desc_single {K L : cochain_complex C ℤ} {p : ℤ} (f : K.X p ⟶ L.X p) (q
   end, }
 
 @[simp]
-lemma desc_single_f {K L : cochain_complex C ℤ} {p : ℤ} (f : K.X p ⟶ L.X p) (q : ℤ)
+lemma desc_single_f (K L : cochain_complex C ℤ) {p : ℤ} (f : K.X p ⟶ L.X p) (q : ℤ)
   [K.is_strictly_le p] [K.is_strictly_ge p]
   (hpq : p+1=q) (hf : f ≫ L.d p q = 0) :
-  (desc_single f q hpq hf).f p = f :=
+  (desc_single K L f q hpq hf).f p = f :=
 begin
   dsimp [desc_single],
   rw if_pos rfl,
 end
 
-def lift_single {K L : cochain_complex C ℤ} {q : ℤ} (f : K.X q ⟶ L.X q) (p : ℤ)
+def lift_single (K L : cochain_complex C ℤ) {q : ℤ} (f : K.X q ⟶ L.X q) (p : ℤ)
   [L.is_strictly_le q] [L.is_strictly_ge q]
   (hpq : p+1=q) (hf : K.d p q ≫ f = 0) : K ⟶ L :=
 { f := λ i, begin
@@ -284,17 +284,17 @@ def lift_single {K L : cochain_complex C ℤ} {q : ℤ} (f : K.X q ⟶ L.X q) (p
   end, }
 
 @[simp]
-lemma lift_single_f {K L : cochain_complex C ℤ} {q : ℤ} (f : K.X q ⟶ L.X q) (p : ℤ)
+lemma lift_single_f (K L : cochain_complex C ℤ) {q : ℤ} (f : K.X q ⟶ L.X q) (p : ℤ)
   [L.is_strictly_le q] [L.is_strictly_ge q]
   (hpq : p+1=q) (hf : K.d p q ≫ f = 0) :
-  (lift_single f p hpq hf).f q = f :=
+  (lift_single K L f p hpq hf).f q = f :=
 by { dsimp [lift_single], rw if_pos rfl, }
 
 def iso_single (K : cochain_complex C ℤ) (n : ℤ)
   [K.is_strictly_le n] [K.is_strictly_ge n] :
   K ≅ (homological_complex.single C _ n).obj (K.X n) :=
-{ hom := desc_single (homological_complex.single_obj_X_self C _ n (K.X n)).inv (n+1) rfl (by simp),
-  inv := lift_single (homological_complex.single_obj_X_self C _ n (K.X n)).hom (n-1) (by linarith) (by simp),
+{ hom := desc_single K _ (homological_complex.single_obj_X_self C _ n (K.X n)).inv (n+1) rfl (by simp),
+  inv := lift_single _ K (homological_complex.single_obj_X_self C _ n (K.X n)).hom (n-1) (by linarith) (by simp),
   hom_inv_id' := from_single_ext _ _ n
     (by simp only [homological_complex.id_f, homological_complex.comp_f,
       desc_single_f, lift_single_f, iso.inv_hom_id]),
@@ -404,11 +404,11 @@ variables {D : Type*} [category D] [abelian D] [has_zero_object D]
 def single_shift_iso_app (A : D) (a b c : ℤ) (h : a = c + b) :
   ((homological_complex.single D (complex_shape.up ℤ) a).obj A)⟦b⟧ ≅
     ((homological_complex.single D (complex_shape.up ℤ) c).obj A) :=
-{ hom := lift_single (((shift_functor_obj_X_iso _) _ _ _ h).hom ≫
+{ hom := lift_single _ _ (((shift_functor_obj_X_iso _) _ _ _ h).hom ≫
       (homological_complex.single_obj_X_self D (complex_shape.up ℤ) a A).hom ≫
       (homological_complex.single_obj_X_self D (complex_shape.up ℤ) c A).inv)
       (c-1) (sub_add_cancel c 1) (by simp),
-  inv := desc_single ((homological_complex.single_obj_X_self D (complex_shape.up ℤ) c A).hom ≫
+  inv := desc_single _ _ ((homological_complex.single_obj_X_self D (complex_shape.up ℤ) c A).hom ≫
     (homological_complex.single_obj_X_self D (complex_shape.up ℤ) a A).inv ≫
     ((shift_functor_obj_X_iso _) _ _ _ h).inv) (c+1) rfl (by simp),
   hom_inv_id' := begin
@@ -425,7 +425,7 @@ lemma single_shift_iso_app_hom_f (A : D) (a b c : ℤ) (h : a = c + b) :
   (single_shift_iso_app A a b c h).hom.f c = ((shift_functor_obj_X_iso _) _ _ _ h).hom ≫
     (homological_complex.single_obj_X_self D (complex_shape.up ℤ) a A).hom ≫
     (homological_complex.single_obj_X_self D (complex_shape.up ℤ) c A).inv :=
-lift_single_f _ _ _ _
+lift_single_f _ _ _ _ _ _
 
 @[simp]
 lemma single_shift_iso_app_inv_f (A : D) (a b c : ℤ) (h : a = c + b) :
@@ -433,7 +433,7 @@ lemma single_shift_iso_app_inv_f (A : D) (a b c : ℤ) (h : a = c + b) :
     (homological_complex.single_obj_X_self D (complex_shape.up ℤ) c A).hom ≫
     (homological_complex.single_obj_X_self D (complex_shape.up ℤ) a A).inv ≫
     ((shift_functor_obj_X_iso _) _ _ _ h).inv :=
-desc_single_f _ _ _ _
+desc_single_f _ _ _ _ _ _
 
 variable (D)
 

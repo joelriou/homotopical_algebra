@@ -5,6 +5,155 @@ noncomputable theory
 open category_theory category_theory.limits category_theory.category
 open_locale zero_object
 
+@[simp]
+lemma category_theory.epi_comp_left_iff_epi {C : Type*} [category C]
+  {X₁ X₂ X₃ : C} (f : X₁ ⟶ X₂) (g : X₂ ⟶ X₃) [epi f]:
+  epi (f ≫ g) ↔ epi g :=
+begin
+  split,
+  { apply epi_of_epi, },
+  { introI,
+    apply epi_comp, },
+end
+
+@[simp]
+lemma category_theory.epi_comp_right_iff_epi {C : Type*} [category C]
+  {X₁ X₂ X₃ : C} (f : X₁ ⟶ X₂) (g : X₂ ⟶ X₃) [is_iso g] :
+  epi (f ≫ g) ↔ epi f :=
+begin
+  split,
+  { introI,
+    exact ⟨λ Z h₁ h₂ eq, by simpa only [← cancel_epi (inv g), ← cancel_epi (f ≫ g),
+      assoc, is_iso.hom_inv_id_assoc] using eq⟩, },
+  { introI,
+    apply epi_comp, },
+end
+
+@[simp]
+lemma category_theory.mono_comp_right_iff_mono {C : Type*} [category C]
+  {X₁ X₂ X₃ : C} (f : X₁ ⟶ X₂) (g : X₂ ⟶ X₃) [mono g] :
+  mono (f ≫ g) ↔ mono f :=
+begin
+  split,
+  { apply mono_of_mono, },
+  { introI,
+    apply mono_comp, },
+end
+
+@[simp]
+lemma category_theory.mono_comp_left_iff_mono {C : Type*} [category C]
+  {X₁ X₂ X₃ : C} (f : X₁ ⟶ X₂) (g : X₂ ⟶ X₃) [is_iso f] :
+  mono (f ≫ g) ↔ mono g :=
+begin
+  split,
+  { introI,
+    exact ⟨λ Z h₁ h₂ eq, by simpa only [← cancel_mono (inv f), ← cancel_mono (f ≫ g),
+      assoc, is_iso.inv_hom_id_assoc] using eq⟩, },
+  { introI,
+    apply mono_comp, },
+end
+
+open category_theory category_theory.limits category_theory.category
+
+namespace category_theory.short_complex
+
+@[simps]
+def homology_map_data.of_zeros_of_limit_kernel_fork {C : Type*} [category C] [has_zero_morphisms C]
+  {S₁ S₂ : short_complex C} (φ : S₁ ⟶ S₂) (hf₁ : S₁.f = 0) (hg₁ : S₁.g = 0) (hf₂ : S₂.f = 0)
+  (c : kernel_fork S₂.g) (hc : is_limit c) :
+  homology_map_data φ
+    (homology_data.of_zeros S₁ hf₁ hg₁)
+    (homology_data.of_limit_kernel_fork S₂ hf₂ c hc) :=
+begin
+  let α := hc.lift (kernel_fork.of_ι φ.τ₂ (by rw [φ.comm₂₃, hg₁, zero_comp])),
+  have hα : α ≫ c.ι = φ.τ₂ := by simp only [fork.is_limit.lift_ι', kernel_fork.ι_of_ι],
+  exact { left :=
+    { φK := α,
+      φH := α,
+      commf'' := by { dsimp, simp only [hf₁, left_homology_data.of_zeros_f',
+        zero_comp, left_homology_data.of_limit_kernel_fork_f', comp_zero], }, },
+    right :=
+    { φQ := φ.τ₂,
+      φH := α,
+      commg'' := by { dsimp, simp only [φ.comm₂₃, right_homology_data.of_zeros_g',
+        right_homology_data.of_limit_kernel_fork_f'], }, }, }
+end
+
+instance is_iso_cycles_map_of_is_iso_of_mono {C : Type*} [category C] [has_zero_morphisms C]
+  {S₁ S₂ : short_complex C} (φ : S₁ ⟶ S₂) [S₁.has_left_homology] [S₂.has_left_homology]
+  [is_iso φ.τ₂] [mono φ.τ₃] :
+  is_iso (cycles_map φ) :=
+begin
+  refine ⟨⟨S₁.lift_cycles (S₂.cycles_i ≫ inv φ.τ₂) _, _, _⟩⟩,
+  { simp only [← cancel_mono φ.τ₃, assoc, ← φ.comm₂₃, is_iso.inv_hom_id_assoc, lift_cycles_i,
+      cycles_i_g, zero_comp], },
+  { simp only [← cancel_mono S₁.cycles_i, assoc, lift_cycles_i, cycles_map_i_assoc,
+      is_iso.hom_inv_id, comp_id, id_comp], },
+  { simp only [← cancel_mono S₂.cycles_i, assoc, is_iso.inv_hom_id, comp_id,
+      lift_cycles_comp_cycles_map, lift_cycles_i, id_comp], },
+end
+
+instance is_iso_cycles_co_map_of_is_iso_of_epi {C : Type*} [category C] [has_zero_morphisms C]
+  {S₁ S₂ : short_complex C} (φ : S₁ ⟶ S₂) [S₁.has_right_homology] [S₂.has_right_homology]
+  [is_iso φ.τ₂] [epi φ.τ₁] :
+  is_iso (cycles_co_map φ) :=
+begin
+  refine ⟨⟨S₂.desc_cycles_co (inv φ.τ₂ ≫ S₁.p_cycles_co) _, _ ,_⟩⟩,
+  { simp only [← cancel_epi φ.τ₁, φ.comm₁₂_assoc, is_iso.hom_inv_id_assoc,
+      f_cycles_co_p, comp_zero], },
+  { simp only [←cancel_epi S₁.p_cycles_co, is_iso.hom_inv_id_assoc,
+      p_cycles_co_map_assoc, p_desc_cycles_co, comp_id], },
+  { simp only [←cancel_epi S₂.p_cycles_co, p_desc_cycles_co_assoc, assoc, p_cycles_co_map,
+      is_iso.inv_hom_id_assoc, comp_id], },
+end
+
+instance mono_cycles_map_of_mono_of_mono {C : Type*} [category C] [has_zero_morphisms C]
+  {S₁ S₂ : short_complex C} (φ : S₁ ⟶ S₂) [S₁.has_homology] [S₂.has_homology]
+  [mono φ.τ₂] [mono φ.τ₃] : mono (cycles_map φ) :=
+begin
+  simp only [← mono_comp_right_iff_mono _ S₂.cycles_i, cycles_map_i, mono_comp_right_iff_mono],
+  apply_instance,
+end
+
+instance epi_cycles_co_map_of_epi_of_epi {C : Type*} [category C] [has_zero_morphisms C]
+  {S₁ S₂ : short_complex C} (φ : S₁ ⟶ S₂) [S₁.has_homology] [S₂.has_homology]
+  [epi φ.τ₂] [epi φ.τ₁] : epi (cycles_co_map φ) :=
+begin
+  simp only [← epi_comp_left_iff_epi S₁.p_cycles_co, p_cycles_co_map, epi_comp_left_iff_epi],
+  apply_instance,
+end
+
+lemma quasi_iso_iff_exact_and_mono {C : Type*} [category C] [abelian C]
+  {S₁ S₂ : short_complex C}
+  (φ : S₁ ⟶ S₂) (hf₁ : S₁.f = 0) (hg₁ : S₁.g = 0) (hf₂ : S₂.f = 0) :
+  short_complex.quasi_iso φ ↔
+    (mk φ.τ₂ S₂.g (by rw [φ.comm₂₃, hg₁, zero_comp])).exact ∧ mono φ.τ₂ :=
+begin
+  rw [exact_iff_epi_to_cycles,
+    (homology_map_data.of_zeros_of_limit_kernel_fork φ hf₁ hg₁ hf₂
+    _ S₂.cycles_is_kernel).left.quasi_iso_iff,
+    homology_map_data.of_zeros_of_limit_kernel_fork_left_φH],
+  have w : φ.τ₂ ≫ S₂.g = 0 := by rw [φ.comm₂₃, hg₁, zero_comp],
+  let S := mk φ.τ₂ S₂.g w,
+  change is_iso (S₂.lift_cycles φ.τ₂ w) ↔ epi S.to_cycles ∧ _,
+  let γ : S₂ ⟶ S :=
+  { τ₁ := 0,
+    τ₂ := 𝟙 _,
+    τ₃ := 𝟙 _,
+    comm₁₂' := by simp only [hf₂, zero_comp], },
+  have eq : S₂.lift_cycles φ.τ₂ w ≫ cycles_map γ = S.to_cycles,
+  { simp only [← cancel_mono S.cycles_i, comp_id, lift_cycles_comp_cycles_map,
+      lift_cycles_i, to_cycles_i], },
+  conv_rhs { rw ← S₂.lift_cycles_i φ.τ₂ w, },
+  simp only [is_iso_iff_mono_and_epi, ← eq, epi_comp_right_iff_epi,
+    mono_comp_right_iff_mono],
+  tauto,
+end
+
+end category_theory.short_complex
+
+open category_theory category_theory.limits category_theory.category
+
 namespace cochain_complex
 
 section
@@ -435,7 +584,7 @@ by { rw double.is_ge_iff_mono, apply_instance, }
 include w
 
 def double.σ : (double h i) ⟶ (homological_complex.single _ (complex_shape.up ℤ) b).obj A :=
-lift_single ((double.X_iso₂ h i rfl).hom ≫ p ≫
+lift_single _ _ ((double.X_iso₂ h i rfl).hom ≫ p ≫
   (homological_complex.single_obj_X_self _ _ _ A).inv) _ h
 begin
   dsimp,
@@ -462,7 +611,7 @@ end
 def double.σ' : (homological_complex.single _ (complex_shape.up ℤ) a).obj B ⟶
   double h p :=
 begin
-  refine desc_single ((homological_complex.single_obj_X_self _ _ _ B).hom ≫ i ≫
+  refine desc_single _ _ ((homological_complex.single_obj_X_self _ _ _ B).hom ≫ i ≫
     (double.X_iso₁ h p rfl).inv) _ h _,
   { dsimp,
     simp only [double.d_eq, assoc, iso.inv_hom_id_assoc, preadditive.is_iso.comp_left_eq_zero,
@@ -561,12 +710,27 @@ begin
   exact ⟨_, _, K.d a b, ⟨as_iso α⟩⟩,
 end
 
+variables {X₁ X₂ X₃ : C}
+
+@[simp]
+def single_to_double (i : X₁ ⟶ X₂) (p : X₂ ⟶ X₃) (w : i ≫ p = 0) :
+  ((homological_complex.single C _ a).obj X₁) ⟶ double h p :=
+desc_single _ _  ((homological_complex.single_obj_X_self C
+    (complex_shape.up ℤ) a X₁).hom ≫ i ≫ (double.X_iso₁ h p rfl).inv) _ h
+    (by simp [reassoc_of w])
+
+@[simp]
+def single_to_double' (g : X₁ ⟶ X₃) (p : X₂ ⟶ X₃) :
+  ((homological_complex.single C _ b).obj X₁) ⟶ double h p :=
+   desc_single _ (double h p) ((homological_complex.single_obj_X_self C
+    (complex_shape.up ℤ) b X₁).hom ≫ g ≫ (double.X_iso₂ h p rfl).inv) (b+1) rfl
+    (is_zero.eq_of_tgt (double.X_is_zero h p (b+1) (by simp only [← h, add_assoc, ne.def,
+      add_right_eq_self, add_self_eq_zero, one_ne_zero, not_false_iff]) (succ_ne_self b)) _ _)
+
 variables {h φ}
 
-lemma single_to_double {Z : C} (f : ((homological_complex.single C _ a).obj Z) ⟶ double h φ) :
-  ∃ (g : Z ⟶ A) (hg : g ≫ φ = 0), f = desc_single ((homological_complex.single_obj_X_self C
-    (complex_shape.up ℤ) a Z).hom ≫ g ≫ (double.X_iso₁ h φ rfl).inv) _ h
-    (by simp [reassoc_of hg]) :=
+lemma eq_single_to_double {Z : C} (f : ((homological_complex.single C _ a).obj Z) ⟶ double h φ) :
+  ∃ (g : Z ⟶ A) (hg : g ≫ φ = 0), f = single_to_double h g φ hg :=
 ⟨(homological_complex.single_obj_X_self C
   (complex_shape.up ℤ) a Z).inv ≫ f.f a ≫ (double.X_iso₁ h φ rfl).hom,
   by simpa only [preadditive.is_iso.comp_left_eq_zero, double_d, double.d_eq,
@@ -574,14 +738,96 @@ lemma single_to_double {Z : C} (f : ((homological_complex.single C _ a).obj Z) �
   iso.inv_hom_id, comp_id, assoc] using f.comm a b =≫ (double.X_iso₂ h φ rfl).hom,
   from_single_ext _ _ a (by simp)⟩
 
-lemma single_to_double' {Z : C} (f : ((homological_complex.single C _ b).obj Z) ⟶ double h φ) :
-  ∃ (g : Z ⟶ B), f = desc_single ((homological_complex.single_obj_X_self C
-    (complex_shape.up ℤ) b Z).hom ≫ g ≫ (double.X_iso₂ h φ rfl).inv) (b+1) rfl
-    (is_zero.eq_of_tgt (double.X_is_zero h φ (b+1) (by simp only [← h, add_assoc, ne.def,
-      add_right_eq_self, add_self_eq_zero, one_ne_zero, not_false_iff]) (succ_ne_self b)) _ _) :=
+lemma eq_single_to_double' {Z : C} (f : ((homological_complex.single C _ b).obj Z) ⟶ double h φ) :
+  ∃ (g : Z ⟶ B), f = single_to_double' h g φ :=
 ⟨(homological_complex.single_obj_X_self C
     (complex_shape.up ℤ) b Z).inv ≫ f.f b ≫ (double.X_iso₂ h φ rfl).hom,
     from_single_ext _ _ b (by simp)⟩
+
+variables (h φ)
+
+lemma double.is_zero_homology₁_iff :
+  is_zero ((double h φ).homology a) ↔ mono φ :=
+begin
+  have hb : b = (complex_shape.up ℤ).next a := by { rw next, linarith, },
+  subst hb,
+  rw [← short_complex.exact_iff_is_zero_homology, short_complex.exact_iff_mono],
+  { dsimp [homological_complex.short_complex_functor],
+    have eq : homological_complex.d_from (double h φ) a = _ := double.d_eq h φ,
+    simp only [eq, mono_comp_left_iff_mono, mono_comp_right_iff_mono], },
+  { exact double.d_eq_zero₂ h φ (by linarith), }
+end
+
+lemma double.is_zero_homology₂_iff :
+  is_zero ((double h φ).homology b) ↔ epi φ :=
+begin
+  have ha : a = (complex_shape.up ℤ).prev b := by { rw prev, linarith, },
+  subst ha,
+  rw [← short_complex.exact_iff_is_zero_homology, short_complex.exact_iff_epi],
+  { dsimp [homological_complex.short_complex_functor],
+    have eq : homological_complex.d_to (double h φ) b = _ := double.d_eq h φ,
+    simp only [eq, ← assoc, epi_comp_right_iff_epi, epi_comp_left_iff_epi], },
+  { exact double.d_eq_zero₁ h φ (by linarith), },
+end
+
+lemma is_iso_homology_map₁_single_to_double_iff_exact_and_mono
+  (i : X₁ ⟶ X₂) (p : X₂ ⟶ X₃) (w : i ≫ p = 0) :
+is_iso (homology_map (single_to_double h i p w) a) ↔
+  (short_complex.mk _ _ w).exact ∧ mono i :=
+begin
+  erw is_iso_homology_map_iff_short_complex_quasi_iso,
+  rw short_complex.quasi_iso_iff_exact_and_mono, rotate,
+  { refl, },
+  { refl, },
+  { exact double.d_eq_zero₂ h p (by linarith), },
+  apply iff.and,
+  { apply short_complex.exact_iff_of_iso,
+    have hb : (complex_shape.up ℤ).next a = b := by { rw next, linarith, },
+    refine short_complex.mk_iso
+      (homological_complex.single_obj_X_self  _ (complex_shape.up ℤ) _ X₁)
+      (double.X_iso₁ h p rfl) (double.X_iso₂ h p hb) _ _ ,
+    { dsimp,
+      simp only [desc_single_f, assoc, iso.inv_hom_id, comp_id], },
+    { dsimp,
+      simpa only [← cancel_mono (double.X_iso₂ h p hb).inv, assoc, iso.hom_inv_id, comp_id,
+        (double.d_eq' h p rfl hb).symm], }, },
+  { simp only [single_to_double, homological_complex.short_complex_functor_map_τ₂,
+      desc_single_f, mono_comp_left_iff_mono, mono_comp_right_iff_mono], },
+end
+
+variable {φ}
+
+lemma single_to_double_quasi_iso_iff (i : X₁ ⟶ X₂) (p : X₂ ⟶ X₃) (w : i ≫ p = 0) :
+  quasi_iso (single_to_double h i p w) ↔ (short_complex.mk _ _ w).short_exact :=
+begin
+  split,
+  { intro hw,
+    have hw' := (is_iso_homology_map₁_single_to_double_iff_exact_and_mono h i p w).1 (hw.is_iso a),
+    haveI : mono i := hw'.2,
+    haveI : epi p,
+    { simp only [← double.is_zero_homology₂_iff h],
+      haveI := hw.is_iso b,
+      exact is_zero.of_iso (is_le.is_zero _ a _ (by linarith))
+        (as_iso (homology_map (single_to_double h i p w) b)).symm, },
+    exact short_complex.short_exact.mk hw'.1, },
+  { intro hw,
+    haveI := hw.epi_g,
+    refine ⟨λ n, _⟩,
+    rcases double.four_cases h n with hn | ⟨hn | hn⟩,
+    { refine ⟨⟨0, is_zero.eq_of_src _ _ _, is_zero.eq_of_src _ _ _⟩⟩,
+      { cases hn,
+        { exact is_ge.is_zero _ _ _ hn, },
+        { exact is_le.is_zero _ a n (by linarith), }, },
+      { cases hn,
+        { exact is_ge.is_zero _ _ _ hn, },
+        { exact is_le.is_zero _ _ _ hn, }, }, },
+    { subst hn,
+      exact (is_iso_homology_map₁_single_to_double_iff_exact_and_mono h i p w).2 ⟨hw.exact, hw.mono_f⟩, },
+    { subst hn,
+      exact ⟨⟨0, is_zero.eq_of_src (is_le.is_zero _ a _ (by linarith)) _ _,
+        is_zero.eq_of_src
+          (by simpa only [double.is_zero_homology₂_iff] using hw.epi_g) _ _⟩⟩, }, },
+end
 
 end abelian
 
