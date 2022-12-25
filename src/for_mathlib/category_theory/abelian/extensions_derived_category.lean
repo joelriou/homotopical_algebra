@@ -5,6 +5,16 @@ noncomputable theory
 
 open category_theory category_theory.limits category_theory.category derived_category
 
+namespace homological_complex
+
+variables {C ι : Type*} [category C] [has_zero_morphisms C] [has_zero_object C]
+  (c : complex_shape ι) (n : ι) [decidable_eq ι]
+
+instance : preserves_finite_limits (single C c n) := sorry
+instance : preserves_finite_colimits (single C c n) := sorry
+
+end homological_complex
+
 variables {C : Type*} [category C] [abelian C]
 
 @[simps]
@@ -19,6 +29,18 @@ def category_theory.short_complex.short_exact.extension
     refine (short_complex.short_exact.iff_of_iso _).1 ex,
     exact (short_complex.mk_iso (iso.refl _) (iso.refl _) (iso.refl _) (by tidy) (by tidy)),
   end, }
+
+instance category_theory.preadditive.is_iso_neg {C : Type*} [category C] [preadditive C]
+  {X Y : C} (f : X ⟶ Y) [is_iso f] : is_iso (-f) :=
+by simpa only [iso.trans_hom, preadditive.mul_iso_hom, units.coe_neg_one, iso.refl_hom,
+  neg_smul, one_zsmul, as_iso_hom, preadditive.neg_comp, id_comp]
+  using is_iso.of_iso ((preadditive.mul_iso (-1 : units ℤ) (iso.refl X)).trans (as_iso f))
+
+@[simp]
+lemma category_theory.preadditive.neg_inv {C : Type*} [category C] [preadditive C]
+  {X Y : C} (f : X ⟶ Y) [is_iso f] : inv (-f) = - inv f :=
+by rw [← cancel_mono (-f), is_iso.inv_hom_id, preadditive.neg_comp,
+  preadditive.comp_neg, neg_neg, is_iso.inv_hom_id]
 
 open category_theory category_theory.limits category_theory.category derived_category
 
@@ -61,7 +83,86 @@ e.δ' ≫ (single_functor_shift_iso C 0 1 (-1) (neg_add_self 1)).inv.app B
 def triangle : pretriangulated.triangle (derived_category C) :=
 pretriangulated.triangle.mk ((single_functor C 0).map e.i) ((single_functor C 0).map e.p) e.δ
 
-lemma triangle_distinguished : e.triangle ∈ dist_triang (derived_category C) := sorry
+@[simps]
+def single_short_complex : short_complex (cochain_complex C ℤ) :=
+short_complex.mk ((homological_complex.single C _ 0).map e.i)
+  ((homological_complex.single C _ 0).map e.p)
+  (by rw [← functor.map_comp, e.w, functor.map_zero])
+
+lemma single_short_complex_short_exact : e.single_short_complex.short_exact :=
+short_complex.short_exact.map_of_exact e.ex (homological_complex.single C (complex_shape.up ℤ) 0)
+
+def iso_mapping_cone := cochain_complex.double_iso_mapping_cone e.i
+
+lemma compatibility_mapping_cone_σ : e.σ = (cochain_complex.double_iso_mapping_cone e.i).hom ≫
+  cochain_complex.from_mapping_cone_of_ses e.single_short_complex_short_exact :=
+begin
+  refine cochain_complex.from_double_ext (neg_add_self 1) _ _ _ _,
+  { dsimp,
+    simp only [σ, cochain_complex.from_mapping_cone_of_ses, single_short_complex_g,
+      cochain_complex.double.σ_f₁, id_comp, cochain_complex.double.desc.f₁, assoc,
+      zero_eq_neg, preadditive.is_iso.comp_left_eq_zero],
+    erw [cochain_complex.mapping_cone.inl_desc_v, cochain_complex.hom_complex.cochain.zero_v,
+      comp_zero], },
+  { dsimp,
+    simp only [σ, cochain_complex.from_mapping_cone_of_ses, single_short_complex_g,
+      cochain_complex.double.σ_f₂, homological_complex.single_obj_X_self_inv,
+      eq_to_hom_refl, comp_id, id_comp, cochain_complex.double.desc.f₂, assoc],
+    erw [cochain_complex.mapping_cone.inr_desc_f],
+    dsimp,
+    simp only [eq_self_iff_true, comp_id, id_comp, if_true], },
+end
+
+open cochain_complex.hom_complex
+
+lemma compatibility_mapping_cone_π :
+  e.π = -(cochain_complex.double_iso_mapping_cone e.i).hom ≫
+  cochain_complex.mapping_cone_δ ((homological_complex.single C _ 0).map e.i) ≫
+  (cochain_complex.single_shift_iso C 0 1 (-1) (neg_add_self 1).symm).hom.app B :=
+begin
+  refine cochain_complex.to_single_ext _ _ (-1) _,
+  simp only [π, cochain_complex.mapping_cone_δ, cochain_complex.double.π_f, eq_to_hom_refl,
+    cochain_complex.double.desc.f₁, comp_id, homological_complex.single_obj_X_self_inv,
+    id_comp, cochain_complex.double_iso_mapping_cone_hom, homological_complex.neg_f_apply,
+    homological_complex.comp_f, cochain_complex.double.desc_f,
+    cochain_complex.hom_complex.cocycle.hom_of_f,
+    cochain_complex.hom_complex.cocycle.right_shift_coe,
+    cochain_complex.mapping_cone_δ_as_cocycle_coe, assoc,
+    cochain_complex.hom_complex.cochain.right_shift_v _ 1 0
+      (zero_add 1).symm (-1) (-1) (by linarith) 0 (neg_add_self 1).symm, cochain.neg_v,
+    preadditive.neg_comp, preadditive.comp_neg, neg_neg],
+  erw cochain_complex.mapping_cone_inl_fst_assoc,
+  dsimp [cochain_complex.double.X_iso₁, homological_complex.X_iso_of_eq, iso.refl,
+    cochain_complex.single_shift_iso, cochain_complex.single_shift_iso_app],
+  simp only [cochain_complex.lift_single_f, id_comp],
+  erw [id_comp, id_comp],
+  refl,
+end
+
+lemma δ_eq_triangle_of_ses_δ :
+  e.δ = triangle_of_ses_δ e.single_short_complex_short_exact :=
+begin
+  dsimp [triangle_of_ses_δ, δ, δ', mapping_cone_triangle],
+  simp only [← cancel_epi (Q.map (cochain_complex.from_mapping_cone_of_ses
+    e.single_short_complex_short_exact)), is_iso.hom_inv_id_assoc,
+    ← Q.map (cochain_complex.double_iso_mapping_cone e.i).hom,
+    preadditive.neg_comp, preadditive.comp_neg,
+    e.compatibility_mapping_cone_σ, functor.map_neg, Q.map_comp, preadditive.neg_inv,
+    is_iso.inv_comp, neg_neg, assoc,
+    ← cancel_epi (Q.map (cochain_complex.double_iso_mapping_cone e.i).hom), mapping_cone_δ,
+    ← cancel_mono ((comm_shift_Q C 1).inv.app ((homological_complex.single C _ 0).obj B)),
+    iso.hom_inv_id_app, single_functor_shift_iso_inv_app, compatibility_mapping_cone_π],
+    erw [← Q.map_comp, iso.hom_inv_id_app, Q.map_id],
+    refl,
+end
+
+lemma triangle_iso : e.triangle ≅ triangle_of_ses e.single_short_complex_short_exact :=
+pretriangulated.triangle.mk_iso _ _ (iso.refl _) (iso.refl _) (iso.refl _) (by tidy) (by tidy)
+  (by { dsimp [triangle], simp only [category_theory.functor.map_id, comp_id,
+    id_comp, δ_eq_triangle_of_ses_δ], })
+
+lemma triangle_distinguished : e.triangle ∈ dist_triang (derived_category C) :=
+pretriangulated.isomorphic_distinguished _ (triangle_of_ses_dist _) _ e.triangle_iso
 
 lemma iso_of_triangle_map (e₁ e₂ : extension A B)
   (φ : e₁.triangle ⟶ e₂.triangle) (hφ₁ : φ.hom₁ = 𝟙 _) (hφ₃ : φ.hom₃ = 𝟙 _) : e₁ ≅ e₂ :=

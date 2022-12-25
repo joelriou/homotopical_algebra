@@ -829,6 +829,123 @@ begin
           (by simpa only [double.is_zero_homology₂_iff] using hw.epi_g) _ _⟩⟩, }, },
 end
 
+lemma from_double_ext {K L : cochain_complex C ℤ} [K.is_strictly_le b] [K.is_strictly_ge a]
+  (f₁ f₂ : K ⟶ L) (h₁ : f₁.f a = f₂.f a) (h₂ : f₁.f b = f₂.f b) : f₁ = f₂ :=
+begin
+  ext n,
+  rcases double.four_cases h n with h' | (h' | h'),
+  { apply is_zero.eq_of_src,
+    cases h',
+    { exact is_strictly_ge.is_zero _ a _ h', },
+    { exact is_strictly_le.is_zero _ b _ h', }, },
+  { unfreezingI { subst h', },
+    exact h₁, },
+  { unfreezingI { subst h', },
+    exact h₂, },
+end
+
+omit h
+variable (φ)
+
+instance mapping_cone_single_map_is_strictly_le :
+  (mapping_cone ((homological_complex.single _ _ 0).map φ)).is_strictly_le 0 :=
+⟨λ n hn, begin
+  rw mapping_cone.X_is_zero_iff,
+  split; exact is_strictly_le.is_zero _ 0 _ (by linarith),
+end⟩
+
+instance mapping_cone_single_map_is_strictly_ge :
+  (mapping_cone ((homological_complex.single _ _ 0).map φ)).is_strictly_ge (-1) :=
+⟨λ n hn, begin
+  rw mapping_cone.X_is_zero_iff,
+  split; exact is_strictly_ge.is_zero _ 0 _ (by linarith),
+end⟩
+
+@[simps]
+def double_iso_mapping_cone : double (neg_add_self 1) φ ≅
+  mapping_cone ((homological_complex.single _ _ 0).map φ) :=
+{ hom := double.desc (neg_add_self 1) φ _
+      ((homological_complex.single_obj_X_self _ _ 0 A).inv ≫
+        (mapping_cone_inl _).v _ _ (zero_add (-1)).symm)
+      ((homological_complex.single_obj_X_self _ _ 0 B).inv ≫
+        (mapping_cone_inr ((homological_complex.single _ _ 0).map φ)).f 0)
+      begin
+        simp only [assoc],
+        erw mapping_cone_inl_d _ (-1) 0 1 (by linarith) (by linarith),
+        simp only [homological_complex.single_obj_X_self_inv, eq_to_hom_refl,
+          homological_complex.single_map_f_self, homological_complex.single_obj_X_self_hom,
+          comp_id, assoc, homological_complex.single_obj_d, zero_comp, sub_zero, id_comp],
+        erw id_comp,
+      end
+      (zero_add 1) (is_zero.eq_of_tgt
+      (by simp only [mapping_cone.X_is_zero_iff, homological_complex.single_obj_X,
+        add_self_eq_zero, one_ne_zero, if_false, and_self, is_zero_zero]) _ _),
+  inv := double.lift (neg_add_self 1) φ _
+      ((mapping_cone_fst _).1.v (-1) 0 (neg_add_self 1).symm ≫
+          (homological_complex.single_obj_X_self _ _ 0 A).hom)
+      ((mapping_cone_snd _ ).v _ _ (zero_add 0).symm ≫
+        (homological_complex.single_obj_X_self _ _ 0 B).hom)
+      begin
+        rw from_mapping_cone_ext_iff _ _ _ (neg_add_self 1).symm,
+        split,
+        { simp only [assoc],
+          erw mapping_cone_inl_fst_assoc,
+          simp only [mapping_cone_inl_d_assoc _ (-1) 0 1 (by linarith) (by linarith),
+            preadditive.sub_comp, assoc],
+          erw [mapping_cone_inl_snd_assoc, mapping_cone_inr_snd_assoc],
+          dsimp,
+          simp [zero_comp, zero_comp, sub_zero], },
+        { simp only [assoc, mapping_cone_inr_d_assoc _ (-1) 0],
+          erw [mapping_cone_inr_fst_assoc, mapping_cone_inr_snd_assoc],
+          simp only [homological_complex.single_obj_d, zero_comp], },
+      end
+      (show (-2 : ℤ) +1 = -1, by linarith)
+      (is_zero.eq_of_src begin
+        rw mapping_cone.X_is_zero_iff,
+        split; exact is_strictly_ge.is_zero _ 0 _ (by linarith),
+      end _ _),
+  hom_inv_id' := begin
+    refine from_double_ext (neg_add_self 1) _ _ _ _,
+    { simp only [assoc, homological_complex.single_obj_X_self_inv, eq_to_hom_refl,
+        homological_complex.single_obj_X_self_hom, id_comp, subtype.val_eq_coe,
+        homological_complex.comp_f, double.desc_f, double.desc.f₁, double.lift_f,
+        double.lift.f₁, homological_complex.id_f],
+      erw mapping_cone_inl_fst_assoc,
+      dsimp,
+      simp only [id_comp, iso.hom_inv_id], },
+    { simp only [assoc, homological_complex.single_obj_X_self_inv, eq_to_hom_refl,
+        homological_complex.single_obj_X_self_hom, id_comp, homological_complex.comp_f,
+        double.desc_f, double.desc.f₂, double.lift_f, double.lift.f₂,
+        homological_complex.id_f],
+      erw mapping_cone_inr_snd_assoc,
+      dsimp,
+      simp only [id_comp, iso.hom_inv_id], },
+  end,
+  inv_hom_id' := begin
+    refine from_double_ext (neg_add_self 1) _ _ _ _,
+    { simp only [assoc, id_comp, homological_complex.single_obj_X_self_inv, eq_to_hom_refl,
+        homological_complex.single_obj_X_self_hom, subtype.val_eq_coe,
+        homological_complex.comp_f, double.lift_f, double.lift.f₁, double.desc_f,
+        double.desc.f₁, iso.inv_hom_id_assoc, homological_complex.id_f,
+        from_mapping_cone_ext_iff _ _ _ (neg_add_self 1).symm,
+        mapping_cone_inl_fst_assoc, mapping_cone_inr_fst_assoc, comp_id],
+      split,
+      { apply id_comp, },
+      { apply is_zero.eq_of_src,
+        exact is_strictly_ge.is_zero _ 0 _ (by linarith), }, },
+    { simp only [assoc, id_comp, homological_complex.single_obj_X_self_inv, eq_to_hom_refl,
+        homological_complex.single_obj_X_self_hom, homological_complex.comp_f, double.lift_f,
+        double.lift.f₂, double.desc_f, double.desc.f₂, iso.inv_hom_id_assoc,
+        homological_complex.id_f],
+      erw id_comp,
+      erw to_mapping_cone_ext_iff _ _ _ (zero_add 1).symm,
+      simp only [assoc, mapping_cone_inr_fst, mapping_cone_inr_snd, id_comp, comp_id],
+      split,
+      { apply is_zero.eq_of_tgt,
+        exact is_strictly_le.is_zero _ 0 _ (by { dsimp, linarith, }), },
+      { refl, }, },
+  end, }
+
 end abelian
 
 end cochain_complex

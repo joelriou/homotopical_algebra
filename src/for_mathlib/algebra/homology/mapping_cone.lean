@@ -9,6 +9,26 @@ noncomputable theory
 open category_theory category_theory.category category_theory.limits
   category_theory.pretriangulated
 
+@[simp]
+lemma category_theory.limits.biprod.is_zero_iff {C : Type*} [category C]
+  [has_zero_morphisms C] (A B : C)
+  [has_binary_biproduct A B] : is_zero (biprod A B) ↔ is_zero A ∧ is_zero B :=
+begin
+  split,
+  { intro h,
+    simp only [is_zero.iff_id_eq_zero],
+    split,
+    { rw ← cancel_mono (biprod.inl : _ ⟶ A ⊞ B),
+      apply h.eq_of_tgt, },
+    { rw ← cancel_mono (biprod.inr : _ ⟶ A ⊞ B),
+      apply h.eq_of_tgt, }, },
+  { rintro ⟨h₁, h₂⟩,
+    rw is_zero.iff_id_eq_zero,
+    ext1,
+    { apply h₁.eq_of_src, },
+    { apply h₂.eq_of_src, }, },
+end
+
 namespace cochain_complex
 
 variables {C : Type*} [category C]
@@ -23,6 +43,15 @@ open hom_complex
 
 def mapping_cone : cochain_complex C ℤ :=
 twist (cocycle.of_hom φ)
+
+lemma mapping_cone.X_is_zero_iff (n : ℤ) :
+  is_zero ((mapping_cone φ).X n) ↔ is_zero (F.X (n+1)) ∧ is_zero (G.X n) :=
+begin
+  dsimp [mapping_cone],
+  simp only [tsub_zero, category_theory.limits.biprod.is_zero_iff, and.congr_left_iff],
+  intro h,
+  congr',
+end
 
 def mapping_cone_inl : cochain F (mapping_cone φ) (-1) :=
 twist.inl (cocycle.of_hom φ) (neg_add_self 1)
@@ -374,7 +403,7 @@ def mapping_cone.desc_cocycle {K : cochain_complex C ℤ} {n m : ℤ} (α : coch
 twist.desc_cocycle _ α β (by linarith) _ eq
 
 @[simp]
-def mapping_cone.desc_cocycle_coe {K : cochain_complex C ℤ} {n m : ℤ} (α : cochain F K m) (β : cocycle G K n)
+lemma mapping_cone.desc_cocycle_coe {K : cochain_complex C ℤ} {n m : ℤ} (α : cochain F K m) (β : cocycle G K n)
   (h : m+1=n) (eq : δ m n α = ε n • (cochain.of_hom φ).comp β.1 (zero_add n).symm) :
 (mapping_cone.desc_cocycle φ α β h eq : cochain (mapping_cone φ) K n) =
   mapping_cone.desc_cochain φ α β h := rfl
@@ -659,36 +688,22 @@ lemma degreewise_exact (n : ℤ) :
 ex.map_of_exact (homological_complex.eval C (complex_shape.up ℤ) n)
 
 def from_mapping_cone_of_ses : mapping_cone S.f ⟶ S.X₃ :=
-cocycle.hom_of
-  (twist.desc_cocycle _ (0 : cochain _ _ (-1))
-    (cocycle.of_hom S.g) (by linarith) (add_zero 0).symm
-      (by simp only [δ_zero, ε_0, cocycle.of_hom_coe,
-        one_zsmul, ← cochain.of_hom_comp, S.zero, cochain.of_hom_zero]))
+mapping_cone.desc S.f 0 S.g (by simp)
 
 @[simp, reassoc]
 lemma inr_from_mapping_cone_of_ses (n : ℤ) :
   (mapping_cone_inr S.f).f n ≫ (from_mapping_cone_of_ses ex).f n = S.g.f n :=
 begin
-  dsimp only [from_mapping_cone_of_ses, mapping_cone_inr, twist.inr,
-    twist.desc_cocycle],
-  simp only [twist.desc_cochain_eq _ _ _ _ (zero_add 1), twist.snd, zero_add, cochain.comp_zero,
-    cocycle.of_hom_coe, cocycle.hom_of_f, cocycle.mk_coe, cochain.comp_zero_cochain,
-    cochain.mk_v, hom_complex.cochain.of_hom_v, homological_complex.id_f, comp_id,
-    biprod.inr_snd_assoc],
+  dsimp only [from_mapping_cone_of_ses],
+  simp only [mapping_cone.inr_desc_f],
 end
 
 @[simp, reassoc]
 lemma inl_from_mapping_cone_of_ses (p q : ℤ) (hpq : q = p + (-1)) :
   (mapping_cone_inl S.f).v p q hpq ≫ (from_mapping_cone_of_ses ex).f q = 0 :=
 begin
-  have eq := hom_complex.cochain.congr_v
-    (hom_complex.twist.inl_comp_snd (hom_complex.cocycle.of_hom S.f) (neg_add_self 1)) p q (by linarith),
-  rw hom_complex.cochain.comp_v _ _ _ p q q hpq (add_zero q).symm at eq,
-  dsimp only [mapping_cone_inl, from_mapping_cone_of_ses, hom_complex.twist.desc_cocycle],
-  simp only [cocycle.of_hom_coe, cocycle.hom_of_f, cocycle.mk_coe,
-    twist.desc_cochain_eq _ _ _ _ (zero_add 1), zero_add, cochain.comp_zero,
-    cochain.comp_zero_cochain, cochain.of_hom_v, ← assoc, eq,
-    cochain.zero_v, zero_comp],
+  dsimp only [from_mapping_cone_of_ses],
+  simp only [mapping_cone.inl_desc_v, cochain.zero_v],
 end
 
 @[simp, reassoc]
@@ -700,8 +715,7 @@ begin
   simp only [homological_complex.comp_f, inr_from_mapping_cone_of_ses],
 end
 
-
-lemma from_mapping_cone_of_ses_quasi_iso : quasi_iso (from_mapping_cone_of_ses ex) :=
+instance from_mapping_cone_of_ses_quasi_iso : quasi_iso (from_mapping_cone_of_ses ex) :=
 ⟨λ n, begin
   rw is_iso_homology_map_iff_short_complex_quasi_iso'
     (from_mapping_cone_of_ses ex) (show (n-1)+1=n, by linarith) rfl,
