@@ -24,10 +24,10 @@ namespace cylinder
 variable {K}
 
 def inl : K ⟶ cylinder K :=
-homological_complex.biprod.inl ≫ ι_mapping_cone _
+homological_complex.biprod.inl ≫ mapping_cone.inr _
 
 def inr : K ⟶ cylinder K :=
-homological_complex.biprod.inr ≫ ι_mapping_cone _
+homological_complex.biprod.inr ≫ mapping_cone.inr _
 
 variable (K)
 
@@ -38,13 +38,13 @@ begin
     simp only [cocycle.δ_cochain_of_hom, neg_zero, zero_add,
       cochain.zero_cochain_comp, cochain.of_hom_v, inl, inr,
       homological_complex.comp_f, homological_complex.biprod.inl_f, assoc,
-      homological_complex.biprod.inr_f, ι_mapping_cone,
-      mapping_cone_inr_fst, comp_zero], },
+      homological_complex.biprod.inr_f,
+      mapping_cone.inr_fst, comp_zero], },
   { ext1 p,
     simp only [cochain.comp_zero_cochain, cochain.of_hom_v, δ_zero, cochain.id_comp,
       zero_add, cochain.add_v, homological_complex.biprod.lift_f, homological_complex.id_f,
-      homological_complex.neg_f_apply, inl, inr, ι_mapping_cone, homological_complex.comp_f,
-      homological_complex.biprod.inl_f, assoc, mapping_cone_inr_snd, comp_id, homological_complex.biprod.inr_f],
+      homological_complex.neg_f_apply, inl, inr, homological_complex.comp_f,
+      homological_complex.biprod.inl_f, assoc, mapping_cone.inr_snd, comp_id, homological_complex.biprod.inr_f],
     ext,
     { simp only [add_zero, biprod.inl_fst, preadditive.add_comp,
         biprod.lift_fst, biprod.inr_fst], },
@@ -67,12 +67,12 @@ end
 @[simp, reassoc]
 lemma inl_desc (f₁ f₂ : K ⟶ L) (h : homotopy f₁ f₂) :
   inl ≫ desc f₁ f₂ h = f₁ :=
-by simp only [desc, inl, assoc, mapping_cone.ι_desc, homological_complex.biprod.inl_desc]
+by simp only [desc, inl, assoc, mapping_cone.inr_desc, homological_complex.biprod.inl_desc]
 
 @[simp, reassoc]
 lemma inr_desc (f₁ f₂ : K ⟶ L) (h : homotopy f₁ f₂) :
   inr ≫ desc f₁ f₂ h = f₂ :=
-by simp only [desc, inr, assoc, mapping_cone.ι_desc, homological_complex.biprod.inr_desc]
+by simp only [desc, inr, assoc, mapping_cone.inr_desc, homological_complex.biprod.inr_desc]
 
 @[simp]
 def π : cylinder K ⟶ K :=
@@ -87,7 +87,7 @@ def homotopy_equiv : homotopy_equiv (cylinder K) K :=
   homotopy_hom_inv_id := begin
     refine mapping_cone.desc_homotopy _ _ _ 0
       ((cochain.of_hom homological_complex.biprod.snd).comp
-        (mapping_cone_inl _) (zero_add _).symm) _ _,
+        (mapping_cone.inl _) (zero_add _).symm) _ _,
     { ext1,
       dsimp [desc],
       simp only [zero_add, cochain.of_hom_comp, cochain.comp_zero_cochain, cochain.of_hom_v,
@@ -96,19 +96,19 @@ def homotopy_equiv : homotopy_equiv (cylinder K) K :=
         homological_complex.neg_f_apply, homological_complex.biprod.snd_f, biprod.lift_snd_assoc,
         preadditive.neg_comp, id_comp],
       erw [homological_complex.id_f, comp_id, add_left_neg], },
-    { erw [comp_id, mapping_cone_cochain_ext' _ _ (zero_add 1).symm],
-      dsimp [desc, inl, ι_mapping_cone],
+    { erw [comp_id, mapping_cone.cochain_ext' _ _ (zero_add 1).symm],
+      dsimp [desc, inl],
       split,
       { simp only [cochain.of_hom_comp, cochain.comp_assoc_of_second_is_zero_cochain,
-          add_zero, mapping_cone_inr_comp_fst, cochain.comp_zero, add_left_neg,
-          δ_comp_of_first_is_zero_cochain, mapping_cone_δ_inl, cocycle.δ_cochain_of_hom,
+          add_zero, mapping_cone.inr_comp_fst, cochain.comp_zero, add_left_neg,
+          δ_comp_of_first_is_zero_cochain, mapping_cone.δ_inl, cocycle.δ_cochain_of_hom,
           cochain.zero_comp, smul_zero, cochain.add_comp], },
       { ext1,
         simp only [add_zero, cochain.of_hom_comp, cochain.comp_assoc_of_third_is_zero_cochain,
-          mapping_cone_inr_comp_snd, cochain.comp_id, cochain.comp_zero_cochain,
+          mapping_cone.inr_comp_snd, cochain.comp_id, cochain.comp_zero_cochain,
           cochain.of_hom_v, homological_complex.biprod.inl_f, mapping_cone.inr_desc_f_assoc,
           homological_complex.biprod.desc_f, homological_complex.id_f, add_left_neg,
-          δ_comp_of_first_is_zero_cochain, mapping_cone_δ_inl, cocycle.δ_cochain_of_hom,
+          δ_comp_of_first_is_zero_cochain, mapping_cone.δ_inl, cocycle.δ_cochain_of_hom,
           cochain.zero_comp, smul_zero, cochain.add_comp, cochain.add_v,
           homological_complex.biprod.snd_f, homological_complex.biprod.lift_f,
           homological_complex.neg_f_apply],

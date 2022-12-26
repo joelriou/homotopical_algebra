@@ -129,10 +129,10 @@ section
 open cochain_complex
 
 lemma homology_functor_comp_ι_mapping_cone {K L : cochain_complex C ℤ} (φ : K ⟶ L) (n : ℤ) :
-  (homology_functor C (complex_shape.up ℤ) n).map (φ ≫ ι_mapping_cone φ) = 0 :=
+  (homology_functor C (complex_shape.up ℤ) n).map (φ ≫ mapping_cone.inr φ) = 0 :=
 begin
   rw homotopy_category.homology_functor_map_factors,
-  have hφ : homotopy_category.induced_triangle (mapping_cone_triangle φ) ∈ dist_triang _,
+  have hφ : homotopy_category.induced_triangle (mapping_cone.triangle φ) ∈ dist_triang _,
   { rw homotopy_category.triangle_distinguished_iff,
     exact ⟨_, _, _, ⟨iso.refl _⟩⟩, },
   simpa only [functor.map_comp, functor.map_zero]
@@ -144,7 +144,7 @@ variable {C}
 
 lemma homology_functor_is_homological_aux {K L : cochain_complex C ℤ} (φ : K ⟶ L) (n : ℤ) :
   (short_complex.mk ((homology_functor C (complex_shape.up ℤ) n).map φ)
-    ((homology_functor C (complex_shape.up ℤ) n).map (ι_mapping_cone φ))
+    ((homology_functor C (complex_shape.up ℤ) n).map (mapping_cone.inr φ))
     (by rw [← functor.map_comp, homology_functor_comp_ι_mapping_cone])).exact :=
 begin
   rw short_complex.exact_iff_pseudo_exact',
@@ -168,11 +168,11 @@ begin
   simp only [assoc, homological_complex.short_complex_functor_map_τ₂,
     short_complex.lift_cycles_comp_cycles_map, short_complex.lift_cycles_i,
     short_complex.to_cycles_i, homological_complex.short_complex_functor_obj_f,
-    @to_mapping_cone_ext_iff _ _ _ _ _ _ φ _ _ _ _ ((complex_shape.up _).next n) (by simp),
-    mapping_cone_d_fst ((complex_shape.up _).prev n) n ((complex_shape.up _).next n) (by simp) (by simp),
-    mapping_cone_d_snd ((complex_shape.up _).prev n) n (by simp),
-    ι_mapping_cone, mapping_cone_inr_fst, comp_zero, preadditive.comp_neg,
-    zero_eq_neg, mapping_cone_inr_snd, preadditive.comp_add] at hc₁,
+    @mapping_cone.to_ext_iff _ _ _ _ _ _ φ _ _ _ _ ((complex_shape.up _).next n) (by simp),
+    mapping_cone.d_fst ((complex_shape.up _).prev n) n ((complex_shape.up _).next n) (by simp) (by simp),
+    mapping_cone.d_snd ((complex_shape.up _).prev n) n (by simp),
+    mapping_cone.inr_fst, comp_zero, preadditive.comp_neg,
+    zero_eq_neg, mapping_cone.inr_snd, preadditive.comp_add] at hc₁,
   dsimp at hc₁,
   rw comp_id at hc₁,
   obtain ⟨hc₁, hc₁'⟩ := hc₁,
@@ -188,7 +188,7 @@ begin
     short_complex.lift_cycles_comp_cycles_map_assoc,
     short_complex.lift_cycles_comp_homology_π_eq_iff],
   exact ⟨A₂, 𝟙 A₂, infer_instance,
-    c₁ ≫ (mapping_cone_snd φ).v ((complex_shape.up ℤ).prev n)
+    c₁ ≫ (mapping_cone.snd φ).v ((complex_shape.up ℤ).prev n)
       ((complex_shape.up ℤ).prev n) (add_zero _).symm, by simpa only [id_comp, hc₁', assoc]⟩,
 end
 
@@ -367,10 +367,10 @@ variables {K L : cochain_complex C ℤ}
 def mapping_cone := Q.obj (cochain_complex.mapping_cone φ)
 
 def ι_mapping_cone : Q.obj L ⟶ mapping_cone φ :=
-Q.map (cochain_complex.ι_mapping_cone φ)
+Q.map (cochain_complex.mapping_cone.inr φ)
 
 def mapping_cone_δ : mapping_cone φ ⟶ (Q.obj K)⟦(1 : ℤ)⟧ :=
-  Q.map (cochain_complex.mapping_cone_δ φ) ≫ (comm_shift_Q C 1).hom.app K
+  Q.map (cochain_complex.mapping_cone.δ φ) ≫ (comm_shift_Q C 1).hom.app K
 
 def mapping_cone_triangle : triangle (derived_category C) :=
 triangle.mk (Q.map φ) (ι_mapping_cone φ) (mapping_cone_δ φ)
@@ -384,7 +384,7 @@ begin -- needs cleaning up...
   { tidy, },
   { dsimp [mapping_cone_triangle, mapping_cone_δ,
       homotopy_category.mapping_cone_triangle',
-      cochain_complex.mapping_cone_δ',
+      cochain_complex.mapping_cone.δ',
       comm_shift_Q, functor.comm_shift_comp],
     simp only [category_theory.functor.map_id, comp_id, id_comp],
     congr' 1,
@@ -447,7 +447,7 @@ begin
   { dsimp [triangle_of_ses, mapping_cone_triangle, ι_mapping_cone],
     simp only [← cancel_mono (Q.map (cochain_complex.from_mapping_cone_of_ses ex)),
       id_comp, assoc, is_iso.inv_hom_id, comp_id, ← Q.map_comp,
-      cochain_complex.ι_mapping_cone_comp_from_mapping_cone_of_ses], },
+      cochain_complex.inr_mapping_cone_comp_from_mapping_cone_of_ses], },
   { dsimp [triangle_of_ses, triangle_of_ses_δ],
     simp only [category_theory.functor.map_id, comp_id], },
 end

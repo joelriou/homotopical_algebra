@@ -114,21 +114,21 @@ open cochain_complex.hom_complex
 
 lemma compatibility_mapping_cone_π :
   e.π = -(cochain_complex.double_iso_mapping_cone e.i).hom ≫
-  cochain_complex.mapping_cone_δ ((homological_complex.single C _ 0).map e.i) ≫
+  cochain_complex.mapping_cone.δ ((homological_complex.single C _ 0).map e.i) ≫
   (cochain_complex.single_shift_iso C 0 1 (-1) (neg_add_self 1).symm).hom.app B :=
 begin
   refine cochain_complex.to_single_ext _ _ (-1) _,
-  simp only [π, cochain_complex.mapping_cone_δ, cochain_complex.double.π_f, eq_to_hom_refl,
+  simp only [π, cochain_complex.mapping_cone.δ, cochain_complex.double.π_f, eq_to_hom_refl,
     cochain_complex.double.desc.f₁, comp_id, homological_complex.single_obj_X_self_inv,
     id_comp, cochain_complex.double_iso_mapping_cone_hom, homological_complex.neg_f_apply,
     homological_complex.comp_f, cochain_complex.double.desc_f,
     cochain_complex.hom_complex.cocycle.hom_of_f,
     cochain_complex.hom_complex.cocycle.right_shift_coe,
-    cochain_complex.mapping_cone_δ_as_cocycle_coe, assoc,
+    cochain_complex.mapping_cone.δ_as_cocycle_coe, assoc,
     cochain_complex.hom_complex.cochain.right_shift_v _ 1 0
       (zero_add 1).symm (-1) (-1) (by linarith) 0 (neg_add_self 1).symm, cochain.neg_v,
     preadditive.neg_comp, preadditive.comp_neg, neg_neg],
-  erw cochain_complex.mapping_cone_inl_fst_assoc,
+  erw cochain_complex.mapping_cone.inl_fst_assoc,
   dsimp [cochain_complex.double.X_iso₁, homological_complex.X_iso_of_eq, iso.refl,
     cochain_complex.single_shift_iso, cochain_complex.single_shift_iso_app],
   simp only [cochain_complex.lift_single_f, id_comp],
