@@ -152,16 +152,46 @@ by { dsimp, apply_instance, }
 
 end
 
+section preadditive
+
+variables [has_zero_object C] [preadditive C]
+  (A B) [has_binary_biproduct B A]
+
+@[simps]
+def trivial : extension A B :=
+{ X := biprod B A,
+  i := biprod.inl,
+  p := biprod.snd,
+  w := biprod.inl_snd,
+  ex := short_complex.splitting.short_exact
+    { r := biprod.fst,
+      s := biprod.inr,
+      f_r := by tidy,
+      s_g := by tidy,
+      id := by tidy, }, }
+
+end preadditive
+
 variable [abelian C]
 
 variables {A B} {E₁ E₂ : extension A B}
 
+instance (f : E₁ ⟶ E₂) : is_iso f.τ :=
+(infer_instance : is_iso ((to_short_exact_sequence_functor A B).map f).τ₂)
+
 instance (f : E₁ ⟶ E₂) : is_iso f :=
 ⟨begin
-  haveI : is_iso f.τ := (infer_instance : is_iso ((to_short_exact_sequence_functor A B).map f).τ₂),
   refine ⟨⟨inv f.τ, _, _⟩, _, _⟩,
   tidy,
 end⟩
+
+@[simp, reassoc]
+lemma iso_hom_inv_τ (e : E₁ ≅ E₂) : e.hom.τ ≫ e.inv.τ = 𝟙 _ :=
+by rw [← comp_τ, e.hom_inv_id, id_τ]
+
+@[simp, reassoc]
+lemma iso_inv_hom_τ (e : E₁ ≅ E₂) : e.inv.τ ≫ e.hom.τ = 𝟙 _ :=
+by rw [← comp_τ, e.inv_hom_id, id_τ]
 
 @[simps]
 instance has_vadd : has_vadd (A ⟶ B) (E₁ ⟶ E₂) :=
@@ -214,6 +244,38 @@ lemma vadd_vsub (g : A ⟶ B) (f : E₁ ⟶ E₂) :
 by rw [← cancel_mono E₂.i, ← cancel_epi E₁.p, p_has_vsub_vsub_i, has_vadd_vadd_τ, add_sub_cancel]
 
 @[simps]
+def iso_trivial_equiv (e : extension A B) :
+  (e ≅ trivial A B) ≃ (short_complex.mk _ _ e.w).splitting :=
+{ to_fun := λ φ,
+  { r := φ.hom.τ ≫ biprod.fst,
+    s := biprod.inr ≫ φ.inv.τ,
+    f_r := by simp only [hom.commi_assoc, trivial_i, biprod.inl_fst],
+    s_g := by simp only [assoc, hom.commp, trivial_p, biprod.inr_snd],
+    id := begin
+      dsimp,
+      rw [← cancel_epi φ.inv.τ, ← cancel_mono φ.hom.τ],
+      simp only [assoc, preadditive.comp_add, iso_inv_hom_τ_assoc, hom.commp_assoc,
+        trivial_p, preadditive.add_comp, hom.commi, trivial_i, iso_inv_hom_τ, comp_id],
+      erw [comp_id],
+      dsimp,
+      rw biprod.total,
+    end },
+  inv_fun := λ s, as_iso
+  { τ := biprod.lift s.r e.p,
+    commi' := begin
+      ext,
+      { simp only [assoc, biprod.lift_fst, trivial_i, biprod.inl_fst, s.f_r], },
+      { simp only [w, assoc, biprod.lift_snd, trivial_i, biprod.inl_snd], },
+    end, },
+  left_inv := λ φ, begin
+    ext,
+    { tidy, },
+    { dsimp,
+      simpa only [biprod.lift_snd] using φ.hom.commp'.symm, },
+  end,
+  right_inv := λ s, short_complex.splitting.ext_r _ _ (by simp), }
+
+@[simps]
 def pull {A' : C} (E : extension A B) (π : A' ⟶ A) : extension A' B :=
 { X := pullback E.p π,
   i := pullback.lift E.i 0 (by simp),
@@ -245,7 +307,6 @@ def pull_functor {A A' : C} (π : A' ⟶ A) (B : C) : extension A B ⥤ extensio
 { obj := λ E, E.pull π,
   map := λ E₁ E₂ f,
   { τ := pullback.map _ _ _ _ f.τ (𝟙 A') (𝟙 A) (by simp) (by simp), }, }
-
 
 def pull_functor_id (A B : C) : pull_functor (𝟙 A) B ≅ 𝟭 _ :=
 nat_iso.of_components

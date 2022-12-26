@@ -180,6 +180,16 @@ begin
     by simp only [eq, functor.map_comp, is_iso.inv_comp, assoc, is_iso.hom_inv_id_assoc]⟩,
 end
 
+lemma shift_is_le (K : derived_category C) (a b c : ℤ) (h : a = c + b)
+  [K.is_le a] : (K⟦b⟧).is_le c :=
+⟨λ n hn, is_zero.of_iso (is_le.is_zero _ a _ (by linarith))
+  ((derived_category.shift_homology_functor_iso C b n _ rfl).app K)⟩
+
+lemma shift_is_ge (K : derived_category C) (a b c : ℤ) (h : a = c + b)
+  [K.is_ge a] : (K⟦b⟧).is_ge c :=
+⟨λ n hn, is_zero.of_iso (is_ge.is_zero _ a _ (by linarith))
+  ((derived_category.shift_homology_functor_iso C b n _ rfl).app K)⟩
+
 end derived_category
 
 namespace cochain_complex

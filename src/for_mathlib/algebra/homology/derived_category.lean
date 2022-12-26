@@ -104,7 +104,7 @@ nat_iso.of_components
 end
 
 def shift_homology_functor_iso [abelian C] (n k m : ℤ) (h : k + n = m) :
-  shift_functor _ n ⋙ homology_functor C (complex_shape.up ℤ) k ≅
+  category_theory.shift_functor _ n ⋙ homology_functor C (complex_shape.up ℤ) k ≅
     homology_functor C _ m :=
 (functor.associator _ _ _).symm ≪≫ iso_whisker_right (shift_short_complex_functor_iso C _ _ _ h) _
 
@@ -493,10 +493,14 @@ def homology_functor_factors_Qh (n : ℤ) :
     homotopy_category.homology_functor C (complex_shape.up ℤ) n :=
 localization.lifting.iso _ (homotopy_category.acyclic C).W _ _
 
-def homology_functor_factors (n : ℤ) :
+instance homology_functor_lifting (n : ℤ) : localization.lifting Q (quasi_isomorphisms C (complex_shape.up ℤ))
+  (_root_.homology_functor C _ n) (homology_functor C n) :=
+⟨functor.associator _ _ _ ≪≫ iso_whisker_left _ ((homology_functor_factors_Qh C n)) ≪≫
+  homotopy_category.homology_factors C _ n⟩
+
+lemma homology_functor_factors (n : ℤ) :
   Q ⋙ homology_functor C n ≅ _root_.homology_functor C (complex_shape.up ℤ) n :=
-functor.associator _ _ _ ≪≫ iso_whisker_left _ ((homology_functor_factors_Qh C n)) ≪≫
-  homotopy_category.homology_factors C _ n
+localization.lifting.iso _ (quasi_isomorphisms C (complex_shape.up ℤ)) _ _
 
 instance homology_functor_preserves_zero_morphisms (n : ℤ) :
   (homology_functor C n).preserves_zero_morphisms :=
@@ -554,5 +558,21 @@ begin
   dsimp [Q],
   rw homotopy_category.eq_of_homotopy _ _ h,
 end
+
+@[instance]
+instance shift_functor_comp_homology_lifting (a b : ℤ) :
+  localization.lifting Q (quasi_isomorphisms C (complex_shape.up ℤ))
+  (shift_functor (cochain_complex C ℤ) a ⋙ _root_.homology_functor C (complex_shape.up ℤ) b)
+  (shift_functor (derived_category C) a ⋙ homology_functor C b) :=
+⟨(functor.associator _ _ _).symm ≪≫ iso_whisker_right (comm_shift_Q C a).symm _ ≪≫
+    functor.associator _ _ _ ≪≫ iso_whisker_left _ (homology_functor_factors C b)⟩
+
+variable (C)
+
+def shift_homology_functor_iso [abelian C] (n k m : ℤ) (h : k + n = m):
+  shift_functor _ n ⋙ homology_functor C k ≅
+    homology_functor C m :=
+localization.lift_nat_iso Q (quasi_isomorphisms C _) _ _ _ _
+    (cochain_complex.shift_homology_functor_iso C n k m h)
 
 end derived_category

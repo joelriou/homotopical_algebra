@@ -10,9 +10,6 @@ namespace homological_complex
 variables {C ι : Type*} [category C] [has_zero_morphisms C] [has_zero_object C]
   (c : complex_shape ι) (n : ι) [decidable_eq ι]
 
-instance : preserves_finite_limits (single C c n) := sorry
-instance : preserves_finite_colimits (single C c n) := sorry
-
 end homological_complex
 
 variables {C : Type*} [category C] [abelian C]
@@ -349,17 +346,23 @@ begin
     erw id_comp, },
 end
 
-lemma δ_nat_trans_injective' (e₁ e₂ : extension A B)
-  (h : e₁.δ = e₂.δ) : nonempty (e₁ ≅ e₂) :=
+lemma _root_.category_theory.abelian.extension.δ_eq_iff (e₁ e₂ : extension A B) :
+  (e₁.δ = e₂.δ) ↔ nonempty (e₁ ≅ e₂) :=
 begin
-  obtain ⟨β, hβ₁, hβ₂⟩ := pretriangulated.complete_distinguished_triangle_morphism₂ _ _
-    e₁.triangle_distinguished e₂.triangle_distinguished (𝟙 _) (𝟙 _)
-    (by simpa only [category_theory.functor.map_id, comp_id, id_comp] using h),
-  let γ : e₁.triangle ⟶ e₂.triangle :=
-  { hom₁ := 𝟙 _,
-    hom₂ := β,
-    hom₃ := 𝟙 _, },
-  exact ⟨extension.iso_of_triangle_map e₁ e₂ γ rfl rfl⟩,
+  split,
+  { intro h,
+    obtain ⟨β, hβ₁, hβ₂⟩ := pretriangulated.complete_distinguished_triangle_morphism₂ _ _
+      e₁.triangle_distinguished e₂.triangle_distinguished (𝟙 _) (𝟙 _)
+      (by simpa only [category_theory.functor.map_id, comp_id, id_comp] using h),
+    let γ : e₁.triangle ⟶ e₂.triangle :=
+    { hom₁ := 𝟙 _,
+      hom₂ := β,
+      hom₃ := 𝟙 _, },
+    exact ⟨extension.iso_of_triangle_map e₁ e₂ γ rfl rfl⟩, },
+  { rintro ⟨h⟩,
+    change extensions.δ (quot.mk _ e₁) = extensions.δ (quot.mk _ e₂),
+    congr' 1,
+    exact quot.sound ⟨h⟩, },
 end
 
 variables (A B)
@@ -368,8 +371,9 @@ lemma δ_nat_trans_bijective :
   function.bijective (@extensions.δ _ _ _ A B) :=
 begin
   split,
-  { rintros ⟨e₁⟩ ⟨e₂⟩ h,
-    exact quot.sound (δ_nat_trans_injective' _ _ h), },
+  { rintros ⟨e₁⟩ ⟨e₂⟩ (h : e₁.δ = e₂.δ),
+    rw extension.δ_eq_iff at h,
+    exact quot.sound h, },
   { intro φ,
     obtain ⟨e, rfl⟩ := δ_nat_trans_surjective' φ,
     exact ⟨quotient.mk' e, rfl⟩, },
@@ -393,5 +397,34 @@ variable (C)
 def δ_nat_iso := as_iso (δ_nat_trans C)
 
 end extensions
+
+namespace extension
+
+variables (A B : C)
+
+@[simp]
+lemma trivial.δ : (trivial A B).δ = 0 :=
+begin
+  haveI : is_split_epi (abelian.extension.trivial A B).triangle.mor₂ := is_split_epi.mk'
+  { section_ := Q.map ((homological_complex.single _ _ _).map biprod.inr),
+    id' := begin
+      erw [← functor.map_comp, ← functor.map_comp, biprod.inr_snd,
+        category_theory.functor.map_id, category_theory.functor.map_id],
+      refl,
+    end, },
+  simpa only [← cancel_epi (abelian.extension.trivial A B).triangle.mor₂, comp_zero]
+    using pretriangulated.triangle.comp_zero₂₃ _ (trivial A B).triangle_distinguished,
+end
+
+
+variables {A B}
+
+lemma δ_eq_zero_iff (e : extension A B) : e.δ = 0 ↔ nonempty (e ≅ trivial A B) :=
+by simp only [← extension.δ_eq_iff, trivial.δ]
+
+lemma δ_neq_zero_iff (e : extension A B) : e.δ ≠ 0 ↔ is_empty (e ≅ trivial A B) :=
+by simpa only [not_nonempty_iff] using e.δ_eq_zero_iff.not
+
+end extension
 
 end category_theory.abelian
