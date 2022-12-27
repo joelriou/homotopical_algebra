@@ -169,7 +169,7 @@ def shift_homology_functor_iso [abelian C] (n k m : ℤ) (h : k + n = m) :
 
 variable {C}
 
-def shift_homology_functor_iso_hom_app [abelian C] (n k m : ℤ) (h : k + n = m)
+lemma shift_homology_functor_iso_hom_app [abelian C] (n k m : ℤ) (h : k + n = m)
   (X : cochain_complex C ℤ) :
   (shift_homology_functor_iso C n k m h).hom.app X =
     short_complex.homology_map ((shift_short_complex_functor_iso C _ _ _ h).hom.app X) :=
@@ -179,7 +179,11 @@ lemma shift_functor_add'_inv_app_comp_zero_hom_app_eq [abelian C] (n' n k : ℤ)
   (X : cochain_complex C ℤ) :
     ((category_theory.shift_functor_add' (cochain_complex C ℤ) n' n 0 h).inv.app X : _ ⟶ _).f k ≫
   ((shift_functor_zero (homological_complex C (complex_shape.up ℤ)) ℤ).hom.app X : _ ⟶ _).f k =
-  eq_to_hom (congr_arg X.X (show k+n+n' = k, by rw [← add_left_inj n, add_assoc, ← h, add_zero])) := sorry
+  eq_to_hom (congr_arg X.X (show k+n+n' = k, by rw [← add_left_inj n, add_assoc, ← h, add_zero])) :=
+begin
+  rw [shift_functor_add'_eq, shift_functor_zero_eq],
+  apply eq_to_hom_trans,
+end
 
 @[simp, reassoc]
 lemma shift_homology_functor_iso_hom_app_comp [abelian C] (n k m n' : ℤ)
@@ -416,6 +420,25 @@ def comm_shift_Q (n : ℤ) :
     Q ⋙ shift_functor (derived_category C) n :=
 functor.comm_shift_comp (quotient.comm_shift _ _) (shift.localization_comm_shift _ _ _)
 
+lemma shift_functor_add'_hom_app_Q_obj (a b c : ℤ) (h : c = a + b)
+  (K : cochain_complex C ℤ) :
+  ((shift_functor_add' (derived_category C) a b c) h).hom.app (Q.obj K) =
+    (comm_shift_Q C c).inv.app K ≫
+      Q.map (((shift_functor_add' _ a b c) h).hom.app K) ≫
+      (comm_shift_Q C b).hom.app (K⟦a⟧) ≫
+      (shift_functor (derived_category C) b).map ((comm_shift_Q C a).hom.app K) :=
+begin
+  sorry,
+end
+
+lemma shift_functor_zero_hom_app_Q_obj (K : cochain_complex C ℤ) :
+  (shift_functor_zero (derived_category C) ℤ).hom.app (Q.obj K) =
+    (comm_shift_Q C 0).inv.app K ≫ Q.map ((shift_functor_zero _ ℤ).hom.app K) :=
+begin
+  sorry,
+end
+
+
 variable {C}
 
 lemma is_iso_Q_map_iff {K L : cochain_complex C ℤ} (φ : K ⟶ L) :
@@ -604,6 +627,12 @@ def homology_functor_factors (n : ℤ) :
   Q ⋙ homology_functor C n ≅ _root_.homology_functor C (complex_shape.up ℤ) n :=
 localization.lifting.iso _ (quasi_isomorphisms C (complex_shape.up ℤ)) _ _
 
+@[simp]
+lemma lifting_iso_eq_homology_functor_factors (n : ℤ) :
+  localization.lifting.iso Q (quasi_isomorphisms C (complex_shape.up ℤ))
+    (_root_.homology_functor C (complex_shape.up ℤ) n) (homology_functor C n) =
+homology_functor_factors C n := rfl
+
 instance homology_functor_preserves_zero_morphisms (n : ℤ) :
   (homology_functor C n).preserves_zero_morphisms :=
 functor.is_homological.localization_lift_preserves_zero_morphisms _ _ _
@@ -662,12 +691,24 @@ begin
 end
 
 @[instance]
-instance shift_functor_comp_homology_lifting (a b : ℤ) :
+def shift_functor_comp_homology_lifting (a b : ℤ) :
   localization.lifting Q (quasi_isomorphisms C (complex_shape.up ℤ))
   (shift_functor (cochain_complex C ℤ) a ⋙ _root_.homology_functor C (complex_shape.up ℤ) b)
   (shift_functor (derived_category C) a ⋙ homology_functor C b) :=
 ⟨(functor.associator _ _ _).symm ≪≫ iso_whisker_right (comm_shift_Q C a).symm _ ≪≫
     functor.associator _ _ _ ≪≫ iso_whisker_left _ (homology_functor_factors C b)⟩
+
+@[simp]
+lemma shift_functor_comp_homology_lifting_iso_hom_app (a b : ℤ) (X : cochain_complex C ℤ) :
+  (localization.lifting.iso Q (quasi_isomorphisms C (complex_shape.up ℤ))
+  (shift_functor (cochain_complex C ℤ) a ⋙ _root_.homology_functor C (complex_shape.up ℤ) b)
+  (shift_functor (derived_category C) a ⋙ homology_functor C b)).hom.app X =
+    (homology_functor C b).map ((comm_shift_Q C a).inv.app X) ≫
+      (homology_functor_factors C b).hom.app (X⟦a⟧) :=
+begin
+  dsimp [shift_functor_comp_homology_lifting],
+  simp only [id_comp],
+end
 
 variable (C)
 
@@ -682,7 +723,29 @@ lemma shift_homology_functor_iso_hom_comp (n k m n' : ℤ) (h : k+n=m) (h' : m+n
     (shift_homology_functor_iso C n k m h).hom ≫ (shift_homology_functor_iso C n' m k h').hom =
   (whisker_right ((shift_functor_add' (derived_category C) n' n 0
       (by rw [← add_right_inj m, ← add_assoc, h', h, add_zero])).inv ≫
-      (shift_functor_zero (derived_category C) ℤ).hom) (homology_functor C k)) := sorry
+      (shift_functor_zero (derived_category C) ℤ).hom) (homology_functor C k)) :=
+localization.nat_trans_ext Q (quasi_isomorphisms C _) _ _ (λ K, begin
+  dsimp only [whisker_left, whisker_right, nat_trans.comp_app,
+    shift_homology_functor_iso, localization.lift_nat_iso],
+  simp only [assoc, localization.lift_nat_trans_app,
+    shift_functor_comp_homology_lifting_iso_hom_app,
+    ← nat_trans.naturality_assoc, functor.comp_map],
+  erw localization.lift_nat_trans_app,
+  simp only [assoc, lifting_iso_eq_homology_functor_factors, iso.inv_hom_id_app_assoc,
+    shift_functor_comp_homology_lifting_iso_hom_app,
+    cochain_complex.shift_homology_functor_iso_hom_app_comp_assoc,
+    (homology_functor_factors C k).inv.naturality, functor.comp_map,
+    iso.hom_inv_id_app_assoc, ← functor.map_comp,
+    shift_functor_zero_hom_app_Q_obj],
+  congr' 1,
+  simp only [← cancel_epi ((shift_functor_add' (derived_category C)
+    n' n 0 (by linarith)).hom.app (Q.obj K)), iso.hom_inv_id_app_assoc],
+  simp only [assoc, shift_functor_add'_hom_app_Q_obj C],
+  slice_lhs 4 5 { erw [← functor.map_comp, iso.hom_inv_id_app,
+    category_theory.functor.map_id], },
+  erw [id_comp, iso.hom_inv_id_app_assoc],
+  rw [Q.map_comp, ← Q.map_comp_assoc, iso.hom_inv_id_app, Q.map_id, id_comp],
+end)
 
 lemma shift_homology_functor_iso_hom_app_comp (n k m n' : ℤ) (h : k+n=m) (h' : m+n' = k)
   (X : derived_category C) :

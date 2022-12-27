@@ -4,6 +4,7 @@ import algebra.homology.homological_complex
 import algebra.homology.homotopy_category
 import for_mathlib.category_theory.quotient_shift
 import for_mathlib.algebra.homology.hom_complex
+import for_mathlib.category_theory.shift_misc
 
 noncomputable theory
 
@@ -114,6 +115,33 @@ begin
     shift_functor_add_hom_app_f, shift_functor_add_inv_app_f,
     homological_complex.X_iso_of_eq, eq_to_iso.inv, eq_to_iso.hom, eq_to_hom_app,
     homological_complex.eq_to_hom_f, eq_to_hom_trans],
+end
+
+variable (C)
+
+lemma shift_functor_add'_eq (a b c : ℤ) (h : c = a + b) :
+  category_theory.shift_functor_add' (cochain_complex C ℤ) a b c h =
+    (shift_functor_add' C a b c h).symm :=
+begin
+  subst h,
+  dsimp only [category_theory.shift_functor_add'],
+  ext K n,
+  dsimp only [iso.trans, shift_functor_add', nat_iso.of_components,
+    nat_trans.comp_app, homological_complex.comp_f, hom.iso_of_components],
+  simp only [eq_to_hom_app, eq_to_hom_f, shift_functor_add_hom_app_f,
+    X_iso_of_eq, eq_to_iso, eq_to_hom_trans, eq_to_hom_refl, nat_trans.id_app,
+    homological_complex.id_f, id_comp],
+end
+
+lemma shift_functor_zero_eq  :
+  (category_theory.shift_functor_zero (cochain_complex C ℤ) ℤ) =
+    (shift_functor_zero' C 0 rfl) :=
+begin
+  change (category_theory.shift_functor_zero (cochain_complex C ℤ) ℤ).symm.symm =
+    (shift_functor_zero' C 0 rfl).symm.symm,
+  congr' 1,
+  ext1,
+  refl,
 end
 
 end cochain_complex
