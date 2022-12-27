@@ -10,6 +10,37 @@ open category_theory category_theory.category category_theory.limits
   category_theory.triangulated category_theory.pretriangulated
 open_locale zero_object
 
+namespace category_theory.pretriangulated
+
+variables {D : Type*} [category D] [has_zero_object D] [has_shift D ℤ] [preadditive D]
+  [∀ (n : ℤ), (shift_functor D n).additive] [pretriangulated D]
+
+namespace triangle
+
+def distinguished (T : triangle D) : Prop :=
+  T ∈ dist_triang D
+
+namespace distinguished
+
+variable {T : triangle D}
+
+lemma comp_zero₁₂ (h : T.distinguished) : T.mor₁ ≫ T.mor₂ = 0 := comp_zero₁₂ _ h
+lemma comp_zero₂₃ (h : T.distinguished) : T.mor₂ ≫ T.mor₃ = 0 :=
+(candidate_triangle.of_distinguished _ h).2.zero₂₃
+lemma comp_zero₃₁ (h : T.distinguished) : T.mor₃ ≫ T.mor₁⟦(1 : ℤ)⟧' = 0 :=
+(candidate_triangle.of_distinguished _ h).2.zero₃₁
+
+lemma rotate (h : T.distinguished) : T.rotate.distinguished :=
+rot_of_dist_triangle D T h
+lemma inv_rotate (h : T.distinguished) : T.inv_rotate.distinguished :=
+inv_rot_of_dist_triangle D T h
+
+end distinguished
+
+end triangle
+
+end category_theory.pretriangulated
+
 section
 
 variables {C ι : Type*} [category C]
@@ -54,7 +85,35 @@ def shift_eval_next : (shift_functor _ n) ⋙ homological_complex.eval C _ ((com
 preadditive.mul_iso ((-1 : units ℤ)^n) (eq_to_iso (congr_arg (homological_complex.eval _ _)
   (show (complex_shape.up ℤ).next k + n = (complex_shape.up ℤ).next m, by { simp, linarith, })))
 
+omit h
+
 variable {C}
+
+lemma shift_eval_prev_hom_app_eq (X : cochain_complex C ℤ) :
+  (shift_eval_prev C n k m h).hom.app X =
+    (-1 : units ℤ)^n • eq_to_hom (congr_arg X.X
+      (by rw [prev, prev, ← h, ← add_left_inj (1 : ℤ), sub_add_cancel, sub_eq_add_neg,
+        add_assoc k, add_comm _ n, add_assoc, int.add_neg_one, sub_add_cancel])) :=
+begin
+  dsimp [shift_eval_prev],
+  simpa only [nat_trans.app_zsmul, eq_to_hom_app],
+end
+
+lemma shift_eval_hom_app_eq (X : cochain_complex C ℤ) :
+  (shift_eval C n k m h).hom.app X = eq_to_hom (congr_arg X.X h) :=
+begin
+  dsimp [shift_eval],
+  apply eq_to_hom_app,
+end
+
+lemma shift_eval_next_hom_app_eq (X : cochain_complex C ℤ) :
+  (shift_eval_next C n k m h).hom.app X =
+    (-1 : units ℤ)^n • eq_to_hom (congr_arg X.X
+    (by rw [next, next, ← h, add_assoc, add_assoc, add_comm _ n])) :=
+begin
+  dsimp [shift_eval_next],
+  simpa only [nat_trans.app_zsmul, eq_to_hom_app],
+end
 
 lemma shift_eval_prev_hom_app_comp_d_to :
   (shift_eval_prev C n k m h).hom.app K ≫ K.d_to m =
@@ -107,6 +166,49 @@ def shift_homology_functor_iso [abelian C] (n k m : ℤ) (h : k + n = m) :
   category_theory.shift_functor _ n ⋙ homology_functor C (complex_shape.up ℤ) k ≅
     homology_functor C _ m :=
 (functor.associator _ _ _).symm ≪≫ iso_whisker_right (shift_short_complex_functor_iso C _ _ _ h) _
+
+variable {C}
+
+def shift_homology_functor_iso_hom_app [abelian C] (n k m : ℤ) (h : k + n = m)
+  (X : cochain_complex C ℤ) :
+  (shift_homology_functor_iso C n k m h).hom.app X =
+    short_complex.homology_map ((shift_short_complex_functor_iso C _ _ _ h).hom.app X) :=
+id_comp _
+
+lemma shift_functor_add'_inv_app_comp_zero_hom_app_eq [abelian C] (n' n k : ℤ) (h : 0 = n' + n)
+  (X : cochain_complex C ℤ) :
+    ((category_theory.shift_functor_add' (cochain_complex C ℤ) n' n 0 h).inv.app X : _ ⟶ _).f k ≫
+  ((shift_functor_zero (homological_complex C (complex_shape.up ℤ)) ℤ).hom.app X : _ ⟶ _).f k =
+  eq_to_hom (congr_arg X.X (show k+n+n' = k, by rw [← add_left_inj n, add_assoc, ← h, add_zero])) := sorry
+
+@[simp, reassoc]
+lemma shift_homology_functor_iso_hom_app_comp [abelian C] (n k m n' : ℤ)
+  (h : k+n=m) (h' : m+n' = k) (X : cochain_complex C ℤ) :
+  (shift_homology_functor_iso C n k m h).hom.app (X⟦n'⟧) ≫ (shift_homology_functor_iso C n' m k h').hom.app X =
+  (_root_.homology_functor C _ k).map
+    ((category_theory.shift_functor_add' (cochain_complex C ℤ) n' n 0
+      (by rw [← add_right_inj m, ← add_assoc, h', h, add_zero])).inv.app X ≫
+    (category_theory.shift_functor_zero _ ℤ).hom.app X) :=
+begin
+  have hn' : n' = -n := by linarith,
+  subst hn',
+  simp only [shift_homology_functor_iso_hom_app, homology_functor_map,
+    ← short_complex.homology_map_comp],
+  dsimp only [homological_complex.short_complex_functor,
+      homological_complex.comp_f],
+  congr' 1,
+  ext1; dsimp only; rw shift_functor_add'_inv_app_comp_zero_hom_app_eq;
+    dsimp [shift_short_complex_functor_iso],
+  { simp only [shift_eval_prev_hom_app_eq],
+    erw [preadditive.comp_zsmul, preadditive.zsmul_comp, smul_smul, eq_to_hom_trans],
+    simpa only [← units.coe_mul, ← zpow_add, neg_add_self n,
+      zpow_zero, units.coe_one, one_zsmul], },
+  { simpa only [shift_eval_hom_app_eq, eq_to_hom_trans], },
+  { simp only [shift_eval_next_hom_app_eq],
+    erw [preadditive.comp_zsmul, preadditive.zsmul_comp, smul_smul, eq_to_hom_trans],
+    simpa only [← units.coe_mul, ← zpow_add, neg_add_self n,
+      zpow_zero, units.coe_one, one_zsmul], },
+end
 
 end cochain_complex
 
@@ -375,7 +477,7 @@ def mapping_cone_δ : mapping_cone φ ⟶ (Q.obj K)⟦(1 : ℤ)⟧ :=
 def mapping_cone_triangle : triangle (derived_category C) :=
 triangle.mk (Q.map φ) (ι_mapping_cone φ) (mapping_cone_δ φ)
 
-lemma Qh_map_mapping_cone_triangle_iso :
+def Qh_map_mapping_cone_triangle_iso :
   (Qh.map_triangle.obj (homotopy_category.mapping_cone_triangle' φ) ≅
     mapping_cone_triangle φ) :=
 begin -- needs cleaning up...
@@ -396,7 +498,7 @@ end
 
 end
 
-def mem_dist_triang_iff' (T : triangle (derived_category C)) :
+lemma mem_dist_triang_iff' (T : triangle (derived_category C)) :
   (T ∈ dist_triang (derived_category C)) ↔
     ∃ (K L : cochain_complex C ℤ) (φ : K ⟶ L),
       nonempty (T ≅
@@ -409,7 +511,7 @@ begin
     exact ⟨_, e, ⟨K, L, φ, ⟨iso.refl _⟩⟩⟩, },
 end
 
-def mem_dist_triang_iff (T : triangle (derived_category C)) :
+lemma mem_dist_triang_iff (T : triangle (derived_category C)) :
   (T ∈ dist_triang (derived_category C)) ↔
     ∃ (K L : cochain_complex C ℤ) (φ : K ⟶ L),
       nonempty (T ≅ mapping_cone_triangle φ) :=
@@ -498,7 +600,7 @@ instance homology_functor_lifting (n : ℤ) : localization.lifting Q (quasi_isom
 ⟨functor.associator _ _ _ ≪≫ iso_whisker_left _ ((homology_functor_factors_Qh C n)) ≪≫
   homotopy_category.homology_factors C _ n⟩
 
-lemma homology_functor_factors (n : ℤ) :
+def homology_functor_factors (n : ℤ) :
   Q ⋙ homology_functor C n ≅ _root_.homology_functor C (complex_shape.up ℤ) n :=
 localization.lifting.iso _ (quasi_isomorphisms C (complex_shape.up ℤ)) _ _
 
@@ -569,10 +671,82 @@ instance shift_functor_comp_homology_lifting (a b : ℤ) :
 
 variable (C)
 
-def shift_homology_functor_iso [abelian C] (n k m : ℤ) (h : k + n = m):
-  shift_functor _ n ⋙ homology_functor C k ≅
-    homology_functor C m :=
+def shift_homology_functor_iso (n k m : ℤ) (h : k + n = m):
+  shift_functor _ n ⋙ homology_functor C k ≅ homology_functor C m :=
 localization.lift_nat_iso Q (quasi_isomorphisms C _) _ _ _ _
     (cochain_complex.shift_homology_functor_iso C n k m h)
+
+@[simp, reassoc]
+lemma shift_homology_functor_iso_hom_comp (n k m n' : ℤ) (h : k+n=m) (h' : m+n' = k) :
+  whisker_left (shift_functor (derived_category C) n')
+    (shift_homology_functor_iso C n k m h).hom ≫ (shift_homology_functor_iso C n' m k h').hom =
+  (whisker_right ((shift_functor_add' (derived_category C) n' n 0
+      (by rw [← add_right_inj m, ← add_assoc, h', h, add_zero])).inv ≫
+      (shift_functor_zero (derived_category C) ℤ).hom) (homology_functor C k)) := sorry
+
+lemma shift_homology_functor_iso_hom_app_comp (n k m n' : ℤ) (h : k+n=m) (h' : m+n' = k)
+  (X : derived_category C) :
+  (shift_homology_functor_iso C n k m h).hom.app (X⟦n'⟧) ≫ (shift_homology_functor_iso C n' m k h').hom.app X =
+  (homology_functor C k).map ((shift_functor_add' (derived_category C) n' n 0 (by linarith)).inv.app X ≫
+      (shift_functor_zero (derived_category C) ℤ).hom.app X) :=
+congr_app (shift_homology_functor_iso_hom_comp C n k m n' h h') X
+
+section
+
+variables {C} {T : triangle (derived_category C)}
+
+lemma homology_sequence.ex₂ (hT : T.distinguished) (n : ℤ) :
+  (short_complex.mk ((homology_functor C n).map T.mor₁) ((homology_functor C n).map T.mor₂)
+    (by simp only [← functor.map_comp, hT.comp_zero₁₂, functor.map_zero])).exact :=
+functor.is_homological.map_distinguished (homology_functor C n) T hT
+
+def homology_sequence.δ (hT : T.distinguished) (n₀ n₁ : ℤ) (h : n₁ = n₀+1) :
+  (homology_functor C n₀).obj T.obj₃ ⟶ (homology_functor C n₁).obj T.obj₁ :=
+(homology_functor C n₀).map T.mor₃ ≫
+  (shift_homology_functor_iso C _ _ _ h.symm).hom.app T.obj₁
+
+@[simp, reassoc]
+lemma homology_sequence.δ_comp (hT : T.distinguished) (n₀ n₁ : ℤ) (h : n₁ = n₀+1) :
+  homology_sequence.δ hT _ _ h ≫ (homology_functor C n₁).map T.mor₁ = 0 :=
+begin
+  dsimp only [homology_sequence.δ],
+  simp only [assoc, ← nat_trans.naturality, functor.comp_map, ← functor.map_comp_assoc,
+    hT.comp_zero₃₁, functor.map_zero, zero_comp],
+end
+
+@[simp, reassoc]
+lemma homology_sequence.comp_δ (hT : T.distinguished) (n₀ n₁ : ℤ) (h : n₁ = n₀+1) :
+  (homology_functor C n₀).map T.mor₂ ≫ homology_sequence.δ hT _ _ h = 0 :=
+begin
+  dsimp only [homology_sequence.δ],
+  rw [← functor.map_comp_assoc, hT.comp_zero₂₃, functor.map_zero, zero_comp],
+end
+
+lemma homology_sequence_ex₃ (hT : T.distinguished) (n₀ n₁ : ℤ) (h : n₁ = n₀+1) :
+  (short_complex.mk ((homology_functor C n₀).map T.mor₂) (homology_sequence.δ hT _ _ h)
+    (by simp)).exact :=
+begin
+  refine (short_complex.exact_iff_of_iso _).1 (homology_sequence.ex₂ hT.rotate n₀),
+  exact short_complex.mk_iso (iso.refl _) (iso.refl _)
+    ((shift_homology_functor_iso C _ _ _ h.symm).app _)
+    (by { dsimp, simp only [id_comp, comp_id], }) (id_comp _),
+end
+
+lemma homology_sequence_ex₁ (hT : T.distinguished) (n₀ n₁ : ℤ) (h : n₁ = n₀+1) :
+  (short_complex.mk (homology_sequence.δ hT _ _ h) ((homology_functor C n₁).map T.mor₁)
+    (by simp)).exact :=
+begin
+  refine (short_complex.exact_iff_of_iso _).1 (homology_sequence.ex₂ hT.inv_rotate n₁),
+  refine short_complex.mk_iso (preadditive.mul_iso (-1) ((shift_homology_functor_iso C (-1) n₁ n₀ (by linarith)).app _))
+    (iso.refl _) (iso.refl _) _ _,
+  { dsimp only [triangle.inv_rotate, preadditive.mul_iso, iso.refl, triangle.mk, homology_sequence.δ],
+    simp only [comp_id, functor.map_neg, units.coe_neg_one, neg_smul, one_smul,
+      preadditive.neg_comp, neg_inj, iso.app_hom, ← nat_trans.naturality_assoc,
+      functor.comp_map, functor.map_comp, shift_homology_functor_iso_hom_app_comp,
+      shift_functor_comp_shift_functor_neg_eq_add'_comp_zero], },
+  { dsimp, simp only [id_comp, comp_id], },
+end
+
+end
 
 end derived_category

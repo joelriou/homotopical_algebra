@@ -47,4 +47,12 @@ end
 
 end functor
 
+lemma shift_functor_comp_shift_functor_neg_eq_add'_comp_zero
+  {G : Type*} [add_group G] [has_shift C G] (n : G) (X : C) :
+  (shift_functor_comp_shift_functor_neg C n).hom.app X =
+    (shift_functor_add' C n (-n) 0 (add_neg_self n).symm).inv.app X ≫
+      (shift_functor_zero C G).hom.app X :=
+by simpa only [shift_functor_add', eq_to_hom_map, unit_of_tensor_iso_unit_hom_app,
+  eq_to_iso.hom, iso.trans_inv, nat_trans.comp_app, assoc]
+
 end category_theory
