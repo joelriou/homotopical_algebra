@@ -99,6 +99,9 @@ begin
   simp only [zpow_neg, ← inv_zpow, inv_neg, inv_one],
 end
 
+lemma ε_sub (n₁ n₂ : ℤ) : ε (n₁ - n₂) = ε n₁ * ε n₂ :=
+by simp only [sub_eq_add_neg, ε_add, ε_neg]
+
 lemma ε_eq_iff (n₁ n₂ : ℤ) : ε n₁ = ε n₂ ↔
   even (n₁ - n₂) :=
 begin
