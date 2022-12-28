@@ -4,6 +4,13 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Joël Riou
 -/
 
+/-
+The purpose of this file is to show that a bounded above complexes of
+projective objects in an abelian category is K-projective. It is now
+broken due to the homology refactor...
+-/
+
+/-
 import for_mathlib.algebra.homology.hom_complex
 import category_theory.abelian.projective
 
@@ -240,3 +247,4 @@ end
 end hom_complex
 
 end cochain_complex
+-/

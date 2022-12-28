@@ -21,21 +21,19 @@ open algebraic_topology cochain_complex.hom_complex category_theory.preadditive
 
 open_locale zero_object
 
-variables (C : Type*) [category C]
+variables (C : Type*) [category C] [abelian C]
 
 namespace cochain_complex
 
 variables (α : Type*) [add_right_cancel_semigroup α] [has_one α]
 
-def quasi_isomorphisms [has_zero_morphisms C] [has_cokernels C] [has_images C] [has_equalizers C]
-  [has_zero_object C] [has_image_maps C] :
+def quasi_isomorphisms :
   morphism_property (cochain_complex C α) :=
 λ X Y w, quasi_iso w
 
 namespace quasi_isomorphisms
 
-lemma mem_iff [has_zero_morphisms C] [has_cokernels C] [has_images C] [has_equalizers C]
-  [has_zero_object C] [has_image_maps C] {X Y : cochain_complex C α} (f : X ⟶ Y) :
+lemma mem_iff {X Y : cochain_complex C α} (f : X ⟶ Y) :
   quasi_isomorphisms C α f ↔ quasi_iso f := by refl
 
 end quasi_isomorphisms

@@ -21,8 +21,6 @@ instance : strong_epi (factor_thru_image θ) :=
 strong_epi_factor_thru_image_of_strong_epi_mono_factorisation
   (has_strong_epi_mono_factorisations.has_fac θ).some
 
-instance : epi (factor_thru_image θ) := strong_epi.epi
-
 lemma is_iso_of_epi_and_card [hθ : epi θ] (h : X.len = Y.len) : is_iso θ :=
 begin
   apply is_iso_of_bijective,

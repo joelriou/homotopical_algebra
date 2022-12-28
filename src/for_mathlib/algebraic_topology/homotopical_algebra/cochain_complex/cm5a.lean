@@ -10,7 +10,6 @@ import category_theory.abelian.basic
 import for_mathlib.algebra.homology.twist_cocycle
 import for_mathlib.algebraic_topology.homotopical_algebra.cochain_complex.basic
 import for_mathlib.algebra.homology.homological_complex_biprod
-import for_mathlib.algebra.homology.quasi_iso_misc
 
 noncomputable theory
 
@@ -198,7 +197,7 @@ def homotopy_equiv_i : homotopy_equiv K (obj f) :=
 
 lemma i_is_weq :
   projective_structure.arrow_classes.weq (i f) :=
-quasi_iso.of_homotopy_equiv (homotopy_equiv_i f)
+(homotopy_equiv_i f).to_quasi_iso
 
 lemma i_is_triv_cof :
   projective_structure.arrow_classes.triv_cof (i f) := ⟨i_is_cof f, i_is_weq f⟩
