@@ -150,12 +150,12 @@ omit L
 
 instance : has_shift W.localization A := shift.localization W.Q W A
 
-variable {A}
-
-@[simp]
-def localization_comm_shift (a : A) :
-  shift_functor C a ⋙ L ≅ L ⋙ @shift_functor D A _ _ (shift.localization L W A) a :=
-(localization.fac _ _ _).symm
+--variable {A}
+--
+--@[simp]
+--def localization_comm_shift (a : A) :
+--  shift_functor C a ⋙ L ≅ L ⋙ @shift_functor D A _ _ (shift.localization L W A) a :=
+--(localization.fac _ _ _).symm
 
 end shift
 
@@ -414,8 +414,11 @@ include hC
 instance additive_shift_localization (n : ℤ) :
   functor.additive (shift_functor W.localization n) := infer_instance
 
-instance W_Q_has_comm_shift : W.Q.has_comm_shift ℤ := sorry
---  (shift.localization_comm_shift W.Q W (1 : ℤ))))
+/-- It would be nicer to use the canonical iso
+  `shift_functor C a ⋙ W.Q ≅ W.Q ⋙ shift_functor W.localization a` for all `a` (rather
+  than just `1`), and prove they satisfies the zero and add axioms. -/
+instance W_Q_has_comm_shift : W.Q.has_comm_shift ℤ :=
+(functor.comm_shift.equiv_ℤ W.Q).symm (localization.fac _ _ _).symm
 
 instance localization_pretriangulated : pretriangulated W.localization :=
 (infer_instance : pretriangulated (localization W.Q W))
