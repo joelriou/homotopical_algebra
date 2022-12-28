@@ -471,7 +471,7 @@ variable (C)
 
 def single_functor_shift_iso (a b c : ℤ) (h : a = c + b) :
   (single_functor C a) ⋙ category_theory.shift_functor _ b ≅ (single_functor C c) :=
-functor.associator _ _ _ ≪≫ iso_whisker_left _ (comm_shift_Q C b).symm ≪≫
+functor.associator _ _ _ ≪≫ iso_whisker_left _ (Q.comm_shift_iso b).symm ≪≫
   (functor.associator _ _ _).symm ≪≫
   iso_whisker_right (cochain_complex.single_shift_iso C _ _ _ h) Q
 
@@ -480,7 +480,7 @@ variable {C}
 @[simp]
 lemma single_functor_shift_iso_hom_app (a b c : ℤ) (h : a = c + b) (X : C) :
   (single_functor_shift_iso C a b c h).hom.app X =
-    (comm_shift_Q C b).inv.app ((homological_complex.single C _ a).obj X) ≫
+    (Q.comm_shift_iso b).inv.app ((homological_complex.single C _ a).obj X) ≫
       Q.map ((cochain_complex.single_shift_iso C a b c h).hom.app X) :=
 begin
   dsimp [single_functor_shift_iso],
@@ -491,7 +491,7 @@ end
 lemma single_functor_shift_iso_inv_app (a b c : ℤ) (h : a = c + b) (X : C) :
   (single_functor_shift_iso C a b c h).inv.app X =
     Q.map ((cochain_complex.single_shift_iso C a b c h).inv.app X) ≫
-    (comm_shift_Q C b).hom.app ((homological_complex.single C _ a).obj X) :=
+    (Q.comm_shift_iso b).hom.app ((homological_complex.single C _ a).obj X) :=
 begin
   dsimp [single_functor_shift_iso],
   simp only [comp_id],

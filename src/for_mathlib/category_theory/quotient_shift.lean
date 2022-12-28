@@ -152,15 +152,16 @@ has_shift_mk _ _
   right_unitality := λ a X, by simpa using congr_app (shift_right_unitality h a) X, }
 
 def functor_comm_shift :
-  @functor.comm_shift _ _ _ _ (functor r) A _ _
+  @functor.has_comm_shift _ _ _ _ (functor r) A _ _
     (quotient.shift h) :=
 { iso := quotient.comm_shift h,
   iso_add := λ a b, begin
     ext K,
     dsimp,
-    simp only [shift.compatibility.comm_shift.comp_hom_app, comm_shift_hom_app, id_comp],
-    erw [functor.map_id, id_comp, id_comp, shift_μ_hom_app, ← functor.map_comp,
-      iso.inv_hom_id_app, functor.map_id],
+    simp only [functor.comm_shift.add_hom_app, comm_shift_hom_app, id_comp],
+    erw [functor.map_id, id_comp, id_comp],
+    change _ ≫ (shift_μ h a b).hom.app ((functor r).obj K) = _,
+    erw [shift_μ_hom_app, ← functor.map_comp, iso.inv_hom_id_app, functor.map_id],
   end,
   iso_zero := begin
     ext K,

@@ -552,12 +552,11 @@ def category_inclusion : triangulated_functor A.category C :=
 
 def Q [is_triangulated C] : triangulated_functor C A.W.localization :=
 begin
-  let F := localization_functor (W A).Q (W A)
-    (shift.localization_comm_shift (W A).Q (W A) (1 : ℤ)),
+  let F := localization_functor (W A).Q (W A),
   exact F,
 end
 
-/- TODO : -> for triangulated.lean
+/- TODO :
 1) show a universal property for the triangulated functor `L` : if
 `G : D ⥤ E` is a functor which lifts a triangulated functor `F : C ⥤ E`
 then `G` is a triangulated functor.

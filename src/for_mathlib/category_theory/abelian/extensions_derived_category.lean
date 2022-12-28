@@ -147,7 +147,7 @@ begin
     e.compatibility_mapping_cone_σ, functor.map_neg, Q.map_comp, preadditive.neg_inv,
     is_iso.inv_comp, neg_neg, assoc,
     ← cancel_epi (Q.map (cochain_complex.double_iso_mapping_cone e.i).hom), mapping_cone_δ,
-    ← cancel_mono ((comm_shift_Q C 1).inv.app ((homological_complex.single C _ 0).obj B)),
+    ← cancel_mono ((Q.comm_shift_iso (1 : ℤ)).inv.app ((homological_complex.single C _ 0).obj B)),
     iso.hom_inv_id_app, single_functor_shift_iso_inv_app, compatibility_mapping_cone_π],
     erw [← Q.map_comp, iso.hom_inv_id_app, Q.map_id],
     refl,

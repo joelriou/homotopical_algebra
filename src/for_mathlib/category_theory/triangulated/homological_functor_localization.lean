@@ -73,31 +73,31 @@ variables {C D A : Type*} [category C] [has_zero_object C] [has_shift C ℤ]
   (W : morphism_property C) [L.is_localization W] [functor.additive L]
   [W.compatible_with_shift ℤ] [left_calculus_of_fractions W]
   [right_calculus_of_fractions W] [morphism_property.compatible_with_triangulation W]
-  (comm_shift : shift_functor C (1 : ℤ) ⋙ L ≅ L ⋙ shift_functor D (1 : ℤ))
+  [L.has_comm_shift ℤ]
   [category A] [abelian A]
 
 section
 
-variables (G : C ⥤ A) (F : (localization L W comm_shift) ⥤ A)
+variables (G : C ⥤ A) (F : (localization L W) ⥤ A)
   [preserves_zero_morphisms G] [localization.lifting L W G F]
 
-include L W comm_shift
+include L W
 
-instance : ess_surj (localization_functor L W comm_shift).to_functor :=
+instance : ess_surj (localization_functor L W).to_functor :=
 begin
   haveI := localization.ess_surj L W,
-  exact ess_surj.of_iso (localization.functor_iso_L L comm_shift).symm,
+  exact ess_surj.of_iso (localization.functor_iso_L L).symm,
 end
 
 lemma localization_preserves_zero_morphisms' : F.preserves_zero_morphisms :=
-localization_preserves_zero_morphisms_aux (localization_functor L W comm_shift) F
+localization_preserves_zero_morphisms_aux (localization_functor L W) F
   (preserves_zero_morphisms.of_iso ((localization.lifting.iso L W G F).symm ≪≫
-  iso_whisker_right (localization.functor_iso_L L comm_shift).symm F))
+  iso_whisker_right (localization.functor_iso_L L).symm F))
 
 lemma localization' [F.preserves_zero_morphisms] [G.is_homological] :
   F.is_homological :=
 begin
-  refine localization_aux (localization_functor L W comm_shift) _ F _,
+  refine localization_aux (localization_functor L W) _ F _,
   { intros T hT,
     obtain ⟨T', e, hT'⟩ := hT,
     exact ⟨T', hT', ⟨e⟩⟩, },
@@ -117,11 +117,11 @@ include G
 
 lemma localization_preserves_zero_morphisms : F.preserves_zero_morphisms :=
 @localization_preserves_zero_morphisms' C W.localization A _ _ _ _ _ _ _ _ _
-  _ _ W.Q W _ _ _ _ _ _ (shift.localization_comm_shift W.Q W (1 : ℤ))_ _ G F _ _
+  _ _ W.Q W _ _ _ _ _ _ _ _ _ G F _ _
 
 lemma localization [F.preserves_zero_morphisms] [G.is_homological] :
   F.is_homological :=
-localization' W.Q W (shift.localization_comm_shift W.Q W (1 : ℤ)) G F
+localization' W.Q W G F
 
 instance localization_lift_preserves_zero_morphisms [G.is_homological] (hG : W.is_inverted_by G) :
   (localization.lift G hG W.Q).preserves_zero_morphisms :=

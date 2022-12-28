@@ -1,5 +1,4 @@
 import category_theory.shift
-import for_mathlib.category_theory.quotient_misc
 
 noncomputable theory
 
@@ -15,6 +14,13 @@ variable (C)
 def shift_functor_add' (a b c : A) (h : c = a + b) :
   shift_functor C c ≅ shift_functor C a ⋙ shift_functor C b :=
 eq_to_iso (by rw h) ≪≫ shift_functor_add C a b
+
+lemma shift_functor_add'_eq_shift_functor_add (a b : A) :
+  shift_functor_add' C a b (a+b) rfl = shift_functor_add C a b :=
+begin
+  ext1,
+  apply id_comp,
+end
 
 namespace functor
 

@@ -2,6 +2,7 @@ import category_theory.shift
 import tactic.linarith
 import for_mathlib.category_theory.functor.shift_compatibility
 import for_mathlib.category_theory.triangulated.shift_compatibility
+import for_mathlib.category_theory.shift_misc
 
 noncomputable theory
 
@@ -9,9 +10,9 @@ namespace category_theory
 
 open category
 
-variables {C D : Type*} [category C] [category D] (F : C ⥤ D)
+variables {C D E : Type*} [category C] [category D] [category E] (F : C ⥤ D)
   {A G : Type*} [add_monoid A] [add_group G]
-  [has_shift C A] [has_shift D A]
+  [has_shift C A] [has_shift D A] [has_shift E A]
   [hCℤ : has_shift C ℤ] [hDℤ : has_shift D ℤ]
 
 namespace functor
@@ -23,6 +24,15 @@ namespace comm_shift
 def unit : shift_functor C (0 : A) ⋙ F ≅ F ⋙ shift_functor D (0 : A) :=
 shift.compatibility.comm_shift.unit _ _ F
 
+@[simp]
+lemma unit_hom_app (X : C) :
+  (unit F A).hom.app X = F.map ((shift_functor_zero C A).hom.app X) ≫
+    (shift_functor_zero D A).inv.app (F.obj X) :=
+begin
+  dsimp [unit, shift.compatibility.comm_shift.unit],
+  erw [id_comp, id_comp],
+end
+
 variables {F A}
 
 @[simp]
@@ -31,11 +41,20 @@ def change {a b : A} (e : shift_functor C a ⋙ F ≅ F ⋙ shift_functor D a)
   shift_functor C b ⋙ F ≅ F ⋙ shift_functor D b :=
 shift.compatibility.comm_shift.change e (eq_to_iso (by subst h))
 
-@[simp]
 def add {a b : A} (e₁ : shift_functor C a ⋙ F ≅ F ⋙ shift_functor D a)
   (e₂ : shift_functor C b ⋙ F ≅ F ⋙ shift_functor D b) :
   shift_functor C (a + b) ⋙ F ≅ F ⋙ shift_functor D (a + b) :=
 shift.compatibility.comm_shift.comp e₁ e₂
+
+@[simp]
+lemma add_hom_app {a b : A} (e₁ : shift_functor C a ⋙ F ≅ F ⋙ shift_functor D a)
+  (e₂ : shift_functor C b ⋙ F ≅ F ⋙ shift_functor D b) (X : C) :
+  (add e₁ e₂).hom.app X = F.map ((shift_functor_add C a b).hom.app X) ≫
+    e₂.hom.app (X⟦a⟧) ≫ (e₁.hom.app X)⟦b⟧' ≫ (shift_functor_add D a b).inv.app (F.obj X) :=
+begin
+  dsimp [add, shift.compatibility.comm_shift.comp],
+  erw [id_comp, id_comp, id_comp],
+end
 
 @[simp]
 def add' {a b c : A} (h : a + b = c) (e₁ : shift_functor C a ⋙ F ≅ F ⋙ shift_functor D a)
@@ -148,25 +167,42 @@ end comm_shift
 variables (F A)
 
 @[ext, nolint has_nonempty_instance]
-structure comm_shift :=
+class has_comm_shift :=
 (iso : Π (a : A), shift_functor C a ⋙ F ≅ F ⋙ shift_functor D a)
 (iso_zero : iso 0 = comm_shift.unit F A)
 (iso_add : ∀ (a b : A), iso (a + b) = comm_shift.add (iso a) (iso b))
+
+variable {A}
+def comm_shift_iso [F.has_comm_shift A] (a : A) :
+  shift_functor C a ⋙ F ≅ F ⋙ shift_functor D a :=
+has_comm_shift.iso a
+
+lemma comm_shift_iso_add [F.has_comm_shift A] (a b : A) :
+  F.comm_shift_iso (a + b) = comm_shift.add (F.comm_shift_iso a) (F.comm_shift_iso b) :=
+has_comm_shift.iso_add _ _
+
+variable (A)
+
+lemma comm_shift_iso_zero [F.has_comm_shift A] :
+  F.comm_shift_iso (0 : A) = comm_shift.unit F A :=
+has_comm_shift.iso_zero
+
+variable {A}
+lemma comm_shift_congr_iso {a b : A} [F.has_comm_shift A] (h : a = b) (X : C) :
+  (F.comm_shift_iso a).hom.app X = eq_to_hom (by rw h) ≫
+    (F.comm_shift_iso b).hom.app X ≫ eq_to_hom (by rw h) :=
+by { subst h, simp only [eq_to_hom_refl, comp_id, id_comp], }
 
 namespace comm_shift
 
 variables {F A}
 
-lemma congr_iso {a b : A} (e : F.comm_shift A) (h : a = b) (X : C) :
-  (e.iso a).hom.app X = eq_to_hom (by rw h) ≫ (e.iso b).hom.app X ≫ eq_to_hom (by rw h) :=
-by { subst h, simp only [eq_to_hom_refl, comp_id, id_comp], }
-
-lemma iso_add_eq_of_iso_eq (e₁ e₂ : F.comm_shift A) (a b : A)
+lemma iso_add_eq_of_iso_eq (e₁ e₂ : F.has_comm_shift A) (a b : A)
   (ha : e₁.iso a = e₂.iso a) (hb : e₁.iso b = e₂.iso b) :
   e₁.iso (a + b) = e₂.iso (a + b) :=
 by rw [e₁.iso_add, e₂.iso_add, ha, hb]
 
-lemma iso_eq_of_iso_add_eq (e₁ e₂ : F.comm_shift A) (a b : A)
+lemma iso_eq_of_iso_add_eq (e₁ e₂ : F.has_comm_shift A) (a b : A)
   (hb : e₁.iso b = e₂.iso b) (hab : e₁.iso (a + b) = e₂.iso (a+b))
   [is_equivalence (shift_functor D b)] : e₁.iso a = e₂.iso a :=
 (comm_shift.add_bijective (e₁.iso b) a).1
@@ -175,7 +211,7 @@ lemma iso_eq_of_iso_add_eq (e₁ e₂ : F.comm_shift A) (a b : A)
 include hCℤ hDℤ
 
 @[ext]
-lemma eq_of_iso_one_eq (e₁ e₂ : F.comm_shift ℤ)
+lemma eq_of_iso_one_eq (e₁ e₂ : F.has_comm_shift ℤ)
   (h : e₁.iso (1 : ℤ) = e₂.iso (1 : ℤ)) : e₁ = e₂ :=
 begin
   suffices : ∀ (n : ℕ), e₁.iso (n : ℤ) = e₂.iso (n : ℤ),
@@ -327,7 +363,7 @@ end mk_ℤ
 def mk'_ℤ (iso : Π (a : ℤ), shift_functor C a ⋙ F ≅ F ⋙ shift_functor D a)
   (iso_zero : iso 0 = comm_shift.unit F ℤ)
   (iso_add_one : ∀ (a : ℤ), iso (a + 1) = comm_shift.add (iso a) (iso 1)) :
-  comm_shift F ℤ :=
+  has_comm_shift F ℤ :=
 { iso := iso,
   iso_zero := iso_zero,
   iso_add := begin
@@ -367,37 +403,44 @@ def mk'_ℤ (iso : Π (a : ℤ), shift_functor C a ⋙ F ≅ F ⋙ shift_functor
 
 @[simps]
 def mk_ℤ (e : shift_functor C (1 : ℤ) ⋙ F ≅ F ⋙ shift_functor D (1 : ℤ)) :
-  comm_shift F ℤ :=
+  has_comm_shift F ℤ :=
 mk'_ℤ (mk_ℤ.iso_ℤ e) rfl (λ a, (mk_ℤ.iso_ℤ_add_one e a).symm)
 
 variable (F)
 
 @[simps]
-def equiv_ℤ : comm_shift F ℤ ≃
+def equiv_ℤ : has_comm_shift F ℤ ≃
   (shift_functor C (1 : ℤ) ⋙ F ≅ F ⋙ shift_functor D (1 : ℤ)) :=
 { to_fun := λ c, c.iso 1,
   inv_fun := λ e, mk_ℤ e,
   left_inv := λ c, by { ext, refl, },
   right_inv := λ e, rfl, }
 
-lemma iso_add_hom_app {F : C ⥤ D} (h : F.comm_shift ℤ) (p q : ℤ) (X : C) :
-  (h.iso (p+q)).hom.app X = F.map ((shift_functor_add C p q).hom.app X) ≫
-    (h.iso q).hom.app (X⟦p⟧) ≫ ((h.iso p).hom.app X)⟦q⟧' ≫
-    (shift_functor_add D p q).inv.app (F.obj X) :=
-by simp only [h.iso_add, add, shift.compatibility.comm_shift.comp_hom_app, iso.symm_hom,
-  iso.symm_inv, monoidal_functor.μ_iso_hom]
+end comm_shift
 
-lemma map_shift_functor_add_comm {F : C ⥤ D} (h : F.comm_shift ℤ) (p q : ℤ) (X : C) :
+variable {A}
+
+lemma iso_add_hom_app (F : C ⥤ D) [F.has_comm_shift A] (p q : A) (X : C) :
+  (F.comm_shift_iso (p+q)).hom.app X = F.map ((shift_functor_add C p q).hom.app X) ≫
+    (F.comm_shift_iso q).hom.app (X⟦p⟧) ≫ ((F.comm_shift_iso p).hom.app X)⟦q⟧' ≫
+    (shift_functor_add D p q).inv.app (F.obj X) :=
+begin
+  simp only [comm_shift_iso_add, comm_shift.add, shift.compatibility.comm_shift.comp_hom_app,
+    iso.symm_hom, iso.symm_inv, monoidal_functor.μ_iso_hom],
+end
+
+lemma map_shift_functor_add_comm {A : Type*} [add_comm_monoid A] (F : C ⥤ D)
+  [has_shift C A] [has_shift D A] [F.has_comm_shift A] (p q : A) (X : C) :
     F.map ((shift_functor_add_comm C p q).hom.app X) ≫
-      (h.iso p).hom.app (X⟦q⟧) ≫ ((h.iso q).hom.app X)⟦p⟧' =
-    (h.iso q).hom.app (X⟦p⟧) ≫ ((h.iso p).hom.app X)⟦q⟧' ≫
+      (F.comm_shift_iso p).hom.app (X⟦q⟧) ≫ ((F.comm_shift_iso q).hom.app X)⟦p⟧' =
+    (F.comm_shift_iso q).hom.app (X⟦p⟧) ≫ ((F.comm_shift_iso p).hom.app X)⟦q⟧' ≫
       (shift_functor_add_comm D p q).hom.app (F.obj X) :=
 begin
-  have eq₁ := h.iso_add_hom_app p q X,
+  have eq₁ := F.iso_add_hom_app p q X,
   simp only [← cancel_mono ((shift_functor_add D p q).hom.app (F.obj X)),
     assoc, iso.inv_hom_id_app] at eq₁,
   erw comp_id at eq₁,
-  have eq₂ := h.iso_add_hom_app q p X,
+  have eq₂ := F.iso_add_hom_app q p X,
   simp only [← cancel_epi (F.map ((shift_functor_add C q p).inv.app X)),
     ← F.map_comp_assoc, iso.inv_hom_id_app, F.map_id, id_comp] at eq₂,
   simp only [← cancel_epi (F.map ((shift_functor_add C p q).hom.app X)),
@@ -407,10 +450,79 @@ begin
   dsimp only [shift_functor_add_comm, iso.symm, iso.trans, nat_trans.comp_app],
   simpa only [F.map_comp, ← F.map_comp_assoc, assoc, eq_to_iso, eq_to_hom_app, eq_to_hom_map,
     iso.hom_inv_id_app, iso.hom_inv_id_app_assoc, F.map_id, id_comp, comp_id,
-    h.congr_iso (add_comm p q), assoc, eq_to_hom_trans, eq_to_hom_refl],
+    F.comm_shift_congr_iso (add_comm p q), assoc, eq_to_hom_trans, eq_to_hom_refl],
 end
 
-end comm_shift
+@[reassoc]
+lemma compatibility_composition (F₁ : C ⥤ D) (F₂ : D ⥤ E)
+  [F₁.has_comm_shift A] [F₂.has_comm_shift A] (a b : A) (X : C) :
+  F₂.map ((shift_functor D b).map ((F₁.comm_shift_iso a).hom.app X)) ≫
+  (F₂.comm_shift_iso b).hom.app ((shift_functor D a).obj (F₁.obj X)) =
+  (F₂.comm_shift_iso b).hom.app (F₁.obj ((shift_functor C a).obj X)) ≫
+    (shift_functor E b).map (F₂.map ((F₁.comm_shift_iso a).hom.app X)) :=
+begin
+  let α := (F₁.comm_shift_iso a).hom,
+  let β := (F₂.comm_shift_iso b).hom,
+  have eq := nat_trans.exchange (F₁.comm_shift_iso a).hom (𝟙 _) (𝟙 _) (F₂.comm_shift_iso b).hom,
+  simp only [id_comp, comp_id] at eq,
+  replace eq := congr_app eq.symm X,
+  dsimp at eq,
+  simpa only [assoc, id_comp, functor.map_id, comp_id] using eq,
+end
+
+instance has_comm_shift_comp (F₁ : C ⥤ D) (F₂ : D ⥤ E)
+  [F₁.has_comm_shift A] [F₂.has_comm_shift A] : (F₁ ⋙ F₂).has_comm_shift A :=
+{ iso := λ a, comm_shift_comp (F₁.comm_shift_iso a) (F₂.comm_shift_iso a),
+  iso_zero := begin
+    ext X,
+    simp only [comm_shift_comp_hom_app, F₁.comm_shift_iso_zero A,
+      F₂.comm_shift_iso_zero A],
+    dsimp only [comm_shift.unit, shift.compatibility.comm_shift.unit],
+    simp only [iso.trans_hom, iso_whisker_right_hom, iso.symm_hom,
+      iso_whisker_left_hom, monoidal_functor.ε_iso_hom,
+      nat_trans.comp_app, whisker_right_app, left_unitor_hom_app, right_unitor_inv_app,
+      whisker_left_app, id_comp, map_comp, assoc, comp_map],
+    erw [functor.map_id, id_comp, id_comp],
+    dsimp [monoidal_functor.ε_iso],
+    nth_rewrite 1 ← F₂.map_comp_assoc,
+    rw [← nat_trans.comp_app, is_iso.hom_inv_id],
+    erw [F₂.map_id, id_comp],
+  end,
+  iso_add := λ a b, begin
+    ext X,
+    simp only [assoc, comm_shift_comp_hom_app, comm_shift.add_hom_app, comp_map,
+      comm_shift_iso_add, functor.map_comp, comp],
+    slice_lhs 4 5 { erw [← F₂.map_comp, iso.inv_hom_id_app, F₂.map_id], },
+    simpa only [assoc, id_comp, compatibility_composition_assoc],
+  end, }
+
+lemma shift_functor_add'_hom_app_obj [F.has_comm_shift A] (a b c : A) (h : c = a + b)
+  (K : C) :
+  ((shift_functor_add' D a b c) h).hom.app (F.obj K) =
+    (F.comm_shift_iso c).inv.app K ≫
+      F.map (((shift_functor_add' _ a b c) h).hom.app K) ≫
+      (F.comm_shift_iso b).hom.app (K⟦a⟧) ≫
+      (shift_functor D b).map ((F.comm_shift_iso a).hom.app K) :=
+begin
+  subst h,
+  simp only [shift_functor_add'_eq_shift_functor_add, F.comm_shift_iso_add,
+    comm_shift.add, iso.symm_hom, shift.compatibility.comm_shift.comp_inv_app, assoc,
+    ← F.map_comp_assoc, μ_hom_inv_app],
+  erw [F.map_id, id_comp, iso.inv_hom_id_app_assoc, ← functor.map_comp,
+    iso.inv_hom_id_app, functor.map_id, comp_id],
+end
+
+variable (A)
+
+lemma shift_functor_zero_hom_app_obj [F.has_comm_shift A] (K : C) :
+  (shift_functor_zero D A).hom.app (F.obj K) =
+    (F.comm_shift_iso 0).inv.app K ≫ F.map ((shift_functor_zero C A).hom.app K) :=
+begin
+  rw F.comm_shift_iso_zero,
+  dsimp [comm_shift.unit, shift.compatibility.comm_shift.unit],
+  erw [comp_id, comp_id, assoc, ← F.map_comp],
+  simp only [ε_hom_inv_app, map_id, comp_id],
+end
 
 end functor
 

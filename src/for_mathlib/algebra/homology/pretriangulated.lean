@@ -380,11 +380,15 @@ triangle.mk (ε n • T.mor₁⟦n⟧') (ε n • T.mor₂⟦n⟧') (ε n • T.
 instance cochain_complex_shift_functor_additive (n : ℤ) :
   (category_theory.shift_functor (cochain_complex C ℤ) n).additive := { }
 
+instance has_comm_shift :
+  (homotopy_category.quotient C (complex_shape.up ℤ)).has_comm_shift ℤ :=
+quotient.functor_comm_shift _
+
 @[simps, reducible]
 def quotient_triangulated_functor_struct :
   triangulated_functor_struct (cochain_complex C ℤ) (homotopy_category C (complex_shape.up ℤ)) :=
 { to_functor := homotopy_category.quotient _ _,
-  comm_shift := quotient.comm_shift _ _, }
+  comm_shift := functor.comm_shift_iso _ 1 }
 
 def induced_triangle (T : triangle (cochain_complex C ℤ)) :
   triangle (homotopy_category C (complex_shape.up ℤ)) :=
@@ -575,12 +579,11 @@ begin
   suffices : (triangle.shift_functor _ n).obj (mapping_cone_triangle' φ)
     ∈ distinguished_triangles C,
   { exact isomorphic_distinguished _ this _ (functor.map_iso _ e), },
-  let h : (homotopy_category.quotient C (complex_shape.up ℤ)).comm_shift ℤ :=
-    quotient.functor_comm_shift _,
   exact ⟨K⟦n⟧, L⟦n⟧, φ⟦n⟧',
     ⟨(triangle.shift_functor (homotopy_category C (complex_shape.up ℤ)) n).map_iso
     (mapping_cone_induced_triangle_iso φ).symm ≪≫
-    ((triangle.shift_functor_comm h n).app (mapping_cone.triangle φ)).symm ≪≫
+    ((triangle.shift_functor_comm
+      ((homotopy_category.quotient C (complex_shape.up ℤ))) n).app _).symm ≪≫
     quotient_triangulated_functor_struct.map_triangle.map_iso (shift_mapping_cone_triangle_iso φ n) ≪≫
     (mapping_cone_induced_triangle_iso _)⟩⟩,
 end
