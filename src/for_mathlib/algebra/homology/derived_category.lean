@@ -20,6 +20,12 @@ namespace triangle
 def distinguished (T : triangle D) : Prop :=
   T ∈ dist_triang D
 
+lemma distinguished_iff (T : triangle D) :
+  T.distinguished ↔ T ∈ dist_triang D := by refl
+
+lemma distinguished.mk (T : triangle D) (hT : T ∈ dist_triang D) : T.distinguished :=
+hT
+
 namespace distinguished
 
 variable {T : triangle D}
@@ -40,6 +46,8 @@ end distinguished
 end triangle
 
 end category_theory.pretriangulated
+
+open category_theory.triangulated category_theory.pretriangulated
 
 section
 
@@ -550,8 +558,8 @@ def triangle_of_ses {S : short_complex (cochain_complex C ℤ)}
 triangle.mk (Q.map S.f) (Q.map S.g) (triangle_of_ses_δ ex)
 
 lemma triangle_of_ses_dist {S : short_complex (cochain_complex C ℤ)}
-  (ex : S.short_exact) : triangle_of_ses ex ∈ dist_triang (derived_category C) :=
-begin
+  (ex : S.short_exact) : (triangle_of_ses ex).distinguished :=
+triangle.distinguished.mk _ begin
   rw mem_dist_triang_iff,
   refine ⟨_, _, S.f, ⟨_⟩⟩,
   refine triangle.mk_iso _ _ (iso.refl _) (iso.refl _)
@@ -773,7 +781,7 @@ begin
   rw [← functor.map_comp_assoc, hT.comp_zero₂₃, functor.map_zero, zero_comp],
 end
 
-lemma homology_sequence_ex₃ (hT : T.distinguished) (n₀ n₁ : ℤ) (h : n₁ = n₀+1) :
+lemma homology_sequence.ex₃ (hT : T.distinguished) (n₀ n₁ : ℤ) (h : n₁ = n₀+1) :
   (short_complex.mk ((homology_functor C n₀).map T.mor₂) (homology_sequence.δ hT _ _ h)
     (by simp)).exact :=
 begin
@@ -783,7 +791,7 @@ begin
     (by { dsimp, simp only [id_comp, comp_id], }) (id_comp _),
 end
 
-lemma homology_sequence_ex₁ (hT : T.distinguished) (n₀ n₁ : ℤ) (h : n₁ = n₀+1) :
+lemma homology_sequence.ex₁ (hT : T.distinguished) (n₀ n₁ : ℤ) (h : n₁ = n₀+1) :
   (short_complex.mk (homology_sequence.δ hT _ _ h) ((homology_functor C n₁).map T.mor₁)
     (by simp)).exact :=
 begin
