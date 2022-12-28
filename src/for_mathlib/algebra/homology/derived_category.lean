@@ -712,6 +712,24 @@ def shift_homology_functor_iso (n k m : ℤ) (h : k + n = m):
 localization.lift_nat_iso Q (quasi_isomorphisms C _) _ _ _ _
     (cochain_complex.shift_homology_functor_iso C n k m h)
 
+variable {C}
+
+lemma shift_homology_functor_iso_hom_app_Q_obj (n k m : ℤ) (h : k + n = m)
+  (X : cochain_complex C ℤ) :
+  (shift_homology_functor_iso C n k m h).hom.app (Q.obj X) =
+  (homology_functor C k).map ((Q.comm_shift_iso n).inv.app X) ≫
+      (homology_functor_factors C k).hom.app (X⟦n⟧) ≫
+      ((cochain_complex.shift_homology_functor_iso C n k m h).hom.app X) ≫
+      (homology_functor_factors C m).inv.app X :=
+begin
+  dsimp only [shift_homology_functor_iso],
+  simp only [localization.lift_nat_iso_hom, localization.lift_nat_trans_app,
+    shift_functor_comp_homology_lifting_iso_hom_app,
+    lifting_iso_eq_homology_functor_factors, assoc],
+end
+
+variable (C)
+
 @[simp, reassoc]
 lemma shift_homology_functor_iso_hom_comp (n k m n' : ℤ) (h : k+n=m) (h' : m+n' = k) :
   whisker_left (shift_functor (derived_category C) n')
