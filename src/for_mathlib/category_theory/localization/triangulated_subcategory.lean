@@ -19,13 +19,27 @@ namespace set
 open category_theory
 
 class respects_iso {X : Type*} [category X] (A : set X) : Prop :=
-(condition : ∀ ⦃x y : X⦄ (e : x ≅ y) (hx : x ∈ A), y ∈ A)
+(condition' : ∀ ⦃x y : X⦄ (e : x ≅ y) (hx : x ∈ A), y ∈ A)
+
+lemma respects_iso.condition {X : Type*} [category X] (A : set X) [A.respects_iso]
+  {x y : X} (e : x ≅ y) (hx : x ∈ A) : y ∈ A :=
+respects_iso.condition' e hx
+
+lemma respects_iso.mem_iff_of_iso {X : Type*} [category X] (A : set X) [A.respects_iso]
+  {x y : X} (e : x ≅ y) : x ∈ A ↔ y ∈ A :=
+begin
+  split,
+  { exact respects_iso.condition A e, },
+  { exact respects_iso.condition A e.symm, },
+end
 
 end set
 
+open category_theory
+
 namespace category_theory
 
-open limits category preadditive
+open limits category preadditive category_theory
 
 namespace functor
 
@@ -64,7 +78,7 @@ namespace subcategory
 
 variable (A : subcategory C)
 
-lemma respects_iso : A.set.respects_iso :=
+instance set_respects_iso : A.set.respects_iso :=
 ⟨λ X Y e hX, A.ext₂ _ (pretriangulated.isomorphic_distinguished _
   (pretriangulated.contractible_distinguished X) (triangle.mk e.hom (0 : Y ⟶ 0) 0)
   (triangle.mk_iso _ _ (iso.refl _) e.symm (iso.refl _) (by tidy) (by tidy) (by tidy))) hX A.zero⟩
@@ -85,7 +99,7 @@ begin
   { intro h,
     exact A.shift X n h, },
   { intro h,
-    refine (respects_iso A).condition
+    exact set.respects_iso.condition A.set
       ((add_neg_equiv (shift_monoidal_functor C ℤ) n).unit_iso.symm.app X) (A.shift _ (-n) h), },
 end
 
@@ -276,11 +290,10 @@ begin
   { intros J₁ J₂ e hJ₁, introI, intros X hX,
     haveI : finite J₁ := finite.of_equiv _ e.symm,
     haveI := has_product_of_equiv X e,
-    have pouf := hJ₁ (X ∘ e) (λ j₁, hX _),
-    exact (subcategory.respects_iso A).condition (product_iso_of_equiv X e)
+    exact set.respects_iso.condition A.set(product_iso_of_equiv X e)
       (hJ₁ (X ∘ e) (λ j₁, hX _)), },
   { introI, intros X hX,
-    refine (subcategory.respects_iso A).condition _ A.zero,
+    refine set.respects_iso.condition A.set  _ A.zero,
     refine (limits.is_zero.iso_zero _).symm,
     haveI : mono (0 : ∏ X ⟶ 0),
     { constructor,
@@ -292,7 +305,7 @@ begin
   { intro J,
     introI,
     intros hJ hJ' X hX,
-    exact (subcategory.respects_iso A).condition (product_iso_option X).symm
+    exact set.respects_iso.condition _ (product_iso_option X).symm
       (binary_product_stable A _ _ (hJ (λ j, X (some j)) (λ j, hX _)) (hX none)), },
 end
 
@@ -398,7 +411,7 @@ lemma category_closed_under_finite_products (J : Type) [finite J] :
   closed_under_limits_of_shape (discrete J) A.set :=
 λ F c hc mem, begin
   let X := λ j, F.obj ⟨j⟩,
-  refine A.respects_iso.condition _ (A.pi_finite_stable X (λ j, mem ⟨j⟩)),
+  refine set.respects_iso.condition A.set _ (A.pi_finite_stable X (λ j, mem ⟨j⟩)),
   exact
   { hom := hc.lift (cone.mk (∏ X) (discrete.nat_trans (by { rintro ⟨i⟩, exact pi.π _ i,}))),
     inv := pi.lift (λ i, c.π.app ⟨i⟩),

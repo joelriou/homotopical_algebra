@@ -1,5 +1,6 @@
 import for_mathlib.category_theory.abelian.extension_example
 import for_mathlib.algebra.homology.homology_sequence
+import for_mathlib.algebra.homology.k_projective
 
 noncomputable theory
 
@@ -167,3 +168,23 @@ begin
   /- Then, we use a general orthogonality condition -/
   apply t_structure_condition,
 end
+
+/-- By definition, a cochain complex `K` is K-projective if for any acyclic complex `L`,
+all the maps `K ⟶ L` are null homotopic (Spaltenstein). Then, if `K` is K-projective,
+morphisms from `Q.obj K` in the derived category can be computed as homotopy classes
+of maps. -/
+example (K L : cochain_complex C ℤ) [K.is_K_projective] :
+  function.bijective (Qh.to_functor.map :
+    ((homotopy_category.quotient C (complex_shape.up ℤ)).obj K ⟶
+    (homotopy_category.quotient C (complex_shape.up ℤ)).obj L) → (Q.obj K ⟶ Q.obj L)) :=
+Qh_map_bijective_of_is_K_projective K L
+
+/-- A key technical result is that a bounded above complex consisting of
+projective objects is K-projective. -/
+example (K : cochain_complex C ℤ) (n : ℤ) [K.is_strictly_le n]
+  [∀ (n : ℤ), projective (K.X n)] : K.is_K_projective :=
+cochain_complex.is_K_projective_of_bounded_above_of_projective K n
+
+/- It follows from the two previous results that there is a full embedding from
+the homotopy category of bounded above complexes of projectives objects into the
+derived category. -/
