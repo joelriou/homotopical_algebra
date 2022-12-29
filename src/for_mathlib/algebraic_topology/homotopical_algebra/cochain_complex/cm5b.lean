@@ -14,7 +14,11 @@ namespace bounded_above_cochain_complex
 
 namespace projective_model_structure
 
-def CM5b : (arrow_classes : category_with_fib_cof_weq (bounded_above_cochain_complex C)).CM5b := sorry
+def CM5b : (arrow_classes : category_with_fib_cof_weq (bounded_above_cochain_complex C)).CM5b :=
+begin
+  intro,
+  sorry
+end
 
 def CM5 : (arrow_classes : category_with_fib_cof_weq (bounded_above_cochain_complex C)).CM5 :=
   ⟨CM5a, CM5b⟩

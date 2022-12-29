@@ -10,7 +10,6 @@ import for_mathlib.category_theory.preadditive.mono_with_projective_coker
 --import category_theory.preadditive.projective
 --import algebra.homology.homological_complex
 import algebra.homology.quasi_iso
---import for_mathlib.category_theory.limits.kernel_functor
 import for_mathlib.algebra.homology.twist_cocycle
 --import tactic.linarith
 
