@@ -153,7 +153,7 @@ end CM5b
 lemma CM5b : (arrow_classes : category_with_fib_cof_weq (bounded_above_cochain_complex C)).CM5b :=
 λ X Z f, begin
   obtain ⟨X', j, hj, q, hq, rfl⟩ := projective_model_structure.CM5a f,
-  obtain ⟨Y, i, hi, p, hp, rfl⟩ := CM5b_for_fibration q hq,
+  obtain ⟨Y, i, hi, p, hp, rfl⟩ := CM5b.for_fibration q hq,
   exact ⟨Y, j ≫ i, cof_stable_under_composition j i hj.1 hi, p, hp, by rw assoc⟩,
 end
 
