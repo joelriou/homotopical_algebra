@@ -65,10 +65,20 @@ variable {C}
 def ι [preadditive C] :
   bounded_above_cochain_complex C ⥤ cochain_complex C ℤ := full_subcategory_inclusion _
 
+namespace projective_model_structure
+
 @[simps]
-def projective_model_structure.arrow_classes [abelian C] :
+def arrow_classes [abelian C] :
   category_with_fib_cof_weq (bounded_above_cochain_complex C) :=
 category_with_fib_cof_weq.inverse_image cochain_complex.projective_structure.arrow_classes
   bounded_above_cochain_complex.ι
+
+lemma cof_stable_under_composition :
+  (arrow_classes :
+  category_with_fib_cof_weq (bounded_above_cochain_complex C)).cof.stable_under_composition :=
+λ X Y Z f g hf hg n,
+mono_with_projective_coker.is_stable_by_composition _ _ _ (hf _) (hg _)
+
+end projective_model_structure
 
 end bounded_above_cochain_complex
