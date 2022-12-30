@@ -15,6 +15,7 @@ import for_mathlib.category_theory.limits.kernel_functor
 noncomputable theory
 
 open category_theory category_theory.limits category_theory.category category_theory.preadditive
+open_locale zero_object
 
 namespace category_theory
 
@@ -108,6 +109,14 @@ end
 lemma of_biprod_inl [preadditive C] (X Y : C) [hY : projective Y] [has_binary_biproduct X Y] :
   mono_with_projective_coker C (biprod.inl : X ⟶ X ⊞ Y) :=
 ⟨Y, hY, biprod.snd, ⟨⟨biprod.fst, biprod.inr, by tidy⟩⟩⟩
+
+variable {C}
+
+lemma id_mem [preadditive C] [has_zero_object C] (X : C) :
+  mono_with_projective_coker C (𝟙 X) :=
+⟨0, projective.zero_projective, 0, split.mk ⟨𝟙 X, 0, by simp⟩⟩
+
+variable (C)
 
 lemma is_stable_by_composition [preadditive C] [has_binary_biproducts C]:
   (mono_with_projective_coker C).stable_under_composition :=
