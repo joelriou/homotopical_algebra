@@ -7,16 +7,153 @@ Authors: Joël Riou
 import for_mathlib.algebraic_topology.homotopical_algebra.cochain_complex.cm5a
 import for_mathlib.algebra.homology.trunc
 import for_mathlib.algebra.homology.k_projective
+import category_theory.filtered
 
 noncomputable theory
 
 open category_theory category_theory.category algebraic_topology
+  category_theory.limits
 
 variables {C : Type*} [category C]
 
 namespace category_theory
 
+
 namespace functor
+
+section
+
+variables {J : Type*} [category J] (F : J ⥤ C) [is_filtered J]
+
+open is_filtered
+
+def is_eventually_constant_from (i : J) : Prop :=
+∀ (j : J) (f : i ⟶ j), is_iso (F.map f)
+
+lemma is_eventually_constant_from.of_map {i i' : J} (g : i ⟶ i')
+  (hi : F.is_eventually_constant_from i) :
+  F.is_eventually_constant_from i' :=
+λ j f, begin
+  haveI : is_iso (F.map (g ≫ f)) := hi _ _,
+  haveI : is_iso (F.map g) := hi _ _,
+  exact is_iso.of_is_iso_fac_left (F.map_comp g f).symm,
+end
+
+class is_eventually_constant : Prop :=
+(condition [] : ∃ (i : J), F.is_eventually_constant_from i)
+
+namespace is_eventually_constant
+
+variable [is_eventually_constant F]
+
+def index : J :=
+  (is_eventually_constant.condition F).some
+
+instance {j : J} (f : index F ⟶ j) :
+  is_iso (F.map f) := (is_eventually_constant.condition F).some_spec j f
+
+lemma map_from_index_eq {j : J} (f₁ f₂ : index F ⟶ j) :
+  F.map f₁ = F.map f₂ :=
+begin
+  haveI : is_iso (F.map (coeq_hom f₁ f₂)) := begin
+    have eq := F.map_comp f₁ (coeq_hom f₁ f₂),
+    exact is_iso.of_is_iso_fac_left eq.symm,
+  end,
+  simp only [← cancel_mono (F.map (coeq_hom f₁ f₂)), ← F.map_comp],
+  exact F.congr_map (coeq_condition f₁ f₂),
+end
+
+lemma map_is_iso {j₁ j₂ : J} (g : j₁ ⟶ j₂) (f₁ : index F ⟶ j₁) :
+  is_iso (F.map g) :=
+is_iso.of_is_iso_fac_left (F.map_comp f₁ g).symm
+
+
+lemma map_eq {j j' : J} (f₁ f₂ : j ⟶ j') (g : index F ⟶ j') :
+  F.map f₁ = F.map f₂ :=
+begin
+  haveI : is_iso (F.map (coeq_hom f₁ f₂)) := map_is_iso F _ g,
+  simp only [← cancel_mono (F.map (coeq_hom f₁ f₂)), ← F.map_comp, coeq_condition],
+end
+
+@[simps]
+def cocone : cocone F :=
+{ X := F.obj (index F),
+  ι :=
+  { app := λ j, F.map (left_to_max j (index F)) ≫
+        category_theory.inv (F.map (right_to_max j (index F))),
+    naturality' := λ j j' g, begin
+      let k := (is_filtered.max j (index F)),
+      let k' := (is_filtered.max j' (index F)),
+      let m := is_filtered.max k k',
+      have eq := map_from_index_eq F (right_to_max _ _ ≫ (left_to_max _ _ : _ ⟶ m))
+        (right_to_max _ _ ≫ (right_to_max _ _ : _ ⟶ m)),
+      simp only [F.map_comp] at eq,
+      haveI : is_iso (F.map (right_to_max k k')) := map_is_iso F _ (right_to_max _ _),
+      erw [const_obj_map, comp_id, ← cancel_mono (F.map (right_to_max _ _ : _ ⟶ k')),
+        assoc, assoc, is_iso.inv_hom_id, comp_id, ← cancel_mono (F.map (right_to_max k k')),
+        assoc, assoc, assoc, ← eq, is_iso.inv_hom_id_assoc, ← F.map_comp, ← F.map_comp,
+        ← F.map_comp],
+      exact map_eq F _ _ (right_to_max _ _ ≫ right_to_max _ _),
+    end }, }
+
+lemma cocone_ι_app_eq {j : J} (g : index F ⟶ j) :
+  (cocone F).ι.app j = category_theory.inv (F.map g) :=
+begin
+  dsimp,
+  let h := coeq_hom (g ≫ left_to_max _ (index F)) (right_to_max _ _),
+  haveI : is_iso (F.map h) := map_is_iso F _ (right_to_max _ _),
+  simpa only [← cancel_epi (F.map g), is_iso.hom_inv_id, assoc, is_iso.hom_inv_id_assoc,
+    ← cancel_mono (F.map (right_to_max j (index F))), is_iso.inv_hom_id, comp_id,
+    ← cancel_mono (F.map h), F.map_comp]
+    using F.congr_map (coeq_condition (g ≫ left_to_max _ (index F)) (right_to_max _ _)),
+end
+
+@[simp]
+lemma cocone_ι_app_index :
+  (cocone F).ι.app (index F) = 𝟙 _ :=
+begin
+  simp only [cocone_ι_app_eq F (𝟙 (index F)), F.map_id],
+  dsimp,
+  simp only [is_iso.inv_id],
+end
+
+def cocone_is_colimit : is_colimit (cocone F) :=
+{ desc := λ s, s.ι.app (index F),
+  fac' := λ s j, begin
+    dsimp,
+    have eq := s.ι.naturality (right_to_max j (index F)),
+    dsimp at eq,
+    rw comp_id at eq,
+    rw [← eq, assoc, is_iso.inv_hom_id_assoc, cocone.w],
+  end,
+  uniq' := λ s m hm, by simpa only [cocone_ι_app_index, id_comp] using hm (index F), }
+
+@[priority 100]
+instance : has_colimit F :=
+⟨⟨⟨_, cocone_is_colimit F⟩⟩⟩
+
+lemma is_iso_cocone_ι_app' (j : J) (g : index F ⟶ j) : is_iso (colimit.ι F j) :=
+begin
+  haveI : is_iso ((cocone F).ι.app j),
+  { rw cocone_ι_app_eq F g,
+    apply_instance, },
+  exact is_iso.of_is_iso_fac_right
+    (limits.colimit.comp_cocone_point_unique_up_to_iso_inv (cocone_is_colimit F) j),
+end
+
+lemma is_iso_colimit_ι_app (i : J) (hi : F.is_eventually_constant_from i) :
+  is_iso (colimit.ι F i) :=
+begin
+  haveI : is_iso (F.map (left_to_max i (index F))) := hi _ _,
+  haveI : is_iso (colimit.ι F (is_filtered.max i (index F))) :=
+    is_iso_cocone_ι_app' _ _ (right_to_max _ _),
+  rw ← colimit.w F (left_to_max i (index F)),
+  apply_instance,
+end
+
+end is_eventually_constant
+
+end
 
 variables {X : ℕ → C} (φ : Π n, X n ⟶ X (n+1))
 
@@ -124,6 +261,13 @@ begin
 end
 
 end mk_of_sequence
+
+@[simps]
+def mk_of_sequence : ℕ ⥤ C :=
+{ obj := X,
+  map := λ n₁ n₂ g, mk_of_sequence.f φ n₁ n₂ (le_of_hom g),
+  map_id' := mk_of_sequence.f_eq_id _,
+  map_comp' := λ n₁ n₂ n₃ g g', (mk_of_sequence.f_comp φ n₁ n₂ n₃ _ _).symm, }
 
 end functor
 
@@ -331,98 +475,61 @@ begin
   apply_instance,
 end
 
-def sequence_map (k₀ k₁ : ℕ) (h : k₀ ≤ k₁) :
-  (sequence f hf F₀ k₀).obj.obj ⟶ (sequence f hf F₀ k₁).obj.obj :=
-functor.mk_of_sequence.f (functor.mk_of_sequence.restriction (sequence_map_next f hf F₀)) k₀ k₁ h
+def inductive_system : ℕ ⥤ cochain_complex C ℤ :=
+functor.mk_of_sequence (functor.mk_of_sequence.restriction (sequence_map_next f hf F₀)) ⋙
+  hom_factorisation.eval f ⋙ ι
 
-lemma sequence_map_succ (k₀ k₁ : ℕ) (h : k₁ = k₀ + 1) :
-  sequence_map f hf F₀ k₀ k₁ (by simpa only [h] using nat.le_succ k₀) =
-    sequence_map_next f hf F₀ k₀ k₁ h :=
-functor.mk_of_sequence.f_of_restriction _ _ _ _
+lemma is_iso_inductive_system_comp_eval_map_next (k₀ k₁ : ℕ ) (h : k₁ = k₀ + 1) (n : ℤ)
+  (hn : n₀ - k₀ ≤ n) :
+  is_iso ((inductive_system f hf F₀ ⋙ homological_complex.eval C (complex_shape.up ℤ) n).map
+    (hom_of_le (nat.le.intro h.symm))) :=
+begin
+  dsimp [inductive_system, hom_factorisation.eval, ι],
+  rw [functor.mk_of_sequence.f_next _ k₀ k₁ h],
+  simp only [functor.mk_of_sequence.restriction, functor.map_comp, eq_to_hom_map,
+    hom_factorisation.comp_τ, hom_factorisation.eq_to_hom_τ],
+  erw [homological_complex.comp_f],
+  haveI := is_iso_sequence_map_next_τ_f f hf F₀ k₀ _ rfl n hn,
+  apply_instance,
+end
 
-def sequence_map_comp (k₀ k₁ k₂ : ℕ) (h : k₀ ≤ k₁) (h' : k₁ ≤ k₂) :
-  sequence_map f hf F₀ k₀ k₁ h ≫ sequence_map f hf F₀ k₁ k₂ h' =
-    sequence_map f hf F₀ k₀ k₂ (h.trans h') :=
-functor.mk_of_sequence.f_comp _ _ _ _ _ _
-
-def sequence_map_τ_comp (k₀ k₁ k₂ : ℕ) (h : k₀ ≤ k₁) (h' : k₁ ≤ k₂) :
-  (sequence_map f hf F₀ k₀ k₁ h).τ ≫ (sequence_map f hf F₀ k₁ k₂ h').τ =
-    (sequence_map f hf F₀ k₀ k₂ (h.trans h')).τ :=
-(hom_factorisation.eval f).congr_map (sequence_map_comp f hf F₀ k₀ k₁ k₂ h h')
-
-def sequence_map_τ_f_comp (k₀ k₁ k₂ : ℕ) (h : k₀ ≤ k₁) (h' : k₁ ≤ k₂) (n : ℤ):
-  (sequence_map f hf F₀ k₀ k₁ h).τ.f n ≫ (sequence_map f hf F₀ k₁ k₂ h').τ.f n =
-    (sequence_map f hf F₀ k₀ k₂ (h.trans h')).τ.f n :=
-by simpa only [← homological_complex.comp_f, ← sequence_map_τ_comp f hf F₀ k₀ k₁ k₂ h h']
-
-def is_iso_sequence_map_τ_f (k₀ k₁ : ℕ )(h : k₀ ≤ k₁) (n : ℤ) (hn : n₀ - k₀ ≤ n) :
-  is_iso ((sequence_map f hf F₀ k₀ k₁ h).τ.f n) :=
+lemma is_iso_inductive_system_comp_eval_map (k₀ k₁ : ℕ ) (h : k₀ ≤ k₁) (n : ℤ)
+  (hn : n₀ - k₀ ≤ n) :
+  is_iso ((inductive_system f hf F₀ ⋙ homological_complex.eval C (complex_shape.up ℤ) n).map
+    (hom_of_le h)) :=
 begin
   rw le_iff_exists_add at h,
-  obtain ⟨r, rfl⟩ := h, unfreezingI { induction r with r hr, },
-  { dsimp [sequence_map],
-    simp only [functor.mk_of_sequence.congr_f _ k₀ (k₀+0) k₀ (by linarith) (by linarith),
-      functor.mk_of_sequence.f_eq_id, eq_to_hom_refl, comp_id],
+  obtain ⟨r, rfl⟩ := h,
+  induction r with r hr,
+  { haveI : is_iso (hom_of_le h) :=
+      ⟨⟨hom_of_le (by refl), subsingleton.elim _ _ , subsingleton.elim _ _⟩⟩,
     apply_instance, },
-  { have ineq : k₀ + r ≤ k₀ + r.succ := by { rw nat.succ_eq_add_one, linarith, },
-    rw ← sequence_map_τ_f_comp f hf F₀ k₀ (k₀+r) (k₀+r.succ) (by linarith) ineq n,
-    haveI := hr (by linarith),
-    haveI : is_iso ((sequence_map f hf F₀ (k₀ + r) (k₀ + r.succ) ineq).τ.f n),
-    { rw sequence_map_succ f hf F₀ (k₀+r) (k₀+r.succ)
-        (by rw [nat.succ_eq_add_one, add_assoc]),
-      apply is_iso_sequence_map_next_τ_f,
-      simp only [nat.cast_add, tsub_le_iff_right],
-      linarith, },
-    apply_instance, },
+  { have h₁ : k₀ ≤ k₀ + r := by linarith,
+    have h₂ : k₀ + r ≤ k₀ + r.succ := by { rw nat.succ_eq_add_one, linarith, },
+    have eq : _ = hom_of_le h := hom_of_le_comp h₁ h₂,
+    simp only [← eq, functor.map_comp],
+    exact @is_iso.comp_is_iso _ _ _ _ _ _ _ (hr h₁)
+      (is_iso_inductive_system_comp_eval_map_next f hf F₀ (k₀+r) (k₀+r.succ)
+          (by { rw nat.succ_eq_add_one, linarith, }) _
+          (by { simp only [nat.cast_add, tsub_le_iff_right], linarith, })), },
 end
 
-def iso_sequence_map_τ_f (k₀ k₁ : ℕ )(h : k₀ ≤ k₁) (n : ℤ) (hn : n₀ - k₀ ≤ n) :
-  (sequence f hf F₀ k₀).obj.obj.Y.obj.X n ≅
-    (sequence f hf F₀ k₁).obj.obj.Y.obj.X n :=
-begin
-  haveI := is_iso_sequence_map_τ_f f hf F₀ k₀ k₁ h n hn,
-  exact as_iso ((sequence_map f hf F₀ k₀ k₁ h).τ.f n),
-end
+lemma inductive_system_comp_eval_is_eventually_constant_from (n : ℤ) :
+  ((inductive_system f hf F₀) ⋙
+    homological_complex.eval _ _ n).is_eventually_constant_from (n₀-n).truncate :=
+λ p hp, is_iso_inductive_system_comp_eval_map _ _ _ _ _ (le_of_hom hp) _
+  (by linarith [int.self_le_coe_truncate (n₀-n)])
 
-@[simp]
-def factorisation_Y_X (n : ℤ) := (sequence f hf F₀ (int.truncate (n₀-n))).obj.obj.Y.obj.X n
-
-def factorisation_Y_d (n n' : ℤ) :
-  factorisation_Y_X f hf F₀ n ⟶ factorisation_Y_X f hf F₀ n' :=
-begin
-  by_cases hn : n+1 = n',
-  { refine homological_complex.d _ n n' ≫
-    (iso_sequence_map_τ_f f hf F₀ _ _ (int.truncate_le_of_le (by linarith)) n' _).inv,
-    linarith [int.self_le_coe_truncate (n₀-n')], },
-  { exact 0 },
-end
-
-lemma factorisation_Y_d_eq (i j : ℤ) (h : i+1 = j) :
-  factorisation_Y_d f hf F₀ i j = homological_complex.d _ i j ≫
-    (iso_sequence_map_τ_f f hf F₀ _ _ (int.truncate_le_of_le
-      (show n₀-j ≤ n₀-i, by { simp only [← h, sub_le_sub_iff_left,
-        le_add_iff_nonneg_right, zero_le_one], })) _
-      (by simpa only [tsub_le_iff_right] using (@le_add_tsub _ _ _ _ _ n₀ j).trans
-        (add_le_add_left (int.self_le_coe_truncate _) _))).inv :=
-by { dsimp [factorisation_Y_d], rw dif_pos h, }
+instance inductive_system_comp_eval_is_eventually_constant (n : ℤ) :
+  ((inductive_system f hf F₀) ⋙
+    homological_complex.eval _ _ n).is_eventually_constant :=
+⟨⟨_, inductive_system_comp_eval_is_eventually_constant_from f hf F₀ n⟩⟩
 
 @[simps]
 def factorisation_Y : bounded_above_cochain_complex C :=
-⟨{ X := factorisation_Y_X f hf F₀,
-  d := factorisation_Y_d f hf F₀,
-  shape' := λ i j (hij : i+1 ≠ j), by { dsimp [factorisation_Y_d], rw dif_neg hij, },
-  d_comp_d' := λ i j k hij hjk, begin
-    rw factorisation_Y_d_eq f hf F₀ i j hij,
-    rw factorisation_Y_d_eq f hf F₀ j k hjk,
-    simp only [assoc],
-    sorry,
-  end, },
-  begin
-    sorry,
-  end⟩
+⟨colimit (inductive_system f hf F₀), sorry⟩
 
-include F₀
-
+@[simps]
 def factorisation : cof_fib_factorisation f :=
 ⟨{ Y := factorisation_Y f hf F₀,
   i := sorry,
