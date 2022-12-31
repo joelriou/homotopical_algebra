@@ -493,7 +493,7 @@ begin
   apply_instance,
 end
 
-lemma is_iso_inductive_system_comp_eval_map (k₀ k₁ : ℕ ) (h : k₀ ≤ k₁) (n : ℤ)
+lemma is_iso_inductive_system_comp_eval_map (k₀ k₁ : ℕ) (h : k₀ ≤ k₁) (n : ℤ)
   (hn : n₀ - k₀ ≤ n) :
   is_iso ((inductive_system f hf F₀ ⋙ homological_complex.eval C (complex_shape.up ℤ) n).map
     (hom_of_le h)) :=
@@ -525,15 +525,51 @@ instance inductive_system_comp_eval_is_eventually_constant (n : ℤ) :
     homological_complex.eval _ _ n).is_eventually_constant :=
 ⟨⟨_, inductive_system_comp_eval_is_eventually_constant_from f hf F₀ n⟩⟩
 
+lemma is_iso_colimit_ι_inductive_system_f (k : ℕ) (n : ℤ) (hn : n₀-k ≤ n) :
+  is_iso ((colimit.ι (inductive_system f hf F₀) k).f n) :=
+begin
+  have ineq : (n₀-n).truncate ≤ k,
+  { by_cases n ≤ n₀,
+    { simp only [← int.coe_nat_le_coe_nat_iff, int.coe_truncate (n₀-n) (by linarith)],
+      linarith, },
+    { simpa only [int.truncate_eq_zero (n₀-n) (by linarith)] using zero_le', }, },
+  haveI := functor.is_eventually_constant.is_iso_colimit_ι_app
+    ((inductive_system f hf F₀) ⋙ homological_complex.eval _ _ n) k
+    (functor.is_eventually_constant_from.of_map _
+      (hom_of_le ineq) (inductive_system_comp_eval_is_eventually_constant_from f hf F₀ n)),
+  exact is_iso.of_is_iso_fac_right ((ι_preserves_colimits_iso_hom (homological_complex.eval _ _ n)
+      (inductive_system f hf F₀) k)),
+end
+
 @[simps]
 def factorisation_Y : bounded_above_cochain_complex C :=
-⟨colimit (inductive_system f hf F₀), sorry⟩
+⟨colimit (inductive_system f hf F₀),
+begin
+  obtain ⟨ny, hny⟩ := F₀.obj.obj.Y.2,
+  have h₂ := le_max_right ny n₀,
+  refine ⟨max ny n₀, λ i hi, _⟩,
+  haveI := is_iso_colimit_ι_inductive_system_f f hf F₀ 0 i
+    (by simpa only [algebra_map.coe_zero, tsub_zero]
+      using (lt_of_le_of_lt (le_max_right _ _) hi).le),
+  exact limits.is_zero.of_iso (hny _ (lt_of_le_of_lt (le_max_left _ _) hi))
+    (as_iso ((limits.colimit.ι (inductive_system f hf F₀) 0).f i)).symm,
+end⟩
+
+def factorisation_i : X ⟶ factorisation_Y f hf F₀ :=
+F₀.obj.obj.i ≫ colimit.ι (inductive_system f hf F₀) 0
+
+def factorisation_p : factorisation_Y f hf F₀ ⟶ Z :=
+begin
+/- inductive_sytem should be defined in the category `hom_factorisation f` instead
+of `cochain_complex C ℤ`-/
+  sorry,
+end
 
 @[simps]
 def factorisation : cof_fib_factorisation f :=
 ⟨{ Y := factorisation_Y f hf F₀,
-  i := sorry,
-  p := sorry,
+  i := factorisation_i f hf F₀,
+  p := factorisation_p f hf F₀,
   fac' := sorry, },
   { hi := sorry,
     hp := sorry, }⟩

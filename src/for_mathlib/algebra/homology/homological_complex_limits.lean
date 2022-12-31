@@ -109,6 +109,11 @@ lemma is_limit_cone : is_limit (cone_of_limit_eval F) :=
 
 instance : has_limit F := ⟨⟨⟨ _, is_limit_cone F⟩⟩⟩
 
+instance (n : ι) : preserves_limit F (homological_complex.eval C c n) :=
+preserves_limit_of_preserves_limit_cone (is_limit_cone F)
+  (is_limit.of_iso_limit (limit.is_limit _)
+    (cones.ext (iso.refl _) (by tidy)))
+
 end
 
 section
@@ -145,6 +150,11 @@ lemma is_colimit_cocone : is_colimit (cocone_of_colimit_eval F) :=
 
 instance : has_colimit F := ⟨⟨⟨ _, is_colimit_cocone F⟩⟩⟩
 
+instance (n : ι) : preserves_colimit F (homological_complex.eval C c n) :=
+preserves_colimit_of_preserves_colimit_cocone (is_colimit_cocone F)
+  (is_colimit.of_iso_colimit (colimit.is_colimit _)
+    (cocones.ext (iso.refl _) (by tidy)))
+
 end
 
 instance [has_limits_of_shape J C] :
@@ -157,15 +167,11 @@ instance [has_colimits_of_shape J C] :
 
 instance [has_limits_of_shape J C] (n : ι) :
   preserves_limits_of_shape J (homological_complex.eval C c n) :=
-⟨λ F, preserves_limit_of_preserves_limit_cone (is_limit_cone F)
-  (is_limit.of_iso_limit (limit.is_limit _)
-    (cones.ext (iso.refl _) (by tidy)))⟩
+⟨λ F, infer_instance⟩
 
 instance [has_colimits_of_shape J C] (n : ι) :
   preserves_colimits_of_shape J (homological_complex.eval C c n) :=
-⟨λ F, preserves_colimit_of_preserves_colimit_cocone (is_colimit_cocone F)
-  (is_colimit.of_iso_colimit (colimit.is_colimit _)
-    (cocones.ext (iso.refl _) (by tidy)))⟩
+⟨λ F, infer_instance⟩
 
 instance [has_finite_limits C] :
   has_finite_limits (homological_complex C c) :=
