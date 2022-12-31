@@ -358,6 +358,15 @@ variable (f)
 @[derive category]
 def cof_fib_factorisation := full_subcategory (@is_cof_fib_factorisation _ _ _ _ _ _ f)
 
+@[simps]
+def cof_fib_factorisation.forget : cof_fib_factorisation f ⥤ hom_factorisation f :=
+full_subcategory_inclusion _
+
+@[simps]
+def cof_fib_factorisation.eval (n : ℤ) : cof_fib_factorisation f ⥤ C :=
+cof_fib_factorisation.forget f ⋙ hom_factorisation.eval f ⋙
+  bounded_above_cochain_complex.ι ⋙ (homological_complex.eval C (complex_shape.up ℤ) n)
+
 variable {f}
 
 def cof_fib_factorisation.quasi_iso_ge (F : cof_fib_factorisation f) (n : ℤ) : Prop :=
@@ -453,16 +462,21 @@ noncomputable def sequence : Π (k : ℕ), cof_fib_factorisation_quasi_iso_ge f 
 def sequence_next_step_iso (k₀ k₁ : ℕ) (h : k₁ = k₀ + 1) :
   (step f hf (n₀ - ↑k₁) (n₀ - ↑k₀) (by { subst h, simp only [nat.cast_add,
     algebra_map.coe_one, sub_add_eq_sub_sub, sub_add_cancel], })
-    (sequence f hf F₀ k₀)).obj.obj ≅
-  (sequence f hf F₀ k₁).obj.obj :=
+    (sequence f hf F₀ k₀)).obj ≅
+  (sequence f hf F₀ k₁).obj :=
 eq_to_iso (by { subst h, unfold sequence, })
 
-instance (k₀ k₁ : ℕ) (h : k₁ = k₀ + 1)  :
+instance (k₀ k₁ : ℕ) (h : k₁ = k₀ + 1) :
   is_iso ((sequence_next_step_iso f hf F₀ k₀ k₁ h).hom.τ) :=
-hom_factorisation.is_iso_τ _
+is_iso.of_iso ((cof_fib_factorisation.forget f ⋙
+  hom_factorisation.eval f).map_iso (sequence_next_step_iso f hf F₀ k₀ k₁ h))
+
+lemma congr_sequence_obj (k k' : ℕ) (h : k = k') :
+  (sequence f hf F₀ k).obj = (sequence f hf F₀ k').obj :=
+by subst h
 
 def sequence_map_next (k₀ k₁ : ℕ) (h : k₁ = k₀ + 1) :
-  (sequence f hf F₀ k₀).obj.obj ⟶ (sequence f hf F₀ k₁).obj.obj :=
+  (sequence f hf F₀ k₀).obj ⟶ (sequence f hf F₀ k₁).obj :=
 step_map f hf (n₀-k₁) (n₀-k₀) (by linarith) _ ≫
   (sequence_next_step_iso f hf F₀ k₀ k₁ h).hom
 
@@ -475,27 +489,32 @@ begin
   apply_instance,
 end
 
-def inductive_system : ℕ ⥤ cochain_complex C ℤ :=
-functor.mk_of_sequence (functor.mk_of_sequence.restriction (sequence_map_next f hf F₀)) ⋙
-  hom_factorisation.eval f ⋙ ι
+def inductive_system : ℕ ⥤ cof_fib_factorisation f :=
+functor.mk_of_sequence (functor.mk_of_sequence.restriction (sequence_map_next f hf F₀))
 
-lemma is_iso_inductive_system_comp_eval_map_next (k₀ k₁ : ℕ ) (h : k₁ = k₀ + 1) (n : ℤ)
+def inductive_system' : ℕ ⥤ cochain_complex C ℤ :=
+inductive_system f hf F₀ ⋙ cof_fib_factorisation.forget f ⋙ hom_factorisation.eval f ⋙
+  bounded_above_cochain_complex.ι
+
+lemma is_iso_inductive_system'_comp_eval_map_next (k₀ k₁ : ℕ ) (h : k₁ = k₀ + 1) (n : ℤ)
   (hn : n₀ - k₀ ≤ n) :
-  is_iso ((inductive_system f hf F₀ ⋙ homological_complex.eval C (complex_shape.up ℤ) n).map
+  is_iso ((inductive_system' f hf F₀ ⋙ homological_complex.eval C (complex_shape.up ℤ) n).map
     (hom_of_le (nat.le.intro h.symm))) :=
 begin
-  dsimp [inductive_system, hom_factorisation.eval, ι],
+  dsimp [inductive_system', inductive_system, hom_factorisation.eval, ι],
   rw [functor.mk_of_sequence.f_next _ k₀ k₁ h],
   simp only [functor.mk_of_sequence.restriction, functor.map_comp, eq_to_hom_map,
     hom_factorisation.comp_τ, hom_factorisation.eq_to_hom_τ],
-  erw [homological_complex.comp_f],
-  haveI := is_iso_sequence_map_next_τ_f f hf F₀ k₀ _ rfl n hn,
-  apply_instance,
+  erw [homological_complex.comp_f, hom_factorisation.eq_to_hom_τ,
+    homological_complex.eq_to_hom_f],
+  { haveI := is_iso_sequence_map_next_τ_f f hf F₀ k₀ _ rfl n hn,
+    apply_instance, },
+  all_goals { rw congr_sequence_obj, linarith, },
 end
 
-lemma is_iso_inductive_system_comp_eval_map (k₀ k₁ : ℕ) (h : k₀ ≤ k₁) (n : ℤ)
+lemma is_iso_inductive_system'_comp_eval_map (k₀ k₁ : ℕ) (h : k₀ ≤ k₁) (n : ℤ)
   (hn : n₀ - k₀ ≤ n) :
-  is_iso ((inductive_system f hf F₀ ⋙ homological_complex.eval C (complex_shape.up ℤ) n).map
+  is_iso ((inductive_system' f hf F₀ ⋙ homological_complex.eval C (complex_shape.up ℤ) n).map
     (hom_of_le h)) :=
 begin
   rw le_iff_exists_add at h,
@@ -509,24 +528,24 @@ begin
     have eq : _ = hom_of_le h := hom_of_le_comp h₁ h₂,
     simp only [← eq, functor.map_comp],
     exact @is_iso.comp_is_iso _ _ _ _ _ _ _ (hr h₁)
-      (is_iso_inductive_system_comp_eval_map_next f hf F₀ (k₀+r) (k₀+r.succ)
+      (is_iso_inductive_system'_comp_eval_map_next f hf F₀ (k₀+r) (k₀+r.succ)
           (by { rw nat.succ_eq_add_one, linarith, }) _
           (by { simp only [nat.cast_add, tsub_le_iff_right], linarith, })), },
 end
 
-lemma inductive_system_comp_eval_is_eventually_constant_from (n : ℤ) :
-  ((inductive_system f hf F₀) ⋙
+lemma inductive_system'_comp_eval_is_eventually_constant_from (n : ℤ) :
+  ((inductive_system' f hf F₀) ⋙
     homological_complex.eval _ _ n).is_eventually_constant_from (n₀-n).truncate :=
-λ p hp, is_iso_inductive_system_comp_eval_map _ _ _ _ _ (le_of_hom hp) _
+λ p hp, is_iso_inductive_system'_comp_eval_map _ _ _ _ _ (le_of_hom hp) _
   (by linarith [int.self_le_coe_truncate (n₀-n)])
 
-instance inductive_system_comp_eval_is_eventually_constant (n : ℤ) :
-  ((inductive_system f hf F₀) ⋙
+instance inductive_system'_comp_eval_is_eventually_constant (n : ℤ) :
+  ((inductive_system' f hf F₀) ⋙
     homological_complex.eval _ _ n).is_eventually_constant :=
-⟨⟨_, inductive_system_comp_eval_is_eventually_constant_from f hf F₀ n⟩⟩
+⟨⟨_, inductive_system'_comp_eval_is_eventually_constant_from f hf F₀ n⟩⟩
 
-lemma is_iso_colimit_ι_inductive_system_f (k : ℕ) (n : ℤ) (hn : n₀-k ≤ n) :
-  is_iso ((colimit.ι (inductive_system f hf F₀) k).f n) :=
+lemma is_iso_colimit_ι_inductive_system'_f (k : ℕ) (n : ℤ) (hn : n₀-k ≤ n) :
+  is_iso ((colimit.ι (inductive_system' f hf F₀) k).f n) :=
 begin
   have ineq : (n₀-n).truncate ≤ k,
   { by_cases n ≤ n₀,
@@ -534,43 +553,53 @@ begin
       linarith, },
     { simpa only [int.truncate_eq_zero (n₀-n) (by linarith)] using zero_le', }, },
   haveI := functor.is_eventually_constant.is_iso_colimit_ι_app
-    ((inductive_system f hf F₀) ⋙ homological_complex.eval _ _ n) k
+    ((inductive_system' f hf F₀) ⋙ homological_complex.eval _ _ n) k
     (functor.is_eventually_constant_from.of_map _
-      (hom_of_le ineq) (inductive_system_comp_eval_is_eventually_constant_from f hf F₀ n)),
+      (hom_of_le ineq) (inductive_system'_comp_eval_is_eventually_constant_from f hf F₀ n)),
   exact is_iso.of_is_iso_fac_right ((ι_preserves_colimits_iso_hom (homological_complex.eval _ _ n)
-      (inductive_system f hf F₀) k)),
+      (inductive_system' f hf F₀) k)),
 end
 
 @[simps]
 def factorisation_Y : bounded_above_cochain_complex C :=
-⟨colimit (inductive_system f hf F₀),
+⟨colimit (inductive_system' f hf F₀),
 begin
   obtain ⟨ny, hny⟩ := F₀.obj.obj.Y.2,
   have h₂ := le_max_right ny n₀,
   refine ⟨max ny n₀, λ i hi, _⟩,
-  haveI := is_iso_colimit_ι_inductive_system_f f hf F₀ 0 i
+  haveI := is_iso_colimit_ι_inductive_system'_f f hf F₀ 0 i
     (by simpa only [algebra_map.coe_zero, tsub_zero]
       using (lt_of_le_of_lt (le_max_right _ _) hi).le),
   exact limits.is_zero.of_iso (hny _ (lt_of_le_of_lt (le_max_left _ _) hi))
-    (as_iso ((limits.colimit.ι (inductive_system f hf F₀) 0).f i)).symm,
+    (as_iso ((limits.colimit.ι (inductive_system' f hf F₀) 0).f i)).symm,
 end⟩
 
+@[simps]
 def factorisation_i : X ⟶ factorisation_Y f hf F₀ :=
-F₀.obj.obj.i ≫ colimit.ι (inductive_system f hf F₀) 0
+F₀.obj.obj.i ≫ colimit.ι (inductive_system' f hf F₀) 0
 
+@[simp]
 def factorisation_p : factorisation_Y f hf F₀ ⟶ Z :=
-begin
-/- inductive_sytem should be defined in the category `hom_factorisation f` instead
-of `cochain_complex C ℤ`-/
-  sorry,
-end
+colimit.desc (inductive_system' f hf F₀) (cocone.mk Z.obj
+{ app := λ n, ((inductive_system f hf F₀).obj n).obj.p,
+  naturality' := λ n n' φ, begin
+    dsimp,
+    rw comp_id,
+    exact ((inductive_system f hf F₀).map φ).commp,
+  end, })
 
 @[simps]
 def factorisation : cof_fib_factorisation f :=
 ⟨{ Y := factorisation_Y f hf F₀,
   i := factorisation_i f hf F₀,
   p := factorisation_p f hf F₀,
-  fac' := sorry, },
+  fac' := begin
+    dsimp only [factorisation_i, factorisation_p],
+    simp only [assoc],
+    erw colimit.ι_desc,
+    dsimp only,
+    exact ((inductive_system f hf F₀).obj 0).1.fac,
+  end, },
   { hi := sorry,
     hp := sorry, }⟩
 
