@@ -12,11 +12,120 @@ noncomputable theory
 
 open category_theory category_theory.category algebraic_topology
 
-universes v u
-
-variables {C : Type u} [category.{v} C]
+variables {C : Type*} [category C]
 
 namespace category_theory
+
+namespace functor
+
+variables {X : ℕ → C} (φ : Π n, X n ⟶ X (n+1))
+
+namespace mk_of_sequence
+
+lemma congr_φ (n n' : ℕ) (h : n = n') :
+  φ n = eq_to_hom (by rw h) ≫ φ n' ≫ eq_to_hom (by rw h) :=
+by { subst h, simp only [eq_to_hom_refl, comp_id, id_comp], }
+
+def f_aux (n : ℕ) : Π (k : ℕ), X n ⟶ X (n+k)
+|0 := eq_to_hom (by rw add_zero)
+|(k+1) := f_aux k ≫ φ (n+k) ≫ eq_to_hom (by rw add_assoc)
+
+lemma congr_f_aux (n k k' : ℕ) (h : k = k') :
+  f_aux φ n k = f_aux φ n k' ≫ eq_to_hom (by rw h) :=
+by { subst h, simp only [eq_to_hom_refl, comp_id], }
+
+lemma congr_f_aux' (n n' k k' : ℕ) (hn : n = n') (hk : k = k') :
+  f_aux φ n k = eq_to_hom (by rw hn) ≫ f_aux φ n' k' ≫ eq_to_hom (by rw [hn, hk]) :=
+by { substs hn hk, simp only [eq_to_hom_refl, comp_id, id_comp], }
+
+def f (n n' : ℕ) (h : n ≤ n') : X n ⟶ X n' :=
+f_aux φ n (n'-n) ≫ eq_to_hom (by { congr', linarith, })
+
+lemma congr_f (n₁ n₂ n₂' : ℕ) (h : n₁ ≤ n₂) (h₂ : n₂ = n₂') :
+  f φ n₁ n₂ h = f φ n₁ n₂' (h.trans (by rw h₂)) ≫ eq_to_hom (by rw h₂) :=
+by { subst h₂, rw [eq_to_hom_refl, comp_id], }
+
+lemma f_eq_f_aux_comp_eq_to_hom (n n' r : ℕ) (h : n' = n+r) :
+  f φ n n' (nat.le.intro h.symm)= f_aux φ n r ≫ eq_to_hom (by rw h) :=
+begin
+  have hr : r = n'-n := by simp only [h, add_tsub_cancel_left],
+  subst hr,
+  refl,
+end
+
+@[simp]
+lemma f_eq_id (n : ℕ) : f φ n n (by refl) = 𝟙 _ :=
+begin
+  rw f_eq_f_aux_comp_eq_to_hom φ n n 0 (add_zero n).symm,
+  dsimp [f_aux],
+  rw comp_id,
+end
+
+lemma f_comp_next (n₁ n₂ n₃ : ℕ) (h : n₁ ≤ n₂) (hn₃ : n₃ = n₂+1) :
+  f φ n₁ n₃ (h.trans (by simpa only [hn₃] using nat.le_succ n₂)) =
+    f φ n₁ n₂ h ≫ φ n₂ ≫ eq_to_hom (by rw hn₃) :=
+begin
+  rw le_iff_exists_add at h,
+  obtain ⟨r, rfl⟩ := h,
+  rw [f_eq_f_aux_comp_eq_to_hom φ n₁ (n₁+r) r rfl,
+    f_eq_f_aux_comp_eq_to_hom φ n₁ n₃ (r+1) (by linarith)],
+  unfold f_aux,
+  simpa only [eq_to_hom_refl, comp_id, assoc],
+end
+
+lemma f_next (n₁ n₂ : ℕ) (h : n₂ = n₁+1) :
+  f φ n₁ n₂ (by simpa only [h] using nat.le_succ n₁) = φ n₁ ≫ eq_to_hom (by rw h) :=
+by simp only [f_comp_next φ n₁ n₁ n₂ (by refl) h, f_eq_id, id_comp]
+
+lemma f_comp (n₁ n₂ n₃ : ℕ) (h₁₂ : n₁ ≤ n₂) (h₂₃ : n₂ ≤ n₃) :
+  f φ n₁ n₂ h₁₂ ≫ f φ n₂ n₃ h₂₃ = f φ n₁ n₃ (h₁₂.trans h₂₃) :=
+begin
+  rw le_iff_exists_add at h₂₃,
+  obtain ⟨r, rfl⟩ := h₂₃,
+  induction r with r hr,
+  { simp only [congr_f φ n₂ (n₂ + 0) n₂ (by linarith) (add_zero n₂),
+      congr_f φ n₁ (n₂ + 0) n₂ (by linarith) (add_zero n₂),
+      f_eq_id, eq_to_hom_refl, comp_id], },
+  { simp only [f_comp_next φ n₂ (n₂+r) (n₂+r.succ) (by linarith) rfl,
+      f_comp_next φ n₁ (n₂+r) (n₂+r.succ) (by linarith) rfl,
+      reassoc_of (hr (by linarith))], },
+end
+
+lemma is_iso_f (n₁ n₂ : ℕ) (h₁₂ : n₁ ≤ n₂)
+  (H : ∀ (p : ℕ) (hp : n₁ ≤ p) (hp' : p < n₂), is_iso (φ p)) :
+  is_iso (f φ n₁ n₂ h₁₂) :=
+begin
+  rw le_iff_exists_add at h₁₂,
+  unfreezingI { obtain ⟨r, rfl⟩ := h₁₂, },
+  unfreezingI { induction r with r hr, },
+  { simp only [congr_f φ n₁ (n₁+0) n₁ (by linarith) (by linarith),
+      f_eq_id, eq_to_hom_refl, comp_id],
+    apply_instance, },
+  { rw congr_f φ n₁ (n₁+r.succ) (n₁+r+1) (by linarith)
+      (by { rw nat.succ_eq_add_one, linarith, }),
+    rw ← f_comp φ n₁ (n₁+r) (n₁+r+1) (by linarith) (by linarith),
+    haveI := H (n₁+r) (by linarith) (by { rw nat.succ_eq_add_one, linarith, }),
+    haveI : is_iso (f φ (n₁+r) (n₁+r+1) (by linarith)),
+    { rw f_next φ _ _ rfl, apply_instance, },
+    haveI := hr (by linarith) (λ p hp hp', H p hp (by { rw nat.succ_eq_add_one, linarith, })),
+    apply_instance, },
+end
+
+variable (ψ : Π (n₀ n₁ : ℕ) (h : n₁ = n₀+1), X n₀ ⟶ X n₁)
+
+@[simp]
+def restriction (n : ℕ) : X n ⟶ X (n+1) := ψ n (n+1) rfl
+
+lemma f_of_restriction (n₀ n₁ : ℕ) (h : n₁ = n₀ + 1) :
+  f (restriction ψ) n₀ n₁ (by simpa only [h] using nat.le_succ n₀) = ψ n₀ n₁ h :=
+begin
+  subst h,
+  simp only [restriction, f_next _ n₀ (n₀+1) rfl, eq_to_hom_refl, comp_id],
+end
+
+end mk_of_sequence
+
+end functor
 
 variables {X Z : C} (f : X ⟶ Z)
 
@@ -208,26 +317,119 @@ instance (k₀ k₁ : ℕ) (h : k₁ = k₀ + 1)  :
   is_iso ((sequence_next_step_iso f hf F₀ k₀ k₁ h).hom.τ) :=
 hom_factorisation.is_iso_τ _
 
-def sequence_map (k₀ k₁ : ℕ) (h : k₁ = k₀ + 1) :
+def sequence_map_next (k₀ k₁ : ℕ) (h : k₁ = k₀ + 1) :
   (sequence f hf F₀ k₀).obj.obj ⟶ (sequence f hf F₀ k₁).obj.obj :=
 step_map f hf (n₀-k₁) (n₀-k₀) (by linarith) _ ≫
   (sequence_next_step_iso f hf F₀ k₀ k₁ h).hom
 
-lemma is_iso_sequence_map_τ_f (k₀ k₁ : ℕ )(h : k₁ = k₀ + 1) (n : ℤ) (hn : n₀ - k₀ ≤ n) :
-  is_iso ((sequence_map f hf F₀ k₀ k₁ h).τ.f n) :=
+lemma is_iso_sequence_map_next_τ_f (k₀ k₁ : ℕ )(h : k₁ = k₀ + 1) (n : ℤ) (hn : n₀ - k₀ ≤ n) :
+  is_iso ((sequence_map_next f hf F₀ k₀ k₁ h).τ.f n) :=
 begin
-  unfold sequence_map,
+  unfold sequence_map_next,
   haveI := is_iso_step_map_τ_f f hf (n₀-k₁) _ (by linarith) (sequence f hf F₀ k₀) n hn,
   erw [homological_complex.comp_f],
   apply_instance,
 end
 
+def sequence_map (k₀ k₁ : ℕ) (h : k₀ ≤ k₁) :
+  (sequence f hf F₀ k₀).obj.obj ⟶ (sequence f hf F₀ k₁).obj.obj :=
+functor.mk_of_sequence.f (functor.mk_of_sequence.restriction (sequence_map_next f hf F₀)) k₀ k₁ h
+
+lemma sequence_map_succ (k₀ k₁ : ℕ) (h : k₁ = k₀ + 1) :
+  sequence_map f hf F₀ k₀ k₁ (by simpa only [h] using nat.le_succ k₀) =
+    sequence_map_next f hf F₀ k₀ k₁ h :=
+functor.mk_of_sequence.f_of_restriction _ _ _ _
+
+def sequence_map_comp (k₀ k₁ k₂ : ℕ) (h : k₀ ≤ k₁) (h' : k₁ ≤ k₂) :
+  sequence_map f hf F₀ k₀ k₁ h ≫ sequence_map f hf F₀ k₁ k₂ h' =
+    sequence_map f hf F₀ k₀ k₂ (h.trans h') :=
+functor.mk_of_sequence.f_comp _ _ _ _ _ _
+
+def sequence_map_τ_comp (k₀ k₁ k₂ : ℕ) (h : k₀ ≤ k₁) (h' : k₁ ≤ k₂) :
+  (sequence_map f hf F₀ k₀ k₁ h).τ ≫ (sequence_map f hf F₀ k₁ k₂ h').τ =
+    (sequence_map f hf F₀ k₀ k₂ (h.trans h')).τ :=
+(hom_factorisation.eval f).congr_map (sequence_map_comp f hf F₀ k₀ k₁ k₂ h h')
+
+def sequence_map_τ_f_comp (k₀ k₁ k₂ : ℕ) (h : k₀ ≤ k₁) (h' : k₁ ≤ k₂) (n : ℤ):
+  (sequence_map f hf F₀ k₀ k₁ h).τ.f n ≫ (sequence_map f hf F₀ k₁ k₂ h').τ.f n =
+    (sequence_map f hf F₀ k₀ k₂ (h.trans h')).τ.f n :=
+by simpa only [← homological_complex.comp_f, ← sequence_map_τ_comp f hf F₀ k₀ k₁ k₂ h h']
+
+def is_iso_sequence_map_τ_f (k₀ k₁ : ℕ )(h : k₀ ≤ k₁) (n : ℤ) (hn : n₀ - k₀ ≤ n) :
+  is_iso ((sequence_map f hf F₀ k₀ k₁ h).τ.f n) :=
+begin
+  rw le_iff_exists_add at h,
+  obtain ⟨r, rfl⟩ := h, unfreezingI { induction r with r hr, },
+  { dsimp [sequence_map],
+    simp only [functor.mk_of_sequence.congr_f _ k₀ (k₀+0) k₀ (by linarith) (by linarith),
+      functor.mk_of_sequence.f_eq_id, eq_to_hom_refl, comp_id],
+    apply_instance, },
+  { have ineq : k₀ + r ≤ k₀ + r.succ := by { rw nat.succ_eq_add_one, linarith, },
+    rw ← sequence_map_τ_f_comp f hf F₀ k₀ (k₀+r) (k₀+r.succ) (by linarith) ineq n,
+    haveI := hr (by linarith),
+    haveI : is_iso ((sequence_map f hf F₀ (k₀ + r) (k₀ + r.succ) ineq).τ.f n),
+    { rw sequence_map_succ f hf F₀ (k₀+r) (k₀+r.succ)
+        (by rw [nat.succ_eq_add_one, add_assoc]),
+      apply is_iso_sequence_map_next_τ_f,
+      simp only [nat.cast_add, tsub_le_iff_right],
+      linarith, },
+    apply_instance, },
+end
+
+def iso_sequence_map_τ_f (k₀ k₁ : ℕ )(h : k₀ ≤ k₁) (n : ℤ) (hn : n₀ - k₀ ≤ n) :
+  (sequence f hf F₀ k₀).obj.obj.Y.obj.X n ≅
+    (sequence f hf F₀ k₁).obj.obj.Y.obj.X n :=
+begin
+  haveI := is_iso_sequence_map_τ_f f hf F₀ k₀ k₁ h n hn,
+  exact as_iso ((sequence_map f hf F₀ k₀ k₁ h).τ.f n),
+end
+
+@[simp]
+def factorisation_Y_X (n : ℤ) := (sequence f hf F₀ (int.truncate (n₀-n))).obj.obj.Y.obj.X n
+
+def factorisation_Y_d (n n' : ℤ) :
+  factorisation_Y_X f hf F₀ n ⟶ factorisation_Y_X f hf F₀ n' :=
+begin
+  by_cases hn : n+1 = n',
+  { refine homological_complex.d _ n n' ≫
+    (iso_sequence_map_τ_f f hf F₀ _ _ (int.truncate_le_of_le (by linarith)) n' _).inv,
+    linarith [int.self_le_coe_truncate (n₀-n')], },
+  { exact 0 },
+end
+
+lemma factorisation_Y_d_eq (i j : ℤ) (h : i+1 = j) :
+  factorisation_Y_d f hf F₀ i j = homological_complex.d _ i j ≫
+    (iso_sequence_map_τ_f f hf F₀ _ _ (int.truncate_le_of_le
+      (show n₀-j ≤ n₀-i, by { simp only [← h, sub_le_sub_iff_left,
+        le_add_iff_nonneg_right, zero_le_one], })) _
+      (by simpa only [tsub_le_iff_right] using (@le_add_tsub _ _ _ _ _ n₀ j).trans
+        (add_le_add_left (int.self_le_coe_truncate _) _))).inv :=
+by { dsimp [factorisation_Y_d], rw dif_pos h, }
+
+@[simps]
+def factorisation_Y : bounded_above_cochain_complex C :=
+⟨{ X := factorisation_Y_X f hf F₀,
+  d := factorisation_Y_d f hf F₀,
+  shape' := λ i j (hij : i+1 ≠ j), by { dsimp [factorisation_Y_d], rw dif_neg hij, },
+  d_comp_d' := λ i j k hij hjk, begin
+    rw factorisation_Y_d_eq f hf F₀ i j hij,
+    rw factorisation_Y_d_eq f hf F₀ j k hjk,
+    simp only [assoc],
+    sorry,
+  end, },
+  begin
+    sorry,
+  end⟩
+
 include F₀
 
 def factorisation : cof_fib_factorisation f :=
-begin
-  sorry,
-end
+⟨{ Y := factorisation_Y f hf F₀,
+  i := sorry,
+  p := sorry,
+  fac' := sorry, },
+  { hi := sorry,
+    hp := sorry, }⟩
 
 lemma quasi_iso_factorisation_p (n : ℤ) :
   quasi_iso (ι.map (factorisation f hf F₀).1.p) := sorry
