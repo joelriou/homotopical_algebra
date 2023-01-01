@@ -5,7 +5,7 @@ Authors: Joël Riou
 -/
 
 import for_mathlib.algebraic_topology.homotopical_algebra.cochain_complex.cm5a
-import for_mathlib.algebra.homology.trunc
+import for_mathlib.algebra.homology.double
 import for_mathlib.algebra.homology.k_projective
 import category_theory.filtered
 
@@ -600,8 +600,31 @@ def factorisation : cof_fib_factorisation f :=
     dsimp only,
     exact ((inductive_system f hf F₀).obj 0).1.fac,
   end, },
-  { hi := sorry,
-    hp := sorry, }⟩
+  { hi := λ n, begin
+      let k := (n₀-n).truncate,
+      dsimp [ι],
+      haveI := is_iso_colimit_ι_inductive_system'_f f hf F₀ k n
+        (by linarith [int.self_le_coe_truncate (n₀-n)]),
+      have eq : F₀.obj.obj.i.f n ≫ (limits.colimit.ι (inductive_system' f hf F₀) 0).f n =
+        ((inductive_system f hf F₀).obj k).obj.i.f n ≫
+        (limits.colimit.ι (inductive_system' f hf F₀) k).f n,
+      { simpa only [← homological_complex.comp_f,
+          ← colimit.w (inductive_system' f hf F₀) (hom_of_le (zero_le' : 0 ≤ k)), ← assoc,
+          ← ((inductive_system f hf F₀).map (hom_of_le (zero_le' : 0 ≤ k))).commi],},
+      rw eq,
+      exact preadditive.mono_with_projective_coker.is_stable_by_composition
+        _ _ _ (((inductive_system f hf F₀).obj k).2.hi n)
+          (preadditive.mono_with_projective_coker.of_is_iso _),
+    end,
+    hp := λ n, begin
+      dsimp [ι],
+      let k := (n₀-n).truncate,
+      haveI := is_iso_colimit_ι_inductive_system'_f f hf F₀ k n
+        (by linarith [int.self_le_coe_truncate (n₀-n)]),
+      rw [← epi_comp_left_iff_epi ((limits.colimit.ι (inductive_system' f hf F₀) k).f n),
+        ← homological_complex.comp_f, colimit.ι_desc],
+      exact ((inductive_system f hf F₀).obj k).2.hp n,
+    end, }⟩
 
 lemma quasi_iso_factorisation_p (n : ℤ) :
   quasi_iso (ι.map (factorisation f hf F₀).1.p) := sorry

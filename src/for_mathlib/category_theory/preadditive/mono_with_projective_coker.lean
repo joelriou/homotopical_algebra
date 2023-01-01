@@ -116,6 +116,10 @@ lemma id_mem [preadditive C] [has_zero_object C] (X : C) :
   mono_with_projective_coker C (𝟙 X) :=
 ⟨0, projective.zero_projective, 0, split.mk ⟨𝟙 X, 0, by simp⟩⟩
 
+lemma of_is_iso [preadditive C] [has_zero_object C] {X Y : C} (f : X ⟶ Y) [is_iso f] :
+  mono_with_projective_coker C f :=
+⟨0, projective.zero_projective, 0, split.mk ⟨inv f, 0, by simp⟩⟩
+
 variable (C)
 
 lemma is_stable_by_composition [preadditive C] [has_binary_biproducts C]:
