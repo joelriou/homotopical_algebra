@@ -8,6 +8,7 @@ import for_mathlib.algebraic_topology.homotopical_algebra.cochain_complex.cm5a
 import for_mathlib.algebra.homology.double
 import for_mathlib.algebra.homology.k_projective
 import category_theory.filtered
+import for_mathlib.algebra.homology.homology_sequence
 
 noncomputable theory
 
@@ -17,7 +18,6 @@ open category_theory category_theory.category algebraic_topology
 variables {C : Type*} [category C]
 
 namespace category_theory
-
 
 namespace functor
 
@@ -390,23 +390,59 @@ variables (f) (hf : arrow_classes.fib f)
 include hf
 
 lemma step₁ (n₀ n₁ : ℤ) (hn₁ : n₁ = n₀ + 1)
-  (hf : ∀ (q : ℤ) (hq : n₁ ≤ q), is_iso (homology_map f q)) :
+  (hf' : ∀ (q : ℤ) (hq : n₁ ≤ q), is_iso (homology_map f q)) :
   ∃ (F : cof_fib_factorisation f) (hF₁ : F.is_iso_ge n₁) (hF₂ : F.quasi_iso_ge n₁),
-    epi (homology_map (F.1.p) n₀) := sorry
+    epi (homology_map (F.1.p) n₀) :=
+begin
+  let Y : bounded_above_cochain_complex C :=
+    ⟨homological_complex.biprod X.1
+      ((homological_complex.single C (complex_shape.up ℤ) n₀).obj
+        (projective.over (Z.1.cycles n₀))),
+    sorry⟩,
+  let i : X ⟶ Y := homological_complex.biprod.inl,
+  let p : Y ⟶ Z := homological_complex.biprod.desc f
+    (cochain_complex.desc_single _ _ ((homological_complex.single_obj_X_self _ _ _ _).hom ≫
+    projective.π _ ≫ Z.1.cycles_i n₀) (n₀+1) rfl
+      (by simp only [assoc, homological_complex.cycles_i_d, comp_zero])),
+  refine
+  ⟨⟨{ Y := Y,
+    i := i,
+    p := p,
+    fac' := homological_complex.biprod.inl_desc _ _, },
+    { hi := λ n, begin
+        refine ⟨_, _, biprod.snd, ⟨⟨biprod.fst, biprod.inr,
+          ⟨biprod.inl_fst, biprod.inr_snd, biprod.inl_snd, biprod.inr_fst, biprod.total⟩⟩⟩⟩,
+        by_cases n = n₀,
+        { subst h,
+          exact projective.of_iso (homological_complex.single_obj_X_self C _ _ _).symm
+            infer_instance, },
+        { dsimp [homological_complex.single],
+          rw if_neg h,
+          apply_instance, },
+      end,
+      hp := λ n, begin
+        change epi (p.f n),
+        haveI : epi (biprod.inl ≫ p.f n),
+        { dsimp [p],
+          rw biprod.inl_desc,
+          exact hf n, },
+        exact epi_of_epi biprod.inl (p.f n),
+      end, }⟩, sorry, sorry, sorry⟩,
+end
 
 lemma step₂ (n₀ n₁ : ℤ) (hn₁ : n₁ = n₀ + 1)
-  (hf : ∀ (q : ℤ) (hq : n₁ ≤ q), is_iso (homology_map f q))
-  (hf' : epi (homology_map f n₀)) :
+  (hf' : ∀ (q : ℤ) (hq : n₁ ≤ q), is_iso (homology_map f q))
+  (hf'' : epi (homology_map f n₀)) :
   ∃ (F : cof_fib_factorisation f) (hF₁ : F.is_iso_ge n₀),
     F.quasi_iso_ge n₀ := sorry
 
 lemma step₁₂ (n₀ n₁ : ℤ) (hn₁ : n₁ = n₀ + 1)
-  (hf : ∀ (q : ℤ) (hq : n₁ ≤ q), is_iso (homology_map f q)) :
+  (hf' : ∀ (q : ℤ) (hq : n₁ ≤ q), is_iso (homology_map f q)) :
   ∃ (F : cof_fib_factorisation f) (hF : F.is_iso_ge n₁),
     F.quasi_iso_ge n₀ :=
 begin
-  obtain ⟨F₁, hF₁, hF₂, hp⟩ := step₁ f n₀ n₁ hn₁ hf,
-  obtain ⟨F₂, hF₂, hF₂'⟩ := step₂ F₁.1.p n₀ n₁ hn₁ hF₂ hp,
+  obtain ⟨F₁, hF₁, hF₂, hp⟩ := step₁ f hf n₀ n₁ hn₁ hf',
+  obtain ⟨F₂, hF₂, hF₂'⟩ := step₂ F₁.1.p F₁.2.hp n₀ n₁ hn₁ hF₂ hp,
   let F : cof_fib_factorisation f :=
   ⟨{ Y := F₂.1.Y,
     i := F₁.1.i ≫ F₂.1.i,
@@ -427,7 +463,7 @@ lemma step' (n₀ n₁ : ℤ) (hn₁ : n₁ = n₀ + 1)
   ∃ (F' : cof_fib_factorisation_quasi_iso_ge f n₀) (φ : F.obj.obj ⟶ F'.obj.obj),
     ∀ (i : ℤ) (hi : n₁ ≤ i), is_iso ((hom_factorisation.hom.τ φ).f i) :=
 begin
-  obtain ⟨G, hG, hG'⟩ := step₁₂ F.1.1.p n₀ n₁ hn₁ F.2,
+  obtain ⟨G, hG, hG'⟩ := step₁₂ F.1.1.p F.1.2.hp n₀ n₁ hn₁ F.2,
   let F' : cof_fib_factorisation f :=
   ⟨{ Y := G.1.Y,
     i :=  F.1.1.i ≫ G.1.i,
@@ -627,7 +663,37 @@ def factorisation : cof_fib_factorisation f :=
     end, }⟩
 
 lemma quasi_iso_factorisation_p (n : ℤ) :
-  quasi_iso (ι.map (factorisation f hf F₀).1.p) := sorry
+  quasi_iso (ι.map (factorisation f hf F₀).1.p) :=
+⟨λ n, begin
+  let k := (n₀+1-n).truncate,
+  have hk := int.self_le_coe_truncate (n₀+1-n),
+  have eq : homology_map (colimit.ι (inductive_system' f hf F₀) k) n ≫
+    homology_map (factorisation f hf F₀).obj.p n =
+      homology_map ((inductive_system f hf F₀).obj k).obj.p n,
+  { rw ← homology_map_comp,
+    congr' 1,
+    apply colimit.ι_desc _ _, },
+  haveI : is_iso (homology_map ((inductive_system f hf F₀).obj k).obj.p n) :=
+    (sequence f hf F₀ k).2 n (by linarith),
+  haveI : is_iso (homology_map (limits.colimit.ι (inductive_system' f hf F₀) k) n),
+  { let φ := (homological_complex.short_complex_functor C _ n).map
+      ((limits.colimit.ι (inductive_system' f hf F₀) k)),
+    change is_iso ((short_complex.homology_functor C).map φ),
+    haveI : is_iso φ.τ₁,
+    { apply is_iso_colimit_ι_inductive_system'_f,
+      rw cochain_complex.prev,
+      linarith, },
+    haveI : is_iso φ.τ₂,
+    { apply is_iso_colimit_ι_inductive_system'_f,
+      linarith, },
+    haveI : is_iso φ.τ₃,
+    { apply is_iso_colimit_ι_inductive_system'_f,
+      rw cochain_complex.next,
+      linarith, },
+    haveI := short_complex.is_iso_of_isos φ,
+    apply_instance, },
+  exact is_iso.of_is_iso_fac_left eq,
+end⟩
 
 end induction
 
