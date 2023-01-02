@@ -14,7 +14,7 @@ open category_theory category_theory.category category_theory.limits category_th
 
 namespace cochain_complex
 
-variables {C : Type*} [category C] [additive_category C] [has_binary_biproducts C] /- Fix this -/
+variables {C : Type*} [category C] [preadditive C] [has_binary_biproducts C] /- Fix this -/
 
 namespace hom_complex
 

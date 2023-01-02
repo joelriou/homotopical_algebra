@@ -54,7 +54,7 @@ def projective_structure.arrow_classes [abelian C] :
 
 end cochain_complex
 
-@[derive category]
+@[derive category, derive preadditive]
 def bounded_above_cochain_complex [preadditive C] :=
 full_subcategory (λ (K : cochain_complex C ℤ), K.is_bounded_above)
 
