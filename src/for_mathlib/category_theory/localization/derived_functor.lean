@@ -95,7 +95,13 @@ end structured_arrow
 namespace functor
 
 variables {C D H : Type*} [category C] [category D] [category H]
-  (F : C ⥤ D) (L : C ⥤ H) (W : morphism_property C) [L.is_localization W]
+  {F : C ⥤ D} {L : C ⥤ H} (RF : H ⥤ D) (α : F ⟶ L ⋙ RF) (W : morphism_property C) [L.is_localization W]
+
+class is_right_derived_functor [L.is_localization W] : Prop :=
+(is_initial : nonempty (limits.is_initial (structured_arrow.mk α :
+  structured_arrow F ((whiskering_left C H D).obj L))))
+
+variables (F L)
 
 class has_right_derived_functor : Prop :=
 (has_initial' : limits.has_initial (structured_arrow F ((whiskering_left C _ D).obj W.Q)))
@@ -104,13 +110,11 @@ lemma has_right_derived_functor_iff :
   has_right_derived_functor F W ↔
     limits.has_initial (structured_arrow F ((whiskering_left C H D).obj L)) :=
 begin
-  let Φ :=
-    structured_arrow.whiskering_left F ((whiskering_left _ _ _).obj
+  let Φ := structured_arrow.whiskering_left F ((whiskering_left _ _ _).obj
       (localization.equivalence_from_model L W).functor)
       ((whiskering_left C _ D).obj W.Q),
   let Φ' := structured_arrow.postcomp F ((whiskering_left _ _ D).map_iso
     (localization.Q_comp_equivalence_from_model_functor_iso L W)).inv,
-  let e := as_equivalence (Φ' ⋙ Φ),
   split,
   { intro h,
     haveI := h.has_initial',
@@ -130,12 +134,20 @@ begin
   exact limits.initial _,
 end
 
-def derived_functor [has_right_derived_functor F W] : H ⥤ D :=
+def right_derived_functor [has_right_derived_functor F W] : H ⥤ D :=
 (has_right_derived_functor.initial F L W).right
 
-include L
-def derived_functor_α [has_right_derived_functor F W] : F ⟶ L ⋙ F.derived_functor L W :=
+def right_derived_functor_α [has_right_derived_functor F W] :
+  F ⟶ L ⋙ F.right_derived_functor L W :=
 (has_right_derived_functor.initial F L W).hom
+
+instance right_derived_functor_is_right_derived_functor [has_right_derived_functor F W] :
+  (F.right_derived_functor L W).is_right_derived_functor (F.right_derived_functor_α L W) W :=
+⟨⟨begin
+  haveI := has_right_derived_functor.has_initial F L W,
+  exact limits.is_initial.of_iso limits.initial_is_initial
+    (structured_arrow.iso_mk (iso.refl _) (by tidy)),
+end⟩⟩
 
 end functor
 
