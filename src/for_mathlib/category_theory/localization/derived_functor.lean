@@ -1,11 +1,106 @@
 import for_mathlib.category_theory.localization.predicate
 import category_theory.adjunction.limits
+import category_theory.is_connected
+import for_mathlib.category_theory.localization.products
 
 noncomputable theory
 
 open category_theory category_theory.category
 
 namespace category_theory
+
+section
+
+variables (C : Type*) [category C]
+
+inductive obj_rel : C → C → Prop
+| of_hom ⦃X Y : C⦄ (f : X ⟶ Y) : obj_rel X Y
+
+def connected_components := quot (obj_rel C)
+
+variable {C}
+
+def to_connected_components (X : C) : connected_components C :=
+quot.mk _ X
+
+variable (C)
+
+class is_preconnected' : Prop :=
+(subsingleton_connected_components : subsingleton (connected_components C))
+
+attribute [instance] is_preconnected'.subsingleton_connected_components
+
+class is_connected' extends is_preconnected' C : Prop :=
+[is_nonempty : nonempty C]
+
+lemma connected_components.nat_trans_from_eq {D : Type*} [category D]
+  (X Y : D) (α : (functor.const C).obj X ⟶ (functor.const C).obj Y)
+  (j j' : C) (h : to_connected_components j = to_connected_components j') :
+    α.app j = (α.app j' : X ⟶ Y) :=
+begin
+  let β : C → (X ⟶ Y) := λ j, α.app j,
+  let l : connected_components C → (X ⟶ Y),
+  { refine quot.lift β _,
+    rintro x y ⟨f⟩,
+    dsimp [β],
+    have eq := α.naturality f,
+    dsimp at eq,
+    rw [id_comp, comp_id] at eq,
+    rw eq, },
+  have hl : ∀ (j : C), α.app j = l (to_connected_components j) := λ j, rfl,
+  simp only [hl, h],
+end
+
+lemma nat_trans_from_is_preconnected' {D : Type*} [category D]
+  [is_preconnected' C] (X Y : D) (α : (functor.const C).obj X ⟶ (functor.const C).obj Y)
+  (j j' : C) : α.app j = (α.app j' : X ⟶ Y) :=
+begin
+  apply connected_components.nat_trans_from_eq,
+  apply subsingleton.elim,
+end
+
+end
+
+namespace morphism_property
+
+variables {C : Type*} [category C] (W : morphism_property C)
+
+class multiplicative : Prop :=
+(contains_identities : W.contains_identities)
+(comp [] : W.stable_under_composition)
+
+section
+
+variable [multiplicative W]
+
+instance contains_identities_of_multiplicative : W.contains_identities :=
+multiplicative.contains_identities
+
+include W
+@[protected, nolint unused_arguments]
+structure category :=
+(obj : C)
+
+variable {W}
+
+@[ext]
+structure category.hom (X Y : W.category) :=
+(f : X.obj ⟶ Y.obj)
+(hf : W f)
+
+@[simps]
+instance : category W.category :=
+{ hom := category.hom,
+  id := λ X,
+  { f := 𝟙 _,
+    hf := contains_identities.id _ _, },
+  comp := λ X Y Z φ φ',
+  { f := φ.f ≫ φ'.f,
+    hf := multiplicative.comp W φ.f φ'.f φ.hf φ'.hf, }, }
+
+end
+
+end morphism_property
 
 namespace functor
 
@@ -95,16 +190,18 @@ end structured_arrow
 namespace functor
 
 variables {C D H : Type*} [category C] [category D] [category H]
-  {F : C ⥤ D} {L : C ⥤ H} (RF : H ⥤ D) (α : F ⟶ L ⋙ RF) (W : morphism_property C) [L.is_localization W]
+  {F : C ⥤ D} (RF : H ⥤ D) {L : C ⥤ H} (α : F ⟶ L ⋙ RF) (W : morphism_property C) [L.is_localization W]
 
-class is_right_derived_functor [L.is_localization W] : Prop :=
-(is_initial : nonempty (limits.is_initial (structured_arrow.mk α :
+class is_right_derived_functor : Prop :=
+(is_initial [] : nonempty (limits.is_initial (structured_arrow.mk α :
   structured_arrow F ((whiskering_left C H D).obj L))))
 
-variables (F L)
+variables (F)
 
 class has_right_derived_functor : Prop :=
 (has_initial' : limits.has_initial (structured_arrow F ((whiskering_left C _ D).obj W.Q)))
+
+variable (L)
 
 lemma has_right_derived_functor_iff :
   has_right_derived_functor F W ↔
@@ -121,6 +218,13 @@ begin
     exact adjunction.has_colimits_of_shape_of_equivalence (Φ' ⋙ Φ), },
   { introI,
     exact ⟨adjunction.has_colimits_of_shape_of_equivalence (inv (Φ' ⋙ Φ))⟩, },
+end
+
+lemma is_right_derived_functor.has_right_derived_functor [RF.is_right_derived_functor α] :
+  F.has_right_derived_functor W :=
+begin
+  rw F.has_right_derived_functor_iff L W,
+  exact limits.is_initial.has_initial (is_right_derived_functor.is_initial α).some,
 end
 
 lemma has_right_derived_functor.has_initial [has_right_derived_functor F W] :
@@ -142,7 +246,7 @@ def right_derived_functor_α [has_right_derived_functor F W] :
 (has_right_derived_functor.initial F L W).hom
 
 instance right_derived_functor_is_right_derived_functor [has_right_derived_functor F W] :
-  (F.right_derived_functor L W).is_right_derived_functor (F.right_derived_functor_α L W) W :=
+  (F.right_derived_functor L W).is_right_derived_functor (F.right_derived_functor_α L W) :=
 ⟨⟨begin
   haveI := has_right_derived_functor.has_initial F L W,
   exact limits.is_initial.of_iso limits.initial_is_initial
@@ -150,5 +254,188 @@ instance right_derived_functor_is_right_derived_functor [has_right_derived_funct
 end⟩⟩
 
 end functor
+
+section
+
+variables {C D : Type*} [category C] [category D]
+  (W : morphism_property C) (W' : morphism_property D)
+
+structure localizor_morphism :=
+(functor : C ⥤ D)
+(mapW : ∀ ⦃X Y : C⦄ (f : X ⟶ Y) (hf : W f), W' (functor.map f))
+
+namespace localizor_morphism
+
+variables {W W'} (Φ : localizor_morphism W W') [morphism_property.multiplicative W]
+  [morphism_property.multiplicative W']
+
+@[simps]
+def induced_functor : W.category ⥤ W'.category :=
+{ obj := λ X, ⟨Φ.functor.obj X.obj⟩,
+  map := λ X Y φ,
+  { f := Φ.functor.map φ.f,
+    hf := Φ.mapW φ.f φ.hf, }, }
+
+@[derive category]
+def right_resolution (Y : D) := structured_arrow (⟨Y⟩ : W'.category) Φ.induced_functor
+
+@[simps]
+def right_resolution.mk {Y : D} (X : C) (f : Y ⟶ Φ.functor.obj X) (hf : W' f) :
+  Φ.right_resolution Y :=
+structured_arrow.mk (⟨f, hf⟩ : (⟨Y⟩ : W'.category) ⟶ Φ.induced_functor.obj ⟨X⟩)
+
+end localizor_morphism
+
+end
+
+namespace right_derivability_structure
+
+variables {C₀ C H : Type*} [category C] [category C₀] [category H]
+  {W₀ : morphism_property C₀}
+  {W : morphism_property C} (L : C ⥤ H) [L.is_localization W] (Φ : localizor_morphism W₀ W)
+  [morphism_property.multiplicative W₀] [morphism_property.multiplicative W]
+
+structure basic :=
+(hL : (Φ.functor ⋙ L).is_localization W₀)
+  -- hL should be a property of `Φ`, regardless of the choice of the localization functor `L`
+(right_resolution_connected : ∀ (Y : C), is_connected' (Φ.right_resolution Y))
+(nonempty_arrow_right_resolution :
+  ∀ ⦃Y₁ Y₂ : C⦄ (f : Y₁ ⟶ Y₂), ∃ (X₁ : Φ.right_resolution Y₁) (X₂ : Φ.right_resolution Y₂)
+  (f' : X₁.right.obj ⟶ X₂.right.obj), X₁.hom.1 ≫ Φ.functor.map f' = f ≫ X₂.hom.1)
+
+namespace basic
+
+variables {L Φ} (β : basic L Φ) {D : Type*} [category D]
+
+def some_right_resolution (Y : C) : Φ.right_resolution Y :=
+(β.right_resolution_connected Y).is_nonempty.some
+
+variables {F : C ⥤ D} (hF : W₀.is_inverted_by (Φ.functor ⋙ F))
+
+namespace existence_derived_functor
+
+include β hF
+
+def RF : H ⥤ D :=
+begin
+  haveI := β.hL,
+  exact localization.lift (Φ.functor ⋙ F) hF (Φ.functor ⋙ L),
+end
+
+def ε : Φ.functor ⋙ L ⋙ RF β hF ≅ Φ.functor ⋙ F :=
+begin
+  haveI := β.hL,
+  haveI : localization.lifting (Φ.functor ⋙ L) W₀ (Φ.functor ⋙ F) (RF β hF) :=
+    localization.lifting_lift _ _ _,
+  refine (functor.associator _ _ _).symm ≪≫ localization.lifting.iso (Φ.functor ⋙ L) W₀ _ _,
+end
+
+def α' (X : C) : (functor.const (Φ.right_resolution X)).obj (F.obj X) ⟶
+  (functor.const (Φ.right_resolution X)).obj ((RF β hF).obj (L.obj X)) :=
+{ app := λ X₀, F.map X₀.hom.1 ≫ (ε β hF).inv.app _ ≫
+    (RF β hF).map (localization.iso_of_hom L W _ X₀.hom.2).inv,
+  naturality' := λ X₀ X₀' φ, begin
+    dsimp,
+    simp only [functor.map_inv, id_comp, comp_id],
+    have eq₁ := φ.w,
+    have eq₂ := (ε β hF).inv.naturality φ.right.1,
+    dsimp at eq₁ eq₂,
+    rw id_comp at eq₁,
+    rw eq₁,
+    dsimp,
+    rw [functor.map_comp, assoc, reassoc_of eq₂],
+    congr' 2,
+    simp only [functor.map_comp],
+    erw is_iso.comp_inv_eq, -- should be tidied
+    rw is_iso.inv_hom_id_assoc,
+  end, }
+
+def α_app (X : C) : F.obj X ⟶ (RF β hF).obj (L.obj X) :=
+(α' β hF X).app (β.some_right_resolution X)
+
+lemma α_app_eq {X : C} (X₀ : Φ.right_resolution X) :
+  (α_app β hF) X = (α' β hF X).app X₀ :=
+begin
+  haveI := β.right_resolution_connected X,
+  apply nat_trans_from_is_preconnected',
+end
+
+def α : F ⟶ L ⋙ RF β hF :=
+{ app := λ X, (α_app β hF) X,
+  naturality' := λ Y₁ Y₂ f, begin
+    obtain ⟨X₁, X₂, f', fac⟩ := β.nonempty_arrow_right_resolution f,
+    rw [α_app_eq β hF X₁, α_app_eq β hF X₂],
+    dsimp [α'],
+    have eq₁ := F.congr_map fac,
+    have eq₂ := (ε β hF).inv.naturality f',
+    simp only [functor.map_comp] at eq₁,
+    dsimp at eq₂,
+    simp only [assoc, ← reassoc_of eq₁, reassoc_of eq₂, ← functor.map_comp],
+    congr' 3,
+    rw [is_iso.eq_inv_comp, ← L.map_comp_assoc, fac, L.map_comp, assoc,
+      is_iso.hom_inv_id, comp_id],
+  end, }
+
+instance (X₀ : C₀) : is_iso ((α β hF).app (Φ.functor.obj X₀)) :=
+begin
+  let X₀' := localizor_morphism.right_resolution.mk Φ X₀ (𝟙 _)
+    (morphism_property.contains_identities.id W _),
+  dsimp [α],
+  rw α_app_eq β hF (localizor_morphism.right_resolution.mk Φ X₀ (𝟙 _)
+    (morphism_property.contains_identities.id W _)),
+  dsimp [α'],
+  simp only [functor.map_id, is_iso.inv_id, comp_id, id_comp],
+  apply_instance,
+end
+
+def RF' : structured_arrow F ((whiskering_left C H D).obj L) :=
+structured_arrow.mk (α β hF)
+
+instance is_iso_RF'_hom_app (X₀ : C₀) :
+  is_iso ((RF' β hF).hom.app (Φ.functor.obj X₀)) :=
+(infer_instance : is_iso ((α β hF).app (Φ.functor.obj X₀)))
+
+instance (G : structured_arrow F ((whiskering_left C H D).obj L)) :
+  subsingleton (RF' β hF ⟶ G) :=
+⟨λ φ₁ φ₂, begin
+  apply structured_arrow.ext,
+  haveI := β.hL,
+  apply localization.nat_trans_ext (Φ.functor ⋙ L) W₀,
+  intro X₀,
+  have eq₁ := congr_app φ₁.w (Φ.functor.obj X₀),
+  have eq₂ := congr_app φ₂.w (Φ.functor.obj X₀),
+  dsimp at eq₁ eq₂ ⊢,
+  rw [id_comp] at eq₁ eq₂,
+  rw [← cancel_epi ((RF' β hF).hom.app (Φ.functor.obj X₀)), ← eq₁, eq₂],
+end⟩
+
+def RF_τ (G : structured_arrow F ((whiskering_left C H D).obj L)) :
+  RF' β hF ⟶ G :=
+begin
+  sorry,
+end
+
+instance (G : structured_arrow F ((whiskering_left C H D).obj L)) :
+  unique (RF' β hF ⟶ G) :=
+unique_of_subsingleton (RF_τ β hF G)
+
+lemma is_initial_RF' : limits.is_initial (RF' β hF) := limits.is_initial.of_unique _
+
+instance RF_is_right_derived_functor :
+  (RF β hF).is_right_derived_functor (α _ _) :=
+⟨⟨is_initial_RF' β hF⟩⟩
+
+end existence_derived_functor
+
+variable (F)
+
+open existence_derived_functor
+
+lemma existence_derived_functor : F.has_right_derived_functor W :=
+functor.is_right_derived_functor.has_right_derived_functor F (RF β hF) L (α _ _) W
+
+end basic
+
+end right_derivability_structure
 
 end category_theory
