@@ -213,17 +213,29 @@ variable {C}
 def Qh : K_injective C (complex_shape.up ℤ) ⥤ derived_category C :=
 K_injective.ι _ _ ⋙ derived_category.Qh.to_functor
 
-variable (C)
-
-lemma W_eq_isomorphisms : W C = morphism_property.isomorphisms _ := sorry
-
-variable {C}
-
 instance full_Qh : full (Qh : _ ⥤ derived_category C) :=
 functor.full_of_surjective _ (λ K L, (derived_category.Qh_map_bijective_of_is_K_injective _ _).2)
 
 instance faithful_Qh : faithful (Qh : _ ⥤ derived_category C) :=
 ⟨λ K L, (derived_category.Qh_map_bijective_of_is_K_injective _ _).1⟩
+
+variable (C)
+
+lemma W_eq_isomorphisms : W C = morphism_property.isomorphisms _ :=
+begin
+  ext K L f,
+  split,
+  { intro hf,
+    haveI : is_iso (Qh.map f) :=
+      ((acyclic C).is_iso_map_iff derived_category.Qh.to_functor f).2 hf,
+    exact is_iso_of_reflects_iso f Qh, },
+  { rintro (h : is_iso _),
+    haveI := h,
+    refine ((acyclic C).is_iso_map_iff derived_category.Qh.to_functor ((ι _ _).map f)).1 _,
+    apply_instance, },
+end
+
+variable {C}
 
 variables [has_enough_K_injectives C]
 
