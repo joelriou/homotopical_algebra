@@ -439,7 +439,7 @@ functor.comm_shift_comp_hom_app _ _ _
 
 lemma is_iso_Q_map_iff {K L : cochain_complex C ℤ} (φ : K ⟶ L) :
   is_iso (Q.map φ) ↔ quasi_iso φ :=
-(subcategory.is_iso_map_iff _ _).trans (homotopy_category.map_quotient_W_iff φ)
+(subcategory.is_iso_map_iff _ Qh.to_functor _).trans (homotopy_category.map_quotient_W_iff φ)
 
 instance {K L : cochain_complex C ℤ} (φ : K ⟶ L) [quasi_iso φ] :
   is_iso (Q.map φ) :=

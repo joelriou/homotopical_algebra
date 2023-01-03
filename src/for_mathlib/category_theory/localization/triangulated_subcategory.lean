@@ -1,3 +1,4 @@
+import for_mathlib.category_theory.localization.derived_functor
 import for_mathlib.category_theory.localization.triangulated
 import for_mathlib.category_theory.triangulated.pretriangulated_misc
 import for_mathlib.category_theory.triangulated.shift_triangle
@@ -164,6 +165,10 @@ begin
   exact subcategory.ext₂ A _ (is_triangulated.octahedron_axiom rfl H₁₂ H₂₃ H₁₃).some.mem
     mem₁₂ mem₂₃,
 end
+
+instance W_multiplicative [is_triangulated C] : (W A).multiplicative :=
+{ contains_identities := infer_instance,
+  comp := W_stable_under_composition A, }
 
 lemma W_respects_iso : (W A).respects_iso :=
 begin
@@ -578,8 +583,9 @@ then `G` is a triangulated functor.
 instance Q_to_functor_is_localization [is_triangulated C] : A.Q.to_functor.is_localization A.W :=
 (infer_instance : A.W.Q.is_localization A.W)
 
-lemma is_iso_map_iff [A.saturated] [is_triangulated C] {X Y : C} (f : X ⟶ Y) : is_iso (A.Q.map f) ↔ A.W f :=
-by convert localization.is_iso_map_iff_of_calculus_of_fractions (W A).Q (W A) f
+lemma is_iso_map_iff [A.saturated] [is_triangulated C] {D : Type*} [category D] (L : C ⥤ D)
+  [L.is_localization (W A)] {X Y : C} (f : X ⟶ Y) : is_iso (L.map f) ↔ A.W f :=
+localization.is_iso_map_iff_of_calculus_of_fractions L (W A) f
 
 lemma is_zero_obj_iff' [is_triangulated C] (X : C) :
   is_zero (A.Q.obj X) ↔ ∃ (Y : C) (i : X ⟶ Y) [is_split_mono i], Y ∈ A.set :=
@@ -631,7 +637,6 @@ def left_orthogonal : subcategory C :=
 instance left_orthogonal_saturated : A.left_orthogonal.saturated :=
 ⟨λ X Y i hi hX Z f hZ, begin
   haveI := hi,
-  have pif := retraction i,
   rw [← cancel_epi (retraction i), comp_zero],
   exact hX _ hZ,
 end⟩
@@ -679,6 +684,73 @@ end
 lemma left_orthogonal_bijective_Q_map [is_triangulated C] (X Y : C) (hX : X ∈ A.left_orthogonal.set) :
   function.bijective (λ (f : X ⟶ Y), A.Q.map f) :=
 A.left_orthogonal_bijective_L_map A.W.Q _ _ hX
+
+def right_orthogonal : subcategory C :=
+{ set := λ Y, ∀ ⦃X : C⦄ (f : X ⟶ Y) (hX : X ∈ A.set), f = 0,
+  zero := by tidy,
+  shift := λ Y n h X f hY, begin
+    let adj : shift_functor C (-n) ⊣ shift_functor C (n) :=
+      (add_neg_equiv (shift_monoidal_functor C ℤ) n).symm.to_adjunction,
+    apply (adj.hom_equiv _ _).symm.injective,
+    rw [(h _ (A.shift X (-n) hY) : (adj.hom_equiv _ _).symm f = 0),
+      adjunction.hom_equiv_counit, functor.map_zero, zero_comp],
+  end,
+  ext₂ := λ T hT h₁ h₃ X f hX, begin
+    obtain ⟨g, hg⟩ := covariant_yoneda_exact₂ T hT f (h₃ _ hX),
+    rw [hg, h₁ g hX, zero_comp],
+  end, }
+
+instance right_orthogonal_saturated : A.right_orthogonal.saturated :=
+⟨λ X Y i hi hX Z f hZ, begin
+  haveI := hi,
+  rw [← cancel_mono i, zero_comp],
+  exact hX _ hZ,
+end⟩
+
+lemma right_orthogonal_comp_W_bijective (Z : C) (hZ : Z ∈ A.right_orthogonal.set)
+  {X Y : C} (w : X ⟶ Y) (hw : A.W w) :
+  function.bijective (λ (f : Y ⟶ Z), w ≫ f) :=
+begin
+  split,
+  { intros y₁ y₂ hy,
+    let y := y₁ - y₂,
+    suffices : y = 0,
+    { rw ← sub_eq_zero,
+      exact this, },
+    dsimp at hy,
+    obtain ⟨U, f, g, H, mem⟩ := hw,
+    obtain ⟨u, hu⟩ := contravariant_yoneda_exact₂ _ H y
+      (by { dsimp [y], rw [comp_sub, hy, sub_self], }),
+    rw [hu, hZ u mem, comp_zero], },
+  { intro z,
+    rw W_eq_W' at hw,
+    obtain ⟨U, f, g, H, mem⟩ := hw,
+    obtain ⟨y, hy⟩ := contravariant_yoneda_exact₂ _ H z (hZ _ mem),
+    exact ⟨y, hy.symm⟩, },
+end
+
+lemma right_orthogonal_bijective_L_map [is_triangulated C] {D : Type*} [category D]
+  (L : C ⥤ D) [L.is_localization A.W] (X Y : C) (hY : Y ∈ A.right_orthogonal.set) :
+  function.bijective (λ (f : X ⟶ Y), L.map f) :=
+begin
+  split,
+  { intros f₁ f₂ hf,
+    dsimp at hf,
+    rw right_calculus_of_fractions.L_map_eq_iff L A.W at hf,
+    rcases hf with ⟨Z, s, hs, eq⟩,
+    exact (A.right_orthogonal_comp_W_bijective _ hY s hs).1 eq, },
+  { intro g,
+    obtain ⟨z, hz⟩ := right_calculus_of_fractions.L_map_fac L A.W g,
+    dsimp [right_calculus_of_fractions.map_roof] at hz,
+    obtain ⟨f, hf⟩ := (A.right_orthogonal_comp_W_bijective _ hY z.s z.hs).2 z.f,
+    refine ⟨f, _⟩,
+    dsimp at hf ⊢,
+    rw [hz, ← hf, L.map_comp, is_iso.inv_hom_id_assoc], },
+end
+
+lemma right_orthogonal_bijective_Q_map [is_triangulated C] (X Y : C) (hY : Y ∈ A.right_orthogonal.set) :
+  function.bijective (λ (f : X ⟶ Y), A.Q.map f) :=
+A.right_orthogonal_bijective_L_map A.W.Q _ _ hY
 
 end subcategory
 
