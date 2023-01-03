@@ -147,19 +147,6 @@ def whiskering_left : structured_arrow X₃ (F ⋙ G) ⥤ structured_arrow X₃ 
 { obj := λ X₂, mk X₂.hom,
   map := λ X₂ X₂' φ, hom_mk (F.map φ.right) (w φ), }
 
-def whiskering_left_equivalence :
-equivalence (structured_arrow X₃ (eF.functor ⋙ G)) (structured_arrow X₃ G) :=
-{ functor := whiskering_left X₃ eF.functor G,
-  inverse := begin
-    refine _ ⋙ whiskering_left X₃ eF.inverse (eF.functor ⋙ G),
-    sorry,
-  end,
-  unit_iso := sorry,
-  counit_iso := sorry, }
-
-instance [is_equivalence F] : is_equivalence (whiskering_left X₃ F G) :=
-is_equivalence.of_equivalence (whiskering_left_equivalence X₃ (functor.as_equivalence F) G)
-
 variables {X₃ X₃'}
 
 @[simps]
@@ -208,6 +195,34 @@ def postcomp_iso : equivalence (structured_arrow X₃ G) (structured_arrow X₃ 
 
 instance [is_iso τ] : is_equivalence (postcomp X₃ τ) :=
 is_equivalence.of_equivalence (postcomp_iso X₃ (as_iso τ))
+
+variable (G)
+
+@[simps]
+def whiskering_left_equivalence :
+equivalence (structured_arrow X₃ (eF.functor ⋙ G)) (structured_arrow X₃ G) :=
+{ functor := whiskering_left X₃ eF.functor G,
+  inverse := (postcomp_iso X₃ ((functor.left_unitor _).symm ≪≫
+      iso_whisker_right eF.counit_iso.symm _≪≫ functor.associator _ _ _)).functor ⋙
+    whiskering_left X₃ eF.inverse (eF.functor ⋙ G),
+  unit_iso := nat_iso.of_components
+    (λ Y, structured_arrow.iso_mk (eF.unit_iso.app _) begin
+      dsimp,
+      simp only [comp_id, id_comp],
+      congr' 2,
+      simpa only [← cancel_mono (eF.counit_iso.hom.app (eF.functor.obj Y.right)),
+        equivalence.functor_unit_comp, iso.inv_hom_id_app],
+    end) (by tidy),
+  counit_iso := nat_iso.of_components
+    (λ X, structured_arrow.iso_mk (eF.counit_iso.app _) begin
+      dsimp,
+      simp only [id_comp, assoc, ← G.map_comp, iso.inv_hom_id_app],
+      dsimp,
+      simp only [functor.map_id, comp_id],
+    end) (by tidy), }
+
+instance [is_equivalence F] : is_equivalence (whiskering_left X₃ F G) :=
+is_equivalence.of_equivalence (whiskering_left_equivalence X₃ (functor.as_equivalence F) G)
 
 end structured_arrow
 
