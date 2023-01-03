@@ -9,6 +9,11 @@ open category_theory category_theory.category
 
 namespace category_theory
 
+@[simps]
+instance localization.lifting.of_comp {C D E : Type*} [category C] [category D] [category E]
+  (L : C ⥤ D) (W : morphism_property C) [L.is_localization W] (F : D ⥤ E) :
+  localization.lifting L W (L ⋙ F) F := ⟨iso.refl _⟩
+
 section
 
 variables (C : Type*) [category C]
@@ -104,11 +109,30 @@ end morphism_property
 
 namespace functor
 
-variables {C₁ C₂ C₃ : Type*} [category C₁] [category C₂] [category C₃]
+variables (C₁ C₂ C₃ : Type*) [category C₁] [category C₂] [category C₃]
   (F : C₁ ⥤ C₂)
 
+@[simps]
+def whiskering_left_id : (whiskering_left C₁ C₁ C₃).obj (𝟭 C₁) ≅ 𝟭 _ :=
+nat_iso.of_components (functor.left_unitor) (by tidy)
+
+variables {C₁ C₂}
+
+@[simps]
+def equivalence_whiskering_left (e : C₁ ≌ C₂) : (C₂ ⥤ C₃) ≌ C₁ ⥤ C₃ :=
+{ functor := (whiskering_left _ _ _).obj e.functor,
+  inverse := (whiskering_left _ _ _).obj e.inverse,
+  unit_iso := (whiskering_left_id _ _).symm ≪≫ (whiskering_left _ _ C₃).map_iso e.counit_iso.symm,
+  counit_iso := (whiskering_left _ _ C₃).map_iso e.unit_iso.symm ≪≫ whiskering_left_id _ _,
+  functor_unit_iso_comp' := λ F, begin
+    ext X,
+    dsimp,
+    simp only [id_comp, comp_id, ← F.map_comp, equivalence.counit_inv_functor_comp, F.map_id],
+  end, }
+
 instance [is_equivalence F] :
-  is_equivalence ((whiskering_left _ _ C₃).obj F) := sorry
+  is_equivalence ((whiskering_left _ _ C₃).obj F) :=
+is_equivalence.of_equivalence (equivalence_whiskering_left C₃ (as_equivalence F))
 
 end functor
 
@@ -195,6 +219,34 @@ variables {C D H : Type*} [category C] [category D] [category H]
 class is_right_derived_functor : Prop :=
 (is_initial [] : nonempty (limits.is_initial (structured_arrow.mk α :
   structured_arrow F ((whiskering_left C H D).obj L))))
+
+namespace is_right_derived_functor
+
+variables (RF₁ RF₂ : H ⥤ D) (α₁ : F ⟶ L ⋙ RF₁) (α₂ : F ⟶ L ⋙ RF₂)
+  [RF₁.is_right_derived_functor α₁] [RF₂.is_right_derived_functor α₂]
+
+def uniq' : (structured_arrow.mk α₁ :
+  structured_arrow F ((whiskering_left C H D).obj L)) ≅ structured_arrow.mk α₂ :=
+limits.is_colimit.cocone_point_unique_up_to_iso
+    (is_right_derived_functor.is_initial α₁).some
+    (is_right_derived_functor.is_initial α₂).some
+
+/- It should be slightly better to define natural transformation `RF₁ ⟶ G` for any `G` equipped
+with a nat_trans, and then construct the isomorphism `uniq` using universal properties for
+both `RF₁` and `RF₂`. -/
+
+def uniq : RF₁ ≅ RF₂ :=
+(structured_arrow.proj _ _).map_iso (uniq' _ _ α₁ α₂)
+
+@[simp]
+def uniq_hom_app_comm (X : C) : α₁.app X ≫ (uniq _ _ α₁ α₂).hom.app (L.obj X) = α₂.app X :=
+congr_app (structured_arrow.w (uniq' _ _ α₁ α₂).hom) X
+
+@[simp]
+def uniq_inv_app_comm (X : C) : α₂.app X ≫ (uniq _ _ α₁ α₂).inv.app (L.obj X) = α₁.app X :=
+congr_app (structured_arrow.w (uniq' _ _ α₁ α₂).inv) X
+
+end is_right_derived_functor
 
 variables (F)
 
@@ -322,12 +374,12 @@ begin
   exact localization.lift (Φ.functor ⋙ F) hF (Φ.functor ⋙ L),
 end
 
-def ε : Φ.functor ⋙ L ⋙ RF β hF ≅ Φ.functor ⋙ F :=
+def ε : (Φ.functor ⋙ L) ⋙ RF β hF ≅ Φ.functor ⋙ F :=
 begin
   haveI := β.hL,
   haveI : localization.lifting (Φ.functor ⋙ L) W₀ (Φ.functor ⋙ F) (RF β hF) :=
     localization.lifting_lift _ _ _,
-  refine (functor.associator _ _ _).symm ≪≫ localization.lifting.iso (Φ.functor ⋙ L) W₀ _ _,
+  refine localization.lifting.iso (Φ.functor ⋙ L) W₀ _ _,
 end
 
 def α' (X : C) : (functor.const (Φ.right_resolution X)).obj (F.obj X) ⟶
@@ -360,6 +412,7 @@ begin
   apply nat_trans_from_is_preconnected',
 end
 
+@[simps]
 def α : F ⟶ L ⋙ RF β hF :=
 { app := λ X, (α_app β hF) X,
   naturality' := λ Y₁ Y₂ f, begin
@@ -388,6 +441,7 @@ begin
   apply_instance,
 end
 
+@[simps]
 def RF' : structured_arrow F ((whiskering_left C H D).obj L) :=
 structured_arrow.mk (α β hF)
 
@@ -406,13 +460,47 @@ instance (G : structured_arrow F ((whiskering_left C H D).obj L)) :
   have eq₂ := congr_app φ₂.w (Φ.functor.obj X₀),
   dsimp at eq₁ eq₂ ⊢,
   rw [id_comp] at eq₁ eq₂,
-  rw [← cancel_epi ((RF' β hF).hom.app (Φ.functor.obj X₀)), ← eq₁, eq₂],
+  rw [← cancel_epi ((α β hF).app (Φ.functor.obj X₀))],
+  dsimp,
+  rw [← eq₁, eq₂],
 end⟩
+
+def RF_τ' (G : structured_arrow F ((whiskering_left C H D).obj L)) :
+  RF β hF ⟶ G.right :=
+begin
+  haveI := β.hL,
+  exact localization.lift_nat_trans (Φ.functor ⋙ L) W₀ _ _ _ _
+    ((ε β hF).hom ≫ whisker_left _ G.hom ≫ (functor.associator _ _ _).inv),
+end
+
+@[simp]
+lemma RF_τ'_app_eq (G : structured_arrow F ((whiskering_left C H D).obj L)) (X₀ : C₀) :
+  (RF_τ' β hF G).app (L.obj (Φ.functor.obj X₀)) =
+    (ε β hF).hom.app X₀ ≫ G.hom.app (Φ.functor.obj X₀) :=
+begin
+  haveI := β.hL,
+  dsimp [RF_τ'],
+  erw localization.lift_nat_trans_app,
+  simp only [localization.lifting.of_comp_iso, iso.refl_hom, nat_trans.id_app,
+    nat_trans.comp_app, whisker_left_app, functor.associator_inv_app,
+    comp_id, iso.refl_inv, assoc],
+  erw id_comp,
+end
 
 def RF_τ (G : structured_arrow F ((whiskering_left C H D).obj L)) :
   RF' β hF ⟶ G :=
 begin
-  sorry,
+  haveI := β.hL,
+  refine structured_arrow.hom_mk (RF_τ' β hF G) _,
+  ext X,
+  let X₀ := β.some_right_resolution X,
+  have eq := (RF_τ' β hF G).naturality (L.map X₀.hom.f),
+  haveI : is_iso (L.map X₀.hom.f) := localization.inverts L W _ X₀.hom.hf,
+  dsimp at ⊢ eq,
+  simp only [← cancel_mono (G.right.map (L.map X₀.hom.f)), assoc, ← eq, RF_τ'_app_eq,
+    α_app_eq β hF X₀, α', ← functor.map_comp_assoc],
+  erw [is_iso.inv_hom_id, functor.map_id, id_comp, iso.inv_hom_id_app_assoc, G.hom.naturality],
+  refl,
 end
 
 instance (G : structured_arrow F ((whiskering_left C H D).obj L)) :
@@ -431,8 +519,24 @@ variable (F)
 
 open existence_derived_functor
 
+/-
+The following lemma is a consequence of Lemma 6.5 of
+_Structures de dérivabilité_ by Bruno Kahn, Georges Maltsiniotis,
+Advances in mathematics 218 (2018).
+-/
+
 lemma existence_derived_functor : F.has_right_derived_functor W :=
 functor.is_right_derived_functor.has_right_derived_functor F (RF β hF) L (α _ _) W
+
+include β hF
+
+lemma is_iso_app (F' : H ⥤ D) (α' : F ⟶ L ⋙ F') [F'.is_right_derived_functor α'] (X₀ : C₀) :
+  is_iso (α'.app (Φ.functor.obj X₀)) :=
+begin
+  rw ← functor.is_right_derived_functor.uniq_hom_app_comm (RF β hF) F' (α β hF) α'
+    (Φ.functor.obj X₀),
+  apply_instance,
+end
 
 end basic
 
