@@ -26,8 +26,6 @@ section
 variables {A B : bounded_above_cochain_complex C} (i : A ⟶ B) (hi : arrow_classes.cof i)
 include hi
 
-def cof_quotient : bounded_above_cochain_complex C := limits.cokernel i
-
 def splittings_of_cof (n : ℤ) : splitting (i.f n) ((limits.cokernel.π i).f n) :=
 begin
 -- show that it is a short_exact sequence
