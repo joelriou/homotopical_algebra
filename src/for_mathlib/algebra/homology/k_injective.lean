@@ -1,5 +1,6 @@
 import for_mathlib.algebra.homology.k_projective
 import for_mathlib.category_theory.localization.derived_functor
+import category_theory.abelian.injective
 
 noncomputable theory
 
@@ -93,6 +94,10 @@ begin
    (((homotopy_category.quotient C (complex_shape.up ℤ)).comm_shift_iso r).app K),
     ← triangulated.subcategory.shift_iff _ _ r],
 end
+
+lemma is_K_injective_of_bounded_below_of_injective
+  (K : cochain_complex C ℤ) (n : ℤ) [K.is_strictly_ge n]
+  [∀ (n : ℤ), injective (K.X n)] : is_K_injective K := sorry
 
 end cochain_complex
 
@@ -235,7 +240,17 @@ begin
     apply_instance, },
 end
 
+
 variable {C}
+
+lemma W_inverts {D : Type*} [category D]
+  (G : K_injective C (complex_shape.up ℤ) ⥤ D) :
+  (W C).is_inverted_by G :=
+begin
+  intros X Y f hf,
+  haveI : is_iso f := by simpa only [W_eq_isomorphisms] using hf,
+  apply_instance,
+end
 
 variables [has_enough_K_injectives C]
 
@@ -317,6 +332,31 @@ lemma right_derivability_structure :
     obtain ⟨f', fac⟩ := K_injective.lift_map f X₁ X₂,
     exact ⟨X₁, X₂, f', fac⟩,
   end, }
+
+section
+
+variables {D : Type*} [category D]
+  (F : homotopy_category C (complex_shape.up ℤ) ⥤ D)
+
+instance existence_right_derived_functor :
+  F.has_right_derived_functor (acyclic C).W :=
+right_derivability_structure.basic.existence_derived_functor
+  K_injective.right_derivability_structure F (W_inverts _)
+
+lemma is_iso_app (RF : derived_category C ⥤ D)
+  (α : F ⟶ derived_category.Qh.to_functor ⋙ RF)
+  [RF.is_right_derived_functor α]
+  (K : homotopy_category C (complex_shape.up ℤ)) [K.is_K_injective] :
+  is_iso (α.app K) :=
+right_derivability_structure.basic.is_iso_app
+    K_injective.right_derivability_structure F (W_inverts _) RF α
+      ⟨K, infer_instance⟩
+
+instance (K : homotopy_category C (complex_shape.up ℤ)) [K.is_K_injective] :
+  is_iso ((F.right_derived_functor_α derived_category.Qh.to_functor (acyclic C).W).app K) :=
+is_iso_app _ _ _ _
+
+end
 
 end K_injective
 
