@@ -65,6 +65,8 @@ variable {C}
 def ι [preadditive C] :
   bounded_above_cochain_complex C ⥤ cochain_complex C ℤ := full_subcategory_inclusion _
 
+instance : functor.additive (ι : bounded_above_cochain_complex C ⥤ cochain_complex C ℤ) := { }
+
 namespace projective_model_structure
 
 @[simps]

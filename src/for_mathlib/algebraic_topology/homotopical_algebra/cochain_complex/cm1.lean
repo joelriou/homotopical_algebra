@@ -9,6 +9,8 @@ import for_mathlib.algebra.homology.homological_complex_limits
 import for_mathlib.algebra.homology.trunc
 import category_theory.limits.full_subcategory
 
+noncomputable theory
+
 open category_theory category_theory.limits
 open_locale zero_object
 
@@ -103,6 +105,18 @@ instance : has_finite_colimits (bounded_above_cochain_complex C) :=
   apply has_colimits_of_shape_of_closed_under_colimits,
   apply is_bounded_above_is_closed_under_colimits_of_shape,
 end⟩
+
+instance : creates_limits_of_shape J (ι : _ ⥤ cochain_complex C ℤ) :=
+begin
+  apply creates_limits_of_shape_full_subcategory_inclusion,
+  apply is_bounded_above_is_closed_under_limits_of_shape,
+end
+
+instance : creates_colimits_of_shape J (ι : _ ⥤ cochain_complex C ℤ) :=
+begin
+  apply creates_colimits_of_shape_full_subcategory_inclusion,
+  apply is_bounded_above_is_closed_under_colimits_of_shape,
+end
 
 end limits
 
