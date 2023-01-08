@@ -123,6 +123,23 @@ def order.lt_inclusion_functor_iso_of_le (m₁ m₂ : α) (h : m₁ ≤ m₂) (b
     (order.order_iso_lt_le m₁ m₂ h b).to_equivalence.functor ⋙
       order.lt_inclusion_functor (⟨b, b.2.trans h⟩ : { x // x ≤ m₂ }) := iso.refl _
 
+@[simps]
+def order.lt_inclusion_functor_iso_of_le' (m₁ m₂ : α) (h : m₁ ≤ m₂) (b : { x // x ≤ m₁}) :
+  (order.order_iso_lt_le m₁ m₂ h b).to_equivalence.inverse ⋙
+    order.lt_inclusion_functor b ⋙ order.le_inclusion_functor_of_le m₁ m₂ h ≅
+      order.lt_inclusion_functor (⟨b, b.2.trans h⟩ : { x // x ≤ m₂ }) :=
+iso_whisker_left (order.order_iso_lt_le m₁ m₂ h b).to_equivalence.inverse
+  (order.lt_inclusion_functor_iso_of_le m₁ m₂ h b) ≪≫ (functor.associator _ _ _).symm ≪≫
+  iso_whisker_right (order.order_iso_lt_le m₁ m₂ h b).to_equivalence.counit_iso _ ≪≫
+  functor.left_unitor _
+
+lemma order.is_bot.subsingleton_le {m : α} (hm : order.is_bot m) :
+  subsingleton {a // a ≤ m} :=
+⟨λ x₁ x₂, begin
+  have eq : ∀ (x : {x // x ≤ m}), x = ⟨m, hm m⟩ := λ x, le_antisymm x.2 (hm _),
+  rw [eq x₁, eq x₂],
+end⟩
+
 end
 
 section
@@ -249,9 +266,17 @@ def restriction (m₁ m₂ : α) (h : m₁ ≤ m₂) :
     hF := begin
       rintro ⟨b, hb⟩ hb',
       have hc := I.hF ⟨b, hb.trans h⟩ (by simpa only [order.is_limit.of_le_iff] using hb'),
-      let e := order.lt_inclusion_functor_iso_of_le m₁ m₂ h ⟨b, hb⟩,
+      apply limits.is_colimit.of_whisker_equivalence
+        (order.order_iso_lt_le m₁ m₂ h ⟨b, hb⟩).to_equivalence.symm,
+      let e := order.lt_inclusion_functor_iso_of_le' m₁ m₂ h ⟨b, hb⟩,
       let e' := iso_whisker_right e I.F,
-      sorry,
+      let e'' : (order.order_iso_lt_le m₁ m₂ h ⟨b, hb⟩).to_equivalence.inverse ⋙
+        order.lt_inclusion_functor ⟨b, hb⟩ ⋙ order.le_inclusion_functor_of_le m₁ m₂ h ⋙
+        I.F ≅ _ := e',
+      equiv_rw (limits.is_colimit.precompose_hom_equiv e''.symm _).symm,
+      refine is_colimit.of_iso_colimit hc (cocones.ext (iso.refl _) (λ a, _)),
+      dsimp,
+      simpa only [comp_id, ← I.F.map_comp],
     end,
     iso := λ a b hab, I.iso ⟨a.1, a.2.trans h⟩ ⟨b.1, b.2.trans h⟩
       (by simpa only [order.are_succ.of_le_iff] using hab), },
@@ -288,8 +313,54 @@ lemma faithful_eval_zero : faithful (eval τ m a₀) :=
 end⟩
 
 lemma full_eval_zero : full (eval τ m a₀) :=
-begin
-  sorry,
+nonempty.some begin
+  rcases a₀ with ⟨a₀, ha₁⟩,
+  rw order.is_bot.of_le_iff at ha₀,
+  dsimp at ha₀,
+  apply @well_founded.induction α (<) is_well_founded.wf (λ (m' : α), nonempty
+    (full (eval τ m' ⟨a₀, ha₀ _⟩))),
+  intros m H,
+  rcases is_well_order.three_cases m with h₁ | (h₂ | h₃),
+  { haveI := h₁.subsingleton_le,
+    refine ⟨full_of_surjective _ (λ I₁ I₂ f, _)⟩,
+    exact
+    ⟨{ f:=
+      { app := λ a, eq_to_hom (by { dsimp, congr, }) ≫ f ≫ eq_to_hom (by { dsimp, congr, }),
+        naturality' := λ a₁ a₂ g, begin
+          have eq := subsingleton.elim a₁ a₂,
+          subst eq,
+          have eq' := subsingleton.elim g (𝟙 _),
+          subst eq',
+          simp only [map_id, id_comp, comp_id],
+        end, },
+      commτ := λ a₁ a₂ h₁₂, begin
+        exfalso,
+        rw subsingleton.elim a₁ a₂ at h₁₂,
+        exact (lt_self_iff_false _).1 h₁₂.1,
+      end, }, begin
+        dsimp,
+        simp only [comp_id, id_comp],
+      end⟩, },
+  { sorry, },
+  { refine ⟨full_of_surjective _ (λ I₁ I₂ f, _)⟩,
+    dsimp at f,
+    let R₁ := λ (m' : α) (hm' : m' < m), (restriction m' m hm'.le).obj I₁,
+    let R₂ := λ (m' : α) (hm' : m' < m), (restriction m' m hm'.le).obj I₂,
+    have h : ∀ (m' : α) (hm' : m' < m), ∃ (Φ : R₁ m' hm' ⟶ R₂ m' hm'),
+      (eval τ m' ⟨a₀, ha₀ _⟩).map Φ = f,
+    { intros m' hm',
+      haveI := (H m' hm').some,
+      apply (eval τ m' ⟨a₀, ha₀ _⟩).map_surjective, },
+    let Φ := λ m' hm', (h m' hm').some,
+    let hΦ : ∀ (m' : α) (hm' : m' < m), (Φ m' hm').f.app ⟨a₀, ha₀ _⟩ = f :=
+      λ m' hm', (h m' hm').some_spec,
+    refine
+    ⟨{ f :=
+      { app := λ a, begin
+          sorry,
+        end,
+        naturality' := sorry, },
+      commτ := sorry, }, sorry⟩, },
 end
 
 end transfinite_iteration
