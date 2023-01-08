@@ -49,6 +49,28 @@ def order.are_succ.lt (h : order.are_succ a b) : a < b := h.1
 def order.are_succ.hom (h : order.are_succ a b) :
   a ⟶ b := hom_of_le h.1.le
 
+lemma order.are_succ.of_le_iff {m : α} (a b : { x : α // x ≤ m}) :
+  order.are_succ a b ↔ order.are_succ a.1 b.1 :=
+begin
+  split,
+  { intro h,
+    exact ⟨h.1, λ c hc₁ hc₂, subtype.ext_iff.1 (h.2 ⟨c, hc₂.le.trans b.2⟩ hc₁ hc₂)⟩, },
+  { intro h,
+    exact ⟨h.1, λ c hc₁ hc₂, by { ext, exact h.2 c.1 hc₁ hc₂}⟩, },
+end
+
+lemma order.is_succ.of_le_iff {m : α} (b : { x : α // x ≤ m}) :
+  order.is_succ b ↔ order.is_succ b.1 :=
+begin
+  split,
+  { rintro ⟨a, ha⟩,
+    rw order.are_succ.of_le_iff at ha,
+    exact ⟨_, ha⟩, },
+  { rintro ⟨a, ha⟩,
+    let a' : { x // x ≤ m} := ⟨a, ha.1.le.trans b.2⟩,
+    exact ⟨_, (order.are_succ.of_le_iff a' b).2 ha⟩, },
+end
+
 @[simps, nolint unused_arguments]
 def order.lt_inclusion_functor (m : α) :
   { a : α // a < m } ⥤ α :=
@@ -65,6 +87,67 @@ def order.lt_cocone (m : α) {C : Type*} [category C] (F : α ⥤ C) :
       simp only [comp_id, ← F.map_comp],
       congr,
     end, }, }
+
+@[simps]
+def order.le_inclusion_functor_of_le (m₁ m₂ : α) (h : m₁ ≤ m₂) :
+  { a : α // a ≤ m₁ } ⥤ { a : α // a ≤ m₂ } :=
+begin
+  let φ : { a : α // a ≤ m₁ } → { a : α // a ≤ m₂ } := λ a, ⟨a.1, a.2.trans h⟩,
+  have hφ : monotone φ := λ a b hab, hab,
+  exact monotone.functor hφ,
+end
+
+@[simps]
+def order.order_iso_lt_le (m₁ m₂ : α) (h : m₁ ≤ m₂) (b : { x // x ≤ m₁}) :
+  order_iso { y : { x // x ≤ m₁ } // y < b } { y : { x // x ≤ m₂ } // y < ⟨b.1, b.2.trans h⟩ } :=
+{ to_fun := λ y, ⟨⟨y.1.1, y.1.2.trans h⟩, y.2⟩,
+  inv_fun := λ y, ⟨⟨y.1, (show y.1.1 ≤ b.1, by exact y.2.le).trans (b.2 : b.1 ≤ m₁)⟩, y.2⟩,
+  left_inv := λ y, by { ext, refl, },
+  right_inv := λ y, by { ext, refl, },
+  map_rel_iff' := λ x y, ⟨λ h, h, λ h, h⟩, }
+
+@[simps]
+def order_iso.to_equivalence {α : Type u } {β : Type v} [preorder α] [preorder β]
+  (e : order_iso α β) : α ≌ β :=
+{ functor := monotone.functor e.monotone,
+  inverse := monotone.functor e.symm.monotone,
+  unit_iso := eq_to_iso (category_theory.functor.ext (λ a, (e.left_inv a).symm)
+    (λ a₁ a₂ f, subsingleton.elim _ _)),
+  counit_iso := eq_to_iso (category_theory.functor.ext (λ b, (e.right_inv b))
+    (λ b₁ b₂ f, subsingleton.elim _ _)),
+  functor_unit_iso_comp' := λ X, subsingleton.elim _ _, }
+
+@[simps]
+def order.lt_inclusion_functor_iso_of_le (m₁ m₂ : α) (h : m₁ ≤ m₂) (b : { x // x ≤ m₁}) :
+  order.lt_inclusion_functor b ⋙ order.le_inclusion_functor_of_le m₁ m₂ h ≅
+    (order.order_iso_lt_le m₁ m₂ h b).to_equivalence.functor ⋙
+      order.lt_inclusion_functor (⟨b, b.2.trans h⟩ : { x // x ≤ m₂ }) := iso.refl _
+
+end
+
+section
+
+variables {α : Type*} [linear_order α]
+
+lemma order.is_bot.of_le_iff {m : α} (a : { x : α // x ≤ m}) :
+  order.is_bot a ↔ order.is_bot a.1 :=
+begin
+  split,
+  { intros h b,
+    by_cases hb : b ≤ m,
+    { exact h ⟨b, hb⟩, },
+    { exact a.2.trans (not_le.1 hb).le, }, },
+  { intros h b,
+    exact h b.1, },
+end
+
+lemma order.is_limit.of_le_iff {m : α} (a : { x : α // x ≤ m}) :
+  order.is_limit a ↔ order.is_limit a.1 :=
+begin
+  dsimp only [order.is_limit],
+  rw [order.is_bot.of_le_iff, order.is_succ.of_le_iff],
+end
+
 
 end
 
@@ -155,6 +238,30 @@ def eval (a : { b : α // b ≤ m}) : transfinite_iteration τ m ⥤ C :=
 
 end
 
+section
+
+variables [linear_order α] {m : α}
+
+def restriction (m₁ m₂ : α) (h : m₁ ≤ m₂) :
+  transfinite_iteration τ m₂ ⥤ transfinite_iteration τ m₁ :=
+{ obj := λ I,
+  { F := order.le_inclusion_functor_of_le _ _ h ⋙ I.F,
+    hF := begin
+      rintro ⟨b, hb⟩ hb',
+      have hc := I.hF ⟨b, hb.trans h⟩ (by simpa only [order.is_limit.of_le_iff] using hb'),
+      let e := order.lt_inclusion_functor_iso_of_le m₁ m₂ h ⟨b, hb⟩,
+      let e' := iso_whisker_right e I.F,
+      sorry,
+    end,
+    iso := λ a b hab, I.iso ⟨a.1, a.2.trans h⟩ ⟨b.1, b.2.trans h⟩
+      (by simpa only [order.are_succ.of_le_iff] using hab), },
+  map := λ I₁ I₂ f,
+  { f := whisker_left (order.le_inclusion_functor_of_le _ _ h) f.f,
+    commτ := λ a b hab, f.commτ ⟨a.1, a.2.trans h⟩ ⟨b.1, b.2.trans h⟩
+      (by simpa only [order.are_succ.of_le_iff] using hab), }, }
+
+end
+
 variables [linear_order α] [is_well_order α (<)] (m : α) (a₀ : { b : α // b ≤ m})
   (ha₀ : order.is_bot a₀)
 
@@ -179,6 +286,11 @@ lemma faithful_eval_zero : faithful (eval τ m a₀) :=
     congr' 1,
     exact H a a.2, },
 end⟩
+
+lemma full_eval_zero : full (eval τ m a₀) :=
+begin
+  sorry,
+end
 
 end transfinite_iteration
 
