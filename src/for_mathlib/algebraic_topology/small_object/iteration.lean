@@ -165,6 +165,60 @@ begin
   rw [order.is_bot.of_le_iff, order.is_succ.of_le_iff],
 end
 
+section
+
+variables {C : Type*} [category C] {m : α} (hm : order.is_top m)
+  (F G : α ⥤ C) (φ : order.lt_inclusion_functor m ⋙ F ⟶ order.lt_inclusion_functor m ⋙ G)
+  (φm : F.obj m ⟶ G.obj m)
+  (comm : ∀ (a : { x // x < m }), F.map (hom_of_le (hm a.1)) ≫ φm =
+    φ.app a ≫ G.map (hom_of_le (hm a.1)))
+
+include comm
+
+def order.is_top.mk_nat_trans : F ⟶ G :=
+{ app := λ a, begin
+    by_cases a < m,
+    { exact φ.app ⟨a, h⟩, },
+    { refine eq_to_hom _ ≫ φm ≫ eq_to_hom _,
+      all_goals
+      { rw le_antisymm (hm _) (not_lt.1 h), }, },
+  end,
+  naturality' := λ a₁ a₂ ψ, begin
+    by_cases h₂ : a₂ < m,
+    { have h₁ := lt_of_le_of_lt (le_of_hom ψ) h₂,
+      rw [dif_pos h₁, dif_pos h₂],
+      let b₁ : { x // x < m} := ⟨a₁, h₁⟩,
+      let b₂ : { x // x < m} := ⟨a₂, h₂⟩,
+      have ψ' : b₁ ≤ b₂ := le_of_hom ψ,
+      convert φ.naturality (hom_of_le ψ'), },
+    { have h₂' := le_antisymm (not_lt.1 h₂) (hm a₂),
+      subst h₂',
+      rw dif_neg (lt_irrefl m),
+      by_cases h₁ : a₁ < m,
+      { simp only [dif_pos h₁, eq_to_hom_refl, id_comp, comp_id],
+        convert comm ⟨a₁ ,h₁⟩, },
+      { have h₁' := le_antisymm (not_lt.1 h₁) (hm a₁),
+        subst h₁',
+        simp only [dif_neg (lt_irrefl m), subsingleton.elim ψ (𝟙 _),
+          category_theory.functor.map_id, comp_id, id_comp], }, },
+  end, }
+
+lemma order.is_top.mk_nat_trans_eq (a : α) (ha : a < m) :
+  (order.is_top.mk_nat_trans hm F G φ φm comm).app a = φ.app ⟨a, ha⟩ :=
+begin
+  dsimp only [order.is_top.mk_nat_trans],
+  rw dif_pos ha,
+end
+
+@[simp]
+lemma order.is_top.mk_nat_trans_eq' :
+  (order.is_top.mk_nat_trans hm F G φ φm comm).app m = φm :=
+begin
+  dsimp only [order.is_top.mk_nat_trans],
+  simp only [dif_neg (lt_irrefl m), eq_to_hom_refl, comp_id, id_comp],
+end
+
+end
 
 end
 
@@ -319,48 +373,60 @@ nonempty.some begin
   dsimp at ha₀,
   apply @well_founded.induction α (<) is_well_founded.wf (λ (m' : α), nonempty
     (full (eval τ m' ⟨a₀, ha₀ _⟩))),
+  clear ha₁ m,
   intros m H,
-  rcases is_well_order.three_cases m with h₁ | (h₂ | h₃),
-  { haveI := h₁.subsingleton_le,
-    refine ⟨full_of_surjective _ (λ I₁ I₂ f, _)⟩,
-    exact
-    ⟨{ f:=
-      { app := λ a, eq_to_hom (by { dsimp, congr, }) ≫ f ≫ eq_to_hom (by { dsimp, congr, }),
-        naturality' := λ a₁ a₂ g, begin
-          have eq := subsingleton.elim a₁ a₂,
-          subst eq,
-          have eq' := subsingleton.elim g (𝟙 _),
-          subst eq',
-          simp only [map_id, id_comp, comp_id],
-        end, },
-      commτ := λ a₁ a₂ h₁₂, begin
-        exfalso,
-        rw subsingleton.elim a₁ a₂ at h₁₂,
-        exact (lt_self_iff_false _).1 h₁₂.1,
-      end, }, begin
-        dsimp,
-        simp only [comp_id, id_comp],
-      end⟩, },
-  { sorry, },
-  { refine ⟨full_of_surjective _ (λ I₁ I₂ f, _)⟩,
-    dsimp at f,
-    let R₁ := λ (m' : α) (hm' : m' < m), (restriction m' m hm'.le).obj I₁,
-    let R₂ := λ (m' : α) (hm' : m' < m), (restriction m' m hm'.le).obj I₂,
-    have h : ∀ (m' : α) (hm' : m' < m), ∃ (Φ : R₁ m' hm' ⟶ R₂ m' hm'),
-      (eval τ m' ⟨a₀, ha₀ _⟩).map Φ = f,
-    { intros m' hm',
-      haveI := (H m' hm').some,
-      apply (eval τ m' ⟨a₀, ha₀ _⟩).map_surjective, },
-    let Φ := λ m' hm', (h m' hm').some,
-    let hΦ : ∀ (m' : α) (hm' : m' < m), (Φ m' hm').f.app ⟨a₀, ha₀ _⟩ = f :=
-      λ m' hm', (h m' hm').some_spec,
+  refine ⟨full_of_surjective _ (λ I₁ I₂ f, _)⟩,
+  dsimp at f,
+  by_cases hm : is_bot m,
+  { haveI : subsingleton { x // x ≤ m},
+    { have hm : ∀ (a : { x // x ≤ m}), a = ⟨a₀, ha₀ _⟩ :=
+        λ a, le_antisymm (a.2.trans (hm _)) (ha₀ _),
+      exact ⟨λ x y, by rw [hm x, hm y]⟩, },
     refine
     ⟨{ f :=
-      { app := λ a, begin
-          sorry,
-        end,
-        naturality' := sorry, },
-      commτ := sorry, }, sorry⟩, },
+      { app := λ a, eq_to_hom (by congr) ≫ f ≫ eq_to_hom (by congr),
+        naturality' := λ a₁ a₂ φ, begin
+          have h₁₂ := subsingleton.elim a₁ a₂,
+          subst h₁₂,
+          simp only [subsingleton.elim φ (𝟙 _), map_id, id_comp, comp_id],
+        end, },
+      commτ := λ a b hab, begin
+        exfalso,
+        rw subsingleton.elim a b at hab,
+        simpa only [lt_self_iff_false] using hab.1,
+      end, }, _⟩,
+    dsimp,
+    simp only [comp_id, id_comp], },
+  { let X := { x // x < m},
+    let R₁ := λ (a : X), (restriction a.1 m a.2.le).obj I₁,
+    let R₂ := λ (a : X), (restriction a.1 m a.2.le).obj I₂,
+    have h : ∀ (a : X), ∃ (Φ : R₁ a ⟶ R₂ a),
+      (eval τ a.1 ⟨a₀, ha₀ _⟩).map Φ = f,
+    { intros a,
+      haveI := (H a.1 a.2).some,
+      apply (eval τ a.1 ⟨a₀, ha₀ _⟩).map_surjective, },
+    let Ψ := λ (a : X), (h a).some,
+    have hΨ : ∀ (a : X), (Ψ a).f.app ⟨a₀, ha₀ _⟩ = f := λ a, (h a).some_spec,
+    let m' : { x // x ≤ m} := ⟨m, le_refl m⟩,
+    have hm' : is_top m' := λ a, a.2,
+    let φ' : order.lt_inclusion_functor m' ⋙ I₁.F ⟶ order.lt_inclusion_functor m' ⋙ I₂.F :=
+    { app := by { rintro ⟨⟨a, ha⟩, ha'⟩, exact (Ψ ⟨a, ha'⟩).f.app ⟨a, le_refl _⟩, },
+      naturality' := sorry, },
+    let φ : I₁.F ⟶ I₂.F := order.is_top.mk_nat_trans hm' _ _ φ' sorry sorry,
+    refine ⟨{ f := φ, commτ := _, }, _⟩,
+    { sorry, },
+    { dsimp,
+      let a₀' : { x // x ≤ m} := ⟨a₀, ha₀ _⟩,
+      have ha₀' : a₀' < m',
+      { rcases lt_or_eq_of_le (show a₀' ≤ m', by apply ha₀) with h₁ | h₂,
+        { exact h₁, },
+        { simp only [subtype.mk_eq_mk] at h₂,
+          exfalso,
+          apply hm,
+          simpa only [h₂] using ha₀, }, },
+      rw order.is_top.mk_nat_trans_eq hm' _ _ _ _ _ a₀' ha₀',
+      dsimp [φ'],
+      rw hΨ, }, },
 end
 
 end transfinite_iteration
