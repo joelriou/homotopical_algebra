@@ -15,6 +15,7 @@ def pushouts : morphism_property C :=
 λ X Y f, ∃ (A B : C) (i : A ⟶ B) (hi : I i) (g : A ⟶ X) (g' : B ⟶ Y),
   is_pushout i g g' f
 
+#exit
 inductive transfinite_composition : morphism_property C
 | transfinite {α : Type v} [linear_order α] [is_well_order α (<)] [order_bot α]
   (F : α ⥤ C) (hF₁ : F.well_order_continuous)

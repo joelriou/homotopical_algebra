@@ -46,6 +46,7 @@ end
 
 def CM4a : (arrow_classes : category_with_fib_cof_weq (bounded_above_cochain_complex C)).CM4a :=
 λ A B X Y i hi p hp, begin
+  --has_lifting_property.iff_of_arrow_iso_left (arrow_iso_of_cof i hi.1) p,
   --cochain_complex.lifting.lift_of_coboundary
   sorry,
 end

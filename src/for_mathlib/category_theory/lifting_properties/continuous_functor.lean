@@ -10,6 +10,7 @@ import order.initial_seg
 
 universes u v
 
+#exit
 namespace category_theory
 
 open limits
@@ -53,12 +54,12 @@ def functor.well_order_cocone : limits.cocone (functor.well_order_inclusion_func
 omit h
 
 /-- add the assumption that β has no maximum and is not empty... -/
-def functor.well_order_continuous₀ (F : α ⥤ C) (β : Type u) [linear_order β] :=
+def functor.well_order_continuous₀ (F : α ⥤ C) (β : Type u) [linear_order β] [has_bot β] :=
   Π (h : principal_seg ((<): β → β → Prop) ((<) : α → α → Prop)),
     limits.is_colimit (F.well_order_cocone h)
 
-def functor.well_order_continuous (F : α ⥤ C) := Π (β : Type u) [hβ : linear_order β],
-  @functor.well_order_continuous₀ _ _ _ _ _ F _ hβ
+def functor.well_order_continuous (F : α ⥤ C) := Π (β : Type u) [hβ : linear_order β] [hβ' : has_bot β],
+  @functor.well_order_continuous₀ _ _ _ _ _ F _ hβ hβ'
 
 namespace morphism_property
 
