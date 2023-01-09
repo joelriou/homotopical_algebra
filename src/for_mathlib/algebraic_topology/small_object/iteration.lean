@@ -398,7 +398,7 @@ def restriction (m₁ m₂ : α) (h : m₁ ≤ m₂) :
 
 end
 
-variables [linear_order α] [is_well_order α (<)] (m : α) (a₀ : { b : α // b ≤ m})
+variables (τ) [linear_order α] [is_well_order α (<)] (m : α) (a₀ : { b : α // b ≤ m})
   (ha₀ : order.is_bot a₀)
 
 include ha₀
@@ -422,6 +422,26 @@ lemma faithful_eval_zero : faithful (eval τ m a₀) :=
     congr' 1,
     exact H a a.2, },
 end⟩
+
+variable {m}
+
+example : ℕ := 42
+
+lemma eval_injective (I₁ I₂ : transfinite_iteration τ m) (m₁ m₂ : { x // x ≤ m})
+  (f₁ : (restriction m₁.1 m m₁.2).obj I₁ ⟶ (restriction m₁.1 m m₁.2).obj I₂)
+  (f₂ : (restriction m₂.1 m m₂.2).obj I₁ ⟶ (restriction m₂.1 m m₂.2).obj I₂)
+  (eq : f₁.f.app ⟨a₀.1, ha₀ _⟩ = f₂.f.app ⟨a₀.1, ha₀ _⟩)
+  (a : { x // x ≤ m}) (ha₁ : a ≤ m₁) (ha₂ : a ≤ m₂) :
+  f₁.f.app ⟨a.1, ha₁⟩ = f₂.f.app ⟨a.1, ha₂⟩ :=
+begin
+  suffices : (restriction a.1 m₁.1 ha₁).map f₁ = (restriction a.1 m₂.1 ha₂).map f₂,
+  { exact congr_app (congr_arg transfinite_iteration.hom.f this) ⟨a.1, le_refl _⟩, },
+  haveI := faithful_eval_zero τ a.1 ⟨a₀, ha₀ _⟩
+    (by simpa only [order.is_bot.of_le_iff] using ha₀),
+  exact (eval τ a.1 ⟨a₀, ha₀ _⟩).map_injective eq,
+end
+
+variable (m)
 
 lemma full_eval_zero : full (eval τ m a₀) :=
 nonempty.some begin
@@ -465,7 +485,11 @@ nonempty.some begin
     let Ψ := λ (a : X), (h a).some,
     have hΨ : ∀ (a : X), (Ψ a).f.app ⟨a₀, ha₀ _⟩ = f := λ a, (h a).some_spec,
     have hΨ' : ∀ (a₁ a₂ : X) (ha₁₂ : a₁ ≤ a₂) (b : α) (hb : b ≤ a₁.1),
-      (Ψ a₁).f.app ⟨b, hb⟩ = (Ψ a₂).f.app ⟨b, hb.trans ha₁₂⟩ := sorry,
+      (Ψ a₁).f.app ⟨b, hb⟩ = (Ψ a₂).f.app ⟨b, hb.trans ha₁₂⟩,
+    { intros a₁ a₂ ha₁₂ b hb,
+      exact eval_injective τ ⟨a₀, ha₀ _⟩ (by simpa only [order.is_bot.of_le_iff] using ha₀)
+        I₁ I₂ ⟨a₁.1, a₁.2.le⟩ ⟨a₂.1, a₂.2.le⟩ (Ψ a₁) (Ψ a₂) (by erw [hΨ a₁, hΨ a₂])
+        ⟨b, hb.trans a₁.2.le⟩ hb (hb.trans ha₁₂), },
     let m' : { x // x ≤ m} := ⟨m, le_refl m⟩,
     have hm' : is_top m' := λ a, a.2,
     let φ' : order.lt_inclusion_functor m' ⋙ I₁.F ⟶ order.lt_inclusion_functor m' ⋙ I₂.F :=
