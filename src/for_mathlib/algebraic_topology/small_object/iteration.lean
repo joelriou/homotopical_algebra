@@ -46,6 +46,8 @@ variables {a b}
 
 def order.are_succ.lt (h : order.are_succ a b) : a < b := h.1
 
+def order.are_succ.le (h : order.are_succ a b) : a ≤ b := h.1.le
+
 def order.are_succ.hom (h : order.are_succ a b) :
   a ⟶ b := hom_of_le h.1.le
 
@@ -165,6 +167,16 @@ begin
   rw [order.is_bot.of_le_iff, order.is_succ.of_le_iff],
 end
 
+lemma order.are_succ.lt_iff_le {a b : α} (h : order.are_succ a b) (c : α) : c < b ↔ c ≤ a :=
+begin
+  split,
+  { intro hc,
+    by_contra',
+    simpa only [h.2 c this.le hc, lt_self_iff_false] using this, },
+  { intro hc,
+    exact lt_of_le_of_lt hc h.lt, },
+end
+
 section
 
 variables {C : Type*} [category C] {m : α} (hm : order.is_top m)
@@ -220,6 +232,43 @@ end
 
 end
 
+section
+
+variables {C : Type*} [category C] {m₁ m₂ : α} (hm₁₂ : order.are_succ m₁ m₂)
+  (hm₂ : order.is_top m₂)
+  (F G : α ⥤ C) (φ : order.lt_inclusion_functor m₂ ⋙ F ⟶ order.lt_inclusion_functor m₂ ⋙ G)
+  (φm : F.obj m₂ ⟶ G.obj m₂)
+  (comm : F.map hm₁₂.hom ≫ φm = φ.app ⟨m₁, hm₁₂.lt⟩ ≫ G.map hm₁₂.hom)
+
+include comm
+
+def order.are_succ.mk_nat_trans : F ⟶ G :=
+hm₂.mk_nat_trans F G φ φm (λ a, begin
+  have r : a.1 ≤ m₁ := (hm₁₂.lt_iff_le _).1 a.2,
+  have r' : a ≤ ⟨m₁, hm₁₂.lt⟩ := r,
+  simp only [subsingleton.elim (hom_of_le (r.trans hm₁₂.le)) (hom_of_le r ≫ hom_of_le hm₁₂.le),
+    functor.map_comp, assoc],
+  erw comm,
+  apply φ.naturality_assoc (hom_of_le r'),
+end)
+
+lemma order.are_succ.mk_nat_trans_eq (a : α) (ha : a < m₂) :
+  (order.are_succ.mk_nat_trans hm₁₂ hm₂ F G φ φm comm).app a = φ.app ⟨a, ha⟩ :=
+begin
+  dsimp only [order.are_succ.mk_nat_trans],
+  apply order.is_top.mk_nat_trans_eq,
+end
+
+@[simp]
+lemma order.are_succ.mk_nat_trans_eq' :
+  (order.are_succ.mk_nat_trans hm₁₂ hm₂ F G φ φm comm).app m₂ = φm :=
+begin
+  dsimp only [order.are_succ.mk_nat_trans],
+  apply order.is_top.mk_nat_trans_eq',
+end
+
+end
+
 end
 
 lemma is_well_order.three_cases {α : Type*} [linear_order α] [is_well_order α (<)]
@@ -230,6 +279,14 @@ begin
   { by_cases h₂ : order.is_succ a,
     { exact or.inr (or.inl h₂), },
     { exact or.inr (or.inr ⟨h₁, h₂⟩), }, },
+end
+
+lemma is_well_order.two_cases {α : Type*} [linear_order α] [is_well_order α (<)]
+  (a : α) (ha : ¬order.is_bot a) : order.is_succ a ∨ order.is_limit a :=
+begin
+  by_cases order.is_succ a,
+  { exact or.inl h, },
+  { exact or.inr ⟨ha, h⟩, },
 end
 
 instance is_well_order_subtype {α : Type*} [linear_order α] [is_well_order α (<)]
@@ -407,26 +464,46 @@ nonempty.some begin
       apply (eval τ a.1 ⟨a₀, ha₀ _⟩).map_surjective, },
     let Ψ := λ (a : X), (h a).some,
     have hΨ : ∀ (a : X), (Ψ a).f.app ⟨a₀, ha₀ _⟩ = f := λ a, (h a).some_spec,
+    have hΨ' : ∀ (a₁ a₂ : X) (ha₁₂ : a₁ ≤ a₂) (b : α) (hb : b ≤ a₁.1),
+      (Ψ a₁).f.app ⟨b, hb⟩ = (Ψ a₂).f.app ⟨b, hb.trans ha₁₂⟩ := sorry,
     let m' : { x // x ≤ m} := ⟨m, le_refl m⟩,
     have hm' : is_top m' := λ a, a.2,
     let φ' : order.lt_inclusion_functor m' ⋙ I₁.F ⟶ order.lt_inclusion_functor m' ⋙ I₂.F :=
     { app := by { rintro ⟨⟨a, ha⟩, ha'⟩, exact (Ψ ⟨a, ha'⟩).f.app ⟨a, le_refl _⟩, },
-      naturality' := sorry, },
-    let φ : I₁.F ⟶ I₂.F := order.is_top.mk_nat_trans hm' _ _ φ' sorry sorry,
-    refine ⟨{ f := φ, commτ := _, }, _⟩,
-    { sorry, },
-    { dsimp,
-      let a₀' : { x // x ≤ m} := ⟨a₀, ha₀ _⟩,
-      have ha₀' : a₀' < m',
-      { rcases lt_or_eq_of_le (show a₀' ≤ m', by apply ha₀) with h₁ | h₂,
-        { exact h₁, },
-        { simp only [subtype.mk_eq_mk] at h₂,
-          exfalso,
-          apply hm,
-          simpa only [h₂] using ha₀, }, },
-      rw order.is_top.mk_nat_trans_eq hm' _ _ _ _ _ a₀' ha₀',
-      dsimp [φ'],
-      rw hΨ, }, },
+      naturality' := begin
+        rintro ⟨⟨a₁, ha₁⟩, ha₁'⟩ ⟨⟨a₂, ha₂⟩, ha₂'⟩ g,
+        dsimp,
+        rw hΨ' ⟨a₁, ha₁'⟩ ⟨a₂, ha₂'⟩ (le_of_hom g),
+        let a₁' : {x // x ≤ a₂} := ⟨a₁, le_of_hom g⟩,
+        let a₂' : {x // x ≤ a₂} := ⟨a₂, le_refl _⟩,
+        let g' : a₁' ⟶ a₂' := hom_of_le (le_of_hom g),
+        exact (Ψ ⟨a₂, ha₂'⟩).f.naturality g',
+      end },
+    cases is_well_order.two_cases _ hm with hm'',
+    { obtain ⟨m₁, hm₁⟩ := hm'',
+      have hm₁' := (order.are_succ.of_le_iff ⟨m₁, hm₁.le⟩ m').2 hm₁,
+      let m₁' : { x // x < m'} := ⟨⟨m₁, hm₁.le⟩, hm₁.lt⟩,
+      let φm : I₁.F.obj m' ⟶ I₂.F.obj m' := (under.forget _).map (I₁.iso _ _ hm₁').hom ≫
+        Φ.map (φ'.app m₁') ≫ (under.forget _).map (I₂.iso _ _ hm₁').inv,
+      refine ⟨{ f := hm₁'.mk_nat_trans hm' _ _ φ' φm _, commτ := _, }, _⟩,
+      { have eq := τ.naturality (φ'.app m₁'),
+        have eq₁ := under.w (I₁.iso _ _ hm₁').hom,
+        have eq₂ := under.w (I₂.iso _ _ hm₁').hom,
+        have eq₃ := ((under.forget _).map_iso (I₂.iso _ _ hm₁')).hom_inv_id,
+        dsimp [φm] at ⊢ eq eq₁ eq₂ eq₃,
+        rw [← eq₁, ← eq₂, assoc] at eq,
+        slice_lhs 1 3 { rw ← eq, },
+        simp only [assoc, eq₃, comp_id], },
+      { sorry, },
+      { dsimp,
+        let a₀' : { x // x ≤ m} := ⟨a₀, ha₀ _⟩,
+        have ha₀' : a₀' < m',
+        { rw hm₁'.lt_iff_le,
+          apply ha₀, },
+        rw hm₁'.mk_nat_trans_eq hm' _ _ _ _ _ a₀' ha₀',
+        dsimp [φ'],
+        rw hΨ, }, },
+    { sorry, }, },
 end
 
 end transfinite_iteration
