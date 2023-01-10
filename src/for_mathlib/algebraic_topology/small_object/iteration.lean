@@ -177,6 +177,11 @@ begin
     exact lt_of_le_of_lt hc h.lt, },
 end
 
+lemma order.are_succ.pred_uniq {a a' b : α} (h₁ : order.are_succ a b) (h₂ : order.are_succ a' b) :
+  a = a' :=
+le_antisymm (by simpa only [← h₂.lt_iff_le] using h₁.lt)
+  (by simpa only [← h₁.lt_iff_le] using h₂.lt)
+
 section
 
 variables {C : Type*} [category C] {m : α} (hm : order.is_top m)
@@ -503,7 +508,7 @@ nonempty.some begin
         let g' : a₁' ⟶ a₂' := hom_of_le (le_of_hom g),
         exact (Ψ ⟨a₂, ha₂'⟩).f.naturality g',
       end },
-    cases is_well_order.two_cases _ hm with hm'',
+    cases is_well_order.two_cases _ hm with hm'' hm'',
     { obtain ⟨m₁, hm₁⟩ := hm'',
       have hm₁' := (order.are_succ.of_le_iff ⟨m₁, hm₁.le⟩ m').2 hm₁,
       let m₁' : { x // x < m'} := ⟨⟨m₁, hm₁.le⟩, hm₁.lt⟩,
@@ -518,7 +523,24 @@ nonempty.some begin
         rw [← eq₁, ← eq₂, assoc] at eq,
         slice_lhs 1 3 { rw ← eq, },
         simp only [assoc, eq₃, comp_id], },
-      { sorry, },
+      { rintro ⟨a, ha⟩ ⟨b, hb⟩ hab,
+        by_cases hb' : b < m,
+        { have ha' : a < m := lt_of_le_of_lt hab.le hb',
+          rw [hm₁'.mk_nat_trans_eq hm' _ _ _ _ _ ⟨b, hb⟩ hb',
+            hm₁'.mk_nat_trans_eq hm' _ _ _ _ _ ⟨a, ha⟩ ha'],
+          dsimp [φ'],
+          rw [hΨ' ⟨a, ha'⟩ ⟨b, hb'⟩ hab.le a (le_refl _)],
+          exact (Ψ ⟨b, hb'⟩).commτ ⟨a, hab.le⟩ ⟨b, le_refl _⟩
+            (by simpa only [order.are_succ.of_le_iff] using hab), },
+        { have hb'' : m = b := le_antisymm (not_lt.1 hb') hb,
+          subst hb'',
+          have ha' : m₁ = a := order.are_succ.pred_uniq hm₁ ((order.are_succ.of_le_iff _ _).1 hab),
+          subst ha',
+          rw [hm₁'.mk_nat_trans_eq' hm', hm₁'.mk_nat_trans_eq hm' _ _ _ _ _ ⟨m₁, ha⟩ hm₁.lt],
+          dsimp [φm],
+          have eq := ((under.forget _).map_iso (I₂.iso ⟨m₁, ha⟩ ⟨m, hb⟩ hab)).inv_hom_id,
+          dsimp at eq,
+          simp only [assoc, eq, comp_id], }, },
       { dsimp,
         let a₀' : { x // x ≤ m} := ⟨a₀, ha₀ _⟩,
         have ha₀' : a₀' < m',
