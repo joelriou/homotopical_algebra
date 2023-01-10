@@ -8,21 +8,20 @@ open category_theory category_theory.category category_theory.limits
 
 section
 
-variables {α : Type w} [partial_order α] (a b : α)
-
-variables {a b}
+variables {α : Type w} [partial_order α] {a b : α}
 
 lemma is_bot.unique (ha : is_bot a) (hb : is_bot b) :
   a = b :=
 le_antisymm (ha _) (hb _)
+
+lemma is_bot.of_le (ha : is_bot b) (a : α) (h : a ≤ b) : is_bot a :=
+λ c, h.trans (ha c)
 
 lemma is_top.unique (ha : is_top a) (hb : is_top b) :
   a = b :=
 le_antisymm (hb _) (ha _)
 
 variables (a b)
-
-variable {α}
 
 def order.are_succ : Prop := (a < b) ∧
   ∀ (c : α) (hc₁ : a ≤ c) (hc₂ : c < b), c = a
@@ -139,6 +138,7 @@ section
 
 variables {α : Type*} [linear_order α]
 
+@[simp]
 lemma is_bot.of_le_iff {m : α} (a : { x : α // x ≤ m}) :
   is_bot a ↔ is_bot a.1 :=
 begin
@@ -828,7 +828,18 @@ lemma surjective_of_is_well_order_of_surjective' (a₀ : α) (ha₀ : is_bot a�
     apply ha₀',
     apply hm₀.1,
     simp only [X.of_is_bot_β, set.mem_singleton], },
-  { sorry, },
+  { obtain ⟨a, hab⟩ := h₂,
+    have ha' : a ∈ m.β := by simpa only [hb] using hab.lt,
+    obtain ⟨t, ht⟩ := hF₁ _ _ hab (m.s ⟨a, ha'⟩),
+    let M := X.extension m hb t (λ c hc, begin
+      rw hab.lt_iff_le at hc,
+      rw m.hs ⟨c, m.hβ _ _ hc ha'⟩ ⟨a, ha'⟩ hc,
+      have eq := congr_arg (F.map (hom_of_le hc).op) ht,
+      simp only [← functor_to_types.map_comp_apply] at eq,
+      convert eq.symm,
+    end),
+    have hM : m < M := X.le_extension _ _ _ _,
+    simpa only [hm M hM.le, lt_self_iff_false] using hM, },
   { obtain ⟨t, ht⟩ := hF₂ _ h₃ ⟨λ c, m.s ⟨c.unop.1, by simpa only [hb] using c.unop.2⟩,
       (λ c d hcd, (m.hs ⟨d.unop.1, _⟩ ⟨c.unop.1, _⟩ _).symm)⟩,
     let M := X.extension m hb t (λ c hc,
@@ -842,6 +853,129 @@ lemma surjective_of_is_well_order_of_surjective [order_bot α] :
 surjective_of_is_well_order_of_surjective' F hF₁ hF₂ ⊥ (order_bot.bot_le)
 
 end
+
+section
+
+variables {m : α} [linear_order α] (F : { x // x < m } ⥤ C) (X : C)
+  (φ : F ⟶ (functor.const _).obj X)
+
+namespace order_extension_from_le_to_le
+
+include F X
+
+def obj (a : { x // x ≤ m}) : C :=
+begin
+  by_cases a.1 < m,
+  { exact F.obj ⟨a.1, h⟩, },
+  { exact X, },
+end
+
+def obj_iso_of_lt (a : { x // x ≤ m}) (ha : a.1 < m) :
+  obj F X a ≅ F.obj ⟨a.1, ha⟩ :=
+eq_to_iso begin
+  dsimp [obj],
+  classical,
+  erw [dif_pos ha],
+end
+
+def obj_iso_of_not_lt (a : { x // x ≤ m}) (ha : ¬ a.1 < m) :
+  obj F X a ≅ X :=
+eq_to_iso begin
+  dsimp [obj],
+  erw [dif_neg ha],
+end
+
+end order_extension_from_le_to_le
+
+open order_extension_from_le_to_le
+
+include φ
+
+def order_extension_from_lt_to_le : { x // x ≤ m } ⥤ C :=
+{ obj := order_extension_from_le_to_le.obj F X,
+  map := λ a b f, begin
+    classical,
+    by_cases ha : a.1 < m,
+    { by_cases hb : b.1 < m,
+      { exact (obj_iso_of_lt F X a ha).hom ≫ F.map (hom_of_le (by exact le_of_hom f)) ≫
+          (obj_iso_of_lt F X b hb).inv, },
+      { exact (obj_iso_of_lt F X a ha).hom ≫ φ.app ⟨a, ha⟩ ≫ (obj_iso_of_not_lt F X b hb).inv, }, },
+    { exact (obj_iso_of_not_lt F X a ha).hom ≫ (obj_iso_of_not_lt F X b
+        (by { simp only [not_lt] at ⊢ ha, exact ha.trans (le_of_hom f), })).inv, },
+  end,
+  map_id' := λ a, begin
+    by_cases ha : a.1 < m,
+    { simp only [dif_pos ha],
+      have h := le_refl (⟨a.1, ha⟩ : { x // x < m}),
+      rw [subsingleton.elim (hom_of_le h) (𝟙 _), functor.map_id, id_comp, iso.hom_inv_id], },
+    { simp only [dif_neg ha, iso.hom_inv_id], },
+  end,
+  map_comp' := λ a b c f g, begin
+    by_cases ha : a.1 < m,
+    { by_cases hb : b.1 < m,
+      { by_cases hc : c.1 < m,
+        { simp only [dif_pos ha, dif_pos hb, dif_pos hc, assoc, iso.inv_hom_id_assoc,
+            iso.cancel_iso_hom_left, ← F.map_comp_assoc],
+          congr, },
+        { simp only [dif_pos ha, dif_pos hb, dif_neg hc, assoc, iso.inv_hom_id_assoc,
+            iso.cancel_iso_hom_left],
+          let f' : (⟨a, ha⟩ : { x // x < m}) ⟶ ⟨b, hb⟩ := f,
+          have eq := φ.naturality f',
+          dsimp at eq,
+          rw comp_id at eq,
+          simp only [← eq, assoc],
+          congr, }, },
+      { have hc : ¬c.1 < m := λ h, hb (lt_of_le_of_lt (le_of_hom g) h),
+        simp only [dif_pos ha, dif_neg hb, dif_neg hc, assoc, iso.inv_hom_id_assoc], } },
+    { have hb : ¬b.1 < m := λ h, ha (lt_of_le_of_lt (le_of_hom f) h),
+      have hc : ¬c.1 < m := λ h, hb (lt_of_le_of_lt (le_of_hom g) h),
+      simp only [dif_neg ha, dif_neg hb, dif_neg hc, assoc, iso.inv_hom_id_assoc], },
+  end, }
+
+end
+
+namespace transfinite_iteration
+
+variables (τ) [linear_order α] [is_well_order α (<)] {m : α} (a₀ : { b : α // b ≤ m})
+  (ha₀ : is_bot a₀)
+
+def mk_of_is_bot (hm : is_bot m) (X : C) : transfinite_iteration τ m :=
+{ F := (functor.const _).obj X,
+  hF := λ b hb, begin
+    exfalso,
+    exact hb.1 (by simpa only [is_bot.of_le_iff] using (hm.of_le _ b.2)),
+  end,
+  iso := begin
+    rintro ⟨a, ha⟩ ⟨b, hb⟩ hab,
+    exfalso,
+    rw order.are_succ.of_le_iff at hab,
+    dsimp at hab,
+    have ha' := is_bot.unique (hm.of_le _ ha) hm,
+    have hb' := is_bot.unique (hm.of_le _ hb) hm,
+    substs ha' hb',
+    simpa only [lt_self_iff_false] using hab.lt,
+  end, }
+
+variable (m)
+
+include ha₀
+
+lemma ess_surj_eval_zero : ess_surj (eval τ m a₀) :=
+begin
+  rcases a₀ with ⟨a₀, ha₁⟩,
+  rw is_bot.of_le_iff at ha₀,
+  apply @well_founded.induction α (<) is_well_founded.wf
+    (λ b, ess_surj (eval τ b ⟨a₀, ha₀ _⟩)) m,
+  intros b H,
+  rcases is_well_order.three_cases b with h₁ | (h₂ | h₃),
+  { have hb := is_bot.unique h₁ ha₀,
+    subst hb,
+    exact ⟨λ X₀, ⟨mk_of_is_bot τ ha₀ X₀, ⟨iso.refl _⟩⟩⟩, },
+  { sorry, },
+  { sorry, },
+end
+
+end transfinite_iteration
 
 end functor
 
