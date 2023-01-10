@@ -430,8 +430,6 @@ end⟩
 
 variable {m}
 
-example : ℕ := 42
-
 lemma eval_injective (I₁ I₂ : transfinite_iteration τ m) (m₁ m₂ : { x // x ≤ m})
   (f₁ : (restriction m₁.1 m m₁.2).obj I₁ ⟶ (restriction m₁.1 m m₁.2).obj I₂)
   (f₂ : (restriction m₂.1 m m₂.2).obj I₁ ⟶ (restriction m₂.1 m m₂.2).obj I₂)
@@ -447,6 +445,8 @@ begin
 end
 
 variable (m)
+
+example : ℕ := 42
 
 lemma full_eval_zero : full (eval τ m a₀) :=
 nonempty.some begin
@@ -496,7 +496,7 @@ nonempty.some begin
         I₁ I₂ ⟨a₁.1, a₁.2.le⟩ ⟨a₂.1, a₂.2.le⟩ (Ψ a₁) (Ψ a₂) (by erw [hΨ a₁, hΨ a₂])
         ⟨b, hb.trans a₁.2.le⟩ hb (hb.trans ha₁₂), },
     let m' : { x // x ≤ m} := ⟨m, le_refl m⟩,
-    have hm' : is_top m' := λ a, a.2,
+    have hm' : order.is_top m' := λ a, a.2,
     let φ' : order.lt_inclusion_functor m' ⋙ I₁.F ⟶ order.lt_inclusion_functor m' ⋙ I₂.F :=
     { app := by { rintro ⟨⟨a, ha⟩, ha'⟩, exact (Ψ ⟨a, ha'⟩).f.app ⟨a, le_refl _⟩, },
       naturality' := begin
@@ -549,7 +549,32 @@ nonempty.some begin
         rw hm₁'.mk_nat_trans_eq hm' _ _ _ _ _ a₀' ha₀',
         dsimp [φ'],
         rw hΨ, }, },
-    { sorry, }, },
+    { let φm : I₁.F.obj m' ⟶ I₂.F.obj m' := sorry,
+      refine ⟨{ f := hm'.mk_nat_trans _ _ φ' φm _, commτ := _, }, _⟩,
+      { sorry, },
+      { rintro ⟨a, ha⟩ ⟨b, hb⟩ hab,
+        have hb' : b < m,
+        { by_contra',
+          have hb'' := le_antisymm this hb,
+          subst hb'',
+          simp only [order.are_succ.of_le_iff] at hab,
+          exact hm''.2 ⟨_, hab⟩, },
+        have ha' : a < m := lt_of_lt_of_le hab.lt hb,
+        rw [hm'.mk_nat_trans_eq _ _ _ _ _ ⟨a, ha⟩ ha',
+          hm'.mk_nat_trans_eq _ _ _ _ _ ⟨b, hb⟩ hb'],
+        dsimp [φ'],
+        rw hΨ' ⟨a, ha'⟩ ⟨b, hb'⟩ hab.le a (le_refl _),
+        exact (Ψ ⟨b, hb'⟩).commτ ⟨a, _⟩ ⟨b, _⟩
+          (by simpa only [order.are_succ.of_le_iff] using hab), },
+      { dsimp,
+        let a₀' : { x // x ≤ m} := ⟨a₀, ha₀ _⟩,
+        have ha₀' : a₀' < m',
+        { by_contra',
+          apply hm''.1,
+          rw ← le_antisymm a₀'.2 this,
+          exact ha₀, },
+        rw hm'.mk_nat_trans_eq _ _ _ _ _ a₀' ha₀',
+        apply hΨ, }, }, },
 end
 
 end transfinite_iteration
