@@ -398,7 +398,8 @@ begin
     ⟨homological_complex.biprod X.1
       ((homological_complex.single C (complex_shape.up ℤ) n₀).obj
         (projective.over (Z.1.cycles n₀))),
-    sorry⟩,
+    cochain_complex.is_bounded_above.of_biprod _ _ X.2
+      (cochain_complex.is_bounded_above.of_is_strictly_le _ n₀)⟩,
   let i : X ⟶ Y := homological_complex.biprod.inl,
   let p : Y ⟶ Z := homological_complex.biprod.desc f
     (cochain_complex.desc_single _ _ ((homological_complex.single_obj_X_self _ _ _ _).hom ≫
@@ -410,7 +411,7 @@ begin
     p := p,
     fac' := homological_complex.biprod.inl_desc _ _, },
     { hi := _, hp := _ }⟩, _, _, _⟩,
-  sorry { intro n,
+  { intro n,
     refine ⟨_, _, biprod.snd, ⟨⟨biprod.fst, biprod.inr,
       ⟨biprod.inl_fst, biprod.inr_snd, biprod.inl_snd, biprod.inr_fst, biprod.total⟩⟩⟩⟩,
     by_cases n = n₀,
@@ -420,14 +421,14 @@ begin
     { dsimp [homological_complex.single],
       rw if_neg h,
       apply_instance, }, },
-  sorry { intro n,
+  { intro n,
     change epi (p.f n),
     haveI : epi (biprod.inl ≫ p.f n),
     { dsimp [p],
       rw biprod.inl_desc,
       exact hf n, },
     exact epi_of_epi biprod.inl (p.f n), },
-  sorry { intros n hn,
+  { intros n hn,
     refine ⟨⟨biprod.fst, biprod.inl_fst, eq.symm _⟩⟩,
     dsimp,
     rw [← biprod.total, add_right_eq_self],

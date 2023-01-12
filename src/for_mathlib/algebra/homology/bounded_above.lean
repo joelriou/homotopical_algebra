@@ -6,6 +6,7 @@ Authors: Joël Riou
 
 import algebra.homology.homological_complex
 import for_mathlib.algebra.homology.homological_complex_biprod
+import for_mathlib.algebra.homology.trunc_le
 
 open category_theory
 open category_theory.category
@@ -50,7 +51,7 @@ def is_bounded_above [has_zero_morphisms C] (K : cochain_complex C ℤ) : Prop :
 
 namespace is_bounded_above
 
-def of_biprod [preadditive C] (K L : cochain_complex C ℤ)
+lemma of_biprod [preadditive C] (K L : cochain_complex C ℤ)
   (hK : K.is_bounded_above) (hL : L.is_bounded_above)
   [∀ i, has_binary_biproduct (K.X i) (L.X i)] :
   is_bounded_above (homological_complex.biprod K L) :=
@@ -67,6 +68,10 @@ begin
   { apply hl,
     exact lt_of_le_of_lt (le_max_right _ _) hi, },
 end
+
+lemma of_is_strictly_le [abelian C] (K : cochain_complex C ℤ) (n : ℤ)
+  [K.is_strictly_le n] : is_bounded_above K :=
+⟨n, λ i hi, is_strictly_le.is_zero K n i hi⟩
 
 end is_bounded_above
 
