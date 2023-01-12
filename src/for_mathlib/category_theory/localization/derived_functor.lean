@@ -2,12 +2,27 @@ import for_mathlib.category_theory.localization.predicate
 import category_theory.adjunction.limits
 import category_theory.is_connected
 import for_mathlib.category_theory.localization.products
+import for_mathlib.category_theory.localization.opposite
 
 noncomputable theory
 
 open category_theory category_theory.category
 
 namespace category_theory
+
+namespace limits
+
+def is_terminal.of_equivalence {C D : Type*} [category C] [category D] (e : C ≌ D) {X : C}
+  (hX : is_terminal X) : is_terminal (e.functor.obj X) :=
+begin
+  change is_limit _,
+  let e' : functor.empty C ⋙ e.functor ≅ functor.empty D := functor.empty_ext _ _,
+  equiv_rw (is_limit.postcompose_inv_equiv e' _).symm,
+  exact is_limit.of_iso_limit (is_limit_of_preserves e.functor hX)
+    (cones.ext (iso.refl _) (by rintro ⟨⟨⟩⟩)),
+end
+
+end limits
 
 @[simps]
 instance localization.lifting.of_comp {C D E : Type*} [category C] [category D] [category E]
@@ -64,6 +79,96 @@ begin
   apply subsingleton.elim,
 end
 
+@[simps]
+def connected_components.op_equiv :
+  connected_components C ≃ connected_components Cᵒᵖ :=
+{ to_fun := quot.lift (λ X, to_connected_components (opposite.op X))
+    (by { rintros X Y ⟨f⟩, symmetry, exact quot.sound ⟨f.op⟩, }),
+  inv_fun := quot.lift (λ X, to_connected_components (opposite.unop X))
+    (by { rintros X Y ⟨f⟩, symmetry, exact quot.sound ⟨f.unop⟩, }),
+  left_inv := by { rintro ⟨X⟩, refl, },
+  right_inv := by { rintro ⟨X⟩, refl, }, }
+
+variables {C} {D E : Type*} [category D] [category E]
+
+def connected_components.map (F : C ⥤ D) :
+  connected_components C → connected_components D :=
+quot.lift (λ X, to_connected_components (F.obj X))
+  (by { rintros X Y ⟨f⟩, exact quot.sound ⟨F.map f⟩, })
+
+@[simp]
+lemma connected_components.map_id (C : Type*) [category C] :
+  connected_components.map (𝟭 C) = id := by tidy
+
+@[simp]
+lemma connected_components.map_id_apply (x : connected_components C) :
+  connected_components.map (𝟭 C) x = x :=
+by simp only [connected_components.map_id, id.def]
+
+@[simp]
+lemma connected_components.map_comp (F : C ⥤ D) (G : D ⥤ E) :
+  connected_components.map (F ⋙ G) =
+    connected_components.map G ∘ connected_components.map F := by tidy
+
+@[simp]
+lemma connected_components.map_comp_apply (F : C ⥤ D) (G : D ⥤ E) (x : connected_components C) :
+  connected_components.map (F ⋙ G) x =
+  connected_components.map G (connected_components.map F x) :=
+by simp only [connected_components.map_comp]
+
+lemma connected_components.map_eq_of_nat_trans {F G : C ⥤ D} (τ : F ⟶ G) :
+  connected_components.map F = connected_components.map G :=
+by { ext ⟨X⟩, exact quot.sound ⟨τ.app X⟩, }
+
+lemma connected_components.map_eq_of_nat_trans_apply {F G : C ⥤ D} (τ : F ⟶ G)
+  (x : connected_components C):
+  connected_components.map F x = connected_components.map G x :=
+by rw connected_components.map_eq_of_nat_trans τ
+
+@[simps]
+def connected_components.equiv_of_equivalence (e : C ≌ D) :
+  connected_components C ≃ connected_components D :=
+{ to_fun := connected_components.map e.functor,
+  inv_fun := connected_components.map e.inverse,
+  left_inv := λ x, by simpa only [connected_components.map_comp_apply,
+    connected_components.map_id_apply]
+    using connected_components.map_eq_of_nat_trans_apply e.unit_iso.inv x,
+  right_inv := λ x, by simpa only [connected_components.map_comp_apply,
+    connected_components.map_id_apply]
+    using connected_components.map_eq_of_nat_trans_apply e.counit_iso.hom x, }
+
+lemma is_preconnected'.of_equivalence (e : C ≌ D) (h : is_preconnected' C) :
+  is_preconnected' D :=
+⟨⟨λ X Y, (connected_components.equiv_of_equivalence e).symm.injective (subsingleton.elim _ _)⟩⟩
+
+lemma is_connected'.of_equivalence (e : C ≌ D) (h : is_connected' C) :
+  is_connected' D :=
+begin
+  haveI : nonempty D := ⟨e.functor.obj h.is_nonempty.some⟩,
+  haveI : is_preconnected' D := is_preconnected'.of_equivalence e h.1,
+  constructor,
+end
+
+lemma is_preconnected'.op (h : is_preconnected' C) : is_preconnected' Cᵒᵖ :=
+⟨⟨λ X Y, (connected_components.op_equiv C).symm.injective (subsingleton.elim _ _)⟩⟩
+
+lemma is_preconnected'.unop (h : is_preconnected' Cᵒᵖ) : is_preconnected' C :=
+⟨⟨λ X Y, (connected_components.op_equiv C).injective (subsingleton.elim _ _)⟩⟩
+
+lemma is_connected'.op (h : is_connected' C) : is_connected' Cᵒᵖ :=
+begin
+  haveI : nonempty Cᵒᵖ := ⟨opposite.op h.is_nonempty.some⟩,
+  haveI : is_preconnected' Cᵒᵖ := is_preconnected'.op infer_instance,
+  constructor,
+end
+
+lemma is_connected'.unop (h : is_connected' Cᵒᵖ) : is_connected' C :=
+begin
+  haveI : nonempty C := ⟨opposite.unop h.is_nonempty.some⟩,
+  haveI : is_preconnected' C := is_preconnected'.unop infer_instance,
+  constructor,
+end
+
 end
 
 namespace morphism_property
@@ -71,7 +176,7 @@ namespace morphism_property
 variables {C : Type*} [category C] (W : morphism_property C)
 
 class multiplicative : Prop :=
-(contains_identities : W.contains_identities)
+(contains_identities [] : W.contains_identities)
 (comp [] : W.stable_under_composition)
 
 section
@@ -79,7 +184,11 @@ section
 variable [multiplicative W]
 
 instance contains_identities_of_multiplicative : W.contains_identities :=
-multiplicative.contains_identities
+multiplicative.contains_identities _
+
+instance : multiplicative W.op :=
+{ contains_identities := (multiplicative.contains_identities W).op,
+  comp := (multiplicative.comp W).op, }
 
 include W
 @[protected, nolint unused_arguments]
@@ -102,6 +211,12 @@ instance : category W.category :=
   comp := λ X Y Z φ φ',
   { f := φ.f ≫ φ'.f,
     hf := multiplicative.comp W φ.f φ'.f φ.hf φ'.hf, }, }
+
+@[simps]
+def category.mk_iso {X Y : W.category} (e : X.obj ≅ Y.obj) (h₁ : W e.hom) (h₂ : W e.inv) :
+  X ≅ Y :=
+{ hom := ⟨e.hom, h₁⟩,
+  inv := ⟨e.inv, h₂⟩, }
 
 end
 
@@ -153,8 +268,6 @@ variables {X₃ X₃'}
 def precomp : structured_arrow X₃ G ⥤ structured_arrow X₃' G :=
 { obj := λ X₂, mk (f ≫ X₂.hom),
   map := λ X₂ X₂' φ, hom_mk φ.right (by tidy), }
-
---instance [is_iso f] : is_equivalence (precomp f G) := sorry
 
 variables {G G'} (X₃)
 
@@ -337,6 +450,11 @@ variables {W W'} (Φ : localizor_morphism W W') [morphism_property.multiplicativ
   [morphism_property.multiplicative W']
 
 @[simps]
+def op : localizor_morphism W.op W'.op :=
+{ functor := Φ.functor.op,
+  mapW := λ X Y f hf, Φ.mapW _ hf, }
+
+@[simps]
 def induced_functor : W.category ⥤ W'.category :=
 { obj := λ X, ⟨Φ.functor.obj X.obj⟩,
   map := λ X Y φ,
@@ -350,6 +468,70 @@ def right_resolution (Y : D) := structured_arrow (⟨Y⟩ : W'.category) Φ.indu
 def right_resolution.mk {Y : D} (X : C) (f : Y ⟶ Φ.functor.obj X) (hf : W' f) :
   Φ.right_resolution Y :=
 structured_arrow.mk (⟨f, hf⟩ : (⟨Y⟩ : W'.category) ⟶ Φ.induced_functor.obj ⟨X⟩)
+
+@[derive category]
+def left_resolution (Y : D) := costructured_arrow Φ.induced_functor (⟨Y⟩ : W'.category)
+
+@[simps]
+def left_resolution.mk {Y : D} (X : C) (f : Φ.functor.obj X ⟶ Y) (hf : W' f) :
+  Φ.left_resolution Y :=
+costructured_arrow.mk (⟨f, hf⟩ : Φ.induced_functor.obj ⟨X⟩ ⟶ (⟨Y⟩ : W'.category))
+
+variable {Φ}
+
+@[simps]
+def left_resolution.op {Y : D} (X : Φ.left_resolution Y) :
+  Φ.op.right_resolution (opposite.op Y) :=
+right_resolution.mk Φ.op (opposite.op X.left.1) X.hom.1.op X.hom.2
+
+@[simps]
+def right_resolution.unop {Y : D} (X : Φ.op.right_resolution (opposite.op Y)) :
+  Φ.left_resolution Y :=
+left_resolution.mk Φ (opposite.unop X.right.1) X.hom.1.unop X.hom.2
+
+@[simps]
+def left_resolution.unop_op {Y : D} (X : Φ.left_resolution Y) :
+  X.op.unop ≅ X :=
+costructured_arrow.iso_mk
+  (morphism_property.category.mk_iso (iso.refl _)
+    (morphism_property.contains_identities.id _ _)
+    (morphism_property.contains_identities.id _ _))
+  (by { ext, dsimp, simp, })
+
+@[simps]
+def right_resolution.op_unop {Y : D} (X : Φ.op.right_resolution (opposite.op Y)) :
+  X.unop.op ≅ X :=
+structured_arrow.iso_mk
+  (morphism_property.category.mk_iso (iso.refl _)
+    (morphism_property.contains_identities.id _ _)
+    (morphism_property.contains_identities.id _ _))
+  (by { ext, dsimp, simp, })
+
+variable (Φ)
+
+@[simps]
+def left_resolution.op_functor (Y : D) :
+  Φ.left_resolution Y ⥤ (Φ.op.right_resolution (opposite.op Y))ᵒᵖ :=
+{ obj := λ X, opposite.op (left_resolution.op X),
+  map := λ X₁ X₂ f, quiver.hom.op (structured_arrow.hom_mk ⟨f.left.1.op, f.left.2⟩
+    (by { ext, dsimp, simpa only [← costructured_arrow.w f], })), }
+
+@[simps]
+def right_resolution.unop_functor (Y : D) :
+  (Φ.op.right_resolution (opposite.op Y))ᵒᵖ ⥤ Φ.left_resolution Y :=
+{ obj := λ X, (opposite.unop X).unop,
+  map := λ X₁ X₂ f, costructured_arrow.hom_mk ⟨f.unop.right.1.unop, f.unop.right.2⟩
+    (by { ext, dsimp, simpa only [← structured_arrow.w f.unop], }), }
+
+@[simps]
+def left_resolution.op_equivalence (Y : D) :
+  Φ.left_resolution Y ≌ (Φ.op.right_resolution (opposite.op Y))ᵒᵖ :=
+{ functor := left_resolution.op_functor _ _,
+  inverse := right_resolution.unop_functor _ _,
+  unit_iso := nat_iso.of_components (λ X, X.unop_op.symm) (by tidy),
+  counit_iso := nat_iso.of_components (λ X, ((opposite.unop X).op_unop).symm.op)
+    (λ X Y f, quiver.hom.unop_inj (by tidy)),
+  functor_unit_iso_comp' := λ X, quiver.hom.unop_inj (by tidy), }
 
 end localizor_morphism
 
@@ -556,5 +738,230 @@ end
 end basic
 
 end right_derivability_structure
+
+namespace functor
+
+variables {C D H : Type*} [category C] [category D] [category H]
+  {F : C ⥤ D} (LF : H ⥤ D) {L : C ⥤ H} (α : L ⋙ LF ⟶ F) (W : morphism_property C) [L.is_localization W]
+
+class is_left_derived_functor : Prop :=
+(is_terminal [] : nonempty (limits.is_terminal (costructured_arrow.mk α :
+  costructured_arrow ((whiskering_left C H D).obj L) F)))
+
+namespace is_left_derived_functor
+
+variables (LF₁ LF₂ : H ⥤ D) (α₁ : L ⋙ LF₁ ⟶ F) (α₂ : L ⋙ LF₂ ⟶ F)
+  [LF₁.is_left_derived_functor α₁] [LF₂.is_left_derived_functor α₂]
+
+def uniq' : (costructured_arrow.mk α₁ :
+  costructured_arrow ((whiskering_left C H D).obj L) F) ≅ costructured_arrow.mk α₂ :=
+limits.is_limit.cone_point_unique_up_to_iso
+    (is_left_derived_functor.is_terminal α₁).some
+    (is_left_derived_functor.is_terminal α₂).some
+
+def uniq : LF₁ ≅ LF₂ :=
+(costructured_arrow.proj _ _).map_iso (uniq' _ _ α₁ α₂)
+
+@[simp]
+def uniq_hom_app_comm (X : C) : (uniq _ _ α₁ α₂).hom.app (L.obj X) ≫ α₂.app X = α₁.app X :=
+congr_app (costructured_arrow.w (uniq' _ _ α₁ α₂).hom) X
+
+@[simp]
+def uniq_inv_app_comm (X : C) : (uniq _ _ α₁ α₂).inv.app (L.obj X) ≫ α₁.app X = α₂.app X :=
+congr_app (costructured_arrow.w (uniq' _ _ α₁ α₂).inv) X
+
+end is_left_derived_functor
+
+variables (F L)
+
+class has_left_derived_functor : Prop :=
+(has_terminal' : limits.has_terminal (costructured_arrow ((whiskering_left C _ D).obj W.Q) F))
+
+namespace costructured_arrow_equivalence_op
+
+@[simps]
+def functor : (costructured_arrow ((whiskering_left C H D).obj L) F) ⥤
+    (structured_arrow F.op ((whiskering_left Cᵒᵖ Hᵒᵖ Dᵒᵖ).obj L.op))ᵒᵖ :=
+{ obj := λ X, opposite.op (structured_arrow.mk
+    (show F.op ⟶ ((whiskering_left Cᵒᵖ Hᵒᵖ Dᵒᵖ).obj L.op).obj X.left.op,
+      by exact (functor.op_hom _ _).map X.hom.op)),
+  map := λ X₁ X₂ f, quiver.hom.op
+    (structured_arrow.hom_mk ((functor.op_hom H D).map (quiver.hom.op f.left))
+      (by { rw ← costructured_arrow.w f, refl, })), }
+
+@[simps]
+def inverse : (structured_arrow F.op ((whiskering_left Cᵒᵖ Hᵒᵖ Dᵒᵖ).obj L.op))ᵒᵖ ⥤
+    (costructured_arrow ((whiskering_left C H D).obj L) F) :=
+{ obj := λ X, costructured_arrow.mk
+      (show ((whiskering_left C H D).obj L).obj X.unop.right.unop ⟶ F,
+        by exact ((functor.op_inv C D).map X.unop.hom).unop ≫ F.op_unop_iso.hom),
+  map := λ X₁ X₂ f, costructured_arrow.hom_mk (((functor.op_inv _ _).map f.unop.right).unop)
+      (by { rw ← structured_arrow.w f.unop, dsimp, ext, tidy, }), }
+
+@[simps]
+def unit_iso : 𝟭 _ ≅ functor F L ⋙ inverse F L :=
+nat_iso.of_components (λ X, costructured_arrow.iso_mk (functor.op_unop_iso X.left).symm
+    (by { ext, dsimp, tidy, })) (by tidy)
+
+@[simps]
+def counit_iso : inverse F L ⋙ functor F L ≅ 𝟭 _ :=
+nat_iso.of_components (λ X, begin
+  change opposite.op (opposite.unop _) ≅ opposite.op (opposite.unop _),
+  apply iso.op,
+  refine structured_arrow.iso_mk (functor.unop_op_iso _).symm _,
+  ext, dsimp, tidy,
+end) (λ X Y f, quiver.hom.unop_inj (by { dsimp, tidy, }))
+
+end costructured_arrow_equivalence_op
+
+def costructured_arrow_equivalence_op :
+  (costructured_arrow ((whiskering_left C H D).obj L) F) ≌
+    (structured_arrow F.op ((whiskering_left Cᵒᵖ Hᵒᵖ Dᵒᵖ).obj L.op))ᵒᵖ :=
+{ functor := costructured_arrow_equivalence_op.functor _ _,
+  inverse := costructured_arrow_equivalence_op.inverse _ _,
+  unit_iso := costructured_arrow_equivalence_op.unit_iso _ _,
+  counit_iso := costructured_arrow_equivalence_op.counit_iso _ _,
+  functor_unit_iso_comp' := λ X, quiver.hom.unop_inj begin
+    dsimp [structured_arrow.iso_mk, structured_arrow.hom_mk, comma.iso_mk],
+    tidy,
+  end, }
+
+variable (L)
+
+lemma has_left_derived_functor_iff_op :
+  has_left_derived_functor F W ↔ has_right_derived_functor F.op W.op :=
+begin
+  have h : F.has_left_derived_functor W ↔
+    limits.has_terminal (costructured_arrow ((whiskering_left C _ D).obj W.Q) F) :=
+    ⟨λ h, h.1, λ h, ⟨h⟩⟩,
+  rw [h, has_right_derived_functor_iff F.op W.Q.op W.op],
+  have e := costructured_arrow_equivalence_op F W.Q,
+  split,
+  { introI,
+    haveI : limits.has_terminal
+      (structured_arrow F.op ((whiskering_left Cᵒᵖ (W.localization)ᵒᵖ Dᵒᵖ).obj W.Q.op))ᵒᵖ :=
+      adjunction.has_limits_of_shape_of_equivalence e.inverse,
+    exact limits.has_initial_of_has_terminal_op, },
+  { introI,
+    exact adjunction.has_limits_of_shape_of_equivalence e.functor, },
+end
+
+lemma has_left_derived_functor_iff :
+  has_left_derived_functor F W ↔
+    limits.has_terminal (costructured_arrow ((whiskering_left C H D).obj L) F) :=
+begin
+  rw [has_left_derived_functor_iff_op, has_right_derived_functor_iff F.op L.op W.op],
+  have e := costructured_arrow_equivalence_op F L,
+  split,
+  { introI,
+    exact adjunction.has_limits_of_shape_of_equivalence e.functor, },
+  { introI,
+    haveI : limits.has_terminal
+      (structured_arrow F.op ((whiskering_left Cᵒᵖ Hᵒᵖ Dᵒᵖ).obj L.op))ᵒᵖ :=
+      adjunction.has_limits_of_shape_of_equivalence e.inverse,
+    exact limits.has_initial_of_has_terminal_op, },
+end
+
+lemma is_left_derived_functor.has_left_derived_functor [LF.is_left_derived_functor α] :
+  F.has_left_derived_functor W :=
+begin
+  rw F.has_left_derived_functor_iff L W,
+  exact limits.is_terminal.has_terminal (is_left_derived_functor.is_terminal α).some,
+end
+
+variables {F L LF F α}
+
+lemma is_left_derived_functor.op (hα : LF.is_left_derived_functor α) :
+  @is_right_derived_functor _ _ _ _ _ _ F.op LF.op L.op ((functor.op_hom _ _).map α.op) :=
+is_right_derived_functor.mk
+  (nonempty.intro (limits.initial_unop_of_terminal
+    (limits.is_terminal.of_equivalence (costructured_arrow_equivalence_op F L)
+      hα.is_terminal.some)))
+
+variables (F L LF F α)
+
+lemma has_left_derived_functor.has_terminal [has_left_derived_functor F W] :
+  limits.has_terminal (costructured_arrow ((whiskering_left C H D).obj L) F) :=
+(has_left_derived_functor_iff F L W).1 infer_instance
+
+def has_left_derived_functor.initial [has_left_derived_functor F W] :
+  (costructured_arrow ((whiskering_left C H D).obj L) F) :=
+begin
+  haveI := has_left_derived_functor.has_terminal F L W,
+  exact limits.terminal _,
+end
+
+def left_derived_functor [has_left_derived_functor F W] : H ⥤ D :=
+(has_left_derived_functor.initial F L W).left
+
+def left_derived_functor_α [has_left_derived_functor F W] :
+  L ⋙ F.left_derived_functor L W ⟶ F :=
+(has_left_derived_functor.initial F L W).hom
+
+instance left_derived_functor_is_left_derived_functor [has_left_derived_functor F W] :
+  (F.left_derived_functor L W).is_left_derived_functor (F.left_derived_functor_α L W) :=
+⟨⟨begin
+  haveI := has_left_derived_functor.has_terminal F L W,
+  exact limits.is_terminal.of_iso limits.terminal_is_terminal
+    (costructured_arrow.iso_mk (iso.refl _) (by tidy)),
+end⟩⟩
+
+end functor
+
+namespace left_derivability_structure
+
+variables {C₀ C H : Type*} [category C] [category C₀] [category H]
+  {W₀ : morphism_property C₀}
+  {W : morphism_property C} (L : C ⥤ H) [L.is_localization W] (Φ : localizor_morphism W₀ W)
+  [morphism_property.multiplicative W₀] [morphism_property.multiplicative W]
+
+structure basic :=
+(hL : (Φ.functor ⋙ L).is_localization W₀)
+  -- hL should be a property of `Φ`, regardless of the choice of the localization functor `L`
+(left_resolution_connected : ∀ (Y : C), is_connected' (Φ.left_resolution Y))
+(nonempty_arrow_left_resolution :
+  ∀ ⦃Y₁ Y₂ : C⦄ (f : Y₁ ⟶ Y₂), ∃ (X₁ : Φ.left_resolution Y₁) (X₂ : Φ.left_resolution Y₂)
+  (f' : X₁.left.obj ⟶ X₂.left.obj), Φ.functor.map f' ≫ X₂.hom.1 = X₁.hom.1 ≫ f)
+
+namespace basic
+
+variables {L Φ}
+
+def op (β : basic L Φ) : right_derivability_structure.basic L.op Φ.op :=
+{ hL := begin
+    haveI := β.hL,
+    exact (infer_instance : (Φ.functor ⋙ L).op.is_localization W₀.op),
+  end,
+  right_resolution_connected := λ Y, (is_connected'.of_equivalence
+      (localizor_morphism.left_resolution.op_equivalence Φ (opposite.unop Y))
+      (β.left_resolution_connected (opposite.unop Y))).unop,
+  nonempty_arrow_right_resolution := λ Y₁ Y₂ f, begin
+    obtain ⟨X₁, X₂, f', fac⟩ := β.nonempty_arrow_left_resolution f.unop,
+    exact ⟨X₂.op, X₁.op, f'.op, quiver.hom.unop_inj fac⟩,
+  end, }
+
+variables (β : basic L Φ) {D : Type*} [category D] (F : C ⥤ D)
+  (hF : W₀.is_inverted_by (Φ.functor ⋙ F))
+
+include β hF
+
+lemma existence_derived_functor : F.has_left_derived_functor W :=
+by simpa only [functor.has_left_derived_functor_iff_op]
+  using β.op.existence_derived_functor F.op hF.op
+
+lemma is_iso_app (F' : H ⥤ D) (α' : L ⋙ F' ⟶ F) [hα' : F'.is_left_derived_functor α'] (X₀ : C₀) :
+  is_iso (α'.app (Φ.functor.obj X₀)) :=
+begin
+  suffices : is_iso (α'.app (Φ.functor.obj X₀)).op,
+  { haveI := this,
+    exact is_iso.of_iso ((as_iso (α'.app (Φ.functor.obj X₀)).op).unop), },
+  let α'' : F.op ⟶ L.op ⋙ F'.op := (functor.op_hom C D).map α'.op,
+  haveI : F'.op.is_right_derived_functor α'' := hα'.op,
+  exact β.op.is_iso_app F.op hF.op F'.op α'' (opposite.op X₀),
+end
+
+end basic
+
+end left_derivability_structure
 
 end category_theory
