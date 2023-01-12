@@ -859,7 +859,7 @@ section
 variables {m : α} [linear_order α] (F : { x // x < m } ⥤ C) (X : C)
   (φ : F ⟶ (functor.const _).obj X)
 
-namespace order_extension_from_le_to_le
+namespace order_extension_from_lt_to_le
 
 include F X
 
@@ -885,14 +885,14 @@ eq_to_iso begin
   erw [dif_neg ha],
 end
 
-end order_extension_from_le_to_le
+end order_extension_from_lt_to_le
 
-open order_extension_from_le_to_le
+open order_extension_from_lt_to_le
 
 include φ
 
 def order_extension_from_lt_to_le : { x // x ≤ m } ⥤ C :=
-{ obj := order_extension_from_le_to_le.obj F X,
+{ obj := order_extension_from_lt_to_le.obj F X,
   map := λ a b f, begin
     classical,
     by_cases ha : a.1 < m,
@@ -934,6 +934,15 @@ def order_extension_from_lt_to_le : { x // x ≤ m } ⥤ C :=
 
 end
 
+@[simps]
+def nat_trans_to_functor_const [preorder α] (F : α ⥤ C) (m : α) (hm : is_top m) :
+  F ⟶ (functor.const _).obj (F.obj m) :=
+{ app := λ a, F.map (hom_of_le (hm a)),
+  naturality' := λ a b hab, begin
+    dsimp,
+    simpa only [comp_id, ← F.map_comp],
+  end, }
+
 namespace transfinite_iteration
 
 variables (τ) [linear_order α] [is_well_order α (<)] {m : α} (a₀ : { b : α // b ≤ m})
@@ -956,6 +965,21 @@ def mk_of_is_bot (hm : is_bot m) (X : C) : transfinite_iteration τ m :=
     simpa only [lt_self_iff_false] using hab.lt,
   end, }
 
+def mk_of_are_succ {a b : α} (hab : order.are_succ a b) (I : transfinite_iteration τ a) :
+  transfinite_iteration τ b :=
+begin
+  let a' : { x // x < b} := ⟨a, hab.lt⟩,
+  have ha' : is_top a' := λ c, (hab.lt_iff_le c.1).1 c.2,
+  let i : { x // x < b } → { x // x ≤ a } := λ x, ⟨x.1, ha' _⟩,
+  have hi : _root_.monotone i := λ x y hxy, hxy,
+  exact
+  { F := order_extension_from_lt_to_le (monotone.functor hi ⋙ I.F)
+      (Φ.obj (I.F.obj ⟨a, le_refl a⟩))
+      (functor.nat_trans_to_functor_const _ a' ha' ≫ (functor.const _).map (τ.app _)),
+    hF := sorry,
+    iso := sorry, }
+end
+
 variable (m)
 
 include ha₀
@@ -971,7 +995,11 @@ begin
   { have hb := is_bot.unique h₁ ha₀,
     subst hb,
     exact ⟨λ X₀, ⟨mk_of_is_bot τ ha₀ X₀, ⟨iso.refl _⟩⟩⟩, },
-  { sorry, },
+  { obtain ⟨a, hab⟩ := h₂,
+    haveI := H a hab.lt,
+    exact ⟨λ X₀, ⟨mk_of_are_succ τ hab ((eval τ a ⟨a₀, ha₀ _⟩).obj_preimage X₀),
+      ⟨order_extension_from_lt_to_le.obj_iso_of_lt _ _ _ (lt_of_le_of_lt (ha₀ _) hab.lt) ≪≫
+      ((eval τ a ⟨a₀, ha₀ _⟩).obj_obj_preimage_iso _)⟩⟩⟩, },
   { sorry, },
 end
 
