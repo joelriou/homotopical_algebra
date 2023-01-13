@@ -524,6 +524,54 @@ begin
   simp only [ε_hom_inv_app, map_id, comp_id],
 end
 
+instance id_has_comm_shift {C A : Type*} [category C]
+  [add_monoid A] [has_shift C A] :
+  (𝟭 C).has_comm_shift A :=
+{ iso := λ a, by refl,
+  iso_add := λ a b, begin
+    ext X,
+    dsimp only [iso.refl, comm_shift.add],
+    simp only [nat_trans.id_app, shift.compatibility.comm_shift.comp_hom_app, id_map],
+    erw [id_comp, functor.map_id, id_comp, iso.inv_hom_id_app],
+    refl,
+  end,
+  iso_zero := begin
+    ext X,
+    dsimp only [iso.refl, comm_shift.unit, shift.compatibility.comm_shift.unit,
+      iso.trans, functor.left_unitor, iso_whisker_right, whiskering_right,
+      functor.map_iso, whisker_right, nat_trans.id_app, nat_trans.comp_app,
+      functor.id, functor.right_unitor, iso.symm, iso_whisker_left,
+      whiskering_left, whisker_left],
+    erw [id_comp, id_comp, iso.inv_hom_id_app],
+    refl,
+  end, }
+
+@[simp]
+lemma has_comm_shift.id_iso_hom_app {C A : Type*} [category C]
+  [add_monoid A] [has_shift C A] (X : C) (a : A) :
+  (comm_shift_iso (𝟭 C) a).hom.app X = 𝟙 _ := rfl
+
+@[simp]
+lemma has_comm_shift.id_iso_inv_app {C A : Type*} [category C]
+  [add_monoid A] [has_shift C A] (X : C) (a : A) :
+  (comm_shift_iso (𝟭 C) a).inv.app X = 𝟙 _ := rfl
+
+@[simp]
+lemma has_comm_shift.comp_hom_app (F₁ : C ⥤ D) (F₂ : D ⥤ E)
+  [F₁.has_comm_shift A] [F₂.has_comm_shift A] (X : C) (a : A) :
+  (comm_shift_iso (F₁ ⋙ F₂) a).hom.app X =
+    F₂.map ((comm_shift_iso F₁ a).hom.app X) ≫
+      (comm_shift_iso F₂ a).hom.app (F₁.obj X) :=
+comm_shift_comp_hom_app _ _ _
+
+@[simp]
+lemma has_comm_shift.comp_inv_app (F₁ : C ⥤ D) (F₂ : D ⥤ E)
+  [F₁.has_comm_shift A] [F₂.has_comm_shift A] (X : C) (a : A) :
+  (comm_shift_iso (F₁ ⋙ F₂) a).inv.app X =
+    (comm_shift_iso F₂ a).inv.app (F₁.obj X) ≫
+      F₂.map ((comm_shift_iso F₁ a).inv.app X) :=
+comm_shift_comp_inv_app _ _ _
+
 end functor
 
 end category_theory
