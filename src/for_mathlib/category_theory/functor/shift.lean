@@ -10,12 +10,12 @@ namespace category_theory
 
 open category
 
+namespace functor
+
 variables {C D E : Type*} [category C] [category D] [category E] (F : C ⥤ D)
   {A G : Type*} [add_monoid A] [add_group G]
   [has_shift C A] [has_shift D A] [has_shift E A]
   [hCℤ : has_shift C ℤ] [hDℤ : has_shift D ℤ]
-
-namespace functor
 
 variables (F A)
 
@@ -573,5 +573,130 @@ lemma has_comm_shift.comp_inv_app (F₁ : C ⥤ D) (F₂ : D ⥤ E)
 comm_shift_comp_inv_app _ _ _
 
 end functor
+
+namespace shift
+
+section
+
+variables {C D : Type*} [category C] [category D] (F : C ⥤ D)
+  {A : Type*} [add_monoid A] [has_shift D A] [full F] [faithful F]
+  (s : A → C ⥤ C) (hs : Π (a : A), s a ⋙ F ≅ F ⋙ shift_functor D a)
+
+local attribute [instance] endofunctor_monoidal_category
+
+lemma has_shift_of_fully_faithful_map_ε_iso_hom_app (X : C) :
+  F.map ((@shift_monoidal_functor C A _ _
+    (has_shift_of_fully_faithful F s hs)).ε_iso.hom.app X) =
+  (shift_zero A (F.obj X)).inv ≫ (hs 0).inv.app X :=
+begin
+  dsimp [shift_monoidal_functor],
+  erw [id_comp, id_comp],
+  simp only [functor.image_preimage],
+end
+
+lemma has_shift_of_fully_faithful_map_ε_iso_inv_app (X : C) :
+  F.map ((@shift_monoidal_functor C A _ _
+    (has_shift_of_fully_faithful F s hs)).ε_iso.inv.app X) =
+  (hs 0).hom.app X ≫ (shift_zero A (F.obj X)).hom :=
+begin
+  rw [← cancel_mono (F.map ((@shift_monoidal_functor C A _ _
+    (has_shift_of_fully_faithful F s hs)).ε_iso.hom.app X)), ← F.map_comp,
+    iso.inv_hom_id_app, F.map_id, has_shift_of_fully_faithful_map_ε_iso_hom_app,
+    assoc, iso.hom_inv_id_assoc, iso.hom_inv_id_app],
+  refl,
+end
+
+lemma has_shift_of_fully_faithful_map_μ_iso_hom_app (a b : A) (X : C) :
+  F.map (((@shift_monoidal_functor C A _ _
+    (has_shift_of_fully_faithful F s hs)).μ_iso (discrete.mk a) (discrete.mk b)).hom.app X) =
+    (hs b).hom.app ((s a).obj X) ≫ (shift_functor D b).map ((hs a).hom.app X) ≫
+      (shift_functor_add D a b).inv.app (F.obj X) ≫ (hs (a + b)).inv.app X :=
+begin
+  dsimp [shift_monoidal_functor],
+  erw [assoc, assoc, assoc, id_comp, comp_id, id_comp, functor.image_preimage],
+end
+
+lemma has_shift_of_fully_faithful_map_μ_iso_inv_app (a b : A) (X : C) :
+  F.map (((@shift_monoidal_functor C A _ _
+    (has_shift_of_fully_faithful F s hs)).μ_iso (discrete.mk a) (discrete.mk b)).inv.app X) =
+      (hs (a + b)).hom.app X ≫
+      (shift_functor_add D a b).hom.app (F.obj X) ≫
+    (shift_functor D b).map ((hs a).inv.app X) ≫
+    (hs b).inv.app ((s a).obj X) :=
+begin
+  erw [← cancel_mono (F.map (((@shift_monoidal_functor C A _ _
+    (has_shift_of_fully_faithful F s hs)).μ_iso (discrete.mk a) (discrete.mk b)).hom.app X)),
+    ← F.map_comp, iso.inv_hom_id_app, F.map_id, assoc, assoc, assoc,
+    has_shift_of_fully_faithful_map_μ_iso_hom_app, iso.inv_hom_id_app_assoc,
+    ← functor.map_comp_assoc, iso.inv_hom_id_app, functor.map_id, id_comp,
+    iso.hom_inv_id_app_assoc, iso.hom_inv_id_app],
+  refl,
+end
+
+def has_comm_shift_of_fully_faithful :
+  @functor.has_comm_shift _ _ _ _ F A _ (has_shift_of_fully_faithful F s hs) _ :=
+{ iso := hs,
+  iso_add := λ a b, begin
+    ext X,
+    dsimp only [functor.comm_shift.add, compatibility.comm_shift.comp,
+      iso.trans, iso.symm, nat_trans.comp_app, iso_whisker_right,
+      whiskering_right, functor.map_iso, whisker_right, functor.associator,
+      iso_whisker_left, whiskering_left, whisker_left],
+    erw [id_comp, id_comp, id_comp, has_shift_of_fully_faithful_map_μ_iso_inv_app,
+      assoc, assoc, assoc, iso.inv_hom_id_app_assoc, ← functor.map_comp_assoc,
+      iso.inv_hom_id_app, functor.map_id, id_comp,
+      iso.symm_hom, monoidal_functor.μ_iso_hom, μ_inv_hom_app, comp_id],
+  end,
+  iso_zero := begin
+    ext X,
+    dsimp only [functor.comm_shift.unit, compatibility.comm_shift.unit, iso.trans,
+      iso_whisker_right, whiskering_right, functor.left_unitor, nat_trans.comp_app,
+      functor.right_unitor, iso.symm, iso_whisker_left, whiskering_left,
+      functor.map_iso, whisker_right, whisker_left],
+    erw [id_comp, id_comp, has_shift_of_fully_faithful_map_ε_iso_inv_app],
+    simp only [iso.app_hom, iso.symm_hom, monoidal_functor.ε_iso_hom, assoc, ε_inv_hom_app],
+    erw comp_id,
+  end, }
+
+end
+
+end shift
+
+end category_theory
+
+section
+
+open category_theory
+
+variables {C : Type*} [category C]
+
+class set.is_stable_by_shift (S : set C) (A : Type*) [add_monoid A] [has_shift C A] : Prop :=
+(condition [] : ∀ (a : A) (X : C) (hX : X ∈ S), X⟦a⟧ ∈ S)
+
+end
+
+namespace category_theory
+
+namespace shift
+
+section
+
+variables {C A : Type*} [category C] [add_monoid A] [has_shift C A]
+  (S : set C) [S.is_stable_by_shift A]
+
+instance has_shift_full_subcategory :
+  has_shift (full_subcategory S) A :=
+has_shift_of_fully_faithful (full_subcategory_inclusion S)
+  (λ a, full_subcategory.lift _ (full_subcategory_inclusion S ⋙ shift_functor C a)
+  (λ X, set.is_stable_by_shift.condition a X.1 X.2))
+  (λ a, full_subcategory.lift_comp_inclusion _ _ _)
+
+instance has_comm_shift_full_subcategory_inclusion :
+  (full_subcategory_inclusion S).has_comm_shift A :=
+has_comm_shift_of_fully_faithful _ _ _
+
+end
+
+end shift
 
 end category_theory

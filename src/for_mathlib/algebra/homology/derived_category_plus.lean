@@ -54,14 +54,8 @@ begin
   exact (full_subcategory_inclusion S).map_injective (is_zero.eq_of_src hX₀ _ _),
 end
 
-def shift_functor (n : ℤ) :
-  full_subcategory S ⥤ full_subcategory S :=
-full_subcategory.lift _ (full_subcategory_inclusion S ⋙ shift_functor C n)
-  (λ K, hS.shift K.1 n K.2)
-
-instance : has_shift (full_subcategory S) ℤ :=
-has_shift_of_fully_faithful (full_subcategory_inclusion S) (shift_functor S)
-  (λ n, full_subcategory.lift_comp_inclusion _ _ _)
+instance is_stable_by_shift : S.is_stable_by_shift ℤ :=
+⟨λ a X hX, hS.shift X a hX⟩
 
 instance shift_functor_additive (n : ℤ) :
   (category_theory.shift_functor (full_subcategory S) n).additive :=
@@ -70,11 +64,8 @@ instance shift_functor_additive (n : ℤ) :
   exact (full_subcategory_inclusion S).map_injective (category_theory.shift_functor C n).map_add,
 end⟩
 
-instance full_subcategory_inclusion_has_comm_shift :
-  (full_subcategory_inclusion S).has_comm_shift ℤ :=
-{ iso := λ n, full_subcategory.lift_comp_inclusion _ _ _,
-  iso_add := sorry,
-  iso_zero := sorry, }
+--instance full_subcategory_inclusion_has_comm_shift :
+--  (full_subcategory_inclusion S).has_comm_shift ℤ := infer_instance
 
 def distinguished_triangles : set (triangle (full_subcategory S)) :=
 λ T, (full_subcategory_inclusion S).map_triangle.obj T ∈ dist_triang C

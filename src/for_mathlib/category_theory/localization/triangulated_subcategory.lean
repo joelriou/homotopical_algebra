@@ -389,28 +389,17 @@ end⟩
 
 lemma test [is_triangulated C] : pretriangulated (W A).localization := infer_instance
 
-@[protected, derive category, derive preadditive]
-def category := full_subcategory A.set
+@[protected]
+abbreviation category := full_subcategory A.set
 
 instance : has_zero_object (subcategory.category A) :=
 ⟨⟨⟨0, A.zero⟩, ⟨λ X, nonempty.intro (unique_of_subsingleton 0),
   λ X, nonempty.intro (unique_of_subsingleton 0)⟩⟩⟩
 
-@[simps]
-def category.shift_functor (n : ℤ) : A.category ⥤ A.category :=
-full_subcategory.lift A.set (full_subcategory_inclusion A.set ⋙ shift_functor C n)
-  (λ X, (A.shift_iff X.obj n).mp X.property)
+instance set_is_stable_by_shift : A.set.is_stable_by_shift ℤ :=
+⟨λ n X hX, A.shift X n hX⟩
 
-@[simps]
-def category.comm_shift (n : ℤ) :
-  category.shift_functor A n ⋙ full_subcategory_inclusion A.set ≅
-    full_subcategory_inclusion A.set ⋙ shift_functor C n :=
-    full_subcategory.lift_comp_inclusion _ _ _
-
-@[simps]
-instance : has_shift A.category ℤ := has_shift_of_fully_faithful
-  (full_subcategory_inclusion A.set) (category.shift_functor A)
-  (category.comm_shift A)
+--instance : has_shift A.category ℤ := infer_instance
 
 lemma category_closed_under_finite_products (J : Type) [finite J] :
   closed_under_limits_of_shape (discrete J) A.set :=
@@ -436,16 +425,12 @@ instance category_has_finite_products : has_finite_products (A.category) :=
 
 instance shift_functor_additive (n : ℤ) : (shift_functor A.category n).additive := infer_instance
 
-def inclusion : A.category ⥤ C := full_subcategory_inclusion _
+abbreviation inclusion : A.category ⥤ C := full_subcategory_inclusion _
 
-/-- should be a general compatibility for shifts defined on full subcategories -/
-instance full_subcategory_inclusion_has_comm_shift :
-  A.inclusion.has_comm_shift ℤ :=
-{ iso := category.comm_shift A,
-  iso_add := sorry,
-  iso_zero := sorry, }
+--instance full_subcategory_inclusion_has_comm_shift :
+--  A.inclusion.has_comm_shift ℤ := infer_instance
 
-instance category_inclusion_additive : A.inclusion.additive := { }
+--instance category_inclusion_additive : A.inclusion.additive := infer_instance
 
 namespace category_pretriangulated
 
@@ -532,8 +517,7 @@ begin
     @triangle.mk C _ _ _ _ _ f g h,
   { refine triangle.mk_iso _ _ (iso.refl _) (iso.refl _) (iso.refl _) (by tidy) (by tidy) _,
     dsimp,
-    erw [id_comp, functor.map_id, comp_id, comp_id],
-    refl, },
+    erw [id_comp, functor.map_id, comp_id, comp_id], },
   split,
   { exact λ h, pretriangulated.isomorphic_distinguished _ h _ e.symm, },
   { exact λ h, pretriangulated.isomorphic_distinguished _ h _ e, },
