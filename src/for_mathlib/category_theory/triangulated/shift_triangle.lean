@@ -1,9 +1,9 @@
---import for_mathlib.category_theory.localization.triangulated
 import tactic.linarith
 import category_theory.triangulated.rotate
 import for_mathlib.category_theory.triangulated.shift_compatibility
 import for_mathlib.category_theory.triangulated.pretriangulated_misc
 import for_mathlib.category_theory.functor.shift
+import for_mathlib.category_theory.triangulated.triangulated_functor
 
 noncomputable theory
 
@@ -158,13 +158,15 @@ begin
         linarith, }, }, },
 end
 
+example : ℕ := 42
+
 def triangle.shift_functor_comm {C D : Type*} [category C] [category D]
   [preadditive C] [preadditive D] [has_shift C ℤ] [has_shift D ℤ] [has_zero_object C] [has_zero_object D]
   [∀ (n : ℤ), (shift_functor C n).additive] [∀ (n : ℤ), (shift_functor D n).additive] (F : C ⥤ D)
   [F.additive]
   [F.has_comm_shift ℤ] (n : ℤ) :
-  triangle.shift_functor C n ⋙ (triangulated_functor_struct.mk F (F.comm_shift_iso 1)).map_triangle ≅
-  (triangulated_functor_struct.mk F (F.comm_shift_iso 1)).map_triangle ⋙ triangle.shift_functor D n :=
+  triangle.shift_functor C n ⋙ F.map_triangle ≅
+    F.map_triangle ⋙ triangle.shift_functor D n :=
 begin
   refine nat_iso.of_components (λ T, triangle.mk_iso _ _
     ((F.comm_shift_iso n).app _) ((F.comm_shift_iso n).app _) ((F.comm_shift_iso n).app _) _ _ _)

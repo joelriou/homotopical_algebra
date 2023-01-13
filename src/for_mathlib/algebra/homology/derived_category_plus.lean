@@ -70,30 +70,25 @@ instance shift_functor_additive (n : ℤ) :
   exact (full_subcategory_inclusion S).map_injective (category_theory.shift_functor C n).map_add,
 end⟩
 
-@[simps]
-def inclusion : triangulated_functor_struct (full_subcategory S) C :=
-{ comm_shift := full_subcategory.lift_comp_inclusion _ _ _,
-  .. full_subcategory_inclusion S }
-
-instance inclusion_to_functor_additive : (inclusion S).to_functor.additive :=
-begin
-  change (full_subcategory_inclusion S).additive,
-  apply_instance,
-end
+instance full_subcategory_inclusion_has_comm_shift :
+  (full_subcategory_inclusion S).has_comm_shift ℤ :=
+{ iso := λ n, full_subcategory.lift_comp_inclusion _ _ _,
+  iso_add := sorry,
+  iso_zero := sorry, }
 
 def distinguished_triangles : set (triangle (full_subcategory S)) :=
-λ T, (inclusion S).map_triangle.obj T ∈ dist_triang C
+λ T, (full_subcategory_inclusion S).map_triangle.obj T ∈ dist_triang C
 
 lemma isomorphic_distinguished (T₁ : triangle (full_subcategory S))
   (hT₁ : T₁ ∈ distinguished_triangles S) (T₂ : triangle (full_subcategory S)) (e : T₂ ≅ T₁) :
   T₂ ∈ distinguished_triangles S :=
-pretriangulated.isomorphic_distinguished _ hT₁ _ ((inclusion S).map_triangle.map_iso e)
+pretriangulated.isomorphic_distinguished _ hT₁ _ ((full_subcategory_inclusion S).map_triangle.map_iso e)
 
 lemma contractible_distinguished (X : full_subcategory S) :
   triangle.mk (𝟙 X) (0 : X ⟶ 0) 0 ∈ distinguished_triangles S :=
 begin
   refine pretriangulated.isomorphic_distinguished _
-    (pretriangulated.contractible_distinguished ((inclusion S).obj X)) _ _,
+    (pretriangulated.contractible_distinguished ((full_subcategory_inclusion S).obj X)) _ _,
   refine triangle.mk_iso _ _ (iso.refl _) (iso.refl _)
     (full_subcategory_inclusion S).map_zero_object _ _ _,
   tidy,
@@ -103,10 +98,10 @@ lemma rotate_distinguished_triangle (T : triangle (full_subcategory S)) :
   T ∈ distinguished_triangles S ↔
     T.rotate ∈ distinguished_triangles S :=
 begin
-  change ((inclusion S).map_triangle.obj T ∈ dist_triang C) ↔
-    ((inclusion S).map_triangle.obj T.rotate ∈ dist_triang C),
+  change ((full_subcategory_inclusion S).map_triangle.obj T ∈ dist_triang C) ↔
+    ((full_subcategory_inclusion S).map_triangle.obj T.rotate ∈ dist_triang C),
   rw pretriangulated.rotate_distinguished_triangle,
-  let e := (map_triangle_rotate (inclusion S)).app T,
+  let e := (full_subcategory_inclusion S).map_triangle_rotate.app T,
   split,
   { exact λ h, pretriangulated.isomorphic_distinguished _ h _ e.symm, },
   { exact λ h, pretriangulated.isomorphic_distinguished _ h _ e, },
@@ -133,7 +128,8 @@ lemma complete_distinguished_triangle_morphism (T₁ T₂ : triangle (full_subca
     (category_theory.shift_functor _ 1).map a = c ≫ T₂.mor₃ :=
 begin
   obtain ⟨c, ⟨hc₁, hc₂⟩⟩ := pretriangulated.complete_distinguished_triangle_morphism
-    ((inclusion S).map_triangle.obj T₁) ((inclusion S).map_triangle.obj T₂)
+    ((full_subcategory_inclusion S).map_triangle.obj T₁)
+      ((full_subcategory_inclusion S).map_triangle.obj T₂)
     hT₁ hT₂ a b h,
   refine ⟨c, ⟨hc₁, _⟩⟩,
   dsimp at hc₂,
@@ -151,7 +147,7 @@ instance : pretriangulated (full_subcategory S) :=
 
 instance [is_triangulated C] : is_triangulated (full_subcategory S) :=
 ⟨λ X₁ X₂ X₃ Z₁₂ Z₂₃ Z₁₃ u₁₂ u₂₃ u₁₃ comm v₁₂ w₁₂ h₁₂ v₂₃ w₂₃ h₂₃ v₁₃ w₁₃ h₁₃, begin
-  have comm' := (inclusion S).congr_map comm,
+  have comm' := (full_subcategory_inclusion S).congr_map comm,
   rw [functor.map_comp] at comm',
   have H := (is_triangulated.octahedron_axiom comm' h₁₂ h₂₃ h₁₃).some,
   obtain ⟨m₁, m₃, comm₁, comm₂, comm₃, comm₄, H'⟩ := H,
@@ -368,7 +364,7 @@ namespace derived_category
 namespace plus
 
 def Qh : homotopy_category.plus C ⥤ derived_category.plus C :=
-full_subcategory.lift _ (homotopy_category.plus.ι ⋙ Qh.to_functor)
+full_subcategory.lift _ (homotopy_category.plus.ι ⋙ Qh)
 begin
   rintro ⟨⟨K⟩, n, hn⟩,
   refine ⟨n, (_ : (Q.obj K).is_ge n)⟩,

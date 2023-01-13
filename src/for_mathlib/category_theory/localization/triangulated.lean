@@ -4,6 +4,7 @@ import for_mathlib.category_theory.localization.calculus_of_fractions
 import for_mathlib.category_theory.preadditive.equivalence
 import for_mathlib.category_theory.triangulated.triangulated
 import for_mathlib.category_theory.functor.shift
+import for_mathlib.category_theory.triangulated.triangulated_functor
 
 noncomputable theory
 
@@ -176,21 +177,11 @@ include L
 
 namespace localization
 
-@[simps]
-def functor : triangulated_functor_struct C D :=
-{ comm_shift := L.comm_shift_iso 1,
-  .. L }
-
-@[simps]
-def functor_iso_L : (functor L).to_functor ≅ L :=
-nat_iso.of_components (λ X, iso.refl _) (by tidy)
-
-instance : functor.additive (functor L).to_functor := { }
 
 include hC
 @[simp]
 def distinguished_triangles : set (triangle D) :=
-λ T, ∃ (T' : triangle C) (e : T ≅ (functor L).map_triangle.obj T'), T' ∈ dist_triang C
+λ T, ∃ (T' : triangle C) (e : T ≅ L.map_triangle.obj T'), T' ∈ dist_triang C
 
 lemma isomorphic_distinguished {T₁ T₂ : triangle D} (e : T₂ ≅ T₁)
   (h : T₁ ∈ distinguished_triangles L) : T₂ ∈ distinguished_triangles L :=
@@ -215,13 +206,12 @@ begin
   { intro h,
     rcases h with ⟨T', e', hT'⟩,
     refine ⟨T'.rotate, (rotate D).map_iso e' ≪≫
-      ((map_triangle_rotate (functor L)).app T'),
+      (L.map_triangle_rotate.app T'),
       pretriangulated.rot_of_dist_triangle C T' hT'⟩, },
   { intro h,
     rcases h with ⟨T', e', hT'⟩,
     refine ⟨T'.inv_rotate, ((triangle_rotation D).unit_iso.app T) ≪≫
-        (inv_rotate D).map_iso e' ≪≫
-        (map_triangle_inv_rotate (functor L)).app T' ,
+        (inv_rotate D).map_iso e' ≪≫ L.map_triangle_inv_rotate.app T' ,
       pretriangulated.inv_rot_of_dist_triangle C T' hT'⟩, },
 end
 
@@ -299,7 +289,6 @@ begin
   rcases morphism_property.compatible_with_triangulation.condition T'₂ T'₃ hT'₂ H₃
     za.s (sq.s' ≫ zb.s ≫ s) za.hs h₂ comm with ⟨α, hα₀, ⟨hα₁, hα₂⟩⟩,
   let φ : T'₂ ⟶ T'₃ := triangle_morphism.mk za.s (sq.s' ≫ zb.s ≫ s) α comm hα₁ hα₂,
-  let F := (functor L),
   haveI := localization.inverts L W _ za.hs,
   haveI := localization.inverts L W _ h₂,
   haveI := localization.inverts L W _ hα₀,
@@ -402,9 +391,15 @@ end)
 
 include W
 
-def localization_functor : triangulated_functor C (localization L W) :=
-{ map_distinguished' := λ T hT, ⟨T, iso.refl _, hT⟩,
-  .. localization.functor L }
+def localization_functor : C ⥤ localization L W := L
+
+instance localization_functor_has_comm_shift :
+  (localization_functor L W).has_comm_shift ℤ :=
+(infer_instance : L.has_comm_shift ℤ)
+
+instance localization_functor_is_triangulated :
+  (localization_functor L W).is_triangulated :=
+⟨λ T hT, ⟨T, iso.refl _, hT⟩⟩
 
 variables [morphism_property.stable_under_finite_products W] [has_finite_products C]
 

@@ -3,13 +3,15 @@ import category_theory.triangulated.pretriangulated
 import for_mathlib.category_theory.triangulated.pretriangulated_misc
 
 open category_theory category_theory.category category_theory.limits
+  category_theory.pretriangulated
+
+noncomputable theory
 
 namespace category_theory
 
 namespace functor
 
 variables {C D E : Type*} [category C] [category D] [category E]
-  [has_zero_object C] [has_zero_object D] [has_zero_object E]
   [has_shift C ℤ] [has_shift D ℤ] [has_shift E ℤ]
   [preadditive C] [preadditive D] [preadditive E]
   (F : C ⥤ D) [F.has_comm_shift ℤ] (G : D ⥤ E) [G.has_comm_shift ℤ]
@@ -30,6 +32,40 @@ def map_triangle : pretriangulated.triangle C ⥤ pretriangulated.triangle D :=
       simp only [functor.comp_map, ← F.map_comp_assoc, f.comm₃],
     end, }, }
 
+@[simps]
+def map_triangle_rotate [functor.additive F] :
+  F.map_triangle ⋙ pretriangulated.rotate D ≅
+    pretriangulated.rotate C ⋙ F.map_triangle :=
+nat_iso.of_components (λ T, triangle.mk_iso _ _ (iso.refl _) (iso.refl _)
+  ((F.comm_shift_iso (1 : ℤ)).symm.app _) (by tidy) (by tidy) begin
+    dsimp,
+    simp only [map_id, preadditive.neg_comp, comp_id,
+      map_neg, preadditive.comp_neg, neg_inj],
+    erw ← nat_trans.naturality_assoc,
+    simp only [comp_map, iso.inv_hom_id_app, comp_id],
+  end)
+  (λ X Y f, begin
+    ext,
+    { dsimp, simp, },
+    { dsimp, simp, },
+    { dsimp, erw ← nat_trans.naturality, refl, },
+  end)
+
+@[simps]
+def map_triangle_inv_rotate [functor.additive F]
+  [∀ (n : ℤ), (shift_functor C n).additive]
+  [∀ (n : ℤ), (shift_functor D n).additive] :
+  F.map_triangle ⋙ pretriangulated.inv_rotate D ≅
+    pretriangulated.inv_rotate C ⋙ F.map_triangle :=
+calc F.map_triangle ⋙ inv_rotate D ≅ _ : (functor.left_unitor _).symm
+... ≅ _ : iso_whisker_right (pretriangulated.triangle_rotation C).counit_iso.symm _
+... ≅ _ : functor.associator _ _ _
+... ≅ _ : iso_whisker_left _ (functor.associator _ _ _).symm
+... ≅ _ : iso_whisker_left _ (iso_whisker_right (map_triangle_rotate F).symm _)
+... ≅ _ : iso_whisker_left _ (functor.associator _ _ _)
+... ≅ _ : iso_whisker_left _ (iso_whisker_left _ (pretriangulated.triangle_rotation D).unit_iso.symm)
+... ≅ _: iso_whisker_left _ (functor.right_unitor _)
+
 variable (C)
 
 @[simps]
@@ -47,6 +83,7 @@ nat_iso.of_components (λ T, pretriangulated.triangle.mk_iso _ _ (iso.refl _) (i
 variables [∀ (n : ℤ), (shift_functor C n).additive]
   [∀ (n : ℤ), (shift_functor D n).additive]
   [∀ (n : ℤ), (shift_functor E n).additive]
+  [has_zero_object C] [has_zero_object D] [has_zero_object E]
   [pretriangulated C] [pretriangulated D] [pretriangulated E]
 
 @[protected]

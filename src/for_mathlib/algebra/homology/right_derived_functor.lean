@@ -11,16 +11,16 @@ namespace abelian
 variables {C D : Type*} [category C] [category D] [abelian C] [abelian D]
   (F : C ⥤ D) [functor.additive F]
   [(functor.map_homotopy_category (complex_shape.up ℤ) F ⋙
-    derived_category.Qh.to_functor).has_right_derived_functor (homotopy_category.acyclic C).W]
+    derived_category.Qh).has_right_derived_functor (homotopy_category.acyclic C).W]
 
 def total_right_derived_functor : derived_category C ⥤ derived_category D :=
   (functor.map_homotopy_category (complex_shape.up ℤ) F ⋙
-    derived_category.Qh.to_functor).right_derived_functor derived_category.Qh.to_functor
+    derived_category.Qh).right_derived_functor derived_category.Qh
       (homotopy_category.acyclic C).W
 
 def total_right_derived_functor_αh :
   functor.map_homotopy_category (complex_shape.up ℤ) F ⋙
-    derived_category.Qh.to_functor ⟶ derived_category.Qh.to_functor ⋙
+    derived_category.Qh ⟶ derived_category.Qh ⋙
       total_right_derived_functor F :=
 functor.right_derived_functor_α _ _ _
 

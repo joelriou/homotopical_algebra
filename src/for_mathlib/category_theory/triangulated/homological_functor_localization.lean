@@ -31,34 +31,35 @@ variables {C D A : Type*} [category C] [has_zero_object C] [has_shift C ℤ]
   [preadditive D] [∀ (n : ℤ), (shift_functor D n).additive] [pretriangulated D]
   [category A] [abelian A]
 
-variables (L : triangulated_functor C D)
+variables (L : C ⥤ D) [L.has_comm_shift ℤ]
   (hL : ∀ (T : pretriangulated.triangle D) (hT : T ∈ dist_triang D),
     ∃ (T' : pretriangulated.triangle C) (hT' : T' ∈ dist_triang C),
       nonempty (T ≅ L.map_triangle.obj T'))
 
-lemma localization_preserves_zero_morphisms_aux (F : D ⥤ A) [ess_surj L.to_functor]
-  (hF : (L.to_functor ⋙ F).preserves_zero_morphisms) : F.preserves_zero_morphisms :=
+lemma localization_preserves_zero_morphisms_aux (F : D ⥤ A) [ess_surj L]
+  [functor.preserves_zero_morphisms L]
+  (hF : (L ⋙ F).preserves_zero_morphisms) : F.preserves_zero_morphisms :=
 ⟨λ X Y, begin
-  simp only [← cancel_epi (F.map (L.to_functor.obj_obj_preimage_iso X).hom),
-    ← cancel_mono (F.map (L.to_functor.obj_obj_preimage_iso Y).inv), ← F.map_comp,
-    zero_comp, comp_zero, ← L.to_functor.map_zero, ← functor.comp_map,
-    (L.to_functor ⋙ F).map_zero],
+  simp only [← cancel_epi (F.map (L.obj_obj_preimage_iso X).hom),
+    ← cancel_mono (F.map (L.obj_obj_preimage_iso Y).inv), ← F.map_comp,
+    zero_comp, comp_zero, ← L.map_zero, ← functor.comp_map,
+    (L ⋙ F).map_zero],
 end⟩
 
 include hL
 
-lemma ess_surj_aux : ess_surj L.to_functor :=
+lemma ess_surj_aux : ess_surj L :=
 ⟨λ Y, begin
   obtain ⟨T, hT, ⟨e⟩⟩ := hL (contractible_triangle Y) (contractible_distinguished Y),
   exact ⟨_, ⟨(triangle.eval₁ D).map_iso e.symm⟩⟩,
 end⟩
 
 lemma localization_aux (F : D ⥤ A) [F.preserves_zero_morphisms]
-  (hF : (L.to_functor ⋙ F).is_homological) :
+  [L.preserves_zero_morphisms] [L.is_triangulated] (hF : (L ⋙ F).is_homological) :
   F.is_homological :=
 is_homological.mk' _ (λ T hT, begin
   obtain ⟨T', hT', ⟨e⟩⟩ := hL T hT,
-  exact ⟨L.map_triangle.obj T', pretriangulated.triangulated_functor.map_distinguished L T' hT',
+  exact ⟨L.map_triangle.obj T', L.map_distinguished T' hT',
     e, hF.map_distinguished T' hT'⟩,
 end)
 
@@ -83,16 +84,17 @@ variables (G : C ⥤ A) (F : (localization L W) ⥤ A)
 
 include L W
 
-instance : ess_surj (localization_functor L W).to_functor :=
-begin
-  haveI := localization.ess_surj L W,
-  exact ess_surj.of_iso (localization.functor_iso_L L).symm,
-end
+instance : ess_surj (localization_functor L W) :=
+by convert localization.ess_surj L W
 
-lemma localization_preserves_zero_morphisms' : F.preserves_zero_morphisms :=
+instance localization_functor_preserves_zero_morphisms :
+  (localization_functor L W).preserves_zero_morphisms :=
+(infer_instance : L.preserves_zero_morphisms)
+
+lemma localization_preserves_zero_morphisms' [L.preserves_zero_morphisms] :
+  F.preserves_zero_morphisms :=
 localization_preserves_zero_morphisms_aux (localization_functor L W) F
-  (preserves_zero_morphisms.of_iso ((localization.lifting.iso L W G F).symm ≪≫
-  iso_whisker_right (localization.functor_iso_L L).symm F))
+  (preserves_zero_morphisms.of_iso (localization.lifting.iso L W G F).symm)
 
 lemma localization' [F.preserves_zero_morphisms] [G.is_homological] :
   F.is_homological :=
@@ -116,8 +118,8 @@ variables (G : C ⥤ A) [preserves_zero_morphisms G]
 include G
 
 lemma localization_preserves_zero_morphisms : F.preserves_zero_morphisms :=
-@localization_preserves_zero_morphisms' C W.localization A _ _ _ _ _ _ _ _ _
-  _ _ W.Q W _ _ _ _ _ _ _ _ _ G F _ _
+@localization_preserves_zero_morphisms' C W.localization A
+    _ _ _ _ _ _ _ _ _ _ _ W.Q W _ _ _ _ _ _ _ _ _ G F _ _ _
 
 lemma localization [F.preserves_zero_morphisms] [G.is_homological] :
   F.is_homological :=

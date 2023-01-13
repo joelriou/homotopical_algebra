@@ -375,9 +375,7 @@ lemma mem_quasi_isomorphisms_iff {K L : homological_complex D c} (φ : K ⟶ L) 
 
 end
 
-@[derive category, derive preadditive, derive has_zero_object, derive has_finite_products,
-  derive has_finite_coproducts]
-def derived_category := (homotopy_category.acyclic C).W.localization
+abbreviation derived_category := (homotopy_category.acyclic C).W.localization
 
 instance : inhabited (derived_category C) := ⟨0⟩
 
@@ -385,40 +383,32 @@ namespace derived_category
 
 variable {C}
 
-instance : has_shift (derived_category C) ℤ :=
-by { dsimp [derived_category], apply_instance, }
-
-instance shift_functor_additive (n : ℤ) :
-  (shift_functor (derived_category C) n).additive :=
-by { dsimp [derived_category], apply_instance, }
-
 instance : pretriangulated (derived_category C) :=
-by { dsimp [derived_category], apply_instance, }
+pretriangulated.localization_pretriangulated _
 
 instance : is_triangulated (derived_category C) :=
-by { dsimp [derived_category], apply_instance, }
+pretriangulated.localization_triangulated _
 
-def Qh : triangulated_functor (homotopy_category C (complex_shape.up ℤ)) (derived_category C) :=
-pretriangulated.localization_functor _ _
+abbreviation Qh : homotopy_category C (complex_shape.up ℤ) ⥤ derived_category C :=
+(homotopy_category.acyclic C).W.Q
 
-instance Qh_has_comm_shift : (Qh.to_functor : _ ⥤ derived_category C).has_comm_shift ℤ :=
-pretriangulated.W_Q_has_comm_shift _
+--instance Qh_has_comm_shift : (Qh : _ ⥤ derived_category C).has_comm_shift ℤ :=
+--infer_instance
 
-instance Qh_additive : (Qh : triangulated_functor _ (derived_category C)).to_functor.additive :=
-by { dsimp [Qh, localization_functor], apply_instance, }
+--instance Qh_additive : (Qh : _ ⥤ (derived_category C)).additive :=
+--infer_instance
 
-instance Qh_is_localization_W :
-  Qh.to_functor.is_localization (homotopy_category.acyclic C).W :=
-begin
-  change (morphism_property.Q _).is_localization _,
-  apply_instance,
-end
+--instance Qh_is_localization_W :
+--  Qh.is_localization (homotopy_category.acyclic C).W := infer_instance
 
-instance : ess_surj (Qh.to_functor : _ ⥤ derived_category C) :=
+instance Qh_is_triangulated : (Qh : _ ⥤ derived_category C).is_triangulated :=
+pretriangulated.localization_functor_is_triangulated _ _
+
+instance : ess_surj (Qh : _ ⥤ derived_category C) :=
 localization.ess_surj _ (homotopy_category.acyclic C).W
 
 def Q : cochain_complex C ℤ ⥤ derived_category C :=
-homotopy_category.quotient _ _ ⋙ Qh.to_functor
+homotopy_category.quotient _ _ ⋙ Qh
 
 instance Q_additive : (Q : _ ⥤ derived_category C).additive :=
 by { dsimp [Q], apply_instance, }
@@ -427,19 +417,19 @@ variable (C)
 
 instance Q_has_comm_shift : (Q : cochain_complex C ℤ ⥤ _).has_comm_shift ℤ :=
 (infer_instance : (homotopy_category.quotient C _ ⋙
-    Qh.to_functor : cochain_complex C ℤ ⥤ _).has_comm_shift ℤ)
+    Qh : cochain_complex C ℤ ⥤ _).has_comm_shift ℤ)
 
 variable {C}
 
 lemma Q_comm_shift_iso_hom_app (K : cochain_complex C ℤ ) (n : ℤ) :
   (Q.comm_shift_iso n).hom.app K =
-    Qh.to_functor.map (((homotopy_category.quotient C _).comm_shift_iso n).hom.app K) ≫
-      (Qh.to_functor.comm_shift_iso n).hom.app _ :=
+    Qh.map (((homotopy_category.quotient C _).comm_shift_iso n).hom.app K) ≫
+      (Qh.comm_shift_iso n).hom.app _ :=
 functor.comm_shift_comp_hom_app _ _ _
 
 lemma is_iso_Q_map_iff {K L : cochain_complex C ℤ} (φ : K ⟶ L) :
   is_iso (Q.map φ) ↔ quasi_iso φ :=
-(subcategory.is_iso_map_iff _ Qh.to_functor _).trans (homotopy_category.map_quotient_W_iff φ)
+(subcategory.is_iso_map_iff _ Qh _).trans (homotopy_category.map_quotient_W_iff φ)
 
 instance {K L : cochain_complex C ℤ} (φ : K ⟶ L) [quasi_iso φ] :
   is_iso (Q.map φ) :=
@@ -462,7 +452,7 @@ begin
 end
 
 instance Q_is_localization : Q.is_localization (quasi_isomorphisms C _) :=
-localization.comp (homotopy_category.quotient _ _) (Qh.to_functor)
+localization.comp (homotopy_category.quotient _ _) Qh
     (cochain_complex.homotopy_equivalences C) (homotopy_category.acyclic C).W
     (quasi_isomorphisms C _) (Q_inverts_quasi_isomorphisms C)
     (homotopy_equivalences_subset_quasi_isomorphisms C)
@@ -577,7 +567,7 @@ lemma left_factorisation {K L : cochain_complex C ℤ} (φ : Q.obj K ⟶ Q.obj L
     φ = Q.map f ≫ (by { haveI := hs, exact inv (Q.map s), }) :=
 begin
   obtain ⟨⟨⟨L'⟩, f, s, hs⟩ , hz⟩ :=
-    left_calculus_of_fractions.L_map_fac Qh.to_functor (homotopy_category.acyclic C).W φ,
+    left_calculus_of_fractions.L_map_fac Qh (homotopy_category.acyclic C).W φ,
   refine ⟨_, (homotopy_category.quotient _ _).preimage f,
     (homotopy_category.quotient _ _).preimage s, _, _⟩,
   { simpa only [← homotopy_category.map_quotient_W_iff, functor.image_preimage] using hs, },
@@ -590,7 +580,7 @@ lemma right_factorisation {K L : cochain_complex C ℤ} (φ : Q.obj K ⟶ Q.obj 
     φ = (by { haveI := hs, exact inv (Q.map s), }) ≫ Q.map f :=
 begin
   obtain ⟨⟨⟨L'⟩, s, f, hs⟩ , hz⟩ :=
-    right_calculus_of_fractions.L_map_fac Qh.to_functor (homotopy_category.acyclic C).W φ,
+    right_calculus_of_fractions.L_map_fac Qh (homotopy_category.acyclic C).W φ,
   refine ⟨_, (homotopy_category.quotient _ _).preimage s,
     (homotopy_category.quotient _ _).preimage f, _, _⟩,
   { simpa only [← homotopy_category.map_quotient_W_iff, functor.image_preimage] using hs, },
@@ -602,14 +592,14 @@ variable (C)
 
 def homology_functor (n : ℤ) : derived_category C ⥤ C :=
 localization.lift (homotopy_category.homology_functor C (complex_shape.up ℤ) n)
-  (homotopy_category.homology_functor_is_inverted_by C n) Qh.to_functor
+  (homotopy_category.homology_functor_is_inverted_by C n) Qh
 
-instance (n : ℤ) : localization.lifting Qh.to_functor (homotopy_category.acyclic C).W
+instance (n : ℤ) : localization.lifting Qh (homotopy_category.acyclic C).W
   (homotopy_category.homology_functor C (complex_shape.up ℤ) n) (homology_functor C n) :=
 localization.lifting_lift _ _ _
 
 def homology_functor_factors_Qh (n : ℤ) :
-  Qh.to_functor ⋙ homology_functor C n ≅
+  Qh ⋙ homology_functor C n ≅
     homotopy_category.homology_functor C (complex_shape.up ℤ) n :=
 localization.lifting.iso _ (homotopy_category.acyclic C).W _ _
 

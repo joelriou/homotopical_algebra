@@ -143,7 +143,7 @@ namespace derived_category
 
 lemma Qh_map_bijective_of_is_K_injective
   (K L : homotopy_category C (complex_shape.up ℤ)) [L.is_K_injective] :
-  function.bijective (λ (f : K ⟶ L), Qh.to_functor.map f) :=
+  function.bijective (λ (f : K ⟶ L), Qh.map f) :=
 (triangulated.subcategory.right_orthogonal_bijective_Q_map
   (homotopy_category.acyclic C) _ _
   (by { rw ← L.is_K_injective_iff, apply_instance, }))
@@ -151,7 +151,7 @@ lemma Qh_map_bijective_of_is_K_injective
 lemma Qh_map_bijective_of_is_K_injective'
   (K L : cochain_complex C ℤ) [L.is_K_injective] :
   function.bijective (λ (f : ((homotopy_category.quotient _ _).obj K ⟶
-    (homotopy_category.quotient _ _).obj L)), Qh.to_functor.map f) :=
+    (homotopy_category.quotient _ _).obj L)), Qh.map f) :=
 (triangulated.subcategory.right_orthogonal_bijective_Q_map
   (homotopy_category.acyclic C) _ _
   ((cochain_complex.is_K_injective_iff L).1 infer_instance))
@@ -216,7 +216,7 @@ namespace K_injective
 variable {C}
 
 def Qh : K_injective C (complex_shape.up ℤ) ⥤ derived_category C :=
-K_injective.ι _ _ ⋙ derived_category.Qh.to_functor
+K_injective.ι _ _ ⋙ derived_category.Qh
 
 instance full_Qh : full (Qh : _ ⥤ derived_category C) :=
 functor.full_of_surjective _ (λ K L, (derived_category.Qh_map_bijective_of_is_K_injective _ _).2)
@@ -232,14 +232,13 @@ begin
   split,
   { intro hf,
     haveI : is_iso (Qh.map f) :=
-      ((acyclic C).is_iso_map_iff derived_category.Qh.to_functor f).2 hf,
+      ((acyclic C).is_iso_map_iff derived_category.Qh f).2 hf,
     exact is_iso_of_reflects_iso f Qh, },
   { rintro (h : is_iso _),
     haveI := h,
-    refine ((acyclic C).is_iso_map_iff derived_category.Qh.to_functor ((ι _ _).map f)).1 _,
+    refine ((acyclic C).is_iso_map_iff derived_category.Qh ((ι _ _).map f)).1 _,
     apply_instance, },
 end
-
 
 variable {C}
 
@@ -259,17 +258,17 @@ instance (Y : homotopy_category C (complex_shape.up ℤ)) :
 has_enough_K_injectives.condition Y
 
 instance (Y : homotopy_category C (complex_shape.up ℤ)) (X : Φ.right_resolution Y) :
-  is_iso (derived_category.Qh.to_functor.map X.hom.f) :=
+  is_iso (derived_category.Qh.map X.hom.f) :=
 by simpa only [triangulated.subcategory.is_iso_map_iff (homotopy_category.acyclic C)
-  derived_category.Qh.to_functor] using X.hom.hf
+  derived_category.Qh] using X.hom.hf
 
 instance ess_surj_Qh : ess_surj (Qh : _ ⥤ derived_category C) :=
 ⟨λ Z, begin
-  have e := derived_category.Qh.to_functor.obj_obj_preimage_iso Z,
-  let Y := derived_category.Qh.to_functor.obj_preimage Z,
+  have e := derived_category.Qh.obj_obj_preimage_iso Z,
+  let Y := derived_category.Qh.obj_preimage Z,
   let X := (has_enough_K_injectives.condition Y).some,
   exact ⟨X.right.obj, ⟨(as_iso (derived_category.Qh.map X.hom.f)).symm ≪≫
-    derived_category.Qh.to_functor.obj_obj_preimage_iso Z⟩⟩,
+    derived_category.Qh.obj_obj_preimage_iso Z⟩⟩,
 end⟩
 
 instance : is_equivalence (Qh : _ ⥤ derived_category C) :=
@@ -296,8 +295,8 @@ lemma lift_map {Y₁ Y₂ : homotopy_category C (complex_shape.up ℤ)} (f : Y�
   (X₁ : Φ.right_resolution Y₁) (X₂ : Φ.right_resolution Y₂) :
   ∃ (f' : X₁.right.obj ⟶ X₂.right.obj), X₁.hom.f ≫ Φ.functor.map f' = f ≫ X₂.hom.f :=
 begin
-  let f'' := inv (derived_category.Qh.to_functor.map (X₁.hom.f)) ≫
-    derived_category.Qh.to_functor.map (f ≫ X₂.hom.f),
+  let f'' := inv (derived_category.Qh.map (X₁.hom.f)) ≫
+    derived_category.Qh.map (f ≫ X₂.hom.f),
   obtain ⟨f', hf'⟩ := (derived_category.Qh_map_bijective_of_is_K_injective _ _).2 f'',
   refine ⟨f', (derived_category.Qh_map_bijective_of_is_K_injective _ _).1 _⟩,
   dsimp [Φ, ι] at hf' ⊢,
@@ -314,8 +313,8 @@ instance (Y : homotopy_category C (complex_shape.up ℤ)) :
   refine quot.sound ⟨structured_arrow.hom_mk ⟨g, _⟩ _⟩,
   { change (homotopy_category.acyclic C).W _,
     rw ← triangulated.subcategory.is_iso_map_iff (homotopy_category.acyclic C)
-      derived_category.Qh.to_functor,
-    replace hg := derived_category.Qh.to_functor.congr_map hg,
+      derived_category.Qh,
+    replace hg := derived_category.Qh.congr_map hg,
     rw functor.map_comp at hg,
     exact is_iso.of_is_iso_fac_left hg, },
   { ext, exact hg, },
@@ -323,7 +322,7 @@ end⟩⟩
 
 lemma right_derivability_structure :
   right_derivability_structure.basic
-    (derived_category.Qh.to_functor : _ ⥤ derived_category C) Φ :=
+    (derived_category.Qh : _ ⥤ derived_category C) Φ :=
 { hL := (infer_instance : Qh.is_localization _),
   right_resolution_connected := λ Y, { },
   nonempty_arrow_right_resolution := λ Y₁ Y₂ f, begin
@@ -344,7 +343,7 @@ right_derivability_structure.basic.existence_derived_functor
   K_injective.right_derivability_structure F (W_inverts _)
 
 lemma is_iso_app (RF : derived_category C ⥤ D)
-  (α : F ⟶ derived_category.Qh.to_functor ⋙ RF)
+  (α : F ⟶ derived_category.Qh ⋙ RF)
   [RF.is_right_derived_functor α]
   (K : homotopy_category C (complex_shape.up ℤ)) [K.is_K_injective] :
   is_iso (α.app K) :=
@@ -353,7 +352,7 @@ right_derivability_structure.basic.is_iso_app
       ⟨K, infer_instance⟩
 
 instance (K : homotopy_category C (complex_shape.up ℤ)) [K.is_K_injective] :
-  is_iso ((F.right_derived_functor_α derived_category.Qh.to_functor (acyclic C).W).app K) :=
+  is_iso ((F.right_derived_functor_α derived_category.Qh (acyclic C).W).app K) :=
 is_iso_app _ _ _ _
 
 end

@@ -173,7 +173,7 @@ by { dsimp [quotient], apply_instance, }
 
 lemma mapping_cone_comp_triangle_distinguished {X₁ X₂ X₃ : cochain_complex C ℤ}
   (f : X₁ ⟶ X₂) (g : X₂ ⟶ X₃) :
-  quotient_triangulated_functor_struct.map_triangle.obj
+  (homotopy_category.quotient _ _).map_triangle.obj
     (cochain_complex.mapping_cone_comp_triangle f g) ∈ dist_triang (homotopy_category C (complex_shape.up ℤ)) :=
 begin
   refine ⟨_,_, (cochain_complex.mapping_cone_comp_triangle f g).mor₁,
@@ -207,16 +207,16 @@ is_triangulated.mk' (begin
   let β := cochain_complex.mapping_cone.triangle_map (u₁₂ ≫ u₂₃) u₂₃ u₁₂ (𝟙 X₃) (by rw comp_id),
   refine octahedron.mk ((homotopy_category.quotient _ _).map α.hom₃)
     ((homotopy_category.quotient _ _).map β.hom₃)
-    (quotient_triangulated_functor_struct.map_triangle.map α).comm₂
+    ((homotopy_category.quotient _ _).map_triangle.map α).comm₂
     begin
-      have eq := (quotient_triangulated_functor_struct.map_triangle.map α).comm₃,
+      have eq := ((homotopy_category.quotient _ _).map_triangle.map α).comm₃,
       dsimp at eq,
       erw [comp_id, comp_id, comp_id] at eq,
       exact eq.symm,
     end
-    (trans (quotient_triangulated_functor_struct.map_triangle.map β).comm₂ (id_comp _))
+    (trans ((homotopy_category.quotient _ _).map_triangle.map β).comm₂ (id_comp _))
     begin
-      have eq := (quotient_triangulated_functor_struct.map_triangle.map β).comm₃,
+      have eq := ((homotopy_category.quotient _ _).map_triangle.map β).comm₃,
       dsimp at eq,
       erw comp_id at eq,
       conv_rhs at eq { congr, skip, erw comp_id, },

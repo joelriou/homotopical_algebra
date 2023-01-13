@@ -436,18 +436,22 @@ instance category_has_finite_products : has_finite_products (A.category) :=
 
 instance shift_functor_additive (n : ℤ) : (shift_functor A.category n).additive := infer_instance
 
-@[simps]
-def category_inclusion' : triangulated_functor_struct A.category C :=
-{ comm_shift := category.comm_shift A 1,
-  .. full_subcategory_inclusion A.set }
+def inclusion : A.category ⥤ C := full_subcategory_inclusion _
 
-instance category_inclusion_additive : (category_inclusion' A).additive := { }
+/-- should be a general compatibility for shifts defined on full subcategories -/
+instance full_subcategory_inclusion_has_comm_shift :
+  A.inclusion.has_comm_shift ℤ :=
+{ iso := category.comm_shift A,
+  iso_add := sorry,
+  iso_zero := sorry, }
+
+instance category_inclusion_additive : A.inclusion.additive := { }
 
 namespace category_pretriangulated
 
 @[simp]
 def distinguished_triangles : _root_.set (triangle A.category) :=
-λ T, A.category_inclusion'.map_triangle.obj T ∈ dist_triang C
+λ T, A.inclusion.map_triangle.obj T ∈ dist_triang C
 
 variable {A}
 
@@ -455,14 +459,14 @@ lemma isomorphic_distinguished (T₁ : triangle A.category)
   (hT₁ : T₁ ∈ distinguished_triangles A) (T₂ : triangle A.category) (e : T₂ ≅ T₁) :
   T₂ ∈ distinguished_triangles A :=
 pretriangulated.isomorphic_distinguished _ hT₁ _
-      (A.category_inclusion'.map_triangle.map_iso e)
+      (A.inclusion.map_triangle.map_iso e)
 
 lemma contractible_distinguished (X : A.category) :
   triangle.mk (𝟙 X) (0 : X ⟶ 0) 0 ∈ distinguished_triangles A :=
 begin
   refine pretriangulated.isomorphic_distinguished _
-    (pretriangulated.contractible_distinguished (A.category_inclusion'.obj X)) _ _,
-  refine triangle.mk_iso _ _ (iso.refl _) (iso.refl _) A.category_inclusion'.map_zero_object _ _ _,
+    (pretriangulated.contractible_distinguished (A.inclusion.obj X)) _ _,
+  refine triangle.mk_iso _ _ (iso.refl _) (iso.refl _) A.inclusion.map_zero_object _ _ _,
   tidy,
 end
 
@@ -471,7 +475,7 @@ lemma distinguished_cocone_triangle (X Y : A.category) (f : X ⟶ Y) :
   triangle.mk f g h ∈ category_pretriangulated.distinguished_triangles A :=
 begin
   obtain ⟨Z, g, h, mem⟩ := pretriangulated.distinguished_cocone_triangle
-    _ _ ((category_inclusion' A).map f),
+    _ _ (A.inclusion.map f),
   refine ⟨⟨Z, A.ext₃ _ mem X.2 Y.2,⟩, g, h,
     pretriangulated.isomorphic_distinguished _ mem _ _⟩,
   refine triangle.mk_iso _ _ (iso.refl _) (iso.refl _) (iso.refl _) (by tidy) (by tidy) _,
@@ -484,10 +488,10 @@ lemma rotate_distinguished_triangle (T : triangle A.category) :
   T ∈ category_pretriangulated.distinguished_triangles A ↔
     T.rotate ∈ category_pretriangulated.distinguished_triangles A :=
 begin
-  change (A.category_inclusion'.map_triangle.obj T ∈ dist_triang C) ↔
-    (A.category_inclusion'.map_triangle.obj T.rotate ∈ dist_triang C),
+  change (A.inclusion.map_triangle.obj T ∈ dist_triang C) ↔
+    (A.inclusion.map_triangle.obj T.rotate ∈ dist_triang C),
   rw pretriangulated.rotate_distinguished_triangle,
-  let e := (map_triangle_rotate A.category_inclusion').app T,
+  let e := A.inclusion.map_triangle_rotate.app T,
   split,
   { exact λ h, pretriangulated.isomorphic_distinguished _ h _ e.symm, },
   { exact λ h, pretriangulated.isomorphic_distinguished _ h _ e, },
@@ -500,7 +504,7 @@ lemma complete_distinguished_triangle_morphism (T₁ T₂ : triangle A.category)
     (shift_functor A.category 1).map a = c ≫ T₂.mor₃ :=
 begin
   obtain ⟨c, ⟨hc₁, hc₂⟩⟩ := pretriangulated.complete_distinguished_triangle_morphism
-    (A.category_inclusion'.map_triangle.obj T₁) (A.category_inclusion'.map_triangle.obj T₂)
+    (A.inclusion.map_triangle.obj T₁) (A.inclusion.map_triangle.obj T₂)
     hT₁ hT₂ a b h,
   refine ⟨c, ⟨hc₁, _⟩⟩,
   dsimp at hc₂,
@@ -524,11 +528,12 @@ lemma dist_triang_iff {X Y Z : A.category} (f : X ⟶ Y) (g : Y ⟶ Z) (h : Z �
     (@triangle.mk C _ _ _ _ _ f g h ∈ dist_triang C) :=
 begin
   change (_ ∈ dist_triang C) ↔ _,
-  let e : A.category_inclusion'.map_triangle.obj (triangle.mk f g h) ≅
+  let e : A.inclusion.map_triangle.obj (triangle.mk f g h) ≅
     @triangle.mk C _ _ _ _ _ f g h,
   { refine triangle.mk_iso _ _ (iso.refl _) (iso.refl _) (iso.refl _) (by tidy) (by tidy) _,
     dsimp,
-    erw [id_comp, functor.map_id, comp_id, comp_id], },
+    erw [id_comp, functor.map_id, comp_id, comp_id],
+    refl, },
   split,
   { exact λ h, pretriangulated.isomorphic_distinguished _ h _ e.symm, },
   { exact λ h, pretriangulated.isomorphic_distinguished _ h _ e, },
@@ -536,7 +541,7 @@ end
 
 instance [is_triangulated C] : is_triangulated A.category :=
 ⟨λ X₁ X₂ X₃ Z₁₂ Z₂₃ Z₁₃ u₁₂ u₂₃ u₁₃ comm v₁₂ w₁₂ h₁₂ v₂₃ w₂₃ h₂₃ v₁₃ w₁₃ h₁₃, begin
-  have comm' := A.category_inclusion'.congr_map comm,
+  have comm' := A.inclusion.congr_map comm,
   rw [functor.map_comp] at comm',
   have H := (is_triangulated.octahedron_axiom comm' h₁₂ h₂₃ h₁₃).some,
   obtain ⟨m₁, m₃, comm₁, comm₂, comm₃, comm₄, H'⟩ := H,
@@ -563,16 +568,22 @@ instance [is_triangulated C] : is_triangulated A.category :=
     end, }
 end⟩
 
-@[simps]
-def category_inclusion : triangulated_functor A.category C :=
-{ map_distinguished' := λ T hT, hT,
-  ..A.category_inclusion' }
+instance inclusion_is_triangulated : A.inclusion.is_triangulated :=
+{ map_distinguished' := λ T hT, hT, }
+example : ℕ := 42
 
-def Q [is_triangulated C] : triangulated_functor C A.W.localization :=
+def Q [is_triangulated C] : C ⥤ A.W.localization :=
 begin
   let F := localization_functor (W A).Q (W A),
   exact F,
 end
+
+instance Q_has_comm_shift [is_triangulated C] : A.Q.has_comm_shift ℤ :=
+(infer_instance : (localization_functor (W A).Q (W A)).has_comm_shift ℤ)
+
+instance Q_is_triangulated [is_triangulated C] : A.Q.is_triangulated :=
+(infer_instance : (localization_functor (W A).Q (W A)).is_triangulated)
+
 
 /- TODO :
 1) show a universal property for the triangulated functor `L` : if
@@ -580,7 +591,7 @@ end
 then `G` is a triangulated functor.
  -/
 
-instance Q_to_functor_is_localization [is_triangulated C] : A.Q.to_functor.is_localization A.W :=
+instance Q_to_functor_is_localization [is_triangulated C] : A.Q.is_localization A.W :=
 (infer_instance : A.W.Q.is_localization A.W)
 
 lemma is_iso_map_iff [A.saturated] [is_triangulated C] {D : Type*} [category D] (L : C ⥤ D)

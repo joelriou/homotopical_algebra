@@ -384,15 +384,9 @@ instance has_comm_shift :
   (homotopy_category.quotient C (complex_shape.up ℤ)).has_comm_shift ℤ :=
 quotient.functor_comm_shift _
 
-@[simps, reducible]
-def quotient_triangulated_functor_struct :
-  triangulated_functor_struct (cochain_complex C ℤ) (homotopy_category C (complex_shape.up ℤ)) :=
-{ to_functor := homotopy_category.quotient _ _,
-  comm_shift := functor.comm_shift_iso _ 1 }
-
 def induced_triangle (T : triangle (cochain_complex C ℤ)) :
   triangle (homotopy_category C (complex_shape.up ℤ)) :=
-quotient_triangulated_functor_struct.map_triangle.obj T
+(homotopy_category.quotient _ _).map_triangle.obj T
 
 def mapping_cone_induced_triangle_iso :
   induced_triangle (mapping_cone.triangle φ) ≅ mapping_cone_triangle' φ :=
@@ -584,7 +578,7 @@ begin
     (mapping_cone_induced_triangle_iso φ).symm ≪≫
     ((triangle.shift_functor_comm
       ((homotopy_category.quotient C (complex_shape.up ℤ))) n).app _).symm ≪≫
-    quotient_triangulated_functor_struct.map_triangle.map_iso (shift_mapping_cone_triangle_iso φ n) ≪≫
+    (homotopy_category.quotient _ _).map_triangle.map_iso (shift_mapping_cone_triangle_iso φ n) ≪≫
     (mapping_cone_induced_triangle_iso _)⟩⟩,
 end
 
@@ -617,7 +611,7 @@ lemma triangle_distinguished_iff (T : triangle (homotopy_category C (complex_sha
   (T ∈ dist_triang (homotopy_category C (complex_shape.up ℤ)))
   ↔ ∃ (K L : cochain_complex C ℤ) (φ : K ⟶ L),
     nonempty (T ≅
-      quotient_triangulated_functor_struct.map_triangle.obj (mapping_cone.triangle φ)) :=
+      (homotopy_category.quotient _ _).map_triangle.obj (mapping_cone.triangle φ)) :=
 begin
   split,
   { rintros ⟨K, L, φ, ⟨e⟩⟩,
@@ -629,7 +623,7 @@ end
 lemma triangle_distinguished_iff' (T : triangle (homotopy_category C (complex_shape.up ℤ))) :
   (T ∈ dist_triang (homotopy_category C (complex_shape.up ℤ))) ↔
   ∃ (K L : cochain_complex C ℤ) (φ : K ⟶ L), nonempty (T ≅
-      quotient_triangulated_functor_struct.map_triangle.obj (mapping_cone.triangle φ).rotate) :=
+      (homotopy_category.quotient _ _).map_triangle.obj (mapping_cone.triangle φ).rotate) :=
 begin
   split,
   { intro hT,
@@ -638,13 +632,13 @@ begin
     obtain ⟨K, L, φ, ⟨e⟩⟩ := hT,
     exact ⟨K, L, φ, ⟨(triangle_rotation _).counit_iso.symm.app T ≪≫
       (pretriangulated.rotate _).map_iso e ≪≫
-      (map_triangle_rotate quotient_triangulated_functor_struct).app _⟩⟩, },
+      (homotopy_category.quotient _ _).map_triangle_rotate.app _⟩⟩, },
   { rintro ⟨K, L, φ, ⟨e⟩⟩,
     suffices : T.inv_rotate ∈ dist_triang _,
     { exact pretriangulated.isomorphic_distinguished _ (rot_of_dist_triangle _ _ this) _
         ((triangle_rotation _).counit_iso.symm.app T), },
     refine ⟨K, L, φ, ⟨(pretriangulated.inv_rotate _).map_iso e ≪≫ (inv_rotate _).map_iso
-        ((map_triangle_rotate quotient_triangulated_functor_struct).symm.app _ ≪≫
+        (((homotopy_category.quotient _ _).map_triangle_rotate).symm.app _ ≪≫
         (rotate _).map_iso (mapping_cone_induced_triangle_iso φ)) ≪≫
       (triangle_rotation _).unit_iso.symm.app _⟩⟩, },
 end

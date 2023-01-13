@@ -181,7 +181,7 @@ namespace derived_category
 lemma Qh_map_bijective_of_is_K_projective
   (K L : cochain_complex C ℤ) [K.is_K_projective] :
   function.bijective (λ (f : ((homotopy_category.quotient _ _).obj K ⟶
-    (homotopy_category.quotient _ _).obj L)), Qh.to_functor.map f) :=
+    (homotopy_category.quotient _ _).obj L)), Qh.map f) :=
 (triangulated.subcategory.left_orthogonal_bijective_Q_map
   (homotopy_category.acyclic C) _ _
   ((cochain_complex.is_K_projective_iff K).1 infer_instance))

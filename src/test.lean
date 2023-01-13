@@ -15,8 +15,8 @@ example : is_triangulated (derived_category C) := infer_instance
 
 /-- There is a triangulated functor from the homotopy category of cochain
 complexes indexed by `ℤ` to the derived category. -/
-example : triangulated_functor (homotopy_category C (complex_shape.up ℤ))
-  (derived_category C) := Qh
+example : functor.is_triangulated
+  (Qh : homotopy_category C (complex_shape.up ℤ) ⥤ derived_category C) := infer_instance
 
 /-- The derived category of an abelian category is the localization of the
 homotopy category of cochain complexes indexed by `ℤ` with respect to a
@@ -25,13 +25,12 @@ By definition, `homotopy_category.acyclic C` is the subtriangulated category
 of the homotopy category consisting of acyclic complexes (i.e. with zero homology).
 The class `(homotopy_category.acyclic C).W` is then the class of morphisms whose
 "cone" is acyclic.  -/
-example : functor.is_localization Qh.to_functor
-  (homotopy_category.acyclic C).W := infer_instance
+example : functor.is_localization Qh (homotopy_category.acyclic C).W := infer_instance
 
 /-- The canonical functor `Q : cochain_complex C ℤ ⥤ derived_category C`
 is the composition of two functors :
 `homotopy_category.quotient _ _ : cochain_complex C ℤ ⥤ homotopy_category C (complex_shape.up ℤ)`
-and `Qh.to_functor : homotopy_category C (complex_shape.up ℤ) ⥤ derived_category C`. -/
+and `Qh : homotopy_category C (complex_shape.up ℤ) ⥤ derived_category C`. -/
 example : cochain_complex C ℤ ⥤ derived_category C := Q
 
 /-- The derived category was defined here in two steps from `cochain_complex C ℤ`
@@ -174,7 +173,7 @@ all the maps `K ⟶ L` are null homotopic (Spaltenstein). Then, if `K` is K-proj
 morphisms from `Q.obj K` in the derived category can be computed as homotopy classes
 of maps. -/
 example (K L : cochain_complex C ℤ) [K.is_K_projective] :
-  function.bijective (Qh.to_functor.map :
+  function.bijective (Qh.map :
     ((homotopy_category.quotient C (complex_shape.up ℤ)).obj K ⟶
     (homotopy_category.quotient C (complex_shape.up ℤ)).obj L) → (Q.obj K ⟶ Q.obj L)) :=
 Qh_map_bijective_of_is_K_projective K L
