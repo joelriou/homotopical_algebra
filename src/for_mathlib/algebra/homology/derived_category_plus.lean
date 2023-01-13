@@ -149,6 +149,39 @@ instance : pretriangulated (full_subcategory S) :=
   rotate_distinguished_triangle := rotate_distinguished_triangle S,
   complete_distinguished_triangle_morphism := complete_distinguished_triangle_morphism S, }
 
+instance [is_triangulated C] : is_triangulated (full_subcategory S) :=
+⟨λ X₁ X₂ X₃ Z₁₂ Z₂₃ Z₁₃ u₁₂ u₂₃ u₁₃ comm v₁₂ w₁₂ h₁₂ v₂₃ w₂₃ h₂₃ v₁₃ w₁₃ h₁₃, begin
+  have comm' := (inclusion S).congr_map comm,
+  rw [functor.map_comp] at comm',
+  have H := (is_triangulated.octahedron_axiom comm' h₁₂ h₂₃ h₁₃).some,
+  obtain ⟨m₁, m₃, comm₁, comm₂, comm₃, comm₄, H'⟩ := H,
+  refine nonempty.intro
+  { m₁ := m₁,
+    m₃ := m₃,
+    comm₁ := comm₁,
+    comm₂ := begin
+      erw [comp_id, comp_id] at comm₂,
+      exact comm₂,
+    end,
+    comm₃ := comm₃,
+    comm₄ := begin
+      erw [comp_id, comp_id] at comm₄,
+      exact comm₄,
+    end,
+    mem := begin
+      change _ ∈ dist_triang C,
+      refine pretriangulated.isomorphic_distinguished _ H' _ _,
+      refine triangle.mk_iso _ _ (iso.refl _) (iso.refl _) (iso.refl _) _ _ _,
+      { dsimp,
+        simp, },
+      { dsimp,
+        simp, },
+      { dsimp,
+        erw [functor.map_id, comp_id, comp_id, id_comp, comp_id],
+        refl, },
+    end, }
+end⟩
+
 end is_triangulated_subcategory'
 
 end triangulated
