@@ -23,9 +23,10 @@ homotopy category of cochain complexes indexed by `ℤ` with respect to a
 certain class of morphisms `(homotopy_category.acyclic C).W`.
 By definition, `homotopy_category.acyclic C` is the subtriangulated category
 of the homotopy category consisting of acyclic complexes (i.e. with zero homology).
-The class `(homotopy_category.acyclic C).W` is then the class of morphisms whose
-"cone" is acyclic.  -/
-example : functor.is_localization Qh (homotopy_category.acyclic C).W := infer_instance
+The class `(triangulated.subcategory.W (homotopy_category.acyclic C))` is then the
+class of morphisms whose "cone" is acyclic.  -/
+example : functor.is_localization Qh
+  (triangulated.subcategory.W (homotopy_category.acyclic C)) := infer_instance
 
 /-- The canonical functor `Q : cochain_complex C ℤ ⥤ derived_category C`
 is the composition of two functors :

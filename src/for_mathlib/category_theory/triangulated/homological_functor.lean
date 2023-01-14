@@ -12,6 +12,12 @@ namespace category_theory
 open limits category pretriangulated
 open_locale zero_object
 
+lemma _root_.category_theory.limits.exists_discrete_walking_pair_exists_iso_pair
+  {C : Type*} [category C] (F : discrete walking_pair ⥤ C) :
+  ∃ (X₁ X₂ : C), nonempty (F ≅ pair X₁ X₂) :=
+⟨F.obj (discrete.mk walking_pair.left), F.obj (discrete.mk walking_pair.right),
+  ⟨discrete.nat_iso_functor ≪≫ eq_to_iso (by { congr' 1, ext j, cases j, tidy, })⟩⟩
+
 section
 
 variables {C D : Type*} [category C] [category D] [has_zero_morphisms C] [has_zero_morphisms D]
@@ -119,9 +125,17 @@ is_homological.mk (λ T hT, (short_complex.exact_iff_of_iso
 
 end is_homological
 
-def kernel_of_is_homological [F.is_homological] : triangulated.subcategory C :=
-{ set := λ K, ∀ (n : ℤ), limits.is_zero (F.obj (K⟦n⟧)),
-  zero := λ n, limits.is_zero.of_iso (is_zero_zero A)
+section
+
+open triangulated
+
+variable [F.is_homological]
+
+def kernel_of_is_homological : set C :=
+λ K, ∀ (n : ℤ), limits.is_zero (F.obj (K⟦n⟧))
+
+instance : is_triangulated_subcategory F.kernel_of_is_homological :=
+{ zero := λ n, limits.is_zero.of_iso (is_zero_zero A)
     (F.map_iso (shift_functor C n).map_zero_object ≪≫ F.map_zero_object),
   shift := λ K m hK n, limits.is_zero.of_iso (hK (m+n))
     (F.map_iso ((shift_functor_add C m n).app K).symm),
@@ -129,7 +143,8 @@ def kernel_of_is_homological [F.is_homological] : triangulated.subcategory C :=
     (triangle.shift_distinguished _ T hT n)).is_zero_of_both_zeros
     (is_zero.eq_of_src (h₁ _) _ _) (is_zero.eq_of_tgt (h₃ _) _ _), }
 
-instance kernel_of_is_homological_saturated [F.is_homological] : F.kernel_of_is_homological.saturated :=
+instance kernel_of_is_homological_saturated :
+  saturated F.kernel_of_is_homological :=
 ⟨λ L K i, begin
   introI,
   intros hL n,
@@ -141,14 +156,8 @@ instance kernel_of_is_homological_saturated [F.is_homological] : F.kernel_of_is_
   simpa only [functor.map_comp, functor.map_id, hL, zero_comp, comp_zero] using eq,
 end⟩
 
-def W_of_is_homological [F.is_homological] : morphism_property C :=
+def W_of_is_homological : morphism_property C :=
 λ X Y f, ∀ (n : ℤ), is_iso (F.map (f⟦n⟧'))
-
-lemma _root_.category_theory.limits.exists_discrete_walking_pair_exists_iso_pair
-  {C : Type*} [category C] (F : discrete walking_pair ⥤ C) :
-  ∃ (X₁ X₂ : C), nonempty (F ≅ pair X₁ X₂) :=
-⟨F.obj (discrete.mk walking_pair.left), F.obj (discrete.mk walking_pair.right),
-  ⟨discrete.nat_iso_functor ≪≫ eq_to_iso (by { congr' 1, ext j, cases j, tidy, })⟩⟩
 
 instance [F.is_homological] : preserves_limits_of_shape (discrete walking_pair) F :=
 begin
@@ -181,19 +190,19 @@ begin
 end
 
 @[priority 100]
-instance is_homological.additive [F.is_homological] : F.additive :=
+instance is_homological.additive : F.additive :=
 functor.additive_of_preserves_binary_products _
 
-lemma kernel_of_is_homological_W [F.is_homological] :
-  F.kernel_of_is_homological.W = F.W_of_is_homological :=
+lemma kernel_of_is_homological_W :
+  triangulated.subcategory.W F.kernel_of_is_homological = F.W_of_is_homological :=
 begin
   ext X Y f,
   split,
   { intros hf n,
     let f' := f⟦n⟧',
     change is_iso (F.map f'),
-    have hf' : F.kernel_of_is_homological.W f' :=
-      (morphism_property.compatible_with_shift.iff F.kernel_of_is_homological.W f n).2 hf,
+    have hf' : triangulated.subcategory.W F.kernel_of_is_homological f' :=
+      (morphism_property.compatible_with_shift.iff _ f n).2 hf,
     obtain ⟨Z, g', h', dist, mem⟩ := hf',
     rw is_iso_iff_mono_and_epi,
     split,
@@ -229,7 +238,7 @@ begin
         smul_zero], }, },
 end
 
-instance shift_is_homological [F.is_homological] (n : ℤ) :
+instance shift_is_homological (n : ℤ) :
   (shift_functor C n ⋙ F).is_homological :=
 ⟨λ T hT, begin
   refine (short_complex.exact_iff_of_iso _).1
@@ -242,8 +251,11 @@ instance shift_is_homological [F.is_homological] (n : ℤ) :
       units.coe_one], },
 end⟩
 
-instance triangulated_functor_preserves_zero_morphisms (F : triangulated_functor C D) :
-  F.to_functor.preserves_zero_morphisms :=
+end
+
+instance triangulated_functor_preserves_zero_morphisms
+  (F : C ⥤ D) [F.has_comm_shift ℤ] [F.is_triangulated] :
+  F.preserves_zero_morphisms :=
 ⟨λ X₁ X₂, begin
   have h := triangle.comp_zero₁₂ _ (F.map_distinguished _
     (binary_product_triangle_distinguished X₁ X₂)),
@@ -251,12 +263,13 @@ instance triangulated_functor_preserves_zero_morphisms (F : triangulated_functor
   simpa only [← F.map_comp, prod.lift_snd] using h,
 end⟩
 
-instance triangulated_functor_preserves_binary_products (F : triangulated_functor C D) :
-  preserves_limits_of_shape (discrete walking_pair) F.to_functor :=
+instance triangulated_functor_preserves_binary_products
+  (F : C ⥤ D) [F.has_comm_shift ℤ] [F.is_triangulated] :
+  preserves_limits_of_shape (discrete walking_pair) F :=
 begin
-  suffices : ∀ (X₁ X₂ : C), preserves_limit (pair X₁ X₂) F.to_functor,
+  suffices : ∀ (X₁ X₂ : C), preserves_limit (pair X₁ X₂) F,
   { haveI := this,
-    exact ⟨λ X, preserves_limit_of_iso_diagram F.to_functor
+    exact ⟨λ X, preserves_limit_of_iso_diagram F
       (category_theory.limits.exists_discrete_walking_pair_exists_iso_pair X)
       .some_spec.some_spec.some.symm⟩, },
   intros X₁ X₂,
@@ -272,17 +285,22 @@ begin
     simp only [assoc, biprod_comparison_fst, zero_comp, ← F.map_comp, biprod.inl_fst,
       F.map_id, comp_id] at hf,
     rw [hf, zero_comp], },
-  haveI : preserves_binary_biproduct X₁ X₂ F.to_functor :=
+  haveI : preserves_binary_biproduct X₁ X₂ F :=
     limits.preserves_binary_biproduct_of_mono_biprod_comparison _,
   apply limits.preserves_binary_product_of_preserves_binary_biproduct,
 end
 
-instance triangulated_functor_additive (F : triangulated_functor C D) : F.to_functor.additive :=
+instance triangulated_functor_additive (F : C ⥤ D) [F.has_comm_shift ℤ] [F.is_triangulated ] :
+  F.additive :=
 functor.additive_of_preserves_binary_products _
 
-lemma is_homological.of_comp (F : triangulated_functor C D) (G : D ⥤ A) [G.additive]
-  [G.is_homological] : (F.to_functor ⋙ G).is_homological :=
-⟨λ T hT, by convert is_homological.map_distinguished G _ (F.map_distinguished _ hT)⟩
+lemma is_homological.of_comp (F : C ⥤ D) (G : D ⥤ A) [F.has_comm_shift ℤ]
+  [F.is_triangulated] [G.preserves_zero_morphisms]
+  [G.is_homological] : (F ⋙ G).is_homological :=
+⟨λ T hT, begin
+  have h := is_homological.map_distinguished G _ (F.map_distinguished _ hT),
+  exact h,
+end⟩
 
 end functor
 

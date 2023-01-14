@@ -69,7 +69,8 @@ open homological_complex
 variables (K : cochain_complex C ℤ)
 
 lemma is_K_injective_iff : is_K_injective K ↔
-  (homotopy_category.quotient _ _).obj K ∈ (homotopy_category.acyclic C).right_orthogonal.set :=
+  (homotopy_category.quotient _ _).obj K
+    ∈ triangulated.right_orthogonal (homotopy_category.acyclic C) :=
 begin
   split,
   { introI,
@@ -90,9 +91,9 @@ lemma shift_is_K_injective_iff (K : cochain_complex C ℤ) (r : ℤ) :
   is_K_injective (K⟦r⟧) ↔ is_K_injective K :=
 begin
   simp only [is_K_injective_iff],
-  erw [set.respects_iso.mem_iff_of_iso (homotopy_category.acyclic C).right_orthogonal.set
+  erw [set.respects_iso.mem_iff_of_iso (triangulated.right_orthogonal (homotopy_category.acyclic C))
    (((homotopy_category.quotient C (complex_shape.up ℤ)).comm_shift_iso r).app K),
-    ← triangulated.subcategory.shift_iff _ _ r],
+   ← triangulated.is_triangulated_subcategory.shift_iff],
 end
 
 lemma is_K_injective_of_bounded_below_of_injective
@@ -117,7 +118,7 @@ begin
 end
 
 lemma is_K_injective_iff (K : homotopy_category C (complex_shape.up ℤ)) : is_K_injective K ↔
-  K ∈ (homotopy_category.acyclic C).right_orthogonal.set :=
+  K ∈ triangulated.right_orthogonal (homotopy_category.acyclic C) :=
 begin
   rw K.is_K_injective_iff',
   cases K,
@@ -180,14 +181,14 @@ variable (C)
 namespace K_injective
 
 def W : morphism_property (homotopy_category.K_injective C (complex_shape.up ℤ)) :=
-(homotopy_category.acyclic C).W.inverse_image (K_injective.ι _ _)
+(triangulated.subcategory.W (homotopy_category.acyclic C)).inverse_image (K_injective.ι _ _)
 
 instance W_multiplicative : (W C).multiplicative :=
 by { dsimp [W], apply_instance, }
 
 variable {C}
 
-def Φ : localizor_morphism (W C) (homotopy_category.acyclic C).W :=
+def Φ : localizor_morphism (W C) (triangulated.subcategory.W (homotopy_category.acyclic C)) :=
 { functor := K_injective.ι _ _,
   mapW := λ X Y f hf, hf, }
 
@@ -231,13 +232,13 @@ begin
   ext K L f,
   split,
   { intro hf,
-    haveI : is_iso (Qh.map f) :=
-      ((acyclic C).is_iso_map_iff derived_category.Qh f).2 hf,
+    haveI : is_iso (Qh.map f) := (triangulated.subcategory.is_iso_map_iff
+      (acyclic C) derived_category.Qh f).2 hf,
     exact is_iso_of_reflects_iso f Qh, },
   { rintro (h : is_iso _),
     haveI := h,
-    refine ((acyclic C).is_iso_map_iff derived_category.Qh ((ι _ _).map f)).1 _,
-    apply_instance, },
+    exact (triangulated.subcategory.is_iso_map_iff (acyclic C) derived_category.Qh ((ι _ _).map f)).1
+      infer_instance, },
 end
 
 variable {C}
@@ -311,7 +312,7 @@ instance (Y : homotopy_category C (complex_shape.up ℤ)) :
   dsimp at hg,
   rw id_comp at hg,
   refine quot.sound ⟨structured_arrow.hom_mk ⟨g, _⟩ _⟩,
-  { change (homotopy_category.acyclic C).W _,
+  { change (triangulated.subcategory.W (homotopy_category.acyclic C)) _,
     rw ← triangulated.subcategory.is_iso_map_iff (homotopy_category.acyclic C)
       derived_category.Qh,
     replace hg := derived_category.Qh.congr_map hg,
@@ -338,7 +339,7 @@ variables {D : Type*} [category D]
   (F : homotopy_category C (complex_shape.up ℤ) ⥤ D)
 
 instance existence_right_derived_functor :
-  F.has_right_derived_functor (acyclic C).W :=
+  F.has_right_derived_functor (triangulated.subcategory.W (acyclic C)) :=
 right_derivability_structure.basic.existence_derived_functor
   K_injective.right_derivability_structure F (W_inverts _)
 
@@ -352,7 +353,8 @@ right_derivability_structure.basic.is_iso_app
       ⟨K, infer_instance⟩
 
 instance (K : homotopy_category C (complex_shape.up ℤ)) [K.is_K_injective] :
-  is_iso ((F.right_derived_functor_α derived_category.Qh (acyclic C).W).app K) :=
+  is_iso ((F.right_derived_functor_α derived_category.Qh
+    (triangulated.subcategory.W (acyclic C))).app K) :=
 is_iso_app _ _ _ _
 
 end

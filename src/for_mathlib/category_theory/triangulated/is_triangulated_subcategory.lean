@@ -6,6 +6,27 @@ noncomputable theory
 open category_theory category_theory.category category_theory.limits
 open_locale zero_object
 
+namespace set
+
+open category_theory
+
+class respects_iso {X : Type*} [category X] (A : set X) : Prop :=
+(condition' : ∀ ⦃x y : X⦄ (e : x ≅ y) (hx : x ∈ A), y ∈ A)
+
+lemma respects_iso.condition {X : Type*} [category X] (A : set X) [A.respects_iso]
+  {x y : X} (e : x ≅ y) (hx : x ∈ A) : y ∈ A :=
+respects_iso.condition' e hx
+
+lemma respects_iso.mem_iff_of_iso {X : Type*} [category X] (A : set X) [A.respects_iso]
+  {x y : X} (e : x ≅ y) : x ∈ A ↔ y ∈ A :=
+begin
+  split,
+  { exact respects_iso.condition A e, },
+  { exact respects_iso.condition A e.symm, },
+end
+
+end set
+
 namespace category_theory
 
 namespace triangulated
@@ -18,10 +39,45 @@ variables {C : Type*} [category C] [has_shift C ℤ] [preadditive C] [has_zero_o
 variable (S : set C)
 
 class is_triangulated_subcategory : Prop :=
-(zero : (0 : C) ∈ S)
+(zero [] : (0 : C) ∈ S)
 (shift : ∀ (X : C) (n : ℤ) (hX : X ∈ S), (shift_functor C n).obj X ∈ S)
 (ext₂ : ∀ (T : triangle C) (hT : T ∈ dist_triang C) (h₁ : T.obj₁ ∈ S)
   (h₃ : T.obj₃ ∈ S), T.obj₂ ∈ S)
+
+namespace is_triangulated_subcategory
+
+variables {S} [is_triangulated_subcategory S]
+
+instance set_respects_iso : S.respects_iso :=
+⟨λ X Y e hX, ext₂ _ (pretriangulated.isomorphic_distinguished _
+  (pretriangulated.contractible_distinguished X) (triangle.mk e.hom (0 : Y ⟶ 0) 0)
+  (triangle.mk_iso _ _ (iso.refl _) e.symm (iso.refl _) (by tidy) (by tidy) (by tidy))) hX
+  (is_triangulated_subcategory.zero S)⟩
+
+lemma ext₁
+  (T : triangle C) (hT : T ∈ dist_triang C) (h₂ : T.obj₂ ∈ S) (h₃ : T.obj₃ ∈ S) :
+  T.obj₁ ∈ S :=
+ext₂ T.inv_rotate (pretriangulated.inv_rot_of_dist_triangle C T hT)
+  (is_triangulated_subcategory.shift _ _ h₃) h₂
+
+lemma ext₃
+  (T : triangle C) (hT : T ∈ dist_triang C) (h₁ : T.obj₁ ∈ S) (h₂ : T.obj₂ ∈ S) :
+  T.obj₃ ∈ S :=
+ext₂ T.rotate (pretriangulated.rot_of_dist_triangle C T hT) h₂
+  (is_triangulated_subcategory.shift _ _ h₁)
+
+lemma shift_iff (X : C) (n : ℤ) : X ∈ S ↔ (shift_functor C n).obj X ∈ S :=
+begin
+  split,
+  { intro h,
+    exact is_triangulated_subcategory.shift _ _ h, },
+  { intro h,
+    exact set.respects_iso.condition S
+      ((add_neg_equiv (shift_monoidal_functor C ℤ) n).unit_iso.symm.app X)
+      (is_triangulated_subcategory.shift _ _ h), },
+end
+
+end is_triangulated_subcategory
 
 class is_triangulated_subcategory' : Prop :=
 (zero : ∃ (X : C) (hX₀ : is_zero X), X ∈ S)

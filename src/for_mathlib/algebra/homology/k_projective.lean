@@ -114,7 +114,7 @@ end homological_complex
 namespace homotopy_category
 
 lemma quotient_obj_mem_acyclic_iff (K : cochain_complex C ℤ) :
-  (quotient _ _).obj K ∈ (acyclic C).set ↔ K.acyclic :=
+  (quotient _ _).obj K ∈ (acyclic C) ↔ K.acyclic :=
 begin
   let e := λ (n : ℤ), (homotopy_category.homology_factors C _ n).symm.app _ ≪≫
       (homotopy_category.shift_homology_functor_iso C n 0 n (zero_add n)).symm.app
@@ -148,7 +148,8 @@ lemma acyclic.shift {K : cochain_complex C ℤ} (h : K.acyclic) (r : ℤ) :
   K⟦r⟧.acyclic := (acyclic.iff_shift K r).1 h
 
 lemma is_K_projective_iff : is_K_projective K ↔
-  (homotopy_category.quotient _ _).obj K ∈ (homotopy_category.acyclic C).left_orthogonal.set :=
+  (homotopy_category.quotient _ _).obj K
+    ∈ triangulated.left_orthogonal (homotopy_category.acyclic C) :=
 begin
   split,
   { introI,
@@ -169,9 +170,9 @@ lemma shift_is_K_projective_iff (K : cochain_complex C ℤ) (r : ℤ) :
   is_K_projective (K⟦r⟧) ↔ is_K_projective K :=
 begin
   simp only [is_K_projective_iff],
-  erw [set.respects_iso.mem_iff_of_iso (homotopy_category.acyclic C).left_orthogonal.set
+  erw [set.respects_iso.mem_iff_of_iso (triangulated.left_orthogonal (homotopy_category.acyclic C))
    (((homotopy_category.quotient C (complex_shape.up ℤ)).comm_shift_iso r).app K),
-    ← triangulated.subcategory.shift_iff _ _ r],
+    ← triangulated.is_triangulated_subcategory.shift_iff],
 end
 
 end cochain_complex
