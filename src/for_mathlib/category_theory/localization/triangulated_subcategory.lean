@@ -6,6 +6,7 @@ import for_mathlib.category_theory.triangulated.triangulated
 import for_mathlib.category_theory.preadditive_subcategory
 import for_mathlib.category_theory.triangulated.coproducts
 import for_mathlib.category_theory.limits.products
+import for_mathlib.category_theory.triangulated.is_triangulated_subcategory
 import category_theory.limits.full_subcategory
 import data.int.order.units
 
@@ -78,6 +79,11 @@ variable {C}
 namespace subcategory
 
 variable (A : subcategory C)
+
+instance : is_triangulated_subcategory A.set :=
+{ zero := A.zero,
+  shift := A.shift,
+  ext₂ := A.ext₂, }
 
 instance set_respects_iso : A.set.respects_iso :=
 ⟨λ X Y e hX, A.ext₂ _ (pretriangulated.isomorphic_distinguished _
@@ -432,81 +438,7 @@ abbreviation inclusion : A.category ⥤ C := full_subcategory_inclusion _
 
 --instance category_inclusion_additive : A.inclusion.additive := infer_instance
 
-namespace category_pretriangulated
-
-@[simp]
-def distinguished_triangles : _root_.set (triangle A.category) :=
-λ T, A.inclusion.map_triangle.obj T ∈ dist_triang C
-
-variable {A}
-
-lemma isomorphic_distinguished (T₁ : triangle A.category)
-  (hT₁ : T₁ ∈ distinguished_triangles A) (T₂ : triangle A.category) (e : T₂ ≅ T₁) :
-  T₂ ∈ distinguished_triangles A :=
-pretriangulated.isomorphic_distinguished _ hT₁ _
-      (A.inclusion.map_triangle.map_iso e)
-
-lemma contractible_distinguished (X : A.category) :
-  triangle.mk (𝟙 X) (0 : X ⟶ 0) 0 ∈ distinguished_triangles A :=
-begin
-  refine pretriangulated.isomorphic_distinguished _
-    (pretriangulated.contractible_distinguished (A.inclusion.obj X)) _ _,
-  refine triangle.mk_iso _ _ (iso.refl _) (iso.refl _) A.inclusion.map_zero_object _ _ _,
-  tidy,
-end
-
-lemma distinguished_cocone_triangle (X Y : A.category) (f : X ⟶ Y) :
-  ∃ (Z : A.category) (g : Y ⟶ Z) (h : Z ⟶ (shift_functor A.category (1 : ℤ)).obj X),
-  triangle.mk f g h ∈ category_pretriangulated.distinguished_triangles A :=
-begin
-  obtain ⟨Z, g, h, mem⟩ := pretriangulated.distinguished_cocone_triangle
-    _ _ (A.inclusion.map f),
-  refine ⟨⟨Z, A.ext₃ _ mem X.2 Y.2,⟩, g, h,
-    pretriangulated.isomorphic_distinguished _ mem _ _⟩,
-  refine triangle.mk_iso _ _ (iso.refl _) (iso.refl _) (iso.refl _) (by tidy) (by tidy) _,
-  dsimp,
-  simp only [functor.map_id, comp_id, id_comp],
-  apply comp_id,
-end
-
-lemma rotate_distinguished_triangle (T : triangle A.category) :
-  T ∈ category_pretriangulated.distinguished_triangles A ↔
-    T.rotate ∈ category_pretriangulated.distinguished_triangles A :=
-begin
-  change (A.inclusion.map_triangle.obj T ∈ dist_triang C) ↔
-    (A.inclusion.map_triangle.obj T.rotate ∈ dist_triang C),
-  rw pretriangulated.rotate_distinguished_triangle,
-  let e := A.inclusion.map_triangle_rotate.app T,
-  split,
-  { exact λ h, pretriangulated.isomorphic_distinguished _ h _ e.symm, },
-  { exact λ h, pretriangulated.isomorphic_distinguished _ h _ e, },
-end
-
-lemma complete_distinguished_triangle_morphism (T₁ T₂ : triangle A.category)
-  (hT₁ : T₁ ∈ distinguished_triangles A) (hT₂ : T₂ ∈ distinguished_triangles A)
-  (a : T₁.obj₁ ⟶ T₂.obj₁) (b : T₁.obj₂ ⟶ T₂.obj₂) (h : T₁.mor₁ ≫ b = a ≫ T₂.mor₁) :
-  ∃ (c : T₁.obj₃ ⟶ T₂.obj₃), T₁.mor₂ ≫ c = b ≫ T₂.mor₂ ∧ T₁.mor₃ ≫
-    (shift_functor A.category 1).map a = c ≫ T₂.mor₃ :=
-begin
-  obtain ⟨c, ⟨hc₁, hc₂⟩⟩ := pretriangulated.complete_distinguished_triangle_morphism
-    (A.inclusion.map_triangle.obj T₁) (A.inclusion.map_triangle.obj T₂)
-    hT₁ hT₂ a b h,
-  refine ⟨c, ⟨hc₁, _⟩⟩,
-  dsimp at hc₂,
-  erw [comp_id, comp_id] at hc₂,
-  exact hc₂,
-end
-
-end category_pretriangulated
-
-instance : pretriangulated A.category :=
-{ distinguished_triangles := category_pretriangulated.distinguished_triangles A,
-  isomorphic_distinguished := category_pretriangulated.isomorphic_distinguished,
-  contractible_distinguished := category_pretriangulated.contractible_distinguished,
-  distinguished_cocone_triangle := category_pretriangulated.distinguished_cocone_triangle,
-  rotate_distinguished_triangle := category_pretriangulated.rotate_distinguished_triangle,
-  complete_distinguished_triangle_morphism :=
-    category_pretriangulated.complete_distinguished_triangle_morphism, }
+instance : pretriangulated A.category := infer_instance
 
 lemma dist_triang_iff {X Y Z : A.category} (f : X ⟶ Y) (g : Y ⟶ Z) (h : Z ⟶ X⟦(1 : ℤ)⟧) :
   (triangle.mk f g h ∈ dist_triang A.category) ↔
@@ -523,38 +455,10 @@ begin
   { exact λ h, pretriangulated.isomorphic_distinguished _ h _ e, },
 end
 
-instance [is_triangulated C] : is_triangulated A.category :=
-⟨λ X₁ X₂ X₃ Z₁₂ Z₂₃ Z₁₃ u₁₂ u₂₃ u₁₃ comm v₁₂ w₁₂ h₁₂ v₂₃ w₂₃ h₂₃ v₁₃ w₁₃ h₁₃, begin
-  have comm' := A.inclusion.congr_map comm,
-  rw [functor.map_comp] at comm',
-  have H := (is_triangulated.octahedron_axiom comm' h₁₂ h₂₃ h₁₃).some,
-  obtain ⟨m₁, m₃, comm₁, comm₂, comm₃, comm₄, H'⟩ := H,
-  refine nonempty.intro
-  { m₁ := m₁,
-    m₃ := m₃,
-    comm₁ := comm₁,
-    comm₂ := begin
-      erw [comp_id, comp_id] at comm₂,
-      exact comm₂,
-    end,
-    comm₃ := comm₃,
-    comm₄ := begin
-      erw [comp_id, comp_id] at comm₄,
-      exact comm₄,
-    end,
-    mem := begin
-      rw dist_triang_iff,
-      refine pretriangulated.isomorphic_distinguished _ H' _ _,
-      refine triangle.mk_iso _ _ (iso.refl _) (iso.refl _) (iso.refl _) (by tidy) (by tidy) _,
-      dsimp,
-      erw [functor.map_id, comp_id, comp_id, id_comp],
-      refl,
-    end, }
-end⟩
+instance [is_triangulated C] : is_triangulated A.category := infer_instance
 
 instance inclusion_is_triangulated : A.inclusion.is_triangulated :=
 { map_distinguished' := λ T hT, hT, }
-example : ℕ := 42
 
 def Q [is_triangulated C] : C ⥤ A.W.localization :=
 begin
