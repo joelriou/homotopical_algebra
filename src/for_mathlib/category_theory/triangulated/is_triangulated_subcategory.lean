@@ -176,6 +176,61 @@ instance full_subcategory_inclusion_is_triangulated :
 
 end is_triangulated_subcategory'
 
+class saturated [is_triangulated_subcategory S] : Prop :=
+(condition : ∀ ⦃X Y : C⦄ (i : Y ⟶ X) [hi : is_split_mono i] (hX : X ∈ S), Y ∈ S)
+
+def left_orthogonal : set C :=
+λ X, ∀ ⦃Y : C⦄ (f : X ⟶ Y) (hY : Y ∈ S), f = 0
+
+def right_orthogonal : set C :=
+λ Y, ∀ ⦃X : C⦄ (f : X ⟶ Y) (hX : X ∈ S), f = 0
+
+instance [S.is_stable_by_shift ℤ] :
+  is_triangulated_subcategory (left_orthogonal S) :=
+{ zero := λ Y hY f, subsingleton.elim _ _,
+  shift := λ X n hX Y f hY, begin
+    let adj : shift_functor C n ⊣ shift_functor C (-n) :=
+      (add_neg_equiv (shift_monoidal_functor C ℤ) n).to_adjunction,
+    apply (adj.hom_equiv _ _).injective,
+    simp only [adjunction.hom_equiv_unit, functor.map_zero, comp_zero],
+    exact hX _ (set.is_stable_by_shift.condition (-n) Y hY),
+  end,
+  ext₂ := λ T hT h₁ h₃ Y f hY, begin
+    obtain ⟨g, hg⟩ := contravariant_yoneda_exact₂ T hT f (h₁ _ hY),
+    rw [hg, h₃ g hY, comp_zero],
+  end, }
+
+instance [S.is_stable_by_shift ℤ] :
+  is_triangulated_subcategory (right_orthogonal S) :=
+{ zero := λ X hX f, subsingleton.elim _ _,
+  shift := λ Y n hY X f hX, begin
+    let adj : shift_functor C (-n) ⊣ shift_functor C n :=
+      (add_neg_equiv (shift_monoidal_functor C ℤ) n).symm.to_adjunction,
+    apply (adj.hom_equiv _ _).symm.injective,
+    simp only [adjunction.hom_equiv_counit, functor.map_zero, zero_comp],
+    exact hY _ (set.is_stable_by_shift.condition (-n) X hX),
+  end,
+  ext₂ := λ T hT h₁ h₃ X f hX, begin
+    obtain ⟨g, hg⟩ := covariant_yoneda_exact₂ T hT f (h₃ _ hX),
+    rw [hg, h₁ g hX, zero_comp],
+  end, }
+
+instance left_orthogonal_saturated [S.is_stable_by_shift ℤ] :
+  saturated (left_orthogonal S) :=
+⟨λ X Y i hi hX Z f hZ, begin
+  haveI := hi,
+  rw [← cancel_epi (retraction i), comp_zero],
+  exact hX _ hZ,
+end⟩
+
+instance right_orthogonal_saturated [S.is_stable_by_shift ℤ] :
+  saturated (right_orthogonal S) :=
+⟨λ X Y i hi hX Z f hZ, begin
+  haveI := hi,
+  rw [← cancel_mono i, zero_comp],
+  exact hX _ hZ,
+end⟩
+
 end triangulated
 
 end category_theory
