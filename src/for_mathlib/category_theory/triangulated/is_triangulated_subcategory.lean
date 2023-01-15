@@ -46,13 +46,20 @@ class is_triangulated_subcategory : Prop :=
 
 namespace is_triangulated_subcategory
 
-variables {S} [is_triangulated_subcategory S]
+variables (S) [is_triangulated_subcategory S]
 
+@[priority 100]
 instance set_respects_iso : S.respects_iso :=
 ⟨λ X Y e hX, ext₂ _ (pretriangulated.isomorphic_distinguished _
   (pretriangulated.contractible_distinguished X) (triangle.mk e.hom (0 : Y ⟶ 0) 0)
   (triangle.mk_iso _ _ (iso.refl _) e.symm (iso.refl _) (by tidy) (by tidy) (by tidy))) hX
   (is_triangulated_subcategory.zero S)⟩
+
+lemma zero' (X : C) (hX : is_zero X) : X ∈ S :=
+by simpa only [set.respects_iso.mem_iff_of_iso S (limits.is_zero.iso_zero hX)]
+  using is_triangulated_subcategory.zero S
+
+variable {S}
 
 lemma ext₁
   (T : triangle C) (hT : T ∈ dist_triang C) (h₂ : T.obj₂ ∈ S) (h₃ : T.obj₃ ∈ S) :
@@ -288,5 +295,62 @@ instance right_orthogonal_saturated [S.is_stable_by_shift ℤ] :
 end⟩
 
 end triangulated
+
+namespace functor
+
+namespace is_triangulated
+
+section
+
+variables {C D E : Type*} [category C] [category D] [category E]
+  [has_zero_object C] [has_zero_object D] [has_zero_object E]
+  [has_shift C ℤ] [has_shift D ℤ] [has_shift E ℤ]
+  [preadditive C] [preadditive D] [preadditive E]
+  [∀ (n : ℤ), (shift_functor C n).additive]
+  [∀ (n : ℤ), (shift_functor D n).additive]
+  [∀ (n : ℤ), (shift_functor E n).additive]
+  [pretriangulated C] [pretriangulated D] [pretriangulated E]
+  {F : C ⥤ D} {G : D ⥤ E} {H : C ⥤ E} (e : F ⋙ G ≅ H)
+  [full G] [faithful G]
+  [F.has_comm_shift ℤ] [H.has_comm_shift ℤ] [G.has_comm_shift ℤ]
+  [functor.is_triangulated G] [functor.is_triangulated H]
+
+lemma of_fully_faithful [e.hom.respects_comm_shift ℤ] : F.is_triangulated :=
+{ map_distinguished' := λ T hT, G.reflects_distinguished _
+    (pretriangulated.isomorphic_distinguished _ (H.map_distinguished T hT) _
+    (((map_triangle_comp F G).app T).symm ≪≫ (map_triangle_nat_iso e).app T)), }
+
+lemma of_fully_faithful' :
+  @functor.is_triangulated _ _ _ _ _ _ _ _ F (has_comm_shift.of_fully_faithful e ℤ) _ _ _ _ _ _ :=
+begin
+  letI := has_comm_shift.of_fully_faithful e ℤ,
+  haveI := has_comm_shift.of_fully_faithful_iso_hom_respects_comm_shift e ℤ,
+  exact of_fully_faithful e,
+end
+
+end
+
+section
+
+variables {C D : Type*} [category C] [category D]
+  [has_zero_object C] [has_zero_object D]
+  [has_shift C ℤ] [has_shift D ℤ]
+  [preadditive C] [preadditive D]
+  [∀ (n : ℤ), (shift_functor C n).additive]
+  [∀ (n : ℤ), (shift_functor D n).additive]
+  [pretriangulated C] [pretriangulated D]
+  (S : set D) (F : C ⥤ D) [F.has_comm_shift ℤ] [functor.is_triangulated F]
+  [S.is_stable_by_shift ℤ] [triangulated.is_triangulated_subcategory' S]
+  (hS : ∀ (X : C), F.obj X ∈ S)
+
+instance full_subcategory_lift_is_triangulated :
+  (full_subcategory.lift S F hS).is_triangulated :=
+of_fully_faithful (full_subcategory.lift_comp_inclusion S F hS)
+
+end
+
+end is_triangulated
+
+end functor
 
 end category_theory

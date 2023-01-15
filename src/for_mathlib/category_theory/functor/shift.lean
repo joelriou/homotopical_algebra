@@ -6,9 +6,9 @@ import for_mathlib.category_theory.shift_misc
 
 noncomputable theory
 
-namespace category_theory
+open category_theory category_theory.category
 
-open category
+namespace category_theory
 
 namespace functor
 
@@ -33,6 +33,15 @@ begin
   erw [id_comp, id_comp],
 end
 
+@[simp]
+lemma unit_inv_app (X : C) :
+  (unit F A).inv.app X = (shift_functor_zero D A).hom.app (F.obj X) ≫
+    F.map ((shift_functor_zero C A).inv.app X) :=
+begin
+  dsimp [unit, shift.compatibility.comm_shift.unit],
+  simp only [comp_id],
+end
+
 variables {F A}
 
 @[simp]
@@ -54,6 +63,16 @@ lemma add_hom_app {a b : A} (e₁ : shift_functor C a ⋙ F ≅ F ⋙ shift_func
 begin
   dsimp [add, shift.compatibility.comm_shift.comp],
   erw [id_comp, id_comp, id_comp],
+end
+
+@[simp]
+lemma add_inv_app {a b : A} (e₁ : shift_functor C a ⋙ F ≅ F ⋙ shift_functor D a)
+  (e₂ : shift_functor C b ⋙ F ≅ F ⋙ shift_functor D b) (X : C) :
+  (add e₁ e₂).inv.app X = (shift_functor_add D a b).hom.app (F.obj X) ≫
+    (e₁.inv.app X)⟦b⟧' ≫ e₂.inv.app (X⟦a⟧) ≫ F.map ((shift_functor_add C a b).inv.app X) :=
+begin
+  dsimp [add, shift.compatibility.comm_shift.comp],
+  erw [comp_id, comp_id, comp_id, assoc, assoc],
 end
 
 @[simp]
@@ -698,5 +717,194 @@ has_comm_shift_of_fully_faithful _ _ _
 end
 
 end shift
+
+namespace functor
+
+namespace has_comm_shift
+
+@[simps]
+def of_iso {C D : Type*} [category C] [category D]
+  {F G : C ⥤ D} (e : F ≅ G) (A : Type*) [add_monoid A] [has_shift C A] [has_shift D A]
+  [F.has_comm_shift A] : G.has_comm_shift A :=
+{ iso := λ a, iso_whisker_left _ e.symm ≪≫ comm_shift_iso F a ≪≫
+      iso_whisker_right e _,
+  iso_zero := begin
+    ext X,
+    simp only [iso.trans_hom, iso_whisker_left_hom, iso.symm_hom, iso_whisker_right_hom,
+      nat_trans.comp_app, whisker_left_app, whisker_right_app, comm_shift.unit_hom_app,
+      iso.symm_inv, monoidal_functor.ε_iso_hom, comm_shift_iso_zero, assoc,
+      ← nat_trans.naturality_assoc, ← nat_trans.naturality],
+    dsimp,
+    simp only [iso.inv_hom_id_app_assoc],
+  end,
+  iso_add := λ a b, begin
+    ext X,
+    simp only [iso.trans_hom, iso_whisker_left_hom, iso.symm_hom, iso_whisker_right_hom,
+      nat_trans.comp_app, whisker_left_app, whisker_right_app, comm_shift.add_hom_app,
+      map_comp, iso.symm_inv, monoidal_functor.μ_iso_hom, assoc, μ_naturality,
+      comm_shift_iso_add],
+    erw nat_trans.naturality_assoc,
+    rw [← functor.map_comp_assoc, iso.hom_inv_id_app, functor.map_id, id_comp],
+    refl,
+  end, }
+
+end has_comm_shift
+
+end functor
+
+namespace nat_trans
+
+variables {C D : Type*} [category C] [category D] {F G : C ⥤ D} (τ : F ⟶ G)
+  (A : Type*) [add_monoid A] [has_shift C A] [has_shift D A] [F.has_comm_shift A]
+  [G.has_comm_shift A]
+
+class respects_comm_shift :=
+(comm [] : ∀ (a : A), (F.comm_shift_iso a).hom ≫ whisker_right τ _ =
+  whisker_left _ τ ≫ (G.comm_shift_iso a).hom)
+
+variable {A}
+
+namespace respects_comm_shift
+
+@[reassoc]
+lemma comm_app (a : A) (X : C) [τ.respects_comm_shift A] :
+  (F.comm_shift_iso a).hom.app X ≫ (τ.app X)⟦a⟧' =
+  τ.app (X⟦a⟧) ≫ (G.comm_shift_iso a).hom.app X :=
+congr_app (respects_comm_shift.comm τ a) X
+
+lemma app_shift (a : A) (X : C) [τ.respects_comm_shift A] :
+  τ.app (X⟦a⟧) = (F.comm_shift_iso a).hom.app X ≫
+    (τ.app X)⟦a⟧' ≫ (G.comm_shift_iso a).inv.app X :=
+by erw [comm_app_assoc, iso.hom_inv_id_app, comp_id]
+
+lemma of_iso {C D : Type*} [category C] [category D]
+  {F G : C ⥤ D} (e : F ≅ G) (A : Type*) [add_monoid A] [has_shift C A] [has_shift D A]
+  [F.has_comm_shift A] :
+  @respects_comm_shift _ _ _ _ _ _ e.hom A _ _ _ _ (functor.has_comm_shift.of_iso e A) :=
+begin
+  letI := functor.has_comm_shift.of_iso e A,
+  refine ⟨λ a, _⟩,
+  conv_rhs { dsimp [functor.comm_shift_iso, functor.has_comm_shift.iso], },
+  ext X,
+  simpa only [comp_app, whisker_left_app, iso.hom_inv_id_app_assoc],
+end
+
+end respects_comm_shift
+
+end nat_trans
+
+namespace functor
+
+namespace has_comm_shift
+
+section
+
+variables {C D E : Type*} [category C] [category D] [category E]
+  {F : C ⥤ D} {G : D ⥤ E} {H : C ⥤ E} (e : F ⋙ G ≅ H)
+  {A : Type*} [add_monoid A]
+  [has_shift C A] [has_shift D A] [has_shift E A]
+  [G.has_comm_shift A] [H.has_comm_shift A]
+  [full G] [faithful G]
+
+include e
+
+def of_fully_faithful.iso (a : A) :
+  shift_functor C a ⋙ F ≅ F ⋙ shift_functor D a :=
+nat_iso_of_comp_fully_faithful G
+  (functor.associator _ _ _ ≪≫ iso_whisker_left _ e ≪≫
+  H.comm_shift_iso a ≪≫ iso_whisker_right e.symm _ ≪≫
+  functor.associator _ _ _ ≪≫ iso_whisker_left _ (G.comm_shift_iso a).symm ≪≫
+  (functor.associator _ _ _).symm)
+
+@[simp]
+lemma of_fully_faithful.map_iso_hom_app (a : A) (X : C) :
+  G.map ((of_fully_faithful.iso e a).hom.app X) =
+    e.hom.app ((shift_functor C a).obj X) ≫ (H.comm_shift_iso a).hom.app X ≫
+      (shift_functor E a).map (e.inv.app X) ≫ (G.comm_shift_iso a).inv.app (F.obj X) :=
+begin
+  dsimp [of_fully_faithful.iso],
+  simp only [category.comp_id, category.id_comp, image_preimage],
+end
+
+@[simp]
+lemma of_fully_faithful.map_iso_inv_app (a : A) (X : C) :
+  G.map ((of_fully_faithful.iso e a).inv.app X) =
+    (G.comm_shift_iso a).hom.app (F.obj X) ≫ (shift_functor E a).map (e.hom.app X) ≫
+      (H.comm_shift_iso a).inv.app X ≫ e.inv.app ((shift_functor C a).obj X) :=
+begin
+  dsimp [of_fully_faithful.iso],
+  simp only [category.id_comp, category.comp_id, category.assoc, image_preimage],
+end
+
+variable (A)
+
+@[simps]
+def of_fully_faithful : F.has_comm_shift A :=
+{ iso := of_fully_faithful.iso e,
+  iso_zero := begin
+    ext X,
+    apply G.map_injective,
+    simp only [of_fully_faithful.map_iso_hom_app, comm_shift.unit_hom_app,
+      iso.symm_hom, iso.symm_inv, monoidal_functor.ε_iso_hom, map_comp,
+      comm_shift_iso_zero, comm_shift.unit_inv_app, assoc],
+    erw nat_trans.naturality_assoc,
+    simp only [id_map, ε_hom_inv_app_assoc],
+    erw nat_trans.naturality_assoc,
+    simp only [comp_map, iso.hom_inv_id_app_assoc],
+  end,
+  iso_add := λ a b, begin
+    ext X,
+    apply G.map_injective,
+    simp only [of_fully_faithful.map_iso_hom_app, comm_shift.add_hom_app, iso.symm_hom,
+      iso.symm_inv, monoidal_functor.μ_iso_hom, map_comp, assoc, comm_shift_iso_add,
+      comm_shift.add_inv_app],
+    erw [← nat_trans.naturality_assoc, ← nat_trans.naturality_assoc, ← nat_trans.naturality_assoc],
+    dsimp,
+    simp only [μ_hom_inv_app_assoc, of_fully_faithful.map_iso_hom_app, map_comp, assoc],
+    nth_rewrite 2 ← functor.map_comp_assoc,
+    rw [iso.inv_hom_id_app, functor.map_id, id_comp],
+  end, }
+
+include A
+
+lemma of_fully_faithful_iso_hom_respects_comm_shift :
+  by { haveI := of_fully_faithful e A, exact e.hom.respects_comm_shift A } :=
+begin
+  constructor,
+  intro a,
+  ext X,
+  simp only [nat_trans.comp_app, comp_hom_app, whisker_right_app, assoc, whisker_left_app],
+  conv_lhs { congr, dsimp [functor.comm_shift_iso], },
+  simp only [of_fully_faithful.map_iso_hom_app, assoc, iso.inv_hom_id_app_assoc,
+    nat_iso.cancel_nat_iso_hom_left, ← functor.map_comp, iso.inv_hom_id_app, functor.map_id],
+  apply comp_id,
+end
+
+end
+
+section
+
+instance of_full_subcategory_lift {C D : Type*} [category C] [category D]
+  (F : C ⥤ D) (S : set D) (A : Type*) [add_monoid A]
+  [has_shift C A] [has_shift D A] [S.is_stable_by_shift A]
+  [F.has_comm_shift A] (hS : ∀ (X : C), S (F.obj X)) :
+  (full_subcategory.lift S F hS).has_comm_shift A :=
+of_fully_faithful (full_subcategory.lift_comp_inclusion S F hS) A
+
+instance of_full_subcategory_lift_iso_hom_respects_comm_shift
+  {C D : Type*} [category C] [category D]
+  (F : C ⥤ D) (S : set D) (A : Type*) [add_monoid A]
+  [has_shift C A] [has_shift D A] [S.is_stable_by_shift A]
+  [F.has_comm_shift A] (hS : ∀ (X : C), S (F.obj X)) :
+  (full_subcategory.lift_comp_inclusion S F hS).hom.respects_comm_shift A :=
+of_fully_faithful_iso_hom_respects_comm_shift _ _
+
+
+end
+
+end has_comm_shift
+
+end functor
+
 
 end category_theory

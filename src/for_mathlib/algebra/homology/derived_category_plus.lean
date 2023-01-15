@@ -5,6 +5,40 @@ noncomputable theory
 open category_theory category_theory.category category_theory.limits
 open_locale zero_object
 
+namespace category_theory
+
+lemma full_of_comp_ess_surj {C D E : Type*} [category C] [category D] [category E]
+  (F : C ⥤ D) (G : D ⥤ E) [ess_surj F]
+  (h : ∀ (X Y : C), function.surjective (λ (f : F.obj X ⟶ F.obj Y), G.map f)) : full G :=
+G.full_of_surjective (λ K₁ K₂ f, begin
+  let K'₁ := F.obj_preimage K₁,
+  let K'₂ := F.obj_preimage K₂,
+  let e₁ : F.obj K'₁ ≅ K₁ := F.obj_obj_preimage_iso K₁,
+  let e₂ : F.obj K'₂ ≅ K₂ := F.obj_obj_preimage_iso K₂,
+  obtain ⟨f', hf'⟩ := h K'₁ K'₂ (G.map e₁.hom ≫ f ≫ G.map e₂.inv),
+  dsimp at hf',
+  refine ⟨e₁.inv ≫ f' ≫ e₂.hom, _⟩,
+  simp only [G.map_comp, hf', assoc],
+  rw [← G.map_comp, e₂.inv_hom_id, G.map_id, comp_id, ← G.map_comp_assoc, e₁.inv_hom_id, G.map_id,
+    id_comp],
+end)
+
+lemma faithful_of_comp_ess_surj {C D E : Type*} [category C] [category D] [category E]
+  (F : C ⥤ D) (G : D ⥤ E) [ess_surj F]
+  (h : ∀ (X Y : C), function.injective (λ (f : F.obj X ⟶ F.obj Y), G.map f)) : faithful G :=
+⟨λ K₁ K₂ f₁ f₂ hf, begin
+  let K'₁ := F.obj_preimage K₁,
+  let K'₂ := F.obj_preimage K₂,
+  let e₁ : F.obj K'₁ ≅ K₁ := F.obj_obj_preimage_iso K₁,
+  let e₂ : F.obj K'₂ ≅ K₂ := F.obj_obj_preimage_iso K₂,
+  rw [← cancel_mono e₂.inv, ← cancel_epi e₁.hom],
+  apply h,
+  dsimp,
+  simp only [hf, functor.map_comp],
+end⟩
+
+end category_theory
+
 variables {C : Type*} [category C] [abelian C]
 
 namespace derived_category
@@ -50,7 +84,7 @@ def mk (K : derived_category C) (n : ℤ) [hn : K.is_ge n] :
 
 variable {C}
 
-def ι : plus C ⥤ derived_category C :=
+abbreviation ι : plus C ⥤ derived_category C :=
 full_subcategory_inclusion _
 
 end plus
@@ -170,11 +204,38 @@ full_subcategory_inclusion _
 
 variable (C)
 
-def homology_functor (n : ℤ) : plus C ⥤ C :=
+abbreviation homology_functor (n : ℤ) : plus C ⥤ C :=
 ι ⋙ homotopy_category.homology_functor C (complex_shape.up ℤ) n
 
-def quasi_isomorphisms : morphism_property (plus C) :=
-  λ K L φ, ∀ (n : ℤ), is_iso ((homology_functor C n).map φ)
+def shift_homology_functor_iso (n k m : ℤ) (h : k + n = m):
+  shift_functor _ n ⋙ homology_functor C k ≅ homology_functor C m :=
+(functor.associator _ _ _).symm ≪≫ iso_whisker_right (ι.comm_shift_iso n) _ ≪≫
+  functor.associator _ _ _ ≪≫
+  iso_whisker_left ι (homotopy_category.shift_homology_functor_iso C n k m h)
+
+abbreviation acyclic : set (plus C) :=
+(homology_functor C 0).kernel_of_is_homological
+
+variable {C}
+
+lemma mem_acyclic_W_iff {K L : plus C} (φ : K ⟶ L) :
+  (subcategory.W (acyclic C)) φ ↔ ∀ (n : ℤ), is_iso ((homology_functor C n).map φ) :=
+by simpa only [functor.kernel_of_is_homological_W,
+  ← λ n, nat_iso.is_iso_map_iff (shift_homology_functor_iso C _ _ _ (zero_add n)) φ]
+
+variable (C)
+
+lemma homology_functor_is_inverted_by (n : ℤ) :
+  (subcategory.W (acyclic C)).is_inverted_by (homology_functor C n) :=
+λ K L f hf, begin
+  rw mem_acyclic_W_iff f at hf,
+  exact hf n,
+end
+
+lemma mem_W_iff_ι_map_mem {K L : homotopy_category.plus C} (f : K ⟶ L) :
+  subcategory.W (homotopy_category.acyclic C) (homotopy_category.plus.ι.map f) ↔
+  subcategory.W (homotopy_category.plus.acyclic C) f :=
+by simpa only [homotopy_category.mem_acyclic_W_iff, homotopy_category.plus.mem_acyclic_W_iff]
 
 end plus
 
@@ -184,8 +245,8 @@ namespace derived_category
 
 namespace plus
 
-def Qh : homotopy_category.plus C ⥤ derived_category.plus C :=
-full_subcategory.lift _ (homotopy_category.plus.ι ⋙ Qh)
+abbreviation Qh : homotopy_category.plus C ⥤ derived_category.plus C :=
+full_subcategory.lift _ (homotopy_category.plus.ι ⋙ derived_category.Qh)
 begin
   rintro ⟨⟨K⟩, n, hn⟩,
   refine ⟨n, (_ : (Q.obj K).is_ge n)⟩,
@@ -193,6 +254,70 @@ begin
   dsimp at hn,
   haveI := hn,
   exact cochain_complex.is_ge_of_is_strictly_ge K n,
+end
+
+variable (C)
+
+def Qh_comp_ι_iso : (Qh : _ ⥤ derived_category.plus C) ⋙ derived_category.plus.ι ≅
+  homotopy_category.plus.ι ⋙ derived_category.Qh :=
+full_subcategory.lift_comp_inclusion _ _ _
+
+namespace Qh_is_localization
+
+lemma inverts :
+  (subcategory.W (homotopy_category.plus.acyclic C)).is_inverted_by Qh :=
+λ K L f hf, begin
+  haveI : is_iso (derived_category.plus.ι.map (Qh.map f)),
+  { erw [is_iso_map_iff_of_nat_iso (Qh_comp_ι_iso C) f],
+    dsimp only [functor.comp_map],
+    apply localization.inverts derived_category.Qh (subcategory.W (homotopy_category.acyclic C)),
+    simpa only [homotopy_category.plus.mem_W_iff_ι_map_mem] using hf, },
+  exact is_iso_of_reflects_iso (Qh.map f) ι,
+end
+
+abbreviation L := localization.lift _ (inverts C) (subcategory.W (homotopy_category.plus.acyclic C)).Q
+
+def L_iso : (subcategory.W (homotopy_category.plus.acyclic C)).Q ⋙ L C ≅ Qh :=
+localization.lifting.iso (subcategory.W (homotopy_category.plus.acyclic C)).Q
+  (subcategory.W (homotopy_category.plus.acyclic C)) _ _
+
+lemma full_L : full (L C) :=
+begin
+  let F := (subcategory.W (homotopy_category.plus.acyclic C)).Q,
+  haveI := localization.ess_surj F
+    (subcategory.W (homotopy_category.plus.acyclic C)), -- should be an instance
+  apply category_theory.full_of_comp_ess_surj F,
+  rintros ⟨⟨K₁⟩, hK₁⟩ ⟨⟨K₂⟩, hK₂⟩ f,
+  let f' : Qh.obj ⟨⟨K₁⟩, hK₁⟩ ⟶ Qh.obj ⟨⟨K₂⟩, hK₂⟩ :=
+    (L_iso C).inv.app _ ≫ f ≫ (L_iso C).hom.app _,
+  let f'' : derived_category.Q.obj K₁ ⟶ derived_category.Q.obj K₂ := f',
+  have h := right_factorisation_of_is_strictly_ge f'',
+  sorry,
+end
+
+instance faithful_L : faithful (L C) := sorry
+
+instance : ess_surj (L C) := sorry
+
+lemma is_equivalence : is_equivalence (L C) :=
+begin
+  haveI := full_L C,
+  exact equivalence.of_fully_faithfully_ess_surj _
+end
+
+end Qh_is_localization
+
+instance Qh_is_localization :
+  (Qh : _ ⥤ derived_category.plus C).is_localization
+  (triangulated.subcategory.W (homotopy_category.plus.acyclic C)) :=
+begin
+  haveI := Qh_is_localization.is_equivalence C,
+  refine functor.is_localization.of_equivalence
+    (triangulated.subcategory.W (homotopy_category.plus.acyclic C)).Q
+    (triangulated.subcategory.W (homotopy_category.plus.acyclic C)) Qh
+    (Qh_is_localization.L C).as_equivalence _,
+  dsimp only [functor.as_equivalence],
+  exact localization.lifting.iso _ (subcategory.W (homotopy_category.plus.acyclic C)) _ _,
 end
 
 end plus

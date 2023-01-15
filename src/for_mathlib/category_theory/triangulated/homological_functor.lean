@@ -294,7 +294,7 @@ instance triangulated_functor_additive (F : C ⥤ D) [F.has_comm_shift ℤ] [F.i
   F.additive :=
 functor.additive_of_preserves_binary_products _
 
-lemma is_homological.of_comp (F : C ⥤ D) (G : D ⥤ A) [F.has_comm_shift ℤ]
+instance is_homological.of_comp (F : C ⥤ D) (G : D ⥤ A) [F.has_comm_shift ℤ]
   [F.is_triangulated] [G.preserves_zero_morphisms]
   [G.is_homological] : (F ⋙ G).is_homological :=
 ⟨λ T hT, begin
