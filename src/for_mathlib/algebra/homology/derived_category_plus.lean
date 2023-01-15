@@ -297,7 +297,18 @@ end
 
 instance faithful_L : faithful (L C) := sorry
 
-instance : ess_surj (L C) := sorry
+instance : ess_surj (L C) :=
+⟨begin
+  rintro ⟨K, hK⟩,
+  let K' := Q.obj_preimage K,
+  let e : Q.obj K' ≅ K := Q.obj_obj_preimage_iso K,
+  obtain ⟨n, hn⟩ := hK,
+  haveI := hn,
+  haveI := (cochain_complex.is_ge_iff_Q_obj_is_ge K' n).2 (derived_category.is_ge.of_iso e.symm n),
+  exact ⟨(morphism_property.Q _).obj ⟨⟨K'.trunc_ge n⟩, ⟨n, infer_instance⟩⟩,
+    ⟨derived_category.plus.ι.preimage_iso (ι.map_iso ((L_iso C).app _) ≪≫
+      (as_iso (Q.map (cochain_complex.trunc_ge.π K' n))).symm ≪≫ e)⟩⟩,
+end⟩
 
 lemma is_equivalence : is_equivalence (L C) :=
 begin
@@ -319,6 +330,7 @@ begin
   dsimp only [functor.as_equivalence],
   exact localization.lifting.iso _ (subcategory.W (homotopy_category.plus.acyclic C)) _ _,
 end
+-- TODO : localizors which induces equivalence of categories on localizations
 
 end plus
 
