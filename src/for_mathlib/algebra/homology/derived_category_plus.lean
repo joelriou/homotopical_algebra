@@ -286,16 +286,52 @@ begin
   let F := (subcategory.W (homotopy_category.plus.acyclic C)).Q,
   haveI := localization.ess_surj F
     (subcategory.W (homotopy_category.plus.acyclic C)), -- should be an instance
+  have hF : (subcategory.W (homotopy_category.plus.acyclic C)).is_inverted_by F :=
+    localization.inverts _ _,
   apply category_theory.full_of_comp_ess_surj F,
-  rintros ⟨⟨K₁⟩, hK₁⟩ ⟨⟨K₂⟩, hK₂⟩ f,
+  rintros ⟨⟨K₁ : cochain_complex C ℤ⟩, hK₁⟩ ⟨⟨K₂ : cochain_complex C ℤ⟩, hK₂⟩ f,
+  have hK₁' := hK₁,
+  have hK₂' := hK₂,
+  obtain ⟨n₁, hn₁⟩ := hK₁',
+  obtain ⟨n₂, hn₂⟩ := hK₂',
+  let n := min n₁ n₂,
+  haveI : K₁.is_strictly_ge n,
+  { haveI := hn₁, exact cochain_complex.is_strictly_ge_of_le _ _ _ (min_le_left n₁ n₂), },
+  haveI : K₂.is_strictly_ge n,
+  { haveI := hn₂, exact cochain_complex.is_strictly_ge_of_le _ _ _ (min_le_right n₁ n₂), },
   let f' : Qh.obj ⟨⟨K₁⟩, hK₁⟩ ⟶ Qh.obj ⟨⟨K₂⟩, hK₂⟩ :=
     (L_iso C).inv.app _ ≫ f ≫ (L_iso C).hom.app _,
   let f'' : derived_category.Q.obj K₁ ⟶ derived_category.Q.obj K₂ := f',
-  have h := right_factorisation_of_is_strictly_ge f'',
-  sorry,
+  obtain ⟨K₃, hK₃', s, g, hs, fac⟩ := right_factorisation_of_is_strictly_ge f'' n,
+  replace fac := (Q.map s) ≫= fac,
+  rw is_iso.hom_inv_id_assoc at fac,
+  haveI := hK₃',
+  haveI := hs,
+  have hK₃ : homotopy_category.is_plus C ⟨K₃⟩ := ⟨n, hK₃'⟩,
+  let s' : (⟨_, hK₃⟩ : homotopy_category.plus C) ⟶ ⟨_, hK₁⟩ := (homotopy_category.quotient _ _).map s,
+  let g' : (⟨_, hK₃⟩ : homotopy_category.plus C) ⟶ ⟨_, hK₂⟩ := (homotopy_category.quotient _ _).map g,
+  haveI : is_iso (F.map s') := hF _ begin
+    rw ← homotopy_category.plus.mem_W_iff_ι_map_mem,
+    erw homotopy_category.map_quotient_W_iff,
+    exact hs,
+  end,
+  refine ⟨inv (F.map s') ≫ F.map g', _⟩,
+  dsimp only,
+  erw [functor.map_comp, ← cancel_epi ((L C).map (F.map s')), ← functor.map_comp_assoc,
+    is_iso.hom_inv_id, (L C).map_id, id_comp, ← cancel_epi ((L_iso C).inv.app ⟨_, hK₃⟩),
+    ← (L_iso C).inv.naturality g', ← fac],
+  dsimp only [f'', f'],
+  erw [assoc, ← (L_iso C).inv.naturality_assoc s'],
+  dsimp,
+  conv_lhs { congr, skip, erw assoc, congr, skip, erw assoc, },
+  erw [(L_iso C).hom_inv_id_app, comp_id],
+  refl,
 end
 
-instance faithful_L : faithful (L C) := sorry
+instance faithful_L : faithful (L C) :=
+begin
+  sorry,
+end
 
 instance : ess_surj (L C) :=
 ⟨begin
