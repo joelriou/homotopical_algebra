@@ -5,6 +5,7 @@ import for_mathlib.category_theory.preadditive.equivalence
 import for_mathlib.category_theory.triangulated.triangulated
 import for_mathlib.category_theory.functor.shift
 import for_mathlib.category_theory.triangulated.triangulated_functor
+import for_mathlib.category_theory.localization.triangulated_functor
 
 noncomputable theory
 
@@ -401,6 +402,10 @@ instance localization_functor_is_triangulated :
   (localization_functor L W).is_triangulated :=
 ⟨λ T hT, ⟨T, iso.refl _, hT⟩⟩
 
+instance localization_functor_ess_surj_on_dist_triang :
+  (localization_functor L W).ess_surj_on_dist_triang :=
+⟨by { rintro T ⟨T', e, hT'⟩, exact ⟨T', hT', ⟨e.symm⟩⟩, }⟩
+
 variables [morphism_property.stable_under_finite_products W] [has_finite_products C]
 
 omit L
@@ -420,6 +425,10 @@ instance localization_pretriangulated : pretriangulated W.localization :=
 
 instance localization_triangulated [is_triangulated C] : is_triangulated W.localization :=
 (infer_instance : is_triangulated (localization W.Q W))
+
+instance Q_ess_surj_on_dist_triang :
+  W.Q.ess_surj_on_dist_triang :=
+(infer_instance : (localization_functor W.Q W).ess_surj_on_dist_triang)
 
 end pretriangulated
 

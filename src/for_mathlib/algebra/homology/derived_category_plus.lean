@@ -1,4 +1,5 @@
 import for_mathlib.algebra.homology.trunc
+import for_mathlib.category_theory.localization.shift
 
 noncomputable theory
 
@@ -276,9 +277,6 @@ lemma inverts :
 end
 
 abbreviation L := localization.lift _ (inverts C) (subcategory.W (homotopy_category.plus.acyclic C)).Q
-
-instance L_has_comm_shift : (L C).has_comm_shift ℤ := nonempty.some sorry
-instance L_is_triangulated : (L C).is_triangulated := sorry
 
 def L_iso : (subcategory.W (homotopy_category.plus.acyclic C)).Q ⋙ L C ≅ Qh :=
 localization.lifting.iso (subcategory.W (homotopy_category.plus.acyclic C)).Q
