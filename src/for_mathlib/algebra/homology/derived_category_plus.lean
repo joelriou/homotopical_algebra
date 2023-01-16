@@ -413,7 +413,6 @@ begin
   dsimp only [functor.as_equivalence],
   exact localization.lifting.iso _ (subcategory.W (homotopy_category.plus.acyclic C)) _ _,
 end
--- TODO : localizors which induces equivalence of categories on localizations
 
 end plus
 

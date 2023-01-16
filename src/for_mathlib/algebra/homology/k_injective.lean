@@ -321,11 +321,19 @@ instance (Y : homotopy_category C (complex_shape.up ℤ)) :
   { ext, exact hg, },
 end⟩⟩
 
+example : ℕ := 42
+
+instance Φ_is_localization_equivalence : (Φ : localizor_morphism (W C) _).is_localization_equivalence :=
+begin
+  rw localizor_morphism.is_localization_equivalence.iff_is_localization Φ
+    (derived_category.Qh : _ ⥤ derived_category C),
+  change Qh.is_localization _,
+  apply_instance,
+end
+
 lemma right_derivability_structure :
-  right_derivability_structure.basic
-    (derived_category.Qh : _ ⥤ derived_category C) Φ :=
-{ hL := (infer_instance : Qh.is_localization _),
-  right_resolution_connected := λ Y, { },
+  right_derivability_structure.basic (Φ : localizor_morphism (W C) _) :=
+{ right_resolution_connected := λ Y, { },
   nonempty_arrow_right_resolution := λ Y₁ Y₂ f, begin
     let X₁ := (has_enough_K_injectives.condition Y₁).some,
     let X₂ := (has_enough_K_injectives.condition Y₂).some,
@@ -349,8 +357,8 @@ lemma is_iso_app (RF : derived_category C ⥤ D)
   (K : homotopy_category C (complex_shape.up ℤ)) [K.is_K_injective] :
   is_iso (α.app K) :=
 right_derivability_structure.basic.is_iso_app
-    K_injective.right_derivability_structure F (W_inverts _) RF α
-      ⟨K, infer_instance⟩
+  K_injective.right_derivability_structure derived_category.Qh F (W_inverts _)
+  RF α ⟨K, infer_instance⟩
 
 instance (K : homotopy_category C (complex_shape.up ℤ)) [K.is_K_injective] :
   is_iso ((F.right_derived_functor_α derived_category.Qh

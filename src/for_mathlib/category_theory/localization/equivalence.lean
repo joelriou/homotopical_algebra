@@ -167,4 +167,27 @@ end
 
 end
 
+section
+
+variables {C D₁ D₂ : Type*} [category C] [category D₁] [category D₂]
+  {L₁ : C ⥤ D₁} {L₂ : C ⥤ D₂} {F : D₁ ⥤ D₂} (e : L₁ ⋙ F ≅ L₂)
+  (W : morphism_property C) [L₁.is_localization W] [L₂.is_localization W]
+
+include e W
+
+def functor.is_equivalence.of_localization_comparison : is_equivalence F :=
+begin
+  let c : Comm_sq (𝟭 C) L₁ L₂ F := ⟨e ≪≫ L₂.left_unitor.symm⟩,
+  exact localization.lifting_is_equivalence c W W L₁ (localization.lift L₁ (localization.inverts L₁ W) L₂) e
+    L₁.left_unitor,
+end
+
+omit e
+
+instance : is_equivalence (localization.lift L₂ (localization.inverts L₂ W) L₁) :=
+functor.is_equivalence.of_localization_comparison
+  (localization.fac L₂ (localization.inverts L₂ W) L₁) W
+
+end
+
 end category_theory
