@@ -277,6 +277,9 @@ end
 
 abbreviation L := localization.lift _ (inverts C) (subcategory.W (homotopy_category.plus.acyclic C)).Q
 
+instance L_has_comm_shift : (L C).has_comm_shift ℤ := nonempty.some sorry
+instance L_is_triangulated : (L C).is_triangulated := sorry
+
 def L_iso : (subcategory.W (homotopy_category.plus.acyclic C)).Q ⋙ L C ≅ Qh :=
 localization.lifting.iso (subcategory.W (homotopy_category.plus.acyclic C)).Q
   (subcategory.W (homotopy_category.plus.acyclic C)) _ _
@@ -330,7 +333,53 @@ end
 
 instance faithful_L : faithful (L C) :=
 begin
-  sorry,
+  let F := (subcategory.W (homotopy_category.plus.acyclic C)).Q,
+  haveI := localization.ess_surj F
+    (subcategory.W (homotopy_category.plus.acyclic C)), -- should be an instance
+  have hF : (subcategory.W (homotopy_category.plus.acyclic C)).is_inverted_by F :=
+    localization.inverts _ _,
+  apply category_theory.faithful_of_comp_ess_surj F,
+  rintros ⟨⟨K₁ : cochain_complex C ℤ⟩, hK₁⟩ ⟨⟨K₂ : cochain_complex C ℤ⟩, hK₂⟩,
+  suffices : ∀ (f : F.obj {obj := {as := K₁}, property := hK₁} ⟶ F.obj {obj := {as := K₂}, property := hK₂})
+    (hf : (L C).map f = 0), f = 0,
+  { intros f₁ f₂ hf,
+    rw [← sub_eq_zero],
+    apply this,
+    simpa only [functor.map_sub, sub_eq_zero] using hf, },
+  intros f hf,
+  obtain ⟨⟨⟨⟨K₁'⟩, hK₁'⟩, s, g, hs⟩, hz⟩ := right_calculus_of_fractions.L_map_fac F
+    (subcategory.W (homotopy_category.plus.acyclic C)) f,
+  dsimp [right_calculus_of_fractions.map_roof] at hz,
+  simp only [hz, preadditive.is_iso.comp_left_eq_zero],
+  obtain ⟨g, rfl⟩ := (homotopy_category.quotient _ _).map_surjective g,
+  let g' : (⟨⟨K₁'⟩, hK₁'⟩ : homotopy_category.plus C) ⟶ ⟨⟨K₂⟩, hK₂⟩ :=
+    (homotopy_category.quotient _ _).map g,
+  have hg : derived_category.Qh.map g' = derived_category.Qh.map 0,
+  { rw [hz, functor.map_comp, preadditive.is_iso.comp_left_eq_zero] at hf,
+    simpa only [functor.comp_map, functor.map_zero, hf, zero_comp,
+      preadditive.is_iso.comp_left_eq_zero] using ((L_iso C).hom.naturality g').symm, },
+  rw left_calculus_of_fractions.L_map_eq_iff derived_category.Qh
+    (subcategory.W (homotopy_category.acyclic C)) at hg,
+  obtain ⟨⟨K₂' : cochain_complex C ℤ⟩, s, hs, fac⟩ := hg,
+  obtain ⟨s, rfl⟩ := (homotopy_category.quotient _ _).map_surjective s,
+  have hK₂' := hK₂,
+  obtain ⟨n, hn : K₂.is_strictly_ge n⟩ := hK₂',
+  rw zero_comp at fac,
+  let t : (⟨⟨K₂⟩, hK₂⟩ : homotopy_category.plus C) ⟶ ⟨⟨K₂'.trunc_ge n⟩, ⟨n, infer_instance⟩⟩ :=
+    (homotopy_category.quotient _ _).map (s ≫ cochain_complex.trunc_ge.π K₂' n),
+  haveI : is_iso (F.map t),
+  { apply hF,
+    erw [← homotopy_category.plus.mem_W_iff_ι_map_mem, homotopy_category.map_quotient_W_iff],
+    haveI : quasi_iso s,
+    { simpa only [← homotopy_category.map_quotient_W_iff] using hs, },
+    haveI : quasi_iso (cochain_complex.trunc_ge.π K₂' n),
+    { rw [cochain_complex.quasi_iso_trunc_ge_π_iff, ← cochain_complex.is_ge_iff_of_quasi_iso s],
+      apply_instance, },
+    apply_instance, },
+  simp only [← cancel_mono (F.map t), zero_comp, ← F.map_comp, ← F.map_zero],
+  congr' 1,
+  dsimp [t],
+  erw [functor.map_comp, ← assoc, fac, zero_comp],
 end
 
 instance : ess_surj (L C) :=
