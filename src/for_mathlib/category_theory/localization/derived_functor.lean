@@ -410,41 +410,39 @@ begin
   simp only [id_comp, functor.is_right_derived_functor_to_comm, whisker_left_id', comp_id],
 end
 
+@[simp, reassoc]
+lemma right_derived_app [RF.is_right_derived_functor α] (X : C) :
+  α.app X ≫ (right_derived τ α β).app (L.obj X) = τ.app X ≫ β.app X :=
+begin
+  dsimp only [right_derived],
+  simp only [functor.is_right_derived_functor_to_comm_app, comp_app],
+end
+
 end nat_trans
+
+namespace nat_iso
+
+variables {C D H : Type*} [category C] [category D] [category H]
+  {F G : C ⥤ D} (e : F ≅ G) {RF RG : H ⥤ D} {L : C ⥤ H}
+  (α : F ⟶ L ⋙ RF) (β : G ⟶ L ⋙ RG)
+
+@[simps]
+def right_derived [RF.is_right_derived_functor α] [RG.is_right_derived_functor β] :
+  RF ≅ RG :=
+{ hom := nat_trans.right_derived e.hom α β,
+  inv := nat_trans.right_derived e.inv β α, }
+
+instance [RF.is_right_derived_functor α] [RG.is_right_derived_functor β] (τ : F ⟶ G)
+  [is_iso τ] : is_iso (nat_trans.right_derived τ α β) :=
+is_iso.of_iso (nat_iso.right_derived (as_iso τ) α β)
+
+end nat_iso
 
 namespace functor
 
 variables {C D H : Type*} [category C] [category D] [category H]
-  {F : C ⥤ D} (RF : H ⥤ D) {L : C ⥤ H} (α : F ⟶ L ⋙ RF)
+  (F : C ⥤ D) (RF : H ⥤ D) {L : C ⥤ H} (α : F ⟶ L ⋙ RF)
   (W : morphism_property C) [L.is_localization W]
-
-namespace is_right_derived_functor
-
-variables (RF₁ RF₂ : H ⥤ D) (α₁ : F ⟶ L ⋙ RF₁) (α₂ : F ⟶ L ⋙ RF₂)
-  [RF₁.is_right_derived_functor α₁] [RF₂.is_right_derived_functor α₂]
-
-@[simps]
-def uniq : RF₁ ≅ RF₂ :=
-{ hom := nat_trans.right_derived (𝟙 F) α₁ α₂,
-  inv := nat_trans.right_derived (𝟙 F) α₂ α₁, }
-
-@[simp]
-def uniq_hom_app_comm (X : C) : α₁.app X ≫ (uniq _ _ α₁ α₂).hom.app (L.obj X) = α₂.app X :=
-begin
-  dsimp only [uniq, nat_trans.right_derived],
-  simp only [id_comp, is_right_derived_functor_to_comm_app],
-end
-
-@[simp]
-def uniq_inv_app_comm (X : C) : α₂.app X ≫ (uniq _ _ α₁ α₂).inv.app (L.obj X) = α₁.app X :=
-begin
-  dsimp only [uniq, nat_trans.right_derived],
-  simp only [id_comp, is_right_derived_functor_to_comm_app],
-end
-
-end is_right_derived_functor
-
-variables (F)
 
 class has_right_derived_functor : Prop :=
 (has_initial' : limits.has_initial (structured_arrow F ((whiskering_left C _ D).obj W.Q)))
@@ -884,8 +882,9 @@ include β hF
 lemma is_iso_app (F' : H ⥤ D) (α' : F ⟶ L ⋙ F') [F'.is_right_derived_functor α'] (X₀ : C₀) :
   is_iso (α'.app (Φ.functor.obj X₀)) :=
 begin
-  rw ← functor.is_right_derived_functor.uniq_hom_app_comm (RF β L hF) F' (α β L hF) α'
-    (Φ.functor.obj X₀),
+  have h := nat_trans.right_derived_app (𝟙 F) (α β L hF) α' (Φ.functor.obj X₀),
+  rw [nat_trans.id_app, id_comp] at h,
+  rw ← h,
   apply_instance,
 end
 
@@ -907,6 +906,7 @@ namespace is_left_derived_functor
 variables (LF₁ LF₂ : H ⥤ D) (α₁ : L ⋙ LF₁ ⟶ F) (α₂ : L ⋙ LF₂ ⟶ F)
   [LF₁.is_left_derived_functor α₁] [LF₂.is_left_derived_functor α₂]
 
+-- this should be updated to match the API for right derived functors
 def uniq' : (costructured_arrow.mk α₁ :
   costructured_arrow ((whiskering_left C H D).obj L) F) ≅ costructured_arrow.mk α₂ :=
 limits.is_limit.cone_point_unique_up_to_iso
