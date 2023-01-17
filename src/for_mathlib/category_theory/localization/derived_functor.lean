@@ -354,7 +354,7 @@ def is_right_derived_functor_to [RF.is_right_derived_functor α] (G : H ⥤ D) (
 (structured_arrow.proj _ _).map
   ((functor.is_right_derived_functor.is_initial α).some.to (structured_arrow.mk β))
 
-@[simp]
+@[simp, reassoc]
 lemma is_right_derived_functor_to_comm [RF.is_right_derived_functor α] (G : H ⥤ D)
   (β : F ⟶ L ⋙ G) :
   α ≫ whisker_left L (RF.is_right_derived_functor_to α G β) = β :=
@@ -383,11 +383,32 @@ end functor
 namespace nat_trans
 
 variables {C D H : Type*} [category C] [category D] [category H]
-  {F G : C ⥤ D} (τ : F ⟶ G) {RF RG : H ⥤ D} {L : C ⥤ H}
-  (α : F ⟶ L ⋙ RF) (β : G ⟶ L ⋙ RG)
+  {F G G' : C ⥤ D} (τ : F ⟶ G) (τ' : G ⟶ G') {RF RG RG' : H ⥤ D} {L : C ⥤ H}
+  (α : F ⟶ L ⋙ RF) (β : G ⟶ L ⋙ RG) (γ : G' ⟶ L ⋙ RG')
 
 def right_derived [RF.is_right_derived_functor α] : RF ⟶ RG :=
 RF.is_right_derived_functor_to α RG (τ ≫ β)
+
+@[simp]
+lemma right_derived_comp [RF.is_right_derived_functor α]
+  [RG.is_right_derived_functor β] :
+  nat_trans.right_derived τ α β ≫ nat_trans.right_derived τ' β γ =
+    nat_trans.right_derived (τ ≫ τ') α γ :=
+begin
+  dsimp only [right_derived],
+  apply RF.is_right_derived_functor_to_ext α,
+  simp only [whisker_left_comp, functor.is_right_derived_functor_to_comm_assoc, assoc,
+    functor.is_right_derived_functor_to_comm],
+end
+
+@[simp]
+lemma right_derived_id [RF.is_right_derived_functor α] :
+  nat_trans.right_derived (𝟙 F) α α = 𝟙 RF :=
+begin
+  dsimp only [right_derived],
+  apply RF.is_right_derived_functor_to_ext α,
+  simp only [id_comp, functor.is_right_derived_functor_to_comm, whisker_left_id', comp_id],
+end
 
 end nat_trans
 
@@ -402,26 +423,24 @@ namespace is_right_derived_functor
 variables (RF₁ RF₂ : H ⥤ D) (α₁ : F ⟶ L ⋙ RF₁) (α₂ : F ⟶ L ⋙ RF₂)
   [RF₁.is_right_derived_functor α₁] [RF₂.is_right_derived_functor α₂]
 
-def uniq' : (structured_arrow.mk α₁ :
-  structured_arrow F ((whiskering_left C H D).obj L)) ≅ structured_arrow.mk α₂ :=
-limits.is_colimit.cocone_point_unique_up_to_iso
-    (is_right_derived_functor.is_initial α₁).some
-    (is_right_derived_functor.is_initial α₂).some
-
-/- It should be slightly better to define natural transformation `RF₁ ⟶ G` for any `G` equipped
-with a nat_trans, and then construct the isomorphism `uniq` using universal properties for
-both `RF₁` and `RF₂`. -/
-
+@[simps]
 def uniq : RF₁ ≅ RF₂ :=
-(structured_arrow.proj _ _).map_iso (uniq' _ _ α₁ α₂)
+{ hom := nat_trans.right_derived (𝟙 F) α₁ α₂,
+  inv := nat_trans.right_derived (𝟙 F) α₂ α₁, }
 
 @[simp]
 def uniq_hom_app_comm (X : C) : α₁.app X ≫ (uniq _ _ α₁ α₂).hom.app (L.obj X) = α₂.app X :=
-congr_app (structured_arrow.w (uniq' _ _ α₁ α₂).hom) X
+begin
+  dsimp only [uniq, nat_trans.right_derived],
+  simp only [id_comp, is_right_derived_functor_to_comm_app],
+end
 
 @[simp]
 def uniq_inv_app_comm (X : C) : α₂.app X ≫ (uniq _ _ α₁ α₂).inv.app (L.obj X) = α₁.app X :=
-congr_app (structured_arrow.w (uniq' _ _ α₁ α₂).inv) X
+begin
+  dsimp only [uniq, nat_trans.right_derived],
+  simp only [id_comp, is_right_derived_functor_to_comm_app],
+end
 
 end is_right_derived_functor
 
