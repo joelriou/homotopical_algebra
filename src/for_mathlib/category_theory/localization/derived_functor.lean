@@ -183,6 +183,7 @@ section
 
 variable [multiplicative W]
 
+@[priority 100]
 instance contains_identities_of_multiplicative : W.contains_identities :=
 multiplicative.contains_identities _
 
@@ -347,6 +348,54 @@ variables {C D H : Type*} [category C] [category D] [category H]
 class is_right_derived_functor : Prop :=
 (is_initial [] : nonempty (limits.is_initial (structured_arrow.mk α :
   structured_arrow F ((whiskering_left C H D).obj L))))
+
+def is_right_derived_functor_to [RF.is_right_derived_functor α] (G : H ⥤ D) (β : F ⟶ L ⋙ G) :
+  RF ⟶ G :=
+(structured_arrow.proj _ _).map
+  ((functor.is_right_derived_functor.is_initial α).some.to (structured_arrow.mk β))
+
+@[simp]
+lemma is_right_derived_functor_to_comm [RF.is_right_derived_functor α] (G : H ⥤ D)
+  (β : F ⟶ L ⋙ G) :
+  α ≫ whisker_left L (RF.is_right_derived_functor_to α G β) = β :=
+structured_arrow.w ((functor.is_right_derived_functor.is_initial α).some.to
+  (structured_arrow.mk β))
+
+@[simp, reassoc]
+lemma is_right_derived_functor_to_comm_app [RF.is_right_derived_functor α] (G : H ⥤ D)
+  (β : F ⟶ L ⋙ G) (X : C) :
+  α.app X ≫ (RF.is_right_derived_functor_to α G β).app (L.obj X) = β.app X :=
+congr_app (RF.is_right_derived_functor_to_comm α G β) X
+
+lemma is_right_derived_functor_to_ext [RF.is_right_derived_functor α] {G : H ⥤ D}
+  (γ₁ γ₂ : RF ⟶ G) (hγ : α ≫ whisker_left L γ₁ = α ≫ whisker_left L γ₂) : γ₁ = γ₂ :=
+begin
+  let F' : structured_arrow F ((whiskering_left C H D).obj L) :=
+    structured_arrow.mk α,
+  let δ₁ : F' ⟶ structured_arrow.mk (α ≫ whisker_left L γ₁) := structured_arrow.hom_mk γ₁ rfl,
+  let δ₂ : F' ⟶ structured_arrow.mk (α ≫ whisker_left L γ₁) := structured_arrow.hom_mk γ₂ hγ.symm,
+  exact (structured_arrow.proj _ _).congr_map
+    ((functor.is_right_derived_functor.is_initial α).some.hom_ext δ₁ δ₂),
+end
+
+end functor
+
+namespace nat_trans
+
+variables {C D H : Type*} [category C] [category D] [category H]
+  {F G : C ⥤ D} (τ : F ⟶ G) {RF RG : H ⥤ D} {L : C ⥤ H}
+  (α : F ⟶ L ⋙ RF) (β : G ⟶ L ⋙ RG)
+
+def right_derived [RF.is_right_derived_functor α] : RF ⟶ RG :=
+RF.is_right_derived_functor_to α RG (τ ≫ β)
+
+end nat_trans
+
+namespace functor
+
+variables {C D H : Type*} [category C] [category D] [category H]
+  {F : C ⥤ D} (RF : H ⥤ D) {L : C ⥤ H} (α : F ⟶ L ⋙ RF)
+  (W : morphism_property C) [L.is_localization W]
 
 namespace is_right_derived_functor
 
