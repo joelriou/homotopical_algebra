@@ -116,10 +116,42 @@ end
 
 section
 
--- of_equivalence_comp_left
--- data : categories C, C', H, H', functor C' ⥤ D...
+variables {C C' D H H' : Type*} [category C] [category C'] [category D] [category H] [category H']
+  {F' : C' ⥤ D} (RF' : H' ⥤ D) {L' : C' ⥤ H'} (α' : F' ⟶ L' ⋙ RF') {L : C ⥤ H}
+  {G : C ⥤ C'} {G' : H ⥤ H'} (e : G ⋙ L' ≅ L ⋙ G')
+  [is_equivalence G] [is_equivalence G']
+  (W : morphism_property C) [L.is_localization W]
+  (W' : morphism_property C') [L'.is_localization W']
+
+lemma of_equivalence_comp_left [RF'.is_right_derived_functor α']
+  (α : G ⋙ F' ⟶ L ⋙ (G' ⋙ RF'))
+  (hα : α = whisker_left G α' ≫ (functor.associator _ _ _).inv ≫
+      whisker_right e.hom RF' ≫ (functor.associator _ _ _).hom) :
+  (G' ⋙ RF').is_right_derived_functor α :=
+begin
+  let e' : (whiskering_left C' H' D).obj L' ⋙ (whiskering_left C C' D).obj G ≅
+    (whiskering_left H H' D).obj G' ⋙ (whiskering_left C H D).obj L :=
+    nat_iso.of_components (λ X, iso_whisker_right e X) (by tidy),
+  exact ⟨⟨limits.is_initial.of_iso (limits.is_initial.is_initial_obj
+    (structured_arrow.whisker e'.hom F') (structured_arrow.mk α')
+    (is_right_derived_functor.is_initial α').some) (structured_arrow.iso_mk (iso.refl _)
+    (by { rw hα, tidy, }))⟩⟩,
+end
+
+instance of_equivalence_comp_left' [RF'.is_right_derived_functor α'] :
+  (G' ⋙ RF').is_right_derived_functor (whisker_left G α' ≫ (functor.associator _ _ _).inv ≫
+      whisker_right e.hom RF' ≫ (functor.associator _ _ _).hom) :=
+of_equivalence_comp_left RF' α' e _ rfl
+
+lemma _root_.category_theory.functor.has_right_derived_functor_equivalence_comp_right
+  [F'.has_right_derived_functor W'] :
+  (G ⋙ F').has_right_derived_functor W :=
+is_right_derived_functor.has_right_derived_functor (G ⋙ F') _ _
+    ((whisker_left G (F'.right_derived_functor_α L' W') ≫ (functor.associator _ _ _).inv ≫
+    whisker_right e.hom _ ≫ (functor.associator _ _ _).hom)) W
 
 end
+
 end is_right_derived_functor
 
 end functor
