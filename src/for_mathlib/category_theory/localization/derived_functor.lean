@@ -226,11 +226,15 @@ end morphism_property
 namespace functor
 
 variables (C₁ C₂ C₃ : Type*) [category C₁] [category C₂] [category C₃]
-  (F : C₁ ⥤ C₂)
+  (F : C₁ ⥤ C₂) (G : C₂ ⥤ C₃)
 
 @[simps]
 def whiskering_left_id : (whiskering_left C₁ C₁ C₃).obj (𝟭 C₁) ≅ 𝟭 _ :=
-nat_iso.of_components (functor.left_unitor) (by tidy)
+nat_iso.of_components functor.left_unitor (by tidy)
+
+@[simps]
+def whiskering_right_id : (whiskering_right C₁ C₃ C₃).obj (𝟭 C₃) ≅ 𝟭 _ :=
+nat_iso.of_components functor.right_unitor (by tidy)
 
 variables {C₁ C₂}
 
@@ -246,9 +250,27 @@ def equivalence_whiskering_left (e : C₁ ≌ C₂) : (C₂ ⥤ C₃) ≌ C₁ �
     simp only [id_comp, comp_id, ← F.map_comp, equivalence.counit_inv_functor_comp, F.map_id],
   end, }
 
-instance [is_equivalence F] :
+instance is_equivalence_whiskering_left [is_equivalence F] :
   is_equivalence ((whiskering_left _ _ C₃).obj F) :=
 is_equivalence.of_equivalence (equivalence_whiskering_left C₃ (as_equivalence F))
+
+variables {C₂ C₃} (C₁)
+
+@[simps]
+def equivalence_whiskering_right (e : C₂ ≌ C₃) : (C₁ ⥤ C₂) ≌ C₁ ⥤ C₃ :=
+{ functor := (whiskering_right _ _ _).obj e.functor,
+  inverse := (whiskering_right _ _ _).obj e.inverse,
+  unit_iso := (whiskering_right_id C₁ C₂).symm ≪≫ (whiskering_right C₁ _ _).map_iso e.unit_iso,
+  counit_iso := (whiskering_right C₁ _ _).map_iso e.counit_iso ≪≫ whiskering_right_id C₁ C₃,
+  functor_unit_iso_comp' := λ F, begin
+    ext X,
+    dsimp,
+    simp,
+  end, }
+
+instance is_equivalence_whiskering_right [is_equivalence G] :
+  is_equivalence ((whiskering_right C₁ _ _).obj G) :=
+is_equivalence.of_equivalence (equivalence_whiskering_right C₁ (as_equivalence G))
 
 end functor
 
