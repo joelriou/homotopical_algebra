@@ -343,11 +343,21 @@ end structured_arrow
 namespace functor
 
 variables {C D H : Type*} [category C] [category D] [category H]
-  {F : C ⥤ D} (RF : H ⥤ D) {L : C ⥤ H} (α : F ⟶ L ⋙ RF) (W : morphism_property C) [L.is_localization W]
+  {F : C ⥤ D} (RF RF' : H ⥤ D) (e : RF ≅ RF') {L : C ⥤ H} (α : F ⟶ L ⋙ RF) (α' : F ⟶ L ⋙ RF')
+  (W : morphism_property C) [L.is_localization W]
 
 class is_right_derived_functor : Prop :=
 (is_initial [] : nonempty (limits.is_initial (structured_arrow.mk α :
   structured_arrow F ((whiskering_left C H D).obj L))))
+
+variables {RF RF'}
+
+lemma is_right_derived_functor.of_iso [RF.is_right_derived_functor α]
+  (eq : α' = α ≫ whisker_left L e.hom) : RF'.is_right_derived_functor α' :=
+⟨⟨limits.is_initial.of_iso (is_right_derived_functor.is_initial α).some
+  (structured_arrow.iso_mk e eq.symm)⟩⟩
+
+variables (RF RF')
 
 def is_right_derived_functor_to [RF.is_right_derived_functor α] (G : H ⥤ D) (β : F ⟶ L ⋙ G) :
   RF ⟶ G :=
@@ -895,38 +905,119 @@ end right_derivability_structure
 namespace functor
 
 variables {C D H : Type*} [category C] [category D] [category H]
-  {F : C ⥤ D} (LF : H ⥤ D) {L : C ⥤ H} (α : L ⋙ LF ⟶ F) (W : morphism_property C) [L.is_localization W]
+  {F : C ⥤ D} (LF LF' : H ⥤ D) (e : LF ≅ LF') {L : C ⥤ H} (α : L ⋙ LF ⟶ F) (α' : L ⋙ LF' ⟶ F)
+  (W : morphism_property C) [L.is_localization W]
 
 class is_left_derived_functor : Prop :=
 (is_terminal [] : nonempty (limits.is_terminal (costructured_arrow.mk α :
   costructured_arrow ((whiskering_left C H D).obj L) F)))
 
-namespace is_left_derived_functor
+variables {LF LF'}
 
-variables (LF₁ LF₂ : H ⥤ D) (α₁ : L ⋙ LF₁ ⟶ F) (α₂ : L ⋙ LF₂ ⟶ F)
-  [LF₁.is_left_derived_functor α₁] [LF₂.is_left_derived_functor α₂]
+lemma is_left_derived_functor.of_iso [LF.is_left_derived_functor α]
+  (eq : α' = whisker_left L e.inv ≫ α) : LF'.is_left_derived_functor α' :=
+⟨⟨limits.is_terminal.of_iso (is_left_derived_functor.is_terminal α).some
+    (costructured_arrow.iso_mk e (by { dsimp, rw eq, ext, simp only [nat_trans.comp_app,
+      whisker_left_app, iso.hom_inv_id_app_assoc], }))⟩⟩
 
--- this should be updated to match the API for right derived functors
-def uniq' : (costructured_arrow.mk α₁ :
-  costructured_arrow ((whiskering_left C H D).obj L) F) ≅ costructured_arrow.mk α₂ :=
-limits.is_limit.cone_point_unique_up_to_iso
-    (is_left_derived_functor.is_terminal α₁).some
-    (is_left_derived_functor.is_terminal α₂).some
+variables (LF LF')
 
-def uniq : LF₁ ≅ LF₂ :=
-(costructured_arrow.proj _ _).map_iso (uniq' _ _ α₁ α₂)
+def is_left_derived_functor_from [LF.is_left_derived_functor α] (G : H ⥤ D) (β : L ⋙ G ⟶ F) :
+  G ⟶ LF :=
+(costructured_arrow.proj _ _).map
+  ((functor.is_left_derived_functor.is_terminal α).some.from (costructured_arrow.mk β))
+
+@[simp, reassoc]
+lemma is_left_derived_functor_from_comm [LF.is_left_derived_functor α] (G : H ⥤ D)
+  (β : L ⋙ G ⟶ F) :
+  whisker_left L (LF.is_left_derived_functor_from α G β) ≫ α = β :=
+costructured_arrow.w ((functor.is_left_derived_functor.is_terminal α).some.from
+  (costructured_arrow.mk β))
+
+@[simp, reassoc]
+lemma is_left_derived_functor_from_comm_app [LF.is_left_derived_functor α] (G : H ⥤ D)
+  (β : L ⋙ G ⟶ F) (X : C) :
+  (LF.is_left_derived_functor_from α G β).app (L.obj X) ≫ α.app X = β.app X :=
+congr_app (LF.is_left_derived_functor_from_comm α G β) X
+
+lemma is_left_derived_functor_from_ext [LF.is_left_derived_functor α] {G : H ⥤ D}
+  (γ₁ γ₂ : G ⟶ LF) (hγ : whisker_left L γ₁ ≫ α = whisker_left L γ₂ ≫ α) : γ₁ = γ₂ :=
+begin
+  let F' : costructured_arrow ((whiskering_left C H D).obj L) F :=
+    costructured_arrow.mk α,
+  let G' : costructured_arrow ((whiskering_left C H D).obj L) F :=
+    @costructured_arrow.mk _ _ _ _ F G ((whiskering_left C H D).obj L) (whisker_left L γ₁ ≫ α),
+  let δ₁ : G' ⟶ F' := costructured_arrow.hom_mk γ₁ rfl,
+  let δ₂ : G' ⟶ F' := costructured_arrow.hom_mk γ₂ hγ.symm,
+  exact (costructured_arrow.proj _ _).congr_map
+    ((functor.is_left_derived_functor.is_terminal α).some.hom_ext δ₁ δ₂),
+end
+
+end functor
+
+namespace nat_trans
+
+variables {C D H : Type*} [category C] [category D] [category H]
+  {F G G' : C ⥤ D} (τ : F ⟶ G) (τ' : G ⟶ G') {LF LG LG' : H ⥤ D} {L : C ⥤ H}
+  (α : L ⋙ LF ⟶ F) (β : L ⋙ LG ⟶ G) (γ : L ⋙ LG' ⟶ G')
+
+def left_derived [LG.is_left_derived_functor β] : LF ⟶ LG :=
+LG.is_left_derived_functor_from β LF (α ≫ τ)
 
 @[simp]
-def uniq_hom_app_comm (X : C) : (uniq _ _ α₁ α₂).hom.app (L.obj X) ≫ α₂.app X = α₁.app X :=
-congr_app (costructured_arrow.w (uniq' _ _ α₁ α₂).hom) X
+lemma left_derived_comp [LG.is_left_derived_functor β]
+  [LG'.is_left_derived_functor γ] :
+  nat_trans.left_derived τ α β ≫ nat_trans.left_derived τ' β γ =
+    nat_trans.left_derived (τ ≫ τ') α γ :=
+begin
+  dsimp only [left_derived],
+  apply LG'.is_left_derived_functor_from_ext γ,
+  simp only [whisker_left_comp, assoc, functor.is_left_derived_functor_from_comm,
+    functor.is_left_derived_functor_from_comm_assoc],
+end
 
 @[simp]
-def uniq_inv_app_comm (X : C) : (uniq _ _ α₁ α₂).inv.app (L.obj X) ≫ α₁.app X = α₂.app X :=
-congr_app (costructured_arrow.w (uniq' _ _ α₁ α₂).inv) X
+lemma left_derived_id [LF.is_left_derived_functor α] :
+  nat_trans.left_derived (𝟙 F) α α = 𝟙 LF :=
+begin
+  dsimp only [left_derived],
+  apply LF.is_left_derived_functor_from_ext α,
+  simp only [comp_id, functor.is_left_derived_functor_from_comm, whisker_left_id', id_comp],
+end
 
-end is_left_derived_functor
+@[simp, reassoc]
+lemma left_derived_app [LG.is_left_derived_functor β] (X : C) :
+  (left_derived τ α β).app (L.obj X) ≫ β.app X = α.app X ≫ τ.app X :=
+begin
+  dsimp only [left_derived],
+  simp only [functor.is_left_derived_functor_from_comm_app, comp_app],
+end
 
-variables (F L)
+end nat_trans
+
+namespace nat_iso
+
+variables {C D H : Type*} [category C] [category D] [category H]
+  {F G : C ⥤ D} (e : F ≅ G) {LF LG : H ⥤ D} {L : C ⥤ H}
+  (α : L ⋙ LF ⟶ F) (β : L ⋙ LG ⟶ G)
+
+@[simps]
+def left_derived [LF.is_left_derived_functor α] [LG.is_left_derived_functor β] :
+  LF ≅ LG :=
+{ hom := nat_trans.left_derived e.hom α β,
+  inv := nat_trans.left_derived e.inv β α, }
+
+instance [LF.is_left_derived_functor α] [LG.is_left_derived_functor β] (τ : F ⟶ G)
+  [is_iso τ] : is_iso (nat_trans.left_derived τ α β) :=
+is_iso.of_iso (nat_iso.left_derived (as_iso τ) α β)
+
+end nat_iso
+
+namespace functor
+
+variables {C D H : Type*} [category C] [category D] [category H]
+  (F : C ⥤ D) (LF : H ⥤ D) (L : C ⥤ H) (α : L ⋙ LF ⟶ F)
+  (W : morphism_property C) [L.is_localization W]
 
 class has_left_derived_functor : Prop :=
 (has_terminal' : limits.has_terminal (costructured_arrow ((whiskering_left C _ D).obj W.Q) F))
