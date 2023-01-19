@@ -111,6 +111,21 @@ nat_iso.of_components (λ T, pretriangulated.triangle.mk_iso _ _ (iso.refl _) (i
 
 variables {F}
 
+@[simps]
+def map_triangle_nat_trans {F' : C ⥤ D} [F'.has_comm_shift ℤ] (τ : F ⟶ F')
+  [τ.respects_comm_shift ℤ] :
+  F.map_triangle ⟶ F'.map_triangle :=
+{ app := λ X,
+  { hom₁ := τ.app _,
+    hom₂ := τ.app _,
+    hom₃ := τ.app _,
+    comm₃' := begin
+      dsimp,
+      simp only [assoc, nat_trans.respects_comm_shift.comm_app τ (1 : ℤ),
+        nat_trans.naturality_assoc],
+    end, }, }
+
+@[simps]
 def map_triangle_nat_iso {F' : C ⥤ D} [F'.has_comm_shift ℤ] (e : F ≅ F')
   [e.hom.respects_comm_shift ℤ] : F.map_triangle ≅ F'.map_triangle :=
 nat_iso.of_components
