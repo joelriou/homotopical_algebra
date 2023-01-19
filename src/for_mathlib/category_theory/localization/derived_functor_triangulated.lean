@@ -33,7 +33,7 @@ namespace basic
 
 include β hF
 
-lemma derived_functor_is_triangulated [F.has_right_derived_functor W] :
+lemma derived_functor_is_triangulated' [F.has_right_derived_functor W] :
   (F.right_derived_functor L W).is_triangulated :=
 ⟨λ T hT, begin
   obtain ⟨T', hT', ⟨e⟩⟩ := functor.ess_surj_on_dist_triang.condition (Φ.functor ⋙ L) T hT,
@@ -52,6 +52,32 @@ lemma derived_functor_is_triangulated [F.has_right_derived_functor W] :
     (functor.map_triangle_comp (Φ.functor ⋙ L) (F.right_derived_functor L W)).symm.app T' ≪≫
     (functor.map_triangle_nat_iso (as_iso τ)).symm.app T'),
 end⟩
+
+lemma derived_functor_is_triangulated (RF : H ⥤ D) (α : F ⟶ L ⋙ RF)
+  [RF.is_right_derived_functor α] [RF.has_comm_shift ℤ] [α.respects_comm_shift ℤ] :
+  RF.is_triangulated :=
+begin
+  haveI := functor.is_right_derived_functor.has_right_derived_functor F RF L α W,
+  haveI := β.derived_functor_is_triangulated' F L hF,
+  let e := nat_iso.right_derived (iso.refl F) (F.right_derived_functor_α L W) α,
+  haveI : e.hom.respects_comm_shift ℤ,
+  { refine ⟨λ n, _⟩,
+    apply functor.is_right_derived_functor_to_ext
+      (shift_functor H n ⋙ F.right_derived_functor L W)
+      (functor.has_comm_shift.right_derived_shift_α F L W n),
+    ext X,
+    simp only [nat_trans.comp_app, whisker_left_app, whisker_right_app],
+    erw functor.has_comm_shift.right_derived_comm_shift_comm_assoc,
+    simp only [nat_iso.right_derived_hom, iso.refl_hom,
+      functor.has_comm_shift.right_derived_α_shift_app, ← functor.map_comp,
+      nat_trans.right_derived_app (𝟙 F) (F.right_derived_functor_α L W) α X,
+      nat_trans.id_app, id_comp,
+      functor.has_comm_shift.right_derived_shift_α_app,
+      assoc, nat_trans.naturality_assoc, nat_trans.right_derived_app_assoc,
+      nat_trans.respects_comm_shift.comm_app α n X,
+      functor.has_comm_shift.comp_hom_app], },
+  exact functor.is_triangulated.of_iso e,
+end
 
 end basic
 

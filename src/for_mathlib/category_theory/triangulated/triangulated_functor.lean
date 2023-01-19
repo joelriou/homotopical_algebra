@@ -170,6 +170,13 @@ begin
     (F.map_distinguished _ mem) (iso.refl _) (iso.refl _) (by tidy))),
 end
 
+variable {F}
+
+lemma is_triangulated.of_iso {G : C ⥤ D} (e : F ≅ G) [F.is_triangulated] [G.has_comm_shift ℤ]
+  [e.hom.respects_comm_shift ℤ] : G.is_triangulated :=
+⟨λ T hT, pretriangulated.isomorphic_distinguished _
+  (F.map_distinguished _ hT) _ ((map_triangle_nat_iso e).symm.app T)⟩
+
 end functor
 
 end category_theory
