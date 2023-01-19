@@ -68,14 +68,21 @@ nat_iso.right_derived (F.comm_shift_iso a) (right_derived_shift_α F L W a)
   (right_derived_α_shift F L W a)
 
 @[reassoc]
-lemma comp_right_derived_comm_shift_hom_app (X : C) :
+lemma right_derived_comm_shift_comm (X : C) :
+  (right_derived_shift_α F L W a).app X ≫ (right_derived_comm_shift F L W a).hom.app (L.obj X) =
+    (F.comm_shift_iso a).hom.app X ≫ (right_derived_α_shift F L W a).app X :=
+nat_trans.right_derived_app (F.comm_shift_iso a).hom
+  (right_derived_shift_α F L W a) (right_derived_α_shift F L W a) X
+
+@[reassoc]
+lemma right_derived_comm_shift_comm' (X : C) :
   (F.right_derived_functor_α L W).app ((shift_functor C a).obj X) ≫
     (F.right_derived_functor L W).map ((L.comm_shift_iso a).hom.app X) ≫
     (right_derived_comm_shift F L W a).hom.app (L.obj X) =
-  (F.comm_shift_iso a).hom.app X ≫ ((F.right_derived_functor_α L W).app X)⟦a⟧' :=
-begin
-  sorry
-end
+  (F.comm_shift_iso a).hom.app X ≫
+    (shift_functor D a).map ((F.right_derived_functor_α L W).app X) :=
+by simpa only [right_derived_shift_α_app, assoc, right_derived_α_shift_app]
+  using right_derived_comm_shift_comm F L W a X
 
 instance : has_comm_shift (F.right_derived_functor L W) A :=
 { iso := λ a, right_derived_comm_shift F L W a,
@@ -83,20 +90,39 @@ instance : has_comm_shift (F.right_derived_functor L W) A :=
     ext1,
     apply is_right_derived_functor_to_ext _ (right_derived_shift_α F L W (0 : A)),
     ext X,
-    simp only [nat_trans.comp_app, whisker_left_app, comm_shift.unit_hom_app,
-      right_derived_shift_α_app, assoc],
-    simp only [comp_right_derived_comm_shift_hom_app F L W (0 : A) X],
-    rw ← cancel_epi ((F.comm_shift_iso (0 : A)).inv.app X),
-    simp only [iso.inv_hom_id_app_assoc],
-    have paf := (F.right_derived_functor_α L W).naturality_assoc,
-    sorry,
+    simp only [nat_trans.comp_app, whisker_left_app, right_derived_comm_shift_comm],
+    simp only [right_derived_α_shift_app, right_derived_shift_α_app, comm_shift.unit_hom_app,
+      assoc, L.comm_shift_iso_zero, F.comm_shift_iso_zero, functor.map_comp],
+    nth_rewrite 1 ← functor.map_comp_assoc,
+    erw [iso.inv_hom_id_app, functor.map_id, id_comp,
+      ← (F.right_derived_functor_α L W).naturality_assoc,
+      (shift_functor_zero D A).inv.naturality ((F.right_derived_functor_α L W).app X)],
   end,
   iso_add := λ a b, begin
     ext1,
     apply is_right_derived_functor_to_ext _ (right_derived_shift_α F L W (a+b)),
     ext X,
-    sorry,
+    simp only [nat_trans.comp_app, whisker_left_app, right_derived_comm_shift_comm],
+    simp only [right_derived_α_shift_app, right_derived_shift_α_app, comm_shift.add_hom_app,
+      assoc, L.comm_shift_iso_add, F.comm_shift_iso_add, functor.map_comp],
+    nth_rewrite 3 ← functor.map_comp_assoc,
+    erw [iso.inv_hom_id_app, functor.map_id, id_comp],
+    erw ← (F.right_derived_functor_α L W).naturality_assoc,
+    rw ← (shift_functor_add D a b).inv.naturality,
+    erw (right_derived_comm_shift F L W b).hom.naturality_assoc,
+    erw right_derived_comm_shift_comm'_assoc F L W b (X⟦a⟧),
+    erw ← functor.map_comp_assoc,
+    rw ← right_derived_comm_shift_comm' F L W a X,
+    simpa only [functor.map_comp, assoc],
   end, }
+
+instance right_derived_functor_α_respects_comm_shift :
+  (F.right_derived_functor_α L W).respects_comm_shift A :=
+⟨λ a, begin
+  ext X,
+  simpa only [nat_trans.comp_app, comp_hom_app, right_derived_α_shift_app,
+    right_derived_shift_α_app, assoc] using (right_derived_comm_shift_comm F L W a X).symm,
+end⟩
 
 end has_comm_shift
 
