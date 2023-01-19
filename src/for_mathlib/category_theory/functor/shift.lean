@@ -754,11 +754,11 @@ end functor
 
 namespace nat_trans
 
-variables {C D : Type*} [category C] [category D] {F G : C ⥤ D} (τ : F ⟶ G)
+variables {C D : Type*} [category C] [category D] {F G : C ⥤ D} (τ : F ⟶ G) (e : F ≅ G)
   (A : Type*) [add_monoid A] [has_shift C A] [has_shift D A] [F.has_comm_shift A]
   [G.has_comm_shift A]
 
-class respects_comm_shift :=
+class respects_comm_shift : Prop :=
 (comm [] : ∀ (a : A), (F.comm_shift_iso a).hom ≫ whisker_right τ _ =
   whisker_left _ τ ≫ (G.comm_shift_iso a).hom)
 
@@ -788,6 +788,79 @@ begin
   ext X,
   simpa only [comp_app, whisker_left_app, iso.hom_inv_id_app_assoc],
 end
+
+instance nat_iso_inv [e.hom.respects_comm_shift A] : e.inv.respects_comm_shift A :=
+⟨λ a, begin
+  ext X,
+  simp only [comp_app, whisker_right_app, whisker_left_app,
+    ← cancel_mono ((shift_functor D a).map (e.hom.app X)), assoc,
+    respects_comm_shift.comm_app e.hom a X, e.inv_hom_id_app_assoc,
+    ← functor.map_comp, e.inv_hom_id_app, functor.map_id],
+  apply comp_id,
+end⟩
+
+lemma of_iso_hom : e.hom.respects_comm_shift A ↔ e.inv.respects_comm_shift A :=
+begin
+  split,
+  { introI,
+    apply_instance, },
+  { intro h,
+    haveI : e.symm.hom.respects_comm_shift A := h,
+    change e.symm.inv.respects_comm_shift A,
+    apply_instance, },
+end
+
+instance of_comp {H : C ⥤ D} (τ' : G ⟶ H) [H.has_comm_shift A] [τ.respects_comm_shift A]
+  [τ'.respects_comm_shift A] : (τ ≫ τ').respects_comm_shift A :=
+⟨λ a, begin
+  ext X,
+  simp only [whisker_right_comp, comp_app, whisker_right_app, whisker_left_comp, assoc,
+    whisker_left_app, comm_app_assoc, comm_app],
+end⟩
+
+instance associator {C₁ C₂ C₃ C₄ : Type*} [category C₁] [category C₂] [category C₃] [category C₄]
+  [has_shift C₁ A] [has_shift C₂ A] [has_shift C₃ A] [has_shift C₄ A]
+  (F₁ : C₁ ⥤ C₂) (F₂ : C₂ ⥤ C₃) (F₃ : C₃ ⥤ C₄)
+  [F₁.has_comm_shift A] [F₂.has_comm_shift A][F₃.has_comm_shift A] :
+  (functor.associator F₁ F₂ F₃).hom.respects_comm_shift A :=
+⟨λ a, begin
+  ext X,
+  simp only [comp_app, functor.has_comm_shift.comp_hom_app, functor.map_comp, assoc,
+    whisker_right_app, functor.associator_hom_app, functor.map_id, whisker_left_app,
+    functor.comp_map],
+  dsimp,
+  simp only [comp_id, id_comp],
+end⟩
+
+instance whisker_left {C₁ C₂ C₃ : Type*} [category C₁] [category C₂] [category C₃]
+  [has_shift C₁ A] [has_shift C₂ A] [has_shift C₃ A]
+  (F : C₁ ⥤ C₂) {G G' : C₂ ⥤ C₃} [F.has_comm_shift A] [G.has_comm_shift A]
+  [G'.has_comm_shift A] (τ : G ⟶ G') [τ.respects_comm_shift A] :
+  (whisker_left F τ).respects_comm_shift A :=
+⟨λ a, begin
+  ext X,
+  simp only [comp_app, functor.has_comm_shift.comp_hom_app, whisker_right_app, whisker_left_app,
+    assoc, whisker_left_twice, comm_app],
+  apply nat_trans.naturality_assoc,
+end⟩
+
+instance whisker_right {C₁ C₂ C₃ : Type*} [category C₁] [category C₂] [category C₃]
+  [has_shift C₁ A] [has_shift C₂ A] [has_shift C₃ A]
+  {F F' : C₁ ⥤ C₂} [F.has_comm_shift A] [F'.has_comm_shift A]
+  (G : C₂ ⥤ C₃) [G.has_comm_shift A]
+  (τ : F ⟶ F') [τ.respects_comm_shift A] :
+  (whisker_right τ G).respects_comm_shift A :=
+⟨λ a, begin
+  ext X,
+  simp only [whisker_right_twice, comp_app, functor.has_comm_shift.comp_hom_app,
+    whisker_right_app, functor.comp_map, assoc, whisker_left_app, ← G.map_comp_assoc,
+    ← comm_app τ a X],
+  erw [G.map_comp, assoc, ← nat_trans.naturality],
+  refl,
+end⟩
+
+instance id : respects_comm_shift (𝟙 F) A :=
+⟨λ a, by simp only [whisker_right_id', comp_id, whisker_left_id', id_comp]⟩
 
 end respects_comm_shift
 
