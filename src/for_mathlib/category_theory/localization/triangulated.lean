@@ -152,12 +152,98 @@ omit L
 
 instance : has_shift W.localization A := shift.localization W.Q W A
 
---variable {A}
---
---@[simp]
---def localization_comm_shift (a : A) :
---  shift_functor C a ⋙ L ≅ L ⋙ @shift_functor D A _ _ (shift.localization L W A) a :=
---(localization.fac _ _ _).symm
+variable {A}
+
+def localization_comm_shift (a : A) :
+  shift_functor C a ⋙ W.Q ≅ W.Q ⋙ shift_functor W.localization a :=
+(localization.fac _ _ _).symm
+
+variable (A)
+
+lemma shift_functor_zero_localization_inv_app (X : C) :
+  (shift_functor_zero W.localization A).inv.app (W.Q.obj X) =
+    W.Q.map ((shift_functor_zero C A).inv.app X) ≫ (localization_comm_shift W (0 : A)).hom.app X :=
+begin
+  dsimp [shift_monoidal_functor],
+  simp only [localization.lift_nat_trans'_app, Comm_sq.horiz_refl_iso, iso.refl_hom,
+    nat_trans.id_app],
+  erw id_comp,
+  refl,
+end
+
+lemma shift_functor_zero_localization_hom_app (X : C) :
+  (shift_functor_zero W.localization A).hom.app (W.Q.obj X) =
+    (localization_comm_shift W (0 : A)).inv.app X ≫
+    W.Q.map ((shift_functor_zero C A).hom.app X) :=
+begin
+  rw [← cancel_mono ((shift_functor_zero W.localization A).inv.app (W.Q.obj X)),
+    iso.hom_inv_id_app, shift_functor_zero_localization_inv_app, assoc, ← W.Q.map_comp_assoc,
+    iso.hom_inv_id_app, W.Q.map_id, id_comp, iso.inv_hom_id_app],
+  refl,
+end
+
+variable {A}
+
+lemma shift_functor_add_localization_inv_app (a b : A) (X : C) :
+  (shift_functor_add W.localization a b).inv.app (W.Q.obj X) =
+    ((localization_comm_shift W a).inv.app X)⟦b⟧' ≫ (localization_comm_shift W b).inv.app (X⟦a⟧) ≫ W.Q.map ((shift_functor_add C a b).inv.app X) ≫
+        (localization_comm_shift W (a+b)).hom.app X :=
+begin
+  dsimp [shift_monoidal_functor, localization.lifting_comp_iso, localization.lifting.uniq],
+  erw localization.lift_nat_trans_app,
+  simpa only [iso.symm_symm_eq, iso.trans_hom, iso_whisker_right_hom, monoidal_functor.μ_iso_hom,
+    nat_trans.comp_app, Comm_sq.horiz_comp_iso_hom_app, whisker_right_app, assoc,
+    nat_trans.id_app, id_comp],
+end
+
+lemma shift_functor_add_localization_hom_app (a b : A) (X : C) :
+  (shift_functor_add W.localization a b).hom.app (W.Q.obj X) =
+        (localization_comm_shift W (a+b)).inv.app X ≫
+     W.Q.map ((shift_functor_add C a b).hom.app X) ≫
+     (localization_comm_shift W b).hom.app (X⟦a⟧) ≫
+    ((localization_comm_shift W a).hom.app X)⟦b⟧' :=
+begin
+  rw [← cancel_mono ((shift_functor_add W.localization a b).inv.app (W.Q.obj X)), assoc, assoc,
+    assoc, iso.hom_inv_id_app, shift_functor_add_localization_inv_app, ← functor.map_comp_assoc,
+    iso.hom_inv_id_app],
+  erw [category_theory.functor.map_id, id_comp, iso.hom_inv_id_app_assoc, ← W.Q.map_comp_assoc,
+    iso.hom_inv_id_app, W.Q.map_id, id_comp, iso.inv_hom_id_app],
+  refl,
+end
+
+namespace has_comm_shift_localization
+
+variable {A}
+
+instance : functor.has_comm_shift W.Q A :=
+{ iso := localization_comm_shift W,
+  iso_zero := begin
+    ext1,
+    apply nat_trans.ext,
+    ext1 X,
+    dsimp [functor.comm_shift.unit, compatibility.comm_shift.unit],
+    erw [id_comp, id_comp],
+    change _ = W.Q.map ((shift_functor_zero C A).hom.app X) ≫
+      (shift_functor_zero W.localization A).inv.app (W.Q.obj X),
+    rw [shift_functor_zero_localization_inv_app, ← W.Q.map_comp_assoc, iso.hom_inv_id_app,
+      W.Q.map_id, id_comp],
+  end,
+  iso_add := λ a b, begin
+    ext1,
+    apply nat_trans.ext,
+    ext1 X,
+    dsimp [functor.comm_shift.add, compatibility.comm_shift.comp],
+    erw [id_comp, id_comp, id_comp],
+    change _ = W.Q.map ((shift_functor_add C a b).hom.app X) ≫
+      (localization_comm_shift W b).hom.app (X⟦a⟧) ≫
+      ((localization_comm_shift W a).hom.app X)⟦b⟧' ≫
+      (shift_functor_add W.localization a b).inv.app (W.Q.obj X),
+    erw [shift_functor_add_localization_inv_app, ← functor.map_comp_assoc, iso.hom_inv_id_app,
+      category_theory.functor.map_id, id_comp, iso.hom_inv_id_app_assoc, ← W.Q.map_comp_assoc,
+      iso.hom_inv_id_app, W.Q.map_id, id_comp],
+  end, }
+
+end has_comm_shift_localization
 
 end shift
 
@@ -414,11 +500,7 @@ include hC
 instance additive_shift_localization (n : ℤ) :
   functor.additive (shift_functor W.localization n) := infer_instance
 
-/-- It would be nicer to use the canonical iso
-  `shift_functor C a ⋙ W.Q ≅ W.Q ⋙ shift_functor W.localization a` for all `a` (rather
-  than just `1`), and prove they satisfies the zero and add axioms. -/
-instance W_Q_has_comm_shift : W.Q.has_comm_shift ℤ :=
-(functor.comm_shift.equiv_ℤ W.Q).symm (localization.fac _ _ _).symm
+--instance W_Q_has_comm_shift : W.Q.has_comm_shift ℤ := infer_instance
 
 instance localization_pretriangulated : pretriangulated W.localization :=
 (infer_instance : pretriangulated (localization W.Q W))
