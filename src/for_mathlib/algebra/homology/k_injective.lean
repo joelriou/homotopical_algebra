@@ -128,11 +128,25 @@ end
 
 variables (C c)
 
+instance zero_is_K_injective :
+  (0 : homotopy_category C c).is_K_injective :=
+⟨⟨λ X f hf, ⟨begin
+  have e : ∀ (X : homotopy_category C c), ((quotient C c).obj X.1 ≅ X),
+  { rintro ⟨X⟩, exact (iso.refl _), },
+  refine homotopy_of_eq _ _ (is_zero.eq_of_tgt (is_zero.of_iso (is_zero_zero _) (e _)) _ _),
+end⟩⟩⟩
 
 abbreviation K_injective := full_subcategory (λ (K : homotopy_category C c), K.is_K_injective)
 
 instance is_K_injective_is_triangulated_subcategory :
-  triangulated.is_triangulated_subcategory (λ (K : homotopy_category C (complex_shape.up ℤ)), K.is_K_injective) := sorry
+  triangulated.is_triangulated_subcategory
+    (λ (K : homotopy_category C (complex_shape.up ℤ)), K.is_K_injective) :=
+begin
+  convert (infer_instance : triangulated.is_triangulated_subcategory
+      (triangulated.right_orthogonal (homotopy_category.acyclic C))),
+  ext,
+  exact is_K_injective_iff _,
+end
 
 instance K_injective_is_K_injective (K : K_injective C c) : K.obj.is_K_injective := K.2
 
