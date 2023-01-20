@@ -1,5 +1,5 @@
 import for_mathlib.algebra.homology.k_projective
-import for_mathlib.category_theory.localization.derived_functor
+import for_mathlib.category_theory.localization.derived_functor_triangulated
 import category_theory.abelian.injective
 
 noncomputable theory
@@ -128,14 +128,17 @@ end
 
 variables (C c)
 
-@[derive category]
-def K_injective := full_subcategory (λ (K : homotopy_category C c), K.is_K_injective)
-/- It would be better to define it as a triangulated_subcategory, so that it
-inherits a triangulated structure -/
+
+abbreviation K_injective := full_subcategory (λ (K : homotopy_category C c), K.is_K_injective)
+
+instance is_K_injective_is_triangulated_subcategory :
+  triangulated.is_triangulated_subcategory (λ (K : homotopy_category C (complex_shape.up ℤ)), K.is_K_injective) := sorry
 
 instance K_injective_is_K_injective (K : K_injective C c) : K.obj.is_K_injective := K.2
 
-def K_injective.ι : K_injective C c ⥤ homotopy_category C c :=
+--instance : pretriangulated (K_injective C (complex_shape.up ℤ)) := infer_instance
+
+abbreviation K_injective.ι : K_injective C c ⥤ homotopy_category C c :=
 full_subcategory_inclusion _
 
 end homotopy_category
@@ -191,6 +194,14 @@ variable {C}
 def Φ : localizor_morphism (W C) (triangulated.subcategory.W (homotopy_category.acyclic C)) :=
 { functor := K_injective.ι _ _,
   mapW := λ X Y f hf, hf, }
+
+instance Φ_functor_has_comm_shift :
+  (Φ : localizor_morphism (W C) _).functor.has_comm_shift ℤ :=
+by { dsimp only [Φ], apply_instance, }
+
+instance Φ_functor_is_triangulated :
+  (Φ : localizor_morphism (W C) _).functor.is_triangulated :=
+by { dsimp only [Φ], apply_instance, }
 
 end K_injective
 
@@ -300,7 +311,7 @@ begin
     derived_category.Qh.map (f ≫ X₂.hom.f),
   obtain ⟨f', hf'⟩ := (derived_category.Qh_map_bijective_of_is_K_injective _ _).2 f'',
   refine ⟨f', (derived_category.Qh_map_bijective_of_is_K_injective _ _).1 _⟩,
-  dsimp [Φ, ι] at hf' ⊢,
+  dsimp [Φ] at hf' ⊢,
   simp only [functor.map_comp, hf', f'', is_iso.hom_inv_id_assoc],
 end
 
@@ -321,8 +332,6 @@ instance (Y : homotopy_category C (complex_shape.up ℤ)) :
   { ext, exact hg, },
 end⟩⟩
 
-example : ℕ := 42
-
 instance Φ_is_localization_equivalence : (Φ : localizor_morphism (W C) _).is_localization_equivalence :=
 begin
   rw localizor_morphism.is_localization_equivalence.iff_is_localization Φ
@@ -340,6 +349,10 @@ lemma right_derivability_structure :
     obtain ⟨f', fac⟩ := K_injective.lift_map f X₁ X₂,
     exact ⟨X₁, X₂, f', fac⟩,
   end, }
+
+instance Φ_functor_comp_Qh_ess_surj_on_dist_triang : (Φ.functor ⋙
+  derived_category.Qh : _ ⥤ derived_category C).ess_surj_on_dist_triang :=
+K_injective.right_derivability_structure.Φ_functor_comp_L_ess_surj_on_dist_triang _
 
 section
 
@@ -364,6 +377,20 @@ instance (K : homotopy_category C (complex_shape.up ℤ)) [K.is_K_injective] :
   is_iso ((F.right_derived_functor_α derived_category.Qh
     (triangulated.subcategory.W (acyclic C))).app K) :=
 is_iso_app _ _ _ _
+
+section
+
+variables [has_zero_object D] [has_shift D ℤ] [preadditive D]
+  [∀ (n : ℤ), (shift_functor D n).additive] [pretriangulated D]
+  [F.has_comm_shift ℤ] [functor.is_triangulated F]
+
+instance right_derived_functor_is_triangulated :
+  (F.right_derived_functor derived_category.Qh
+    (triangulated.subcategory.W (acyclic C))).is_triangulated :=
+right_derivability_structure.basic.derived_functor_is_triangulated'
+    K_injective.right_derivability_structure F derived_category.Qh (W_inverts _)
+
+end
 
 end
 

@@ -26,12 +26,30 @@ variables {C₀ C H D : Type*} [category C₀] [category C] [category D] [catego
   [∀ (n : ℤ ), (shift_functor D n).additive]
   [L.is_localization W]
   [pretriangulated C₀] [pretriangulated C] [pretriangulated H] [pretriangulated D]
-  [functor.ess_surj_on_dist_triang (Φ.functor ⋙ L)]
   [functor.is_triangulated F] [functor.is_triangulated Φ.functor]
 
 namespace basic
 
-include β hF
+include β
+
+lemma Φ_functor_comp_L_ess_surj_on_dist_triang [L.ess_surj_on_dist_triang] [L.is_triangulated]:
+  (Φ.functor ⋙ L).ess_surj_on_dist_triang :=
+⟨λ T hT, begin
+  obtain ⟨T', hT', ⟨e⟩⟩ := functor.ess_surj_on_dist_triang.condition L T hT,
+  obtain ⟨X₁, X₂, f', fac⟩ := β.nonempty_arrow_right_resolution T'.mor₁,
+  obtain ⟨X₃, g, h, mem⟩ := pretriangulated.distinguished_cocone_triangle _ _ f',
+  haveI : is_iso (L.map X₁.hom.f) := localization.inverts L W _ X₁.hom.hf,
+  haveI : is_iso (L.map X₂.hom.f) := localization.inverts L W _ X₂.hom.hf,
+  refine ⟨_, mem, ⟨iso.symm _ ≪≫ e⟩⟩,
+  refine pretriangulated.iso_triangle_of_distinguished_of_is_iso₁₂ _ _
+    (L.map_distinguished _ hT') ((Φ.functor ⋙ L).map_distinguished _ mem)
+      (as_iso (L.map X₁.hom.f)) (as_iso (L.map X₂.hom.f))
+      (by { dsimp, simp only [← L.map_comp, fac]}),
+end⟩
+
+variable [functor.ess_surj_on_dist_triang (Φ.functor ⋙ L)]
+
+include hF
 
 lemma derived_functor_is_triangulated' [F.has_right_derived_functor W] :
   (F.right_derived_functor L W).is_triangulated :=
