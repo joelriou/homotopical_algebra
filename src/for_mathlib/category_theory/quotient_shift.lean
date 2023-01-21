@@ -141,7 +141,7 @@ quotient.nat_trans_ext _ _ (λ X, begin
   { apply eq_to_hom_map, },
 end)
 
-@[protected, simps]
+@[protected]
 def shift : has_shift (quotient r) A :=
 has_shift_mk _ _
 { F := quotient.shift_functor h,
@@ -174,6 +174,90 @@ def functor_comm_shift :
       iso.inv_hom_id_app, functor.map_id],
     refl,
   end, }
+
+section
+
+variables
+  {D : Type*} [category D]
+  {F : C ⥤ D} {F' : quotient r ⥤ D} (e : functor r ⋙ F' ≅ F)
+  {B : Type*} [add_monoid B] [has_shift C B] [has_shift D B]
+  [has_shift (quotient r) B] [(functor r).has_comm_shift B]
+  [F.has_comm_shift B]
+
+def comm_shift_iso_of_fac (a : B) :
+  shift_functor (quotient r) a ⋙ F' ≅ F' ⋙ shift_functor D a :=
+lift_nat_iso _ _ ((functor.associator _ _ _).symm ≪≫
+    iso_whisker_right ((functor r).comm_shift_iso a).symm F' ≪≫
+    functor.associator _ _ _ ≪≫ iso_whisker_left _ e ≪≫
+    F.comm_shift_iso a ≪≫ iso_whisker_right e.symm _ ≪≫ functor.associator _ _ _)
+
+@[simp]
+lemma comm_shift_iso_of_fac_hom_app (a : B) (X : C) :
+  (comm_shift_iso_of_fac e a).hom.app ((functor r).obj X) =
+    F'.map (((functor r).comm_shift_iso a).inv.app X) ≫
+    e.hom.app ((shift_functor C a).obj X) ≫
+    (F.comm_shift_iso a).hom.app X ≫
+    (shift_functor D a).map (e.inv.app X) :=
+begin
+  dsimp only [comm_shift_iso_of_fac],
+  simp only [lift_nat_iso_hom, iso.trans_hom, iso.symm_hom, iso_whisker_right_hom,
+    iso_whisker_left_hom, lift_nat_trans_app, nat_trans.comp_app,
+    functor.associator_inv_app, whisker_right_app, functor.associator_hom_app,
+    whisker_left_app, comp_id, id_comp],
+end
+
+@[simp]
+lemma comm_shift_iso_of_fac_inv_app (a : B) (X : C) :
+  (comm_shift_iso_of_fac e a).inv.app ((functor r).obj X) =
+    (shift_functor D a).map (e.hom.app X) ≫
+    (F.comm_shift_iso a).inv.app X ≫
+    e.inv.app ((shift_functor C a).obj X) ≫
+    F'.map (((functor r).comm_shift_iso a).hom.app X) :=
+begin
+  dsimp only [comm_shift_iso_of_fac],
+  simp only [lift_nat_iso_inv, iso.trans_inv, iso_whisker_right_inv, iso.symm_inv, assoc,
+    iso_whisker_left_inv, lift_nat_trans_app, nat_trans.comp_app,
+    functor.associator_inv_app, whisker_right_app, whisker_left_app,
+    functor.associator_hom_app, comp_id, id_comp],
+end
+
+variable (B)
+
+def has_comm_shift : F'.has_comm_shift B :=
+{ iso := λ a, comm_shift_iso_of_fac e a,
+  iso_zero := begin
+    ext1,
+    refine nat_trans_ext _ _ (λ X, _),
+    simp only [comm_shift_iso_of_fac_hom_app, functor.comm_shift.unit_hom_app,
+      functor.comm_shift_iso_zero, functor.comm_shift.unit_inv_app,
+      F'.map_comp, assoc, ← e.hom.naturality_assoc, functor.comp_map],
+    nth_rewrite 1 ← functor.map_comp_assoc,
+    erw [← functor.map_comp, iso.inv_hom_id_app, (functor r).map_id, F'.map_id, id_comp,
+      ← nat_trans.naturality],
+    dsimp only [functor.id],
+    rw e.hom_inv_id_app_assoc,
+  end,
+  iso_add := λ a b, begin
+    ext1,
+    refine nat_trans_ext _ _ (λ X, _),
+    simp only [functor.comm_shift.add_hom_app, assoc, functor.comm_shift_iso_add,
+      comm_shift_iso_of_fac_hom_app, functor.map_comp, functor.comm_shift.add_inv_app],
+    erw [← nat_trans.naturality_assoc, ← nat_trans.naturality_assoc,
+      comm_shift_iso_of_fac_hom_app, assoc, assoc, assoc],
+    dsimp only [functor.comp_map],
+    nth_rewrite 3 ← functor.map_comp_assoc,
+    erw [← functor.map_comp, iso.inv_hom_id_app, (functor r).map_id, F'.map_id, id_comp],
+    nth_rewrite 4 ← functor.map_comp_assoc,
+    erw [e.inv_hom_id_app, functor.map_id, id_comp, (shift_functor_add D a b).inv.naturality],
+    refl,
+  end, }
+
+instance lift_has_comm_shift
+ (hF : ∀ (x y : C) (f₁ f₂ : x ⟶ y), r f₁ f₂ → F.map f₁ = F.map f₂) :
+  (lift r F hF).has_comm_shift B :=
+has_comm_shift (lift.is_lift r F hF) B
+
+end
 
 end quotient
 
