@@ -8,6 +8,14 @@ open_locale zero_object
 
 namespace category_theory
 
+instance ess_surj_comp {C₁ C₂ C₃ : Type*} [category C₁] [category C₂] [category C₃] (F : C₁ ⥤ C₂)
+  [ess_surj F] (G : C₂ ⥤ C₃) [ess_surj G] : ess_surj (F ⋙ G) :=
+⟨λ Z, ⟨_, ⟨G.map_iso (F.obj_obj_preimage_iso (G.obj_preimage Z)) ≪≫ G.obj_obj_preimage_iso Z⟩⟩⟩
+
+instance ess_surj_Q {C : Type*} [category C] (W : morphism_property C) :
+  ess_surj (W.Q) :=
+localization.ess_surj W.Q W
+
 lemma full_of_comp_ess_surj {C D E : Type*} [category C] [category D] [category E]
   (F : C ⥤ D) (G : D ⥤ E) [ess_surj F]
   (h : ∀ (X Y : C), function.surjective (λ (f : F.obj X ⟶ F.obj Y), G.map f)) : full G :=
@@ -399,6 +407,9 @@ begin
   exact equivalence.of_fully_faithfully_ess_surj _
 end
 
+instance : ess_surj (Qh : _ ⥤ derived_category.plus C) :=
+ess_surj.of_iso (L_iso C)
+
 end Qh_is_localization
 
 instance Qh_is_localization :
@@ -413,6 +424,13 @@ begin
   dsimp only [functor.as_equivalence],
   exact localization.lifting.iso _ (subcategory.W (homotopy_category.plus.acyclic C)) _ _,
 end
+
+def single_functor (n : ℤ) : C ⥤ derived_category.plus C :=
+full_subcategory.lift _ (derived_category.single_functor C n)
+  (λ X, ⟨n, infer_instance⟩)
+
+def homology_functor (n : ℤ) : derived_category.plus C ⥤ C :=
+derived_category.plus.ι ⋙ derived_category.homology_functor C n
 
 end plus
 

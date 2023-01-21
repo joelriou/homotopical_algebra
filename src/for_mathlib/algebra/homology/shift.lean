@@ -133,6 +133,16 @@ begin
     homological_complex.id_f, id_comp],
 end
 
+lemma shift_functor_add_eq (a b : ℤ) :
+  category_theory.shift_functor_add (cochain_complex C ℤ) a b =
+    (shift_functor_add' C a b _ rfl).symm :=
+begin
+  ext1,
+  rw ← shift_functor_add'_eq,
+  dsimp [category_theory.shift_functor_add'],
+  rw id_comp,
+end
+
 lemma shift_functor_zero_eq  :
   (category_theory.shift_functor_zero (cochain_complex C ℤ) ℤ) =
     (shift_functor_zero' C 0 rfl) :=
@@ -143,5 +153,36 @@ begin
   ext1,
   refl,
 end
+
+variables {C} {D : Type*} [category D] (F : C ⥤ D) [preadditive D] [functor.additive F]
+
+def map_cochain_complex_shift_iso (n : ℤ) :
+  shift_functor C n ⋙ F.map_homological_complex (complex_shape.up ℤ) ≅
+    F.map_homological_complex (complex_shape.up ℤ) ⋙ shift_functor D n :=
+nat_iso.of_components (λ K, hom.iso_of_components (λ i, iso.refl _)
+  (λ i j hij, by { dsimp, rw [id_comp, comp_id, functor.map_zsmul], })) (by tidy)
+
+instance map_cochain_complex_has_comm_shift :
+  (functor.map_homological_complex F (complex_shape.up ℤ)).has_comm_shift ℤ :=
+{ iso := λ n, map_cochain_complex_shift_iso F n,
+  iso_zero := begin
+    ext K i,
+    rw [functor.comm_shift.unit_hom_app, comp_f,
+      functor.map_homological_complex_map_f, shift_functor_zero_eq,
+      shift_functor_zero_eq,
+      shift_functor_zero'_hom_app_f, shift_functor_zero'_inv_app_f],
+    dsimp [X_iso_of_eq],
+    simpa only [eq_to_hom_map, eq_to_hom_trans],
+  end,
+  iso_add := λ a b, begin
+    ext K i,
+    simp only [functor.comm_shift.add_hom_app, comp_f, iso.symm_inv,
+      functor.map_homological_complex_map_f, shift_functor_add_eq, iso.symm_hom,
+        shift_functor_add'_inv_app_f, shift_functor_add'_hom_app_f,
+        shift_functor_map_f'],
+    dsimp [map_cochain_complex_shift_iso, iso.refl,
+      X_iso_of_eq],
+    erw [eq_to_hom_map, id_comp, id_comp, eq_to_hom_trans, eq_to_hom_refl],
+  end, }
 
 end cochain_complex
