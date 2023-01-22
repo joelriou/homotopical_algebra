@@ -449,6 +449,9 @@ derived_category.plus.ι ⋙ derived_category.homology_functor C n
 instance homology_functor_additive (n : ℤ) : (homology_functor C n).additive :=
 by { dsimp only [homology_functor], apply_instance, }
 
+instance homology_functor_is_homological (n : ℤ) : (homology_functor C n).is_homological :=
+by { dsimp only [homology_functor], apply_instance, }
+
 end plus
 
 end derived_category

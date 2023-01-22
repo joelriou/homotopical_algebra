@@ -44,6 +44,19 @@ nat_iso.of_components (F.single_comp_map_homological_complex_app c n)
   { simp only [dif_neg h, F.map_zero, zero_comp, comp_zero], },
 end)
 
+variable {c}
+
+lemma _root_.homotopy_category_quotient_map_functor_map_homological_complex
+  {K L : homological_complex C c} (f : K ⟶ L) (F : C ⥤ D) [F.additive] :
+  (homotopy_category.quotient D c).map ((F.map_homological_complex c).map f) =
+    (map_homotopy_category c F).map ((homotopy_category.quotient C c).map f) :=
+begin
+  apply homotopy_category.eq_of_homotopy,
+  apply F.map_homotopy,
+  apply homotopy_category.homotopy_of_eq,
+  simp only [homotopy_category.quotient_map_out],
+end
+
 end
 
 instance map_is_strictly_ge (X : cochain_complex C ℤ) (n : ℤ) [X.is_strictly_ge n] :
@@ -73,6 +86,28 @@ nat_iso.of_components (λ K, iso.refl _)
   simp only [homotopy_category.quotient_map_out],
 end)
 
+instance map_homotopy_category_has_comm_shift :
+  (functor.map_homotopy_category (complex_shape.up ℤ) F).has_comm_shift ℤ :=
+@quotient.has_comm_shift _ _ _ _ _ _ _ F.map_homotopy_category_factors ℤ
+  _ _ _ (infer_instance : has_shift (homotopy_category C (complex_shape.up ℤ)) ℤ)
+  (infer_instance : (homotopy_category.quotient _ _).has_comm_shift ℤ) _
+
+instance : nat_trans.respects_comm_shift F.map_homotopy_category_factors.hom ℤ :=
+⟨λ n, begin
+  ext K,
+  dsimp only [map_homotopy_category_factors, nat_iso.of_components, whisker_right,
+    nat_trans.comp_app, iso.refl, whisker_left],
+  erw [functor.map_id, comp_id, id_comp],
+  apply homotopy_category.eq_of_homotopy,
+  erw [id_comp, id_comp, id_comp, id_comp, id_comp, id_comp, id_comp, id_comp,
+    comp_id, comp_id, comp_id],
+  apply homotopy_category.homotopy_of_eq,
+  simp only [functor.map_comp, homotopy_category.quotient_map_out,
+    homotopy_category_quotient_map_functor_map_homological_complex, iso.symm_hom,
+    ← functor.map_comp_assoc],
+  erw [← functor.map_comp, iso.hom_inv_id_app, functor.map_id, id_comp],
+end⟩
+
 def map_homotopy_category_plus : homotopy_category.plus C ⥤ homotopy_category.plus D :=
 full_subcategory.lift _ (homotopy_category.plus.ι ⋙ functor.map_homotopy_category _ F)
   (λ K, cochain_complex.is_plus.map K.2 F)
@@ -82,14 +117,22 @@ def map_homotopy_category_plus_factors :
     homotopy_category.plus.ι ⋙ functor.map_homotopy_category _ F :=
 full_subcategory.lift_comp_inclusion _ _ _
 
-instance map_homotopy_category_has_comm_shift :
-  (functor.map_homotopy_category (complex_shape.up ℤ) F).has_comm_shift ℤ :=
-@quotient.has_comm_shift _ _ _ _ _ _ _ F.map_homotopy_category_factors ℤ
-  _ _ _ (infer_instance : has_shift (homotopy_category C (complex_shape.up ℤ)) ℤ)
-  (infer_instance : (homotopy_category.quotient _ _).has_comm_shift ℤ) _
 
 instance map_homotopy_category_is_triangulated :
-  (map_homotopy_category (complex_shape.up ℤ) F).is_triangulated := sorry
+  (map_homotopy_category (complex_shape.up ℤ) F).is_triangulated :=
+⟨λ T hT, begin
+  rw homotopy_category.triangle_distinguished_iff at hT ⊢,
+  obtain ⟨K, L, f, ⟨e⟩⟩ := hT,
+  exact ⟨_, _, (F.map_homological_complex _).map f,
+    ⟨(map_homotopy_category (complex_shape.up ℤ) F).map_triangle.map_iso e ≪≫
+    (map_triangle_comp (homotopy_category.quotient C (complex_shape.up ℤ))
+    (map_homotopy_category (complex_shape.up ℤ) F)).symm.app _ ≪≫
+    (map_triangle_nat_iso F.map_homotopy_category_factors).app _ ≪≫
+    (map_triangle_comp (F.map_homological_complex (complex_shape.up ℤ))
+    (homotopy_category.quotient D (complex_shape.up ℤ))).app _ ≪≫
+    (homotopy_category.quotient D (complex_shape.up ℤ)).map_triangle.map_iso
+      (cochain_complex.mapping_cone.triangle_map_iso f F)⟩⟩,
+end⟩
 
 instance map_homotopy_category_plus_has_comm_shift :
   (functor.map_homotopy_category_plus F).has_comm_shift ℤ :=
@@ -127,16 +170,17 @@ begin
   apply_instance,
 end
 
+instance abelian_right_derived_functor_additive (n : ℕ)
+  [F.right_derived_functor_plus.is_triangulated] :
+  (F.abelian_right_derived_functor n).additive :=
+by { dsimp only [abelian_right_derived_functor], apply_instance, }
+
 omit hF
 
 instance (X : homotopy_category.plus C) [X.obj.as.is_termwise_injective]
   [enough_injectives C] :
   is_iso (F.right_derived_functor_plus_αh.app X) :=
 by { dsimp only [right_derived_functor_plus_αh], apply_instance, }
-
-instance abelian_right_derived_functor_additive (n : ℕ) [enough_injectives C] :
-  (F.abelian_right_derived_functor n).additive :=
-by { dsimp only [abelian_right_derived_functor], apply_instance, }
 
 def map_homotopy_plus_single_functor_homology_iso_zero :
   F ≅ homotopy_category.plus.single_functor C 0 ⋙ F.map_homotopy_category_plus ⋙
@@ -190,6 +234,28 @@ begin
   rw abelian_right_derived_functor_α_app,
   apply_instance,
 end
+
+namespace abelian_right_derived_functor_homology_sequence
+
+variables {S : short_complex C} (h : S.short_exact)
+
+variable [F.right_derived_functor_plus.is_triangulated]
+
+variable (n : ℕ )
+
+include h
+
+lemma ex₂ (n : ℕ) :
+  (short_complex.mk ((F.abelian_right_derived_functor n).map S.f)
+    ((F.abelian_right_derived_functor n).map S.g)
+    (by { rw [← functor.map_comp, S.zero, functor.map_zero], })).exact :=
+begin
+  haveI : (derived_category.plus.homology_functor D (n : ℤ)).is_homological := infer_instance,
+  --have h := derived_category.triangle_of_ses_dist,
+  sorry,
+end
+
+end abelian_right_derived_functor_homology_sequence
 
 -- TODO:
 -- * show that total_right_derived_functor is a triangulated functor

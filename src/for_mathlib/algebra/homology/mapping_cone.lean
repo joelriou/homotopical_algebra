@@ -859,6 +859,41 @@ end
 
 end
 
+example : ℕ := 42
+
+section
+
+variables {K L : cochain_complex C ℤ} (f : K ⟶ L) {D : Type*} [category D] [preadditive D]
+  [∀ p, has_binary_biproduct (K.X (p+1)) (L.X p)] (Φ : C ⥤ D) [functor.additive Φ]
+  [∀ p, has_binary_biproduct (((Φ.map_homological_complex (complex_shape.up ℤ)).obj K).X (p + 1))
+    (((Φ.map_homological_complex (complex_shape.up ℤ)).obj  L).X p)]
+
+@[simps]
+def map_iso : (Φ.map_homological_complex _).obj (mapping_cone f) ≅
+  mapping_cone ((Φ.map_homological_complex _).map f) :=
+{ hom := mapping_cone.lift _ (cocycle.map (mapping_cone.fst f) Φ)
+    ((mapping_cone.snd f).map Φ) (by simp),
+  inv := mapping_cone.desc _ ((mapping_cone.inl f).map Φ)
+      ((Φ.map_homological_complex _).map (mapping_cone.inr f)) (by simp),
+  hom_inv_id' := begin
+    ext n,
+    simpa only [homological_complex.comp_f, homological_complex.id_f,
+      lift_desc_f _ _ _ _ _ _ _ n (n+1) rfl, cocycle.map_coe, cochain.map_v,
+      functor.map_homological_complex_map_f, ← Φ.map_comp, ← Φ.map_add,
+      mapping_cone.id, Φ.map_id],
+  end,
+  inv_hom_id' := hom_complex.cochain.of_hom_injective begin
+    ext n,
+    simp only [cochain.of_hom_comp, cochain.comp_zero_cochain, cochain.of_hom_v,
+      homological_complex.id_f, from_ext_iff _ _ (n+1) rfl, to_ext_iff _ _ (n+1) rfl,
+      assoc, lift_fst_f, cocycle.map_coe, cochain.map_v, inl_desc_v_assoc, id_comp,
+      inl_fst, inr_desc_f_assoc, functor.map_homological_complex_map_f, inr_fst,
+      lift_snd_f, inl_snd, inr_snd, ← Φ.map_comp, Φ.map_zero, Φ.map_id],
+    tauto,
+  end, }
+
+end
+
 end mapping_cone
 
 end preadditive

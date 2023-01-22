@@ -813,6 +813,99 @@ lemma lift_to_kernel_comp (z : cocycle L G n) {i : F ⟶ G} {f : G ⟶ K} (hip :
 
 end cocycle
 
+section
+
+variables {n} {D : Type*} [category D] [preadditive D] (z z' : cochain K L n) (f : K ⟶ L)
+  (Φ : C ⥤ D) [functor.additive Φ]
+
+namespace cochain
+
+def map : cochain ((functor.map_homological_complex Φ _).obj K)
+  ((functor.map_homological_complex Φ _).obj L) n :=
+cochain.mk (λ p q hpq, Φ.map (z.v p q hpq))
+
+@[simp]
+lemma map_v (p q : ℤ) (hpq : q=p+n) :
+  (z.map Φ).v p q hpq = Φ.map (z.v p q hpq) := rfl
+
+@[simp]
+lemma map_add : (z+z').map Φ = z.map Φ + z'.map Φ := by tidy
+
+@[simp]
+lemma map_neg : (-z).map Φ = -z.map Φ := by tidy
+
+@[simp]
+lemma map_sub : (z-z').map Φ = z.map Φ - z'.map Φ := by tidy
+
+variables (K L n)
+
+@[simp]
+lemma map_zero : (0 : cochain K L n).map Φ = 0 := by tidy
+
+@[simp]
+lemma map_comp {n₁ n₂ n₁₂ : ℤ} (z₁ : cochain F G n₁) (z₂ : cochain G K n₂) (h : n₁₂ = n₁ + n₂)
+  (Φ : C ⥤ D) [functor.additive Φ] :
+  (z₁.comp z₂ h).map Φ = (z₁.map Φ).comp (z₂.map Φ) h :=
+begin
+  ext p q hpq,
+  simp only [map_v, comp_v _ _ h p _ q rfl (by linarith), Φ.map_comp],
+end
+
+@[simp]
+lemma map_of_hom : (cochain.of_hom f).map Φ =
+  cochain.of_hom ((Φ.map_homological_complex _).map f) := by tidy
+
+end cochain
+
+variables (n m)
+
+@[simp]
+lemma δ_map : δ n m (z.map Φ) = (δ n m z).map Φ :=
+begin
+  by_cases hnm : n+1=m,
+  { ext p q hpq,
+    simp only [δ_v n m hnm _ p q hpq (q-1) (p+1) rfl rfl, cochain.map_v],
+    simp only [functor.map_homological_complex_obj_d, ε_succ, neg_smul, functor.map_add,
+      functor.map_comp, functor.map_neg, add_right_inj, neg_inj, Φ.map_zsmul], },
+  { simp only [δ_shape _ _ hnm, cochain.map_zero], },
+end
+
+end
+
+namespace cocycle
+
+variables {n} {D : Type*} [category D] [preadditive D] (z z' : cocycle K L n) (f : K ⟶ L)
+  (Φ : C ⥤ D) [functor.additive Φ]
+
+@[simps]
+def map : cocycle ((functor.map_homological_complex Φ _).obj K)
+  ((functor.map_homological_complex Φ _).obj L) n :=
+cocycle.mk ((z : cochain K L n).map Φ) (n+1) rfl (by simp)
+
+@[simp]
+lemma map_add : cocycle.map (z+z') Φ = cocycle.map z Φ + cocycle.map z' Φ :=
+by { ext1, simp, }
+
+@[simp]
+lemma map_neg : cocycle.map (-z) Φ = -cocycle.map z Φ :=
+by { ext1, simp, }
+
+@[simp]
+lemma map_sub : cocycle.map (z-z') Φ = cocycle.map z Φ - cocycle.map z' Φ :=
+by { ext1, simp, }
+
+@[simp]
+lemma map_of_hom : cocycle.map (cocycle.of_hom f) Φ =
+  cocycle.of_hom ((Φ.map_homological_complex _).map f) := by tidy
+
+variables (K L n)
+
+@[simp]
+lemma map_zero : cocycle.map (0 : cocycle K L n) Φ = 0 :=
+by { ext1, simp, }
+
+end cocycle
+
 end hom_complex
 
 end cochain_complex

@@ -50,7 +50,6 @@ variables {C : Type*} [category C] [preadditive C] [has_zero_object C]
 
 namespace cochain_complex
 
-
 @[simps mor₁ mor₂ mor₃]
 def mapping_cone.triangle : triangle (cochain_complex C ℤ) :=
 triangle.mk φ (mapping_cone.inr φ) (mapping_cone.δ φ)
@@ -69,6 +68,34 @@ def mapping_cone.triangle_map : mapping_cone.triangle f₁ ⟶ mapping_cone.tria
   comm₁' := comm,
   comm₂' := mapping_cone.inr_comp_map _ _ _ _ comm,
   comm₃' := (mapping_cone.map_comp_δ _ _ _ _ comm).symm, }
+
+@[simps]
+def mapping_cone.triangle_map_iso {D : Type*} [category D] [preadditive D] [has_zero_object D]
+  [has_binary_biproducts D]
+  (Φ : C ⥤ D) [Φ.additive]:
+  (functor.map_triangle (Φ.map_homological_complex (complex_shape.up ℤ))).obj
+    (mapping_cone.triangle φ) ≅ mapping_cone.triangle ((Φ.map_homological_complex _).map φ) :=
+begin
+  refine triangle.mk_iso _ _ (iso.refl _) (iso.refl _) (mapping_cone.map_iso φ Φ) _ _ _,
+  { tidy, },
+  { ext n,
+    rw mapping_cone.to_ext_iff _ _ (n+1) rfl,
+    dsimp,
+    simp only [assoc, mapping_cone.lift_fst_f, hom_complex.cocycle.map_coe,
+      hom_complex.cochain.map_v, id_comp, mapping_cone.inr_fst,
+      mapping_cone.lift_snd_f, mapping_cone.inr_snd, ← Φ.map_comp, Φ.map_zero, Φ.map_id],
+    tauto, },
+  { ext n,
+    dsimp [mapping_cone.δ, mapping_cone.triangle],
+    simp only [assoc, hom_complex.cochain.right_shift_v _ 1 0
+        (zero_add 1).symm n n (add_zero n).symm _ rfl,
+      shift_functor_obj_X_iso, hom_complex.cochain.neg_v, homological_complex.X_iso_of_eq_refl,
+      preadditive.neg_comp, functor.map_neg, functor.map_comp, assoc, preadditive.comp_neg,
+      mapping_cone.lift_fst_f_assoc, hom_complex.cocycle.map_coe,
+      hom_complex.cochain.map_v, neg_inj],
+    dsimp [iso.refl],
+    erw [Φ.map_id, id_comp, comp_id, comp_id], },
+end
 
 end
 
