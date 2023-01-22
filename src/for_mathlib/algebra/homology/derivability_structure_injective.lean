@@ -40,6 +40,13 @@ instance zero_is_termwise_injective :
 ⟨λ n, injective.of_iso (homological_complex.eval C c n).map_zero_object.symm
   infer_instance⟩
 
+instance single_is_termwise_injective (X : C) (n : ι) [decidable_eq ι] [injective X]:
+  ((homological_complex.single C c n).obj X).is_termwise_injective :=
+⟨λ i, begin
+  dsimp,
+  split_ifs; apply_instance,
+end⟩
+
 end homological_complex
 
 namespace cochain_complex

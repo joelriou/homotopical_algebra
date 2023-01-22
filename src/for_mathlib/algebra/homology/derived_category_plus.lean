@@ -246,6 +246,21 @@ lemma mem_W_iff_ι_map_mem {K L : homotopy_category.plus C} (f : K ⟶ L) :
   subcategory.W (homotopy_category.plus.acyclic C) f :=
 by simpa only [homotopy_category.mem_acyclic_W_iff, homotopy_category.plus.mem_acyclic_W_iff]
 
+def single_functor (n : ℤ) : C ⥤ homotopy_category.plus C :=
+full_subcategory.lift _ (homological_complex.single C (complex_shape.up ℤ) n ⋙
+  homotopy_category.quotient _ _) (λ X, ⟨n, by { dsimp, apply_instance, }⟩)
+
+def single_functor_factors (n : ℤ) :
+  single_functor C n ⋙ homotopy_category.plus.ι ≅
+  (homological_complex.single C (complex_shape.up ℤ) n ⋙ homotopy_category.quotient _ _) :=
+full_subcategory.lift_comp_inclusion _ _ _
+
+instance single_functor_additive (n : ℤ) : (single_functor C n).additive :=
+⟨λ K L f₁ f₂, homotopy_category.plus.ι.map_injective begin
+  dsimp only [single_functor],
+  simp only [full_subcategory.lift_map, functor.map_add],
+end⟩
+
 end plus
 
 end homotopy_category
@@ -425,12 +440,14 @@ begin
   exact localization.lifting.iso _ (subcategory.W (homotopy_category.plus.acyclic C)) _ _,
 end
 
-def single_functor (n : ℤ) : C ⥤ derived_category.plus C :=
-full_subcategory.lift _ (derived_category.single_functor C n)
-  (λ X, ⟨n, infer_instance⟩)
+abbreviation single_functor (n : ℤ) : C ⥤ derived_category.plus C :=
+homotopy_category.plus.single_functor C n ⋙ derived_category.plus.Qh
 
 def homology_functor (n : ℤ) : derived_category.plus C ⥤ C :=
 derived_category.plus.ι ⋙ derived_category.homology_functor C n
+
+instance homology_functor_additive (n : ℤ) : (homology_functor C n).additive :=
+by { dsimp only [homology_functor], apply_instance, }
 
 end plus
 
