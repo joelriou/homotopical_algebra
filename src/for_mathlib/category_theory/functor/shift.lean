@@ -979,5 +979,4 @@ end has_comm_shift
 
 end functor
 
-
 end category_theory

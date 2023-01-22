@@ -1,4 +1,5 @@
 import for_mathlib.algebra.homology.derivability_structure_injective
+import for_mathlib.category_theory.abelian.extensions_derived_category
 
 noncomputable theory
 
@@ -13,9 +14,9 @@ namespace functor
 
 section
 
-variables {ι : Type*} (c : complex_shape ι) [decidable_eq ι] (n : ι)
+variables {ι : Type*} (c : complex_shape ι) (n : ι)
 
-def single_comp_map_homological_complex_app (X : C) :
+def single_comp_map_homological_complex_app [decidable_eq ι] (X : C) :
   (F.map_homological_complex c).obj ((homological_complex.single C c n).obj X) ≅
     (homological_complex.single D c n).obj (F.obj X) :=
 homological_complex.hom.iso_of_components
@@ -31,7 +32,7 @@ end)
   simp only [F.map_zero, zero_comp, comp_zero],
 end)
 
-def single_comp_map_homological_complex :
+def single_comp_map_homological_complex [decidable_eq ι] :
   homological_complex.single C c n ⋙ F.map_homological_complex c ≅
     F ⋙ homological_complex.single D c n :=
 nat_iso.of_components (F.single_comp_map_homological_complex_app c n)
@@ -163,19 +164,18 @@ def abelian_right_derived_functor (n : ℕ) : C ⥤ D :=
 derived_category.plus.single_functor C 0 ⋙ right_derived_functor_plus F ⋙
   derived_category.plus.homology_functor D (n : ℤ)
 
-instance single_functor_is_termwise_injective (X : C) (n : ℤ) [injective X] :
-  ((homotopy_category.plus.single_functor C n).obj X).obj.as.is_termwise_injective :=
-begin
-  change ((homological_complex.single C (complex_shape.up ℤ) n).obj X).is_termwise_injective,
-  apply_instance,
-end
-
 instance abelian_right_derived_functor_additive (n : ℕ)
   [F.right_derived_functor_plus.is_triangulated] :
   (F.abelian_right_derived_functor n).additive :=
 by { dsimp only [abelian_right_derived_functor], apply_instance, }
 
 omit hF
+instance single_functor_is_termwise_injective (X : C) (n : ℤ) [injective X] :
+  ((homotopy_category.plus.single_functor C n).obj X).obj.as.is_termwise_injective :=
+begin
+  change ((homological_complex.single C (complex_shape.up ℤ) n).obj X).is_termwise_injective,
+  apply_instance,
+end
 
 instance (X : homotopy_category.plus C) [X.obj.as.is_termwise_injective]
   [enough_injectives C] :
@@ -235,25 +235,80 @@ begin
   apply_instance,
 end
 
+lemma abelian_right_derived_functor_obj_is_zero_of_injective'
+  (X : C) [injective X] [enough_injectives C] (n : ℕ) (hn : 1 ≤ n) :
+  limits.is_zero ((F.abelian_right_derived_functor n).obj X) :=
+begin
+  refine is_zero.of_iso _ (((derived_category.plus.homology_functor D n).map_iso
+    (as_iso (F.right_derived_functor_plus_αh.app
+      ((homotopy_category.plus.single_functor C 0).obj X)))).symm),
+  have h : limits.is_zero ((derived_category.homology_functor D n).obj
+    ((derived_category.single_functor D 0).obj (F.obj X))),
+  { apply derived_category.is_le.is_zero _ 0,
+    rw ← int.coe_nat_le_coe_nat_iff at hn,
+    rw [algebra_map.coe_one] at hn,
+    linarith, },
+  refine is_zero.of_iso h ((derived_category.homology_functor D ↑n).map_iso _),
+  sorry,
+end
+
+lemma abelian_right_derived_functor_obj_is_zero_of_injective (X : C)
+  [injective X] [enough_injectives C] (n : ℕ) :
+  limits.is_zero ((F.abelian_right_derived_functor (n+1)).obj X) :=
+abelian_right_derived_functor_obj_is_zero_of_injective' _ _ _ (by linarith)
+
 namespace abelian_right_derived_functor_homology_sequence
 
-variables {S : short_complex C} (h : S.short_exact)
+variables {S : short_complex C} (ex : S.short_exact) (n : ℕ )
+
+def triangle : pretriangulated.triangle (derived_category.plus D) :=
+F.right_derived_functor_plus.map_triangle.obj (derived_category.plus.triangle_of_ses
+  (short_complex.short_exact.map_of_exact ex (homological_complex.single C (complex_shape.up ℤ) 0))
+  (by { dsimp, exact ⟨0, infer_instance⟩, })
+  (by { dsimp, exact ⟨0, infer_instance⟩, })
+  (by { dsimp, exact ⟨0, infer_instance⟩, }))
+
+def triangle' : pretriangulated.triangle (derived_category D) :=
+derived_category.plus.ι.map_triangle.obj (triangle F ex)
 
 variable [F.right_derived_functor_plus.is_triangulated]
 
-variable (n : ℕ )
+lemma triangle_mem : (triangle F ex).distinguished :=
+F.right_derived_functor_plus.map_distinguished _
+  (derived_category.plus.triangle_of_ses_dist _ _ _ _)
 
-include h
+lemma triangle'_mem : (triangle' F ex).distinguished :=
+derived_category.plus.ι.map_distinguished _ (triangle_mem F ex)
 
 lemma ex₂ (n : ℕ) :
   (short_complex.mk ((F.abelian_right_derived_functor n).map S.f)
     ((F.abelian_right_derived_functor n).map S.g)
     (by { rw [← functor.map_comp, S.zero, functor.map_zero], })).exact :=
-begin
-  haveI : (derived_category.plus.homology_functor D (n : ℤ)).is_homological := infer_instance,
-  --have h := derived_category.triangle_of_ses_dist,
-  sorry,
-end
+derived_category.homology_sequence.ex₂ (triangle'_mem F ex) n
+
+def δ (n₀ n₁ : ℕ) (h : n₁ = n₀+1) :
+  (F.abelian_right_derived_functor n₀).obj S.X₃ ⟶ (F.abelian_right_derived_functor n₁).obj S.X₁ :=
+derived_category.homology_sequence.δ (triangle'_mem F ex) n₀ n₁ (by simp [h])
+
+@[simp, reassoc]
+lemma δ_comp (n₀ n₁ : ℕ) (h : n₁ = n₀+1) :
+  δ F ex n₀ n₁ h ≫ (F.abelian_right_derived_functor n₁).map S.f = 0 :=
+derived_category.homology_sequence.δ_comp (triangle'_mem F ex) n₀ n₁ (by simp [h])
+
+@[simp, reassoc]
+lemma comp_δ (n₀ n₁ : ℕ) (h : n₁ = n₀+1) :
+   (F.abelian_right_derived_functor n₀).map S.g ≫ δ F ex n₀ n₁ h = 0 :=
+derived_category.homology_sequence.comp_δ (triangle'_mem F ex) n₀ n₁ (by simp [h])
+
+lemma ex₃ (n₀ n₁ : ℕ) (h : n₁ = n₀+1) :
+  (short_complex.mk ((F.abelian_right_derived_functor n₀).map S.g) (δ F ex n₀ n₁ h)
+    (by simp)).exact :=
+derived_category.homology_sequence.ex₃ (triangle'_mem F ex) n₀ n₁ (by simp [h])
+
+lemma ex₁ (n₀ n₁ : ℕ) (h : n₁ = n₀+1) :
+  (short_complex.mk (δ F ex n₀ n₁ h) ((F.abelian_right_derived_functor n₁).map S.f)
+    (by simp)).exact :=
+derived_category.homology_sequence.ex₁ (triangle'_mem F ex) n₀ n₁ (by simp [h])
 
 end abelian_right_derived_functor_homology_sequence
 
@@ -264,5 +319,6 @@ end abelian_right_derived_functor_homology_sequence
 --      left exact, it is an isomorphism using an injective resolution
 
 end functor
+
 
 end category_theory

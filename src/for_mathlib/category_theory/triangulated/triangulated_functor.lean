@@ -33,8 +33,6 @@ def map_triangle : pretriangulated.triangle C ⥤ pretriangulated.triangle D :=
       simp only [functor.comp_map, ← F.map_comp_assoc, f.comm₃],
     end, }, }
 
-example : ℕ := 42
-
 instance [faithful F] : faithful F.map_triangle :=
 ⟨λ K L f₁ f₂ hf, begin
   ext; apply F.map_injective,
@@ -178,5 +176,34 @@ lemma is_triangulated.of_iso {G : C ⥤ D} (e : F ≅ G) [F.is_triangulated] [G.
   (F.map_distinguished _ hT) _ ((map_triangle_nat_iso e).symm.app T)⟩
 
 end functor
+
+namespace pretriangulated
+
+variables {C : Type*} [category C] [has_shift C ℤ] [preadditive C]
+  (S : set C) [S.is_stable_by_shift ℤ]
+
+variables (T : pretriangulated.triangle C)
+  (h₁ : T.obj₁ ∈ S) (h₂ : T.obj₂ ∈ S) (h₃ : T.obj₃ ∈ S)
+
+@[simps]
+def full_subcategory_lift_triangle :
+  pretriangulated.triangle (full_subcategory S) :=
+{ obj₁ := ⟨T.obj₁, h₁⟩,
+  obj₂ := ⟨T.obj₂, h₂⟩,
+  obj₃ := ⟨T.obj₃, h₃⟩,
+  mor₁ := T.mor₁,
+  mor₂ := T.mor₂,
+  mor₃ := T.mor₃, }
+
+def full_subcategory_lift_triangle_iso :
+  (full_subcategory_inclusion S).map_triangle.obj
+    (full_subcategory_lift_triangle S T h₁ h₂ h₃) ≅ T :=
+triangle.mk_iso _ _ (iso.refl _) (iso.refl _) (iso.refl _) (by tidy) (by tidy) begin
+  dsimp,
+  simp only [functor.map_id, comp_id, id_comp],
+  erw comp_id,
+end
+
+end pretriangulated
 
 end category_theory

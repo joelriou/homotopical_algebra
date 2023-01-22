@@ -87,11 +87,15 @@ namespace plus
 
 instance : pretriangulated (plus C) := infer_instance
 
+variable {C}
+
 def mk (K : derived_category C) (n : ℤ) [hn : K.is_ge n] :
   derived_category.plus C :=
 ⟨K, n, hn⟩
 
-variable {C}
+def mk' (K : derived_category C) (hK : K.is_plus) :
+  derived_category.plus C :=
+⟨K, hK⟩
 
 abbreviation ι : plus C ⥤ derived_category C :=
 full_subcategory_inclusion _
@@ -104,6 +108,14 @@ namespace cochain_complex
 
 def is_plus (K : cochain_complex C ℤ) : Prop :=
   ∃ (n : ℤ), K.is_strictly_ge n
+
+lemma is_plus.Q {K : cochain_complex C ℤ} (h : K.is_plus) :
+  (derived_category.Q.obj K).is_plus :=
+begin
+  obtain ⟨n, hn⟩ := h,
+  haveI := hn,
+  exact ⟨n, infer_instance⟩,
+end
 
 instance zero_is_strictly_ge (n : ℤ) : is_strictly_ge (0 : cochain_complex C ℤ) n :=
 ⟨λ k hk, is_zero.of_iso (is_zero_zero _)
@@ -451,6 +463,25 @@ by { dsimp only [homology_functor], apply_instance, }
 
 instance homology_functor_is_homological (n : ℤ) : (homology_functor C n).is_homological :=
 by { dsimp only [homology_functor], apply_instance, }
+
+variable {C}
+
+def triangle_of_ses {S : short_complex (cochain_complex C ℤ)} (ex : S.short_exact)
+  (h₁ : S.X₁.is_plus) (h₂ : S.X₂.is_plus) (h₃ : S.X₃.is_plus) :
+    pretriangulated.triangle (derived_category.plus C) :=
+pretriangulated.full_subcategory_lift_triangle _ (derived_category.triangle_of_ses ex)
+  h₁.Q h₂.Q h₃.Q
+
+lemma triangle_of_ses_dist {S : short_complex (cochain_complex C ℤ)} (ex : S.short_exact)
+  (h₁ : S.X₁.is_plus) (h₂ : S.X₂.is_plus) (h₃ : S.X₃.is_plus) :
+  triangle_of_ses ex h₁ h₂ h₃ ∈ dist_triang (derived_category.plus C) :=
+begin
+  change (full_subcategory_inclusion _).map_triangle.obj (triangle_of_ses ex h₁ h₂ h₃)
+    ∈ dist_triang (derived_category C),
+  refine pretriangulated.isomorphic_distinguished _ (derived_category.triangle_of_ses_dist ex) _
+    (pretriangulated.full_subcategory_lift_triangle_iso derived_category.is_plus
+    (derived_category.triangle_of_ses ex) _ _ _),
+end
 
 end plus
 
