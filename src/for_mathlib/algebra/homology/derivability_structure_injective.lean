@@ -221,7 +221,20 @@ localization.inverts derived_category.plus.Qh _ _ X.hom.hf
 
 lemma lift_map {Y₁ Y₂ : homotopy_category.plus C} (f : Y₁ ⟶ Y₂)
   (X₁ : Φ.right_resolution Y₁) (X₂ : Φ.right_resolution Y₂) :
-  ∃ (f' : X₁.right.obj ⟶ X₂.right.obj), X₁.hom.f ≫ Φ.functor.map f' = f ≫ X₂.hom.f := sorry
+  ∃ (f' : X₁.right.obj ⟶ X₂.right.obj), X₁.hom.f ≫ Φ.functor.map f' = f ≫ X₂.hom.f :=
+begin
+  haveI h : (Φ.functor.obj X₂.right.obj).obj.is_K_injective :=
+    termwise_injective.is_K_injective_of_termwise_injective_of_is_plus X₂.right.obj,
+  haveI : (homotopy_category.plus.ι.obj (Φ.induced_functor.obj X₂.right).obj).is_K_injective := h,
+  let f'' := inv (derived_category.plus.Qh.map (X₁.hom.f)) ≫
+    derived_category.plus.Qh.map (f ≫ X₂.hom.f),
+  obtain ⟨f', hf'⟩ := (derived_category.Qh_map_bijective_of_is_K_injective _ _).2 (derived_category.plus.ι.map f''),
+  refine ⟨f', (derived_category.Qh_map_bijective_of_is_K_injective _ _).1 _⟩,
+  dsimp only [Φ, f''] at hf' ⊢,
+  erw [functor.map_comp, hf'],
+  change derived_category.plus.ι.map (derived_category.plus.Qh.map X₁.hom.f) ≫ _ ≫ _ = _,
+  apply is_iso.hom_inv_id_assoc,
+end
 
 instance (Y : homotopy_category.plus C) :
   is_preconnected' (Φ.right_resolution Y) :=
