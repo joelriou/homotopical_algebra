@@ -168,9 +168,22 @@ functor.full_of_surjective _
 
 variable [enough_injectives C]
 
+lemma right_resolution_exists (Y : cochain_complex C ℤ)
+  (n : ℤ) [Y.is_strictly_ge n] :
+  ∃ (Z : cochain_complex C ℤ) (hZ : Z.is_strictly_ge n) (f : Y ⟶ Z)
+    (hf : quasi_iso f), Z.is_termwise_injective := sorry
+
 instance (Y : homotopy_category.plus C) :
   nonempty (Φ.right_resolution Y) :=
-sorry
+begin
+  obtain ⟨n, hn⟩ := Y.property,
+  haveI := hn,
+  obtain ⟨Z, hZ, f, hf, hZ'⟩ := right_resolution_exists Y.obj.as n,
+  exact ⟨localizor_morphism.right_resolution.mk Φ
+    ⟨⟨(homotopy_category.quotient _ _).obj Z, ⟨n, hZ⟩⟩, hZ'⟩
+    ((homotopy_category.quotient _ _).map f)
+    (by simpa only [mem_acyclic_W_iff, ← mem_quasi_isomorphisms_iff] using hf)⟩,
+end
 
 instance : ess_surj (Qh : _ ⥤ derived_category.plus C) :=
 ⟨λ Z, begin

@@ -7,8 +7,48 @@ open category_theory category_theory.category category_theory.limits
 
 namespace category_theory
 
+namespace short_complex
+
+variables {C : Type*} [category C] [preadditive C] [balanced C]
+
+lemma five_lemma.is_iso_τ₁ {S₁ S₂ : short_complex C} (f : S₁ ⟶ S₂)
+  (ex₁ : S₁.exact) (ex₂ : S₂.exact) [is_iso f.τ₂] [mono f.τ₃] [mono S₁.f] [mono S₂.f] :
+  is_iso f.τ₁ :=
+begin
+  refine ⟨⟨short_complex.exact.lift ex₁ (S₂.f ≫ inv f.τ₂) _, _, _⟩⟩,
+  { rw [← cancel_mono f.τ₃, assoc, assoc, ← f.comm₂₃, is_iso.inv_hom_id_assoc,
+    S₂.zero, zero_comp], },
+  { rw [← cancel_mono (S₁.f), assoc, short_complex.exact.lift_f, f.comm₁₂_assoc,
+      is_iso.hom_inv_id, comp_id, id_comp], },
+  { rw [← cancel_mono (S₂.f), assoc, f.comm₁₂, short_complex.exact.lift_f_assoc, assoc,
+    is_iso.inv_hom_id, comp_id, id_comp], },
+end
+
+end short_complex
+
 variables {C D : Type*} [category C] [category D] [abelian C] [abelian D]
   (F : C ⥤ D) [functor.additive F]
+
+namespace injective_embedding
+
+variables [enough_injectives C] (X : C)
+
+def short_complex : short_complex C :=
+short_complex.mk (injective.ι X) (cokernel.π (injective.ι X)) (by simp)
+
+instance injective_short_complex_X₂ : injective (short_complex X).X₂ :=
+by { dsimp [short_complex], apply_instance, }
+
+instance : mono (short_complex X).f :=
+by { dsimp [short_complex], apply_instance, }
+
+instance : epi (short_complex X).g :=
+by { dsimp [short_complex], apply_instance, }
+
+lemma short_exact : (short_complex X).short_exact :=
+short_complex.short_exact.of_g_is_cokernel (cokernel_is_cokernel _)
+
+end injective_embedding
 
 namespace functor
 
@@ -170,6 +210,7 @@ instance abelian_right_derived_functor_additive (n : ℕ)
 by { dsimp only [abelian_right_derived_functor], apply_instance, }
 
 omit hF
+
 instance single_functor_is_termwise_injective (X : C) (n : ℤ) [injective X] :
   ((homotopy_category.plus.single_functor C n).obj X).obj.as.is_termwise_injective :=
 begin
@@ -210,6 +251,22 @@ end
 
 include hF
 
+instance right_derived_functor_plus_obj_is_ge [enough_injectives C]
+  (X : derived_category.plus C) (n : ℤ) [X.obj.is_ge n] :
+  (F.right_derived_functor_plus.obj X).obj.is_ge n := sorry
+
+instance derived_category_plus_single_functor_obj_obj_is_ge (X : C) (n : ℤ) :
+  ((derived_category.plus.single_functor C n).obj X).obj.is_ge n :=
+begin
+  change ((derived_category.single_functor C n).obj X).is_ge n,
+  apply_instance,
+end
+
+--instance test [enough_injectives C] (X : C) [enough_injectives C]:
+--  (F.right_derived_functor_plus.obj
+--    ((derived_category.plus.single_functor C 0).obj X)).obj.is_ge 0 :=
+--infer_instance
+
 def abelian_right_derived_functor_α : F ⟶ F.abelian_right_derived_functor 0 :=
 begin
   refine _ ≫ whisker_right (whisker_left (homotopy_category.plus.single_functor C 0)
@@ -249,7 +306,22 @@ begin
     rw [algebra_map.coe_one] at hn,
     linarith, },
   refine is_zero.of_iso h ((derived_category.homology_functor D ↑n).map_iso _),
-  sorry,
+  let e : homotopy_category.plus.single_functor C 0 ⋙ F.map_homotopy_category_plus ⋙
+    derived_category.plus.Qh ⋙ derived_category.plus.ι ≅ F ⋙ derived_category.single_functor D 0,
+  { refine iso_whisker_left _ (iso_whisker_left _ (derived_category.plus.Qh_comp_ι_iso D)) ≪≫
+      iso_whisker_left _ ((functor.associator _ _ _).symm ≪≫
+      iso_whisker_right F.map_homotopy_category_plus_factors derived_category.Qh) ≪≫
+      iso_whisker_left _ (functor.associator _ _ _) ≪≫
+      (functor.associator _ _ _).symm ≪≫
+      iso_whisker_right (homotopy_category.plus.single_functor_factors C 0)
+        (map_homotopy_category (complex_shape.up ℤ) F ⋙ derived_category.Qh) ≪≫
+      functor.associator _ _ _ ≪≫
+      iso_whisker_left _ ((functor.associator _ _ _).symm ≪≫
+      iso_whisker_right F.map_homotopy_category_factors _) ≪≫
+      iso_whisker_left _ (functor.associator _ _ _) ≪≫
+      (functor.associator _ _ _).symm ≪≫
+      iso_whisker_right (F.single_comp_map_homological_complex (complex_shape.up ℤ) 0) derived_category.Q, },
+  exact e.app _,
 end
 
 lemma abelian_right_derived_functor_obj_is_zero_of_injective (X : C)
@@ -310,11 +382,55 @@ lemma ex₁ (n₀ n₁ : ℕ) (h : n₁ = n₀+1) :
     (by simp)).exact :=
 derived_category.homology_sequence.ex₁ (triangle'_mem F ex) n₀ n₁ (by simp [h])
 
+include ex
+
+lemma ex₀
+  [(F.right_derived_functor_plus.obj
+ ((derived_category.plus.single_functor C 0).obj S.X₃)).obj.is_ge 0] :
+  mono ((F.abelian_right_derived_functor 0).map S.f) :=
+begin
+  refine (short_complex.exact_iff_mono _ (is_zero.eq_of_src _ _ _)).1
+    (derived_category.homology_sequence.ex₁ (triangle'_mem F ex) (-1) 0 (neg_add_self 1).symm),
+  have h := derived_category.is_ge.is_zero ((F.right_derived_functor_plus.obj
+   ((derived_category.plus.single_functor C 0).obj S.X₃)).obj) 0 (-1) (by simp),
+  exact h,
+end
+
+omit ex
+
+instance (X : C) [F.preserves_monomorphisms] [enough_injectives C]:
+  mono (F.abelian_right_derived_functor_α.app X) :=
+begin
+  suffices : mono (F.abelian_right_derived_functor_α.app X ≫
+    (F.abelian_right_derived_functor 0).map (injective.ι X)),
+  { haveI := this,
+    exact mono_of_mono _ ((F.abelian_right_derived_functor 0).map (injective.ι X)), },
+  rw ← nat_trans.naturality,
+  apply_instance,
+end
+
+instance (X : C) [preserves_finite_limits F] [enough_injectives C] :
+  is_iso (F.abelian_right_derived_functor_α.app X) :=
+begin
+  haveI : mono ((injective_embedding.short_complex X).map (F.abelian_right_derived_functor 0)).f :=
+    ex₀ F (injective_embedding.short_exact X),
+  haveI : mono ((injective_embedding.short_complex X).map F).f,
+  { dsimp, apply_instance, },
+  let f := short_complex.map_nat_trans (injective_embedding.short_complex X)
+    F.abelian_right_derived_functor_α,
+  haveI : mono f.τ₃ := (infer_instance : mono (F.abelian_right_derived_functor_α.app _)),
+  haveI : is_iso f.τ₂ := (infer_instance : is_iso (F.abelian_right_derived_functor_α.app _)),
+  refine short_complex.five_lemma.is_iso_τ₁ f _ (ex₂ F (injective_embedding.short_exact X) 0),
+  sorry,
+end
+
+instance [preserves_finite_limits F] [enough_injectives C] :
+  is_iso F.abelian_right_derived_functor_α :=
+nat_iso.is_iso_of_is_iso_app _
+
 end abelian_right_derived_functor_homology_sequence
 
 -- TODO:
--- * show that total_right_derived_functor is a triangulated functor
--- * deduce the long exact sequence attached to a short exact sequence in C
 -- * define the natural transformation F ⟶ R^0 F, and show that when F is
 --      left exact, it is an isomorphism using an injective resolution
 

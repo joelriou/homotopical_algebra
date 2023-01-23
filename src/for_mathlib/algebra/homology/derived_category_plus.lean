@@ -253,10 +253,14 @@ lemma homology_functor_is_inverted_by (n : ℤ) :
   exact hf n,
 end
 
+variable {C}
+
 lemma mem_W_iff_ι_map_mem {K L : homotopy_category.plus C} (f : K ⟶ L) :
   subcategory.W (homotopy_category.acyclic C) (homotopy_category.plus.ι.map f) ↔
   subcategory.W (homotopy_category.plus.acyclic C) f :=
 by simpa only [homotopy_category.mem_acyclic_W_iff, homotopy_category.plus.mem_acyclic_W_iff]
+
+variable (C)
 
 def single_functor (n : ℤ) : C ⥤ homotopy_category.plus C :=
 full_subcategory.lift _ (homological_complex.single C (complex_shape.up ℤ) n ⋙
