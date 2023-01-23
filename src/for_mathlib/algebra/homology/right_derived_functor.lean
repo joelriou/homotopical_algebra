@@ -12,7 +12,7 @@ namespace short_complex
 variables {C : Type*} [category C] [preadditive C] [balanced C]
 
 lemma five_lemma.is_iso_τ₁ {S₁ S₂ : short_complex C} (f : S₁ ⟶ S₂)
-  (ex₁ : S₁.exact) (ex₂ : S₂.exact) [is_iso f.τ₂] [mono f.τ₃] [mono S₁.f] [mono S₂.f] :
+  (ex₁ : S₁.exact) [is_iso f.τ₂] [mono f.τ₃] [mono S₁.f] [mono S₂.f] :
   is_iso f.τ₁ :=
 begin
   refine ⟨⟨short_complex.exact.lift ex₁ (S₂.f ≫ inv f.τ₂) _, _, _⟩⟩,
@@ -249,12 +249,6 @@ begin
     iso_whisker_left _ (derived_category.homology_functor_factors_Qh D 0).symm,
 end
 
-include hF
-
-instance right_derived_functor_plus_obj_is_ge [enough_injectives C]
-  (X : derived_category.plus C) (n : ℤ) [X.obj.is_ge n] :
-  (F.right_derived_functor_plus.obj X).obj.is_ge n := sorry
-
 instance derived_category_plus_single_functor_obj_obj_is_ge (X : C) (n : ℤ) :
   ((derived_category.plus.single_functor C n).obj X).obj.is_ge n :=
 begin
@@ -262,10 +256,11 @@ begin
   apply_instance,
 end
 
---instance test [enough_injectives C] (X : C) [enough_injectives C]:
---  (F.right_derived_functor_plus.obj
---    ((derived_category.plus.single_functor C 0).obj X)).obj.is_ge 0 :=
---infer_instance
+include hF
+
+instance right_derived_functor_plus_obj_is_ge [enough_injectives C]
+  (X : derived_category.plus C) (n : ℤ) [X.obj.is_ge n] :
+  (F.right_derived_functor_plus.obj X).obj.is_ge n := sorry
 
 def abelian_right_derived_functor_α : F ⟶ F.abelian_right_derived_functor 0 :=
 begin
@@ -343,7 +338,9 @@ F.right_derived_functor_plus.map_triangle.obj (derived_category.plus.triangle_of
 def triangle' : pretriangulated.triangle (derived_category D) :=
 derived_category.plus.ι.map_triangle.obj (triangle F ex)
 
-variable [F.right_derived_functor_plus.is_triangulated]
+variable [hF' : F.right_derived_functor_plus.is_triangulated]
+
+include hF'
 
 lemma triangle_mem : (triangle F ex).distinguished :=
 F.right_derived_functor_plus.map_distinguished _
@@ -397,6 +394,7 @@ begin
 end
 
 omit ex
+omit hF'
 
 instance (X : C) [F.preserves_monomorphisms] [enough_injectives C]:
   mono (F.abelian_right_derived_functor_α.app X) :=
@@ -420,8 +418,20 @@ begin
     F.abelian_right_derived_functor_α,
   haveI : mono f.τ₃ := (infer_instance : mono (F.abelian_right_derived_functor_α.app _)),
   haveI : is_iso f.τ₂ := (infer_instance : is_iso (F.abelian_right_derived_functor_α.app _)),
-  refine short_complex.five_lemma.is_iso_τ₁ f _ (ex₂ F (injective_embedding.short_exact X) 0),
-  sorry,
+  refine short_complex.five_lemma.is_iso_τ₁ f _,
+  apply short_complex.exact.of_f_is_kernel,
+  let e : parallel_pair (injective_embedding.short_complex X).g 0 ⋙ F ≅
+    parallel_pair (F.map (injective_embedding.short_complex X).g) 0 :=
+    parallel_pair.ext (iso.refl _) (iso.refl _) (by tidy) (by tidy),
+  equiv_rw (limits.is_limit.postcompose_inv_equiv e _).symm,
+  refine limits.is_limit.of_iso_limit
+    (is_limit_of_preserves F ((injective_embedding.short_exact X).exact.f_is_kernel))
+    (cones.ext (iso.refl _) _),
+  rintro (_|_),
+  { tidy, },
+  { dsimp,
+    simp only [short_complex.zero, functor.map_zero, comp_id, id_comp,
+      ← F.map_comp], },
 end
 
 instance [preserves_finite_limits F] [enough_injectives C] :
@@ -430,11 +440,6 @@ nat_iso.is_iso_of_is_iso_app _
 
 end abelian_right_derived_functor_homology_sequence
 
--- TODO:
--- * define the natural transformation F ⟶ R^0 F, and show that when F is
---      left exact, it is an isomorphism using an injective resolution
-
 end functor
-
 
 end category_theory
