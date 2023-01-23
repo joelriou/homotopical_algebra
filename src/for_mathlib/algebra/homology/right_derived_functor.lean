@@ -259,8 +259,27 @@ end
 include hF
 
 instance right_derived_functor_plus_obj_is_ge [enough_injectives C]
-  (X : derived_category.plus C) (n : ℤ) [X.obj.is_ge n] :
-  (F.right_derived_functor_plus.obj X).obj.is_ge n := sorry
+  (K : derived_category.plus C) (n : ℤ) [K.obj.is_ge n] :
+  (F.right_derived_functor_plus.obj K).obj.is_ge n :=
+begin
+  obtain ⟨K', hK', ⟨e⟩⟩ := derived_category.exists_iso_Q_obj_of_ge K.obj n,
+  haveI := hK',
+  obtain ⟨Z, hZ, f, hf, hZ'⟩ := homotopy_category.plus.termwise_injective.right_resolution_exists K' n,
+  let Z' : homotopy_category.plus C :=
+    ⟨(homotopy_category.quotient _ _).obj Z, ⟨n, hZ⟩⟩,
+  haveI : Z'.obj.as.is_termwise_injective := hZ',
+  let e' : K ≅ derived_category.plus.Qh.obj Z' :=
+    derived_category.plus.ι.preimage_iso (e ≪≫ as_iso (derived_category.Q.map f)),
+  have e'' := (derived_category.Qh.map_iso ((map_homotopy_category_factors F).app Z)).symm ≪≫
+    (derived_category.Qh.map_iso (F.map_homotopy_category_plus_factors.app Z')).symm ≪≫
+    (derived_category.plus.Qh_comp_ι_iso D).symm.app
+    (F.map_homotopy_category_plus.obj Z') ≪≫ derived_category.plus.ι.map_iso
+    (as_iso (F.right_derived_functor_plus_αh.app Z')) ≪≫
+    ((F.right_derived_functor_plus ⋙ derived_category.plus.ι).map_iso e'.symm),
+  erw ← derived_category.is_ge.iff_of_iso e'' n,
+  change (derived_category.Q.obj _).is_ge n,
+  apply_instance,
+end
 
 def abelian_right_derived_functor_α : F ⟶ F.abelian_right_derived_functor 0 :=
 begin
