@@ -1,6 +1,7 @@
 import for_mathlib.algebra.homology.k_projective
 import for_mathlib.category_theory.localization.derived_functor_triangulated
 import category_theory.abelian.injective
+import for_mathlib.algebra.homology.cochain_complex_opposites
 
 noncomputable theory
 
@@ -96,9 +97,29 @@ begin
    ← triangulated.is_triangulated_subcategory.shift_iff],
 end
 
+lemma is_K_injective_of_op (K : cochain_complex C ℤ)
+  (hK : (op_equivalence.op_obj K).is_K_projective) :
+  is_K_injective K :=
+⟨λ (L : cochain_complex C ℤ) f hL, ⟨begin
+  apply cochain_complex.unop_homotopy,
+  let f' : op_equivalence.op_obj K ⟶ _ :=
+    (cochain_complex.op_equivalence.functor C).map f.op,
+  exact (is_K_projective.null_homotopic f' (cochain_complex.acyclic_op hL)).some,
+end⟩⟩
+
 lemma is_K_injective_of_bounded_below_of_injective
   (K : cochain_complex C ℤ) (n : ℤ) [K.is_strictly_ge n]
-  [∀ (n : ℤ), injective (K.X n)] : is_K_injective K := sorry
+  [∀ (n : ℤ), injective (K.X n)] : is_K_injective K :=
+begin
+  haveI : K.is_strictly_ge (-(-n)),
+  { simp only [neg_neg], apply_instance, },
+  haveI : (op_equivalence.op_obj K).is_strictly_le (-n) := op_obj_is_strictly_le K (-n),
+  haveI : ∀ (n : ℤ), projective ((op_equivalence.op_obj K).X n),
+  { intro n,
+    dsimp,
+    apply_instance, },
+  exact is_K_injective_of_op _ (is_K_projective_of_bounded_above_of_projective _ (-n)),
+end
 
 end cochain_complex
 
