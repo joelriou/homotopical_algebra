@@ -79,13 +79,16 @@ end category_theory
 
 namespace cochain_complex
 
-namespace projective_structure
+namespace minus
 
-namespace CM5a
+namespace projective_model_structure
+
+variables {C : Type*} [category C] [abelian C] [enough_projectives C]
+
+/-namespace CM5a
 
 open cochain_complex.hom_complex
 
-variables {C : Type*} [category C] [abelian C] [enough_projectives C]
 
 @[simps]
 def P (L : cochain_complex C ℤ) : cochain_complex C ℤ :=
@@ -250,11 +253,28 @@ lemma p_is_fib : arrow_classes.fib (p f) := CM5a.p_is_fib f
 
 lemma i_is_triv_cof : arrow_classes.triv_cof (i f) := CM5a.i_is_triv_cof f
 
-end CM5a
+end CM5a-/
 
-lemma CM5a : (arrow_classes : category_with_fib_cof_weq (bounded_above_cochain_complex C)).CM5a :=
-λ X Z f, ⟨CM5a.obj f, CM5a.i f, CM5a.i_is_triv_cof f, CM5a.p f, CM5a.p_is_fib f, CM5a.fac f⟩
+lemma CM5a' {X Z : minus C} (f : X ⟶ Z) (n : ℤ) [X.obj.is_strictly_le n]
+  [Z.obj.is_strictly_le n] : ∃ (Y : minus C)
+  (hY : Y.obj.is_strictly_le n) (i : X ⟶ Y) (p : Y ⟶ Z)
+  (hi : (arrow_classes C).triv_cof i) (hp : (arrow_classes C).fib p), i ≫ p = f := sorry
+
+lemma CM5a : (arrow_classes C).CM5a :=
+λ X Z f, begin
+  obtain ⟨nX, hX⟩ := X.property,
+  obtain ⟨nZ, hZ⟩ := Z.property,
+  haveI := hX,
+  haveI := hZ,
+  let n := max nX nZ,
+  haveI : X.obj.is_strictly_le n := is_strictly_le_of_le _ _ _ (le_max_left _ _),
+  haveI : Z.obj.is_strictly_le n := is_strictly_le_of_le _ _ _ (le_max_right _ _),
+  obtain ⟨Y, hY, i, p, hi, hp, fac⟩ := CM5a' f n,
+  exact ⟨Y, i, hi, p, hp, fac⟩,
+end
 
 end projective_model_structure
 
-end bounded_above_cochain_complex
+end minus
+
+end cochain_complex

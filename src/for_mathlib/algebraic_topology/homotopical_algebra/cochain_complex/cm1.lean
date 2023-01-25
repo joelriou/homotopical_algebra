@@ -1,5 +1,5 @@
 /-
-Copyright (c) 2022 Joël Riou. All rights reserved.
+Copyright (c) 2023 Joël Riou. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Joël Riou
 -/
@@ -37,19 +37,17 @@ open category_theory.limits
 
 variables {C : Type*} [category C] [abelian C]
 
-namespace bounded_above_cochain_complex
+namespace cochain_complex
 
 namespace limits
 
 variables {J : Type} [small_category J] [fin_category J]
 
-lemma bound_of_finite (K : J → cochain_complex C ℤ) (hK : ∀ (j : J), (K j).is_bounded_above) :
+lemma bound_of_finite (K : J → cochain_complex C ℤ) (hK : ∀ (j : J), (K j).is_minus) :
   ∃ (n : ℤ), ∀ (j : J), (K j).is_strictly_le n :=
 begin
   let m : J → ℤ := λ j, ((hK j).some),
-  have hm : ∀ (j : J), (K j).is_strictly_le (m j),
-  { intro j,
-    exact ⟨(hK j).some_spec⟩, },
+  have hm : ∀ (j : J), (K j).is_strictly_le (m j) := λ j, (hK j).some_spec,
   let μ := finset.max (finset.image m ⊤),
   by_cases μ = ⊥,
   { simp only [finset.max_eq_bot, finset.top_eq_univ, finset.image_eq_empty,
@@ -66,11 +64,11 @@ end
 
 variable (J)
 
-lemma is_bounded_above_is_closed_under_limits_of_shape :
-  closed_under_limits_of_shape J (cochain_complex.is_bounded_above : cochain_complex C ℤ → Prop) :=
+lemma is_minus_is_closed_under_limits_of_shape :
+  closed_under_limits_of_shape J (cochain_complex.is_minus : cochain_complex C ℤ → Prop) :=
 λ F c hc hF, begin
   obtain ⟨n, hn⟩ := bound_of_finite F.obj hF,
-  refine ⟨n, λ i hi, _⟩,
+  refine ⟨n, ⟨λ i hi, _⟩⟩,
   have hc' := is_limit_of_preserves (homological_complex.eval C (complex_shape.up ℤ) i) hc,
   refine is_zero_of_is_limit_of_is_zero _ hc' (λ j, _),
   haveI := hn j,
@@ -78,11 +76,11 @@ lemma is_bounded_above_is_closed_under_limits_of_shape :
   exact cochain_complex.is_strictly_le.is_zero (F.obj j) n i hi,
 end
 
-lemma is_bounded_above_is_closed_under_colimits_of_shape :
-  closed_under_colimits_of_shape J (cochain_complex.is_bounded_above : cochain_complex C ℤ → Prop) :=
+lemma is_minus_is_closed_under_colimits_of_shape :
+  closed_under_colimits_of_shape J (cochain_complex.is_minus : cochain_complex C ℤ → Prop) :=
 λ F c hc hF, begin
   obtain ⟨n, hn⟩ := bound_of_finite F.obj hF,
-  refine ⟨n, λ i hi, _⟩,
+  refine ⟨n, ⟨λ i hi, _⟩⟩,
   have hc' := is_colimit_of_preserves (homological_complex.eval C (complex_shape.up ℤ) i) hc,
   refine is_zero_of_is_colimit_of_is_zero _ hc' (λ j, _),
   haveI := hn j,
@@ -90,44 +88,48 @@ lemma is_bounded_above_is_closed_under_colimits_of_shape :
   exact cochain_complex.is_strictly_le.is_zero (F.obj j) n i hi,
 end
 
-instance : has_finite_limits (bounded_above_cochain_complex C) :=
+instance : has_finite_limits (cochain_complex.minus C) :=
 ⟨λ J, begin
   introI,
   introI,
   apply has_limits_of_shape_of_closed_under_limits,
-  apply is_bounded_above_is_closed_under_limits_of_shape,
+  apply is_minus_is_closed_under_limits_of_shape,
 end⟩
 
-instance : has_finite_colimits (bounded_above_cochain_complex C) :=
+instance : has_finite_colimits (cochain_complex.minus C) :=
 ⟨λ J, begin
   introI,
   introI,
   apply has_colimits_of_shape_of_closed_under_colimits,
-  apply is_bounded_above_is_closed_under_colimits_of_shape,
+  apply is_minus_is_closed_under_colimits_of_shape,
 end⟩
 
-instance : creates_limits_of_shape J (ι : _ ⥤ cochain_complex C ℤ) :=
+instance : creates_limits_of_shape J (cochain_complex.minus.ι : _ ⥤ cochain_complex C ℤ) :=
 begin
   apply creates_limits_of_shape_full_subcategory_inclusion,
-  apply is_bounded_above_is_closed_under_limits_of_shape,
+  apply is_minus_is_closed_under_limits_of_shape,
 end
 
-instance : creates_colimits_of_shape J (ι : _ ⥤ cochain_complex C ℤ) :=
+instance : creates_colimits_of_shape J (cochain_complex.minus.ι : _ ⥤ cochain_complex C ℤ) :=
 begin
   apply creates_colimits_of_shape_full_subcategory_inclusion,
-  apply is_bounded_above_is_closed_under_colimits_of_shape,
+  apply is_minus_is_closed_under_colimits_of_shape,
 end
 
 end limits
+
+namespace minus
 
 namespace projective_model_structure
 
 variable {C}
 
-lemma CM1 : has_finite_limits (bounded_above_cochain_complex C) ∧
-  has_finite_colimits (bounded_above_cochain_complex C) :=
+lemma CM1 : has_finite_limits (cochain_complex.minus C) ∧
+  has_finite_colimits (cochain_complex.minus C) :=
 ⟨infer_instance, infer_instance⟩
 
 end projective_model_structure
 
-end bounded_above_cochain_complex
+end minus
+
+end cochain_complex

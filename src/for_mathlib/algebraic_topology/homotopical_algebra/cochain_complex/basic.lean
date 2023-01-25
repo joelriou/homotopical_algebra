@@ -1,17 +1,13 @@
 /-
-Copyright (c) 2022 Joël Riou. All rights reserved.
+Copyright (c) 2023 Joël Riou. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Joël Riou
 -/
 
 import for_mathlib.algebraic_topology.homotopical_algebra.model_category
 import for_mathlib.category_theory.preadditive.mono_with_projective_coker
---import category_theory.abelian.basic
---import category_theory.preadditive.projective
---import algebra.homology.homological_complex
 import algebra.homology.quasi_iso
-import for_mathlib.algebra.homology.twist_cocycle
---import tactic.linarith
+import for_mathlib.algebra.homology.derived_category_plus
 
 noncomputable theory
 
@@ -24,63 +20,41 @@ variables (C : Type*) [category C] [abelian C]
 
 namespace cochain_complex
 
-variables (α : Type*) [add_right_cancel_semigroup α] [has_one α]
-
-def quasi_isomorphisms :
-  morphism_property (cochain_complex C α) :=
-λ X Y w, quasi_iso w
-
-namespace quasi_isomorphisms
-
-lemma mem_iff {X Y : cochain_complex C α} (f : X ⟶ Y) :
-  quasi_isomorphisms C α f ↔ quasi_iso f := by refl
-
-end quasi_isomorphisms
-
-def degreewise_epi [preadditive C] : morphism_property (cochain_complex C α) :=
-λ X Y w, ∀ n, epi (w.f n)
-
-def degreewise_mono_with_projective_coker [preadditive C] :
-  morphism_property (cochain_complex C α) :=
-λ X Y w, ∀ n, mono_with_projective_coker C (w.f n)
-
-variable {C}
-@[simps]
-def projective_structure.arrow_classes [abelian C] :
-  category_with_fib_cof_weq (cochain_complex C ℤ) :=
-{ weq := quasi_isomorphisms C ℤ,
-  fib := degreewise_epi C ℤ,
-  cof := degreewise_mono_with_projective_coker C ℤ, }
-
-end cochain_complex
-
-@[derive category, derive preadditive]
-def bounded_above_cochain_complex [preadditive C] :=
-full_subcategory (λ (K : cochain_complex C ℤ), K.is_bounded_above)
-
-namespace bounded_above_cochain_complex
-
-variable {C}
-
-def ι [preadditive C] :
-  bounded_above_cochain_complex C ⥤ cochain_complex C ℤ := full_subcategory_inclusion _
-
-instance : functor.additive (ι : bounded_above_cochain_complex C ⥤ cochain_complex C ℤ) := { }
+namespace minus
 
 namespace projective_model_structure
 
-@[simps]
-def arrow_classes [abelian C] :
-  category_with_fib_cof_weq (bounded_above_cochain_complex C) :=
-category_with_fib_cof_weq.inverse_image cochain_complex.projective_structure.arrow_classes
-  bounded_above_cochain_complex.ι
+variable {C}
 
-lemma cof_stable_under_composition :
-  (arrow_classes :
-  category_with_fib_cof_weq (bounded_above_cochain_complex C)).cof.stable_under_composition :=
+def weq : morphism_property (cochain_complex.minus C) :=
+(quasi_isomorphisms C (complex_shape.up ℤ)).inverse_image cochain_complex.minus.ι
+
+lemma mem_weq_iff {X Y : cochain_complex.minus C} (f : X ⟶ Y) :
+  weq f ↔ quasi_iso (ι.map f) :=
+⟨λ h, ⟨λ n, h n⟩, λ h, h.is_iso⟩
+
+def cof : morphism_property (cochain_complex.minus C) :=
+λ X Y f, ∀ n, mono_with_projective_coker C (f.f n)
+
+lemma cof_is_stable_under_composition :
+  (cof : morphism_property (cochain_complex.minus C)).stable_under_composition :=
 λ X Y Z f g hf hg n,
 mono_with_projective_coker.is_stable_by_composition _ _ _ (hf _) (hg _)
 
+def fib : morphism_property (cochain_complex.minus C) :=
+λ X Y f, ∀ (n : ℤ), epi (f.f n)
+
+variable (C)
+
+@[simps]
+def arrow_classes :
+  category_with_fib_cof_weq (cochain_complex.minus C) :=
+{ weq := weq,
+  fib := fib,
+  cof := cof, }
+
 end projective_model_structure
 
-end bounded_above_cochain_complex
+end minus
+
+end cochain_complex

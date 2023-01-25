@@ -62,6 +62,8 @@ instance zero_is_ge (n : ℤ) : (0 : derived_category C).is_ge n :=
 
 def is_plus (K : derived_category C) : Prop := ∃ (n : ℤ), K.is_ge n
 
+def is_minus (K : derived_category C) : Prop := ∃ (n : ℤ), K.is_le n
+
 variable (C)
 open category_theory.triangulated
 
@@ -82,6 +84,7 @@ instance plus_is_triangulated_subcategory :
   end, }
 
 abbreviation plus := full_subcategory (λ (K : derived_category C), K.is_plus)
+abbreviation minus := full_subcategory (λ (K : derived_category C), K.is_minus)
 
 namespace plus
 
@@ -108,6 +111,9 @@ namespace cochain_complex
 
 def is_plus (K : cochain_complex C ℤ) : Prop :=
   ∃ (n : ℤ), K.is_strictly_ge n
+
+def is_minus (K : cochain_complex C ℤ) : Prop :=
+  ∃ (n : ℤ), K.is_strictly_le n
 
 lemma is_plus.Q {K : cochain_complex C ℤ} (h : K.is_plus) :
   (derived_category.Q.obj K).is_plus :=
@@ -159,6 +165,8 @@ end
 variable (C)
 abbreviation plus :=
 full_subcategory (λ (K : cochain_complex C ℤ), cochain_complex.is_plus K)
+abbreviation minus :=
+full_subcategory (λ (K : cochain_complex C ℤ), cochain_complex.is_minus K)
 
 namespace plus
 
@@ -183,6 +191,15 @@ has_shift_of_fully_faithful ι (shift_functor C)
   (λ n, full_subcategory.lift_comp_inclusion _ _ _)
 
 end plus
+
+namespace minus
+
+variable {C}
+
+abbreviation ι : minus C ⥤ cochain_complex C ℤ :=
+full_subcategory_inclusion _
+
+end minus
 
 end cochain_complex
 

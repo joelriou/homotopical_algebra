@@ -335,13 +335,15 @@ open category_theory
 
 variables [abelian C] [enough_projectives C]
 
-namespace bounded_above_cochain_complex
+namespace cochain_complex
+
+namespace minus
 
 namespace projective_model_structure
 
-namespace CM5b
+/-namespace CM5b
 
-variables {X Z : bounded_above_cochain_complex C} {f : X ⟶ Z}
+variables {X Z : minus C} {f : X ⟶ Z}
 
 instance (n : ℤ) [is_iso f] : is_iso (f.f n) :=
 begin
@@ -737,18 +739,34 @@ begin
     F.1.fac.symm⟩,
 end
 
-end CM5b
+end CM5b-/
 
-lemma CM5b : (arrow_classes : category_with_fib_cof_weq (bounded_above_cochain_complex C)).CM5b :=
+lemma CM5b' {X Z : minus C} (f : X ⟶ Z) (n : ℤ) [X.obj.is_strictly_le n]
+  [Z.obj.is_strictly_le n] : ∃ (Y : minus C)
+  (hY : Y.obj.is_strictly_le n) (i : X ⟶ Y) (p : Y ⟶ Z)
+  (hi : (arrow_classes C).cof i) (hp : (arrow_classes C).triv_fib p), i ≫ p = f := sorry
+  --obtain ⟨X', j, hj, q, hq, rfl⟩ := projective_model_structure.CM5a f,
+  --obtain ⟨Y, i, hi, p, hp, rfl⟩ := CM5b.for_fibration q hq,
+  --exact ⟨Y, j ≫ i, cof_stable_under_composition j i hj.1 hi, p, hp, by rw assoc⟩,
+
+lemma CM5b : (arrow_classes C).CM5b :=
 λ X Z f, begin
-  obtain ⟨X', j, hj, q, hq, rfl⟩ := projective_model_structure.CM5a f,
-  obtain ⟨Y, i, hi, p, hp, rfl⟩ := CM5b.for_fibration q hq,
-  exact ⟨Y, j ≫ i, cof_stable_under_composition j i hj.1 hi, p, hp, by rw assoc⟩,
+  obtain ⟨nX, hX⟩ := X.property,
+  obtain ⟨nZ, hZ⟩ := Z.property,
+  haveI := hX,
+  haveI := hZ,
+  let n := max nX nZ,
+  haveI : X.obj.is_strictly_le n := is_strictly_le_of_le _ _ _ (le_max_left _ _),
+  haveI : Z.obj.is_strictly_le n := is_strictly_le_of_le _ _ _ (le_max_right _ _),
+  obtain ⟨Y, hY, i, p, hi, hp, fac⟩ := CM5b' f n,
+  exact ⟨Y, i, hi, p, hp, fac⟩,
 end
 
-lemma CM5 : (arrow_classes : category_with_fib_cof_weq (bounded_above_cochain_complex C)).CM5 :=
+lemma CM5 : (arrow_classes C).CM5 :=
   ⟨CM5a, CM5b⟩
 
 end projective_model_structure
 
-end bounded_above_cochain_complex
+end minus
+
+end cochain_complex

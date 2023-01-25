@@ -16,15 +16,19 @@ open category_theory category_theory.preadditive algebraic_topology
 
 variables {C : Type*} [category C] [abelian C] [enough_projectives C]
 
-namespace bounded_above_cochain_complex
+namespace cochain_complex
+
+namespace minus
 
 @[simps]
-def projective_model_structure : model_category (bounded_above_cochain_complex C) :=
-{ to_category_with_fib_cof_weq := projective_model_structure.arrow_classes,
+def projective_model_structure : model_category (cochain_complex.minus C) :=
+{ to_category_with_fib_cof_weq := projective_model_structure.arrow_classes C,
   CM1axiom := projective_model_structure.CM1,
   CM2axiom := projective_model_structure.CM2,
   CM3axiom := projective_model_structure.CM3,
   CM4axiom := projective_model_structure.CM4,
   CM5axiom := projective_model_structure.CM5, }
 
-end bounded_above_cochain_complex
+end minus
+
+end cochain_complex
