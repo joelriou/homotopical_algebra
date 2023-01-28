@@ -1,6 +1,7 @@
 import for_mathlib.category_theory.triangulated.shift_compatibility
 import for_mathlib.category_theory.triangulated.pretriangulated_misc
 import category_theory.preadditive.opposite
+import for_mathlib.category_theory.preadditive.misc
 import tactic.abel
 
 noncomputable theory
@@ -204,56 +205,28 @@ def triangle.unop_op (T : triangle C) : T.op.unop ≅ T :=
 def triangle.op_unop (T : triangle Cᵒᵖ) : T.unop.op ≅ T :=
 (triangle_op_equivalence C).counit_iso.app T
 
+def triangle.unop_rotate (T : triangle Cᵒᵖ) : T.rotate.unop ≅ T.unop.inv_rotate :=
+begin
+  refine triangle.mk_iso _ _ (iso.refl _) (preadditive.mul_iso (-1) (iso.refl _)) (iso.refl _) _ _ _,
+  { change (-(-(shift_functor C (-1 : ℤ)).map T.mor₁.unop)) ≫ ((-1 : ℤ) • 𝟙 _) =
+      𝟙 _ ≫ -((T.mor₁.unop ≫
+        (shift_equiv C (1 : ℤ)).counit_iso.inv.app T.obj₁.unop)⟦(-1 : ℤ)⟧' ≫
+        (shift_shift_neg T.unop.obj₁ (1 : ℤ)).hom),
+    rw [neg_zsmul, one_smul, neg_neg, preadditive.comp_neg,
+      id_comp, neg_inj, functor.map_comp, assoc],
+    exact T.mor₁.unop⟦(-1 : ℤ)⟧' ≫=
+      ((shift_equiv C (1 : ℤ)).inverse_counit_inv_comp T.obj₁.unop).symm, },
+  { dsimp [triangle.rotate, triangle.unop],
+    simp only [comp_id, neg_smul, one_zsmul, preadditive.neg_comp, id_comp, neg_neg], },
+  { dsimp [triangle.rotate, triangle.unop],
+    rw [functor.map_id, comp_id, id_comp],
+    refl, },
+end
+
 variables [∀ (n : ℤ), (shift_functor C n).additive]
 
 instance shift_functor_op_additive (n : ℤ) : (shift_functor Cᵒᵖ n).additive :=
 (infer_instance : (shift_functor C (-n)).op.additive)
-
-variables [has_zero_object C] [pretriangulated C]
-
-variable (C)
-
-def distinguished_triangle_op : set (triangle Cᵒᵖ) :=
-λ T, T.unop ∈ dist_triang C
-
-variable {C}
-
-lemma mem_dist_triang_iff_unop (T : triangle Cᵒᵖ) :
-  T ∈ distinguished_triangle_op C ↔ T.unop ∈ dist_triang C := by refl
-
-lemma mem_dist_triang_iff_op (T : triangle C) :
-  (T ∈ dist_triang C) ↔ T.op ∈ distinguished_triangle_op C :=
-begin
-  rw mem_dist_triang_iff_unop,
-  split,
-  { exact λ hT, isomorphic_distinguished _ hT _ T.unop_op, },
-  { exact λ hT, isomorphic_distinguished _ hT _ T.unop_op.symm, },
-end
-
-variable {C}
-
-lemma isomorphic_distinguished_op (T₁ : triangle Cᵒᵖ) (hT₁ : T₁ ∈ distinguished_triangle_op C)
-  (T₂ : triangle Cᵒᵖ) (e : T₂ ≅ T₁) : T₂ ∈ distinguished_triangle_op C :=
-begin
-  rw mem_dist_triang_iff_unop at hT₁ ⊢,
-  exact isomorphic_distinguished _ hT₁ _ ((triangle_op_equivalence C).inverse.map_iso e).unop.symm,
-end
-
-lemma contractible_distinguished_op (X : Cᵒᵖ) :
-  contractible_triangle X ∈ distinguished_triangle_op C :=
-begin
-  rw mem_dist_triang_iff_unop,
-  dsimp [contractible_triangle, triangle.unop],
-  sorry,
-end
-
-instance : pretriangulated Cᵒᵖ :=
-{ distinguished_triangles := distinguished_triangle_op C,
-  isomorphic_distinguished := isomorphic_distinguished_op,
-  contractible_distinguished := contractible_distinguished_op,
-  distinguished_cocone_triangle := sorry,
-  rotate_distinguished_triangle := sorry,
-  complete_distinguished_triangle_morphism := sorry, }
 
 end pretriangulated
 

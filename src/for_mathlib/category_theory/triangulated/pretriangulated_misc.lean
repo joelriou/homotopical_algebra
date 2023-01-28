@@ -78,7 +78,6 @@ end
 section
 variables [∀ (n : ℤ), functor.additive (shift_functor C n)] [has_zero_object C] [pretriangulated C]
 
-
 @[reassoc]
 lemma triangle.comp_zero₁₂ (T : triangle C) (hT : T ∈ dist_triang C) : T.mor₁ ≫ T.mor₂ = 0 :=
 begin
@@ -211,6 +210,27 @@ covariant_yoneda_exact₂ _ (rot_of_dist_triangle _ _
 lemma covariant_yoneda_exact₃ (T : triangle C) (hT : T ∈ dist_triang C) {X : C} (f : X ⟶ T.obj₃)
   (hf : f ≫ T.mor₃ = 0) : ∃ (g : X ⟶ T.obj₂), f = g ≫ T.mor₂ :=
 covariant_yoneda_exact₂ _ (rot_of_dist_triangle _ _ hT) f hf
+
+lemma isomorphic_distinguished_iff {T₁ T₂ : triangle C} (e : T₁ ≅ T₂) :
+  (T₁ ∈ dist_triang C) ↔ T₂ ∈ dist_triang C :=
+begin
+  split,
+  { intro hT₁,
+    exact isomorphic_distinguished _ hT₁ _ e.symm, },
+  { intro hT₂,
+    exact isomorphic_distinguished _ hT₂ _ e, },
+end
+
+lemma inv_rotate_distinguished_triangle (T : triangle C) :
+  (T.inv_rotate ∈ dist_triang C) ↔ T ∈ dist_triang C :=
+begin
+  split,
+  { intro hT,
+    exact isomorphic_distinguished _ (rot_of_dist_triangle _ _ hT) _
+      ((triangle_rotation C).counit_iso.symm.app T), },
+  { intro hT,
+    exact inv_rot_of_dist_triangle _ T hT, },
+end
 
 end
 
