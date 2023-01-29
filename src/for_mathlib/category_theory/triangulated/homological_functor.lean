@@ -48,7 +48,7 @@ section
 
 variables {C : Type*} [category C]
 
-def short_complex.exact.is_zero_of_both_zeros [has_zero_morphisms C]
+lemma short_complex.exact.is_zero_of_both_zeros [has_zero_morphisms C]
   {S : short_complex C} (ex : S.exact)
   (h₁ : S.f = 0) (h₂ : S.g = 0) : is_zero S.X₂ :=
 (short_complex.homology_data.of_zeros S h₁ h₂).exact_iff.1 ex
@@ -159,7 +159,7 @@ end⟩
 def W_of_is_homological : morphism_property C :=
 λ X Y f, ∀ (n : ℤ), is_iso (F.map (f⟦n⟧'))
 
-instance [F.is_homological] : preserves_limits_of_shape (discrete walking_pair) F :=
+instance : preserves_limits_of_shape (discrete walking_pair) F :=
 begin
   suffices : ∀ (X₁ X₂ : C), preserves_limit (pair X₁ X₂) F,
   { haveI := this,
@@ -188,6 +188,7 @@ begin
     limits.preserves_binary_biproduct_of_mono_biprod_comparison F,
   apply limits.preserves_binary_product_of_preserves_binary_biproduct,
 end
+
 
 @[priority 100]
 instance is_homological.additive : F.additive :=
@@ -253,6 +254,7 @@ end⟩
 
 end
 
+@[priority 100]
 instance triangulated_functor_preserves_zero_morphisms
   (F : C ⥤ D) [F.has_comm_shift ℤ] [F.is_triangulated] :
   F.preserves_zero_morphisms :=
@@ -290,10 +292,12 @@ begin
   apply limits.preserves_binary_product_of_preserves_binary_biproduct,
 end
 
+@[priority 100]
 instance triangulated_functor_additive (F : C ⥤ D) [F.has_comm_shift ℤ] [F.is_triangulated ] :
   F.additive :=
 functor.additive_of_preserves_binary_products _
 
+@[priority 100]
 instance is_homological.of_comp (F : C ⥤ D) (G : D ⥤ A) [F.has_comm_shift ℤ]
   [F.is_triangulated] [G.preserves_zero_morphisms]
   [G.is_homological] : (F ⋙ G).is_homological :=
@@ -301,6 +305,81 @@ instance is_homological.of_comp (F : C ⥤ D) (G : D ⥤ A) [F.has_comm_shift �
   have h := is_homological.map_distinguished G _ (F.map_distinguished _ hT),
   exact h,
 end⟩
+
+namespace is_homological
+
+variables (F) (T : pretriangulated.triangle C) (hT : T ∈ dist_triang C)
+  (n₀ n₁ : ℤ) (h : n₁ = n₀+1)
+
+include h
+
+def δ : F.obj (T.obj₃⟦n₀⟧) ⟶ F.obj (T.obj₁⟦n₁⟧) :=
+F.map (T.mor₃⟦n₀⟧' ≫ (shift_functor_add' C (1 : ℤ) n₀ n₁ (by rw [h, add_comm])).inv.app T.obj₁)
+
+include hT
+
+lemma δ_comp : δ F T n₀ n₁ h ≫ F.map (T.mor₁⟦n₁⟧') = 0 :=
+begin
+  dsimp only [δ],
+  rw [← F.map_comp, assoc, ← nat_trans.naturality],
+  erw [← functor.map_comp_assoc, pretriangulated.triangle.comp_zero₃₁ _ hT],
+  simp only [functor.map_zero, zero_comp],
+end
+
+lemma comp_δ : F.map (T.mor₂⟦n₀⟧') ≫ δ F T n₀ n₁ h  = 0 :=
+begin
+  dsimp only [δ],
+  rw [← F.map_comp, ← functor.map_comp_assoc, pretriangulated.triangle.comp_zero₂₃ _ hT],
+  simp only [functor.map_zero, zero_comp],
+end
+
+variable [hF : F.is_homological]
+
+include hF
+
+lemma ex₂ (n : ℤ) :
+  (short_complex.mk (F.map (T.mor₁⟦n⟧')) (F.map (T.mor₂⟦n⟧'))
+    (by rw [← F.map_comp, ← functor.map_comp, pretriangulated.triangle.comp_zero₁₂ _ hT,
+      functor.map_zero, F.map_zero])).exact :=
+begin
+  refine (short_complex.exact_iff_of_iso _).1
+    (is_homological.map_distinguished F _ (pretriangulated.triangle.shift_distinguished C T hT n)),
+  refine short_complex.mk_iso (iso.refl _) (preadditive.mul_iso ((-1 : units ℤ)^n) (iso.refl _))
+    (iso.refl _) _ _,
+  { dsimp,
+    simp only [id_comp, linear.comp_smul, comp_id, F.map_zsmul, smul_smul,
+      int.units_coe_mul_self, one_zsmul], },
+  { dsimp,
+    simp only [linear.smul_comp, id_comp, comp_id, F.map_zsmul], },
+end
+
+lemma ex₃ :
+  (short_complex.mk (F.map (T.mor₂⟦n₀⟧')) (δ F T n₀ n₁ h) (comp_δ F T hT n₀ n₁ h)).exact :=
+begin
+  refine (short_complex.exact_iff_of_iso _).1
+    (is_homological.map_distinguished F _ ((rotate_distinguished_triangle _).1
+      (pretriangulated.triangle.shift_distinguished C T hT n₀))),
+  refine short_complex.mk_iso (iso.refl _) (preadditive.mul_iso ((-1 : units ℤ)^n₀) (iso.refl _))
+    (F.map_iso ((shift_functor_add' C n₀ (1 : ℤ) n₁ h).symm.app T.obj₁)) _ _,
+  { dsimp,
+    simp only [id_comp, comp_id, F.map_zsmul, preadditive.comp_zsmul, smul_smul,
+      int.units_coe_mul_self, one_zsmul], },
+  { dsimp [δ],
+    simp only [preadditive.zsmul_comp, id_comp, F.map_zsmul, ← F.map_comp, assoc],
+    congr' 3,
+    simp only [shift_functor_add_comm_hom_app],
+    dsimp only [shift_functor_add', eq_to_iso, iso.trans],
+    simp only [nat_trans.comp_app, eq_to_hom_app, assoc,
+      iso.hom_inv_id_app_assoc, eq_to_hom_trans], },
+end
+
+--lemma ex₁ :
+--  (short_complex.mk (δ F T n₀ n₁ h) (F.map (T.mor₁⟦n₁⟧')) (δ_comp F T hT n₀ n₁ h)).exact :=
+--begin
+--  sorry,
+--end
+
+end is_homological
 
 end functor
 

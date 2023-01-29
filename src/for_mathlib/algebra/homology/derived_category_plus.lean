@@ -251,8 +251,15 @@ def shift_homology_functor_iso (n k m : ℤ) (h : k + n = m):
   functor.associator _ _ _ ≪≫
   iso_whisker_left ι (homotopy_category.shift_homology_functor_iso C n k m h)
 
+instance : pretriangulated (plus C) :=
+is_triangulated_subcategory'.pretriangulated_full_subcategory _
+
+--instance : is_triangulated (plus C) := infer_instance
+
 abbreviation acyclic : set (plus C) :=
 (homology_functor C 0).kernel_of_is_homological
+
+--instance : saturated (acyclic C) := infer_instance
 
 variable {C}
 

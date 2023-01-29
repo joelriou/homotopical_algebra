@@ -192,7 +192,8 @@ begin
   exact hc₂,
 end
 
-instance : pretriangulated (full_subcategory S) :=
+instance pretriangulated_full_subcategory :
+  pretriangulated (full_subcategory S) :=
 { distinguished_triangles := distinguished_triangles S,
   isomorphic_distinguished := isomorphic_distinguished S,
   contractible_distinguished := contractible_distinguished S,

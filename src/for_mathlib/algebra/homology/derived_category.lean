@@ -324,6 +324,8 @@ end)
 abbreviation acyclic : set (homotopy_category C (complex_shape.up ℤ)) :=
 (homology_functor C (complex_shape.up ℤ) 0).kernel_of_is_homological
 
+instance : saturated (homotopy_category.acyclic C) := infer_instance
+
 lemma mem_acyclic_W_iff {K L : homotopy_category C (complex_shape.up ℤ)} (φ : K ⟶ L) :
   (subcategory.W (acyclic C)) φ ↔ ∀ (n : ℤ), is_iso ((homology_functor _ _ n).map φ) :=
 begin

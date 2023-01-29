@@ -392,7 +392,8 @@ begin
   { exact λ h, pretriangulated.isomorphic_distinguished _ h _ e, },
 end
 
---instance [is_triangulated C] : is_triangulated (full_subcategory S) := infer_instance
+instance is_triangulated_full_subcategory [is_triangulated C] :
+  is_triangulated (full_subcategory S) := infer_instance
 
 --instance inclusion_is_triangulated : (full_subcategory_inclusion S).is_triangulated :=
 --infer_instance

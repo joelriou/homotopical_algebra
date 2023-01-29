@@ -88,7 +88,12 @@ lemma complete_distinguished_triangle_morphism_op (T₁ T₂ : triangle Cᵒᵖ)
   ∃ (c : T₁.obj₃ ⟶ T₂.obj₃),
     T₁.mor₂ ≫ c = b ≫ T₂.mor₂ ∧ T₁.mor₃ ≫ a⟦(1 : ℤ)⟧' = c ≫ T₂.mor₃ :=
 begin
-  have comm : T₂.unop.mor₃ ≫ a.unop⟦(-1 : ℤ)⟧'⟦(1 : ℤ)⟧' = b.unop ≫ T₁.unop.mor₃ := sorry,
+  have comm : T₂.unop.mor₃ ≫ a.unop⟦(-1 : ℤ)⟧'⟦(1 : ℤ)⟧' = b.unop ≫ T₁.unop.mor₃,
+  { dsimp [triangle.unop],
+    slice_rhs 1 2 { rw ← unop_comp, },
+    simp only [fac, unop_comp, assoc],
+    erw ← nat_trans.naturality,
+    refl, },
   obtain ⟨c, hc₁, hc₂⟩ := complete_distinguished_triangle_morphism₂ T₂.unop T₁.unop
     hT₂ hT₁ _ _ comm,
   let f : T₂.unop ⟶ T₁.unop :=
