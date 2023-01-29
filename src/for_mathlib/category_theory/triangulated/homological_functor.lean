@@ -373,11 +373,43 @@ begin
       iso.hom_inv_id_app_assoc, eq_to_hom_trans], },
 end
 
---lemma ex₁ :
---  (short_complex.mk (δ F T n₀ n₁ h) (F.map (T.mor₁⟦n₁⟧')) (δ_comp F T hT n₀ n₁ h)).exact :=
---begin
---  sorry,
---end
+example : ℕ := 42
+
+lemma ex₁ :
+  (short_complex.mk (δ F T n₀ n₁ h) (F.map (T.mor₁⟦n₁⟧')) (δ_comp F T hT n₀ n₁ h)).exact :=
+begin
+  refine (short_complex.exact_iff_of_iso _).1
+    (is_homological.map_distinguished F _ ((inv_rotate_distinguished_triangle _).2
+      (pretriangulated.triangle.shift_distinguished C T hT n₁))),
+  refine short_complex.mk_iso
+    (F.map_iso ((shift_functor_add' C n₁ (-1) n₀
+      (by rw [h, int.add_neg_one, add_tsub_cancel_right])).symm.app T.obj₃))
+    (preadditive.mul_iso ((-1 : units ℤ)^n₀) (iso.refl _))
+    (preadditive.mul_iso ((-1 : units ℤ)) (iso.refl _)) _ _,
+  { change F.map ((shift_functor_add' C n₁ (-1 : ℤ) n₀ _).inv.app T.obj₃) ≫
+      F.map (T.mor₃⟦n₀⟧' ≫ (shift_functor_add' C 1 n₀ n₁ _).inv.app T.obj₁) =
+      F.map (-(shift_functor C (-1 : ℤ)).map (((-1 : units ℤ)^n₁ • T.mor₃⟦n₁⟧') ≫ (shift_functor_add_comm C 1 n₁).hom.app _) ≫
+      (shift_shift_neg (T.obj₁⟦n₁⟧) (1 : ℤ)).hom) ≫ ((-1 : units ℤ)^n₀ • 𝟙 _),
+    rw functor.map_neg,
+    erw preadditive.zsmul_comp,
+    erw preadditive.comp_zsmul,
+    rw functor.map_zsmul,
+    rw preadditive.zsmul_comp,
+    rw functor.map_zsmul,
+    rw comp_id,
+    rw smul_neg,
+    rw smul_smul,
+    simp only [h, zpow_add, zpow_one, mul_neg, units.coe_neg, neg_smul, neg_neg, mul_one,
+      int.units_coe_mul_self, one_smul, ← F.map_comp],
+    congr' 1,
+    dsimp only [shift_functor_add', eq_to_iso, iso.trans, nat_trans.comp_app],
+    simp only [eq_to_hom_app, assoc],
+    simp only [shift_functor_add_comm_hom_app],
+    sorry, },
+  { dsimp,
+    simp only [id_comp, comp_id, F.map_zsmul, preadditive.comp_zsmul, smul_smul, id_comp,
+      preadditive.zsmul_comp, h, zpow_add, zpow_one, mul_neg, mul_one, units.coe_neg, neg_neg], },
+end
 
 end is_homological
 
