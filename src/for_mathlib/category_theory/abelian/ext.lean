@@ -12,6 +12,10 @@ variables {C : Type*} [category C] [abelian C]
 def Ext (n : ℕ) (X Y : C) :=
 ((single_functor C 0).obj X ⟶ ((single_functor C 0).obj Y)⟦(n : ℤ)⟧)
 
+def Ext_functor (n : ℕ) : Cᵒᵖ ⥤ C ⥤ AddCommGroup :=
+(single_functor C 0).op ⋙ preadditive_coyoneda ⋙
+  (whiskering_left _ _ AddCommGroup).obj (single_functor C 0 ⋙ shift_functor _ (n : ℤ))
+
 instance (n : ℕ) (X Y : C) : add_comm_group (Ext n X Y) :=
 by { dsimp only [Ext], apply_instance, }
 
@@ -134,13 +138,68 @@ begin
     zero_comp, comp_zero],
 end
 
-lemma Ext_ex₂₂ {X : C} {n : ℕ} (x₂ : Ext n X S.X₂)
+lemma Ext_ex₂₂ (X : C) (n : ℕ) :
+  (short_complex.mk (AddCommGroup.of_hom (Ext_map₂ n X S.f))
+    (AddCommGroup.of_hom (Ext_map₂ n X S.g)) begin
+      ext x,
+      simp only [comp_apply, AddCommGroup.of_hom_apply, AddCommGroup.zero_apply],
+      rw [← add_monoid_hom.comp_apply, ← Ext_map₂_comp, S.zero,
+        Ext_map₂_zero, add_monoid_hom.zero_apply],
+    end).exact :=
+functor.is_homological.ex₂
+  (preadditive_coyoneda.obj (opposite.op ((single_functor C 0).obj X))) _ ex.triangle_dist n
+
+lemma Ext_ex₂₂' {X : C} {n : ℕ} (x₂ : Ext n X S.X₂)
   (hx₂ : Ext_map₂ n X S.g x₂ = 0) :
   ∃ (x₁ : Ext n X S.X₁), Ext_map₂ n X S.f x₁ = x₂ :=
 begin
-  sorry,
+  have h := ex.Ext_ex₂₂ X n,
+  rw AddCommGroup_exact_iff at h,
+  exact h x₂ hx₂,
 end
 
+lemma Ext_ex₂₃ (X : C) (n₀ n₁ : ℕ) (h : n₁ = n₀+1) :
+  (short_complex.mk (AddCommGroup.of_hom (Ext_map₂ n₀ X S.g))
+    (AddCommGroup.of_hom (ex.Ext_δ₂ X n₀ n₁ h)) begin
+      ext x,
+      simp only [comp_apply, AddCommGroup.of_hom_apply, AddCommGroup.zero_apply],
+      rw [← add_monoid_hom.comp_apply, ex.Ext_comp_δ₂, add_monoid_hom.zero_apply],
+    end).exact :=
+functor.is_homological.ex₃
+  (preadditive_coyoneda.obj (opposite.op ((single_functor C 0).obj X))) _ ex.triangle_dist _ _
+  (by simp [h])
+
+lemma Ext_ex₂₃' {X : C} (n₀ n₁ : ℕ) (h : n₁ = n₀+1)
+  (x₃ : Ext n₀ X S.X₃)
+  (hx₃ : ex.Ext_δ₂ X n₀ n₁ h x₃ = 0) :
+  ∃ (x₂ : Ext n₀ X S.X₂), Ext_map₂ n₀ X S.g x₂ = x₃ :=
+begin
+  have h := ex.Ext_ex₂₃ X n₀ n₁ h,
+  rw AddCommGroup_exact_iff at h,
+  exact h x₃ hx₃,
+end
+
+lemma Ext_ex₂₁ (X : C) (n₀ n₁ : ℕ) (h : n₁ = n₀+1) :
+  (short_complex.mk (AddCommGroup.of_hom (ex.Ext_δ₂ X n₀ n₁ h))
+    (AddCommGroup.of_hom (Ext_map₂ n₁ X S.f)) begin
+      ext x,
+      simp only [comp_apply, AddCommGroup.of_hom_apply, AddCommGroup.zero_apply],
+      rw [← add_monoid_hom.comp_apply, ex.Ext_δ₂_comp, add_monoid_hom.zero_apply],
+    end).exact :=
+functor.is_homological.ex₁
+  (preadditive_coyoneda.obj (opposite.op ((single_functor C 0).obj X))) _ ex.triangle_dist _ _ (by simp [h])
+
+lemma Ext_ex₂₁' {X : C} (n₀ n₁ : ℕ) (h : n₁ = n₀+1)
+  (x₁ : Ext n₁ X S.X₁)
+  (hx₁ : Ext_map₂ n₁ X S.f x₁ = 0) :
+  ∃ (x₃ : Ext n₀ X S.X₃), ex.Ext_δ₂ X n₀ n₁ h x₃ = x₁ :=
+begin
+  have h := ex.Ext_ex₂₁ X n₀ n₁ h,
+  rw AddCommGroup_exact_iff at h,
+  exact h x₁ hx₁,
+end
+
+-- there should be a sign here: (-1)^n₀ or (-1)^n₁ ???
 def Ext_δ₁ (Y : C) (n₀ n₁ : ℕ) (h : n₁ = n₀+1) :
   Ext n₀ S.X₁ Y →+ Ext n₁ S.X₃ Y :=
 { to_fun := λ x, ex.triangle.mor₃ ≫ x⟦(1 : ℤ)⟧' ≫
@@ -169,10 +228,5 @@ end
 end short_exact
 
 end short_complex
-
---def Ext_functor (n : ℕ) : Cᵒᵖ ⥤ C ⥤ AddCommGroup :=
---(single_functor C 0).op ⋙ preadditive_coyoneda ⋙
---  (whiskering_left _ _ AddCommGroup).obj (single_functor C 0 ⋙ shift_functor _ (n : ℤ))
-
 
 end category_theory

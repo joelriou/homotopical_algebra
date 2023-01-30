@@ -326,6 +326,8 @@ include h
 def δ : F.obj (T.obj₃⟦n₀⟧) ⟶ F.obj (T.obj₁⟦n₁⟧) :=
 F.map (T.mor₃⟦n₀⟧' ≫ (shift_functor_add' C (1 : ℤ) n₀ n₁ (by rw [h, add_comm])).inv.app T.obj₁)
 
+omit h
+
 include hT
 
 lemma δ_comp : δ F T n₀ n₁ h ≫ F.map (T.mor₁⟦n₁⟧') = 0 :=
