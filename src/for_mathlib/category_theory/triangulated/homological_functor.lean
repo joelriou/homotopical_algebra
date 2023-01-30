@@ -12,11 +12,21 @@ namespace category_theory
 open limits category pretriangulated
 open_locale zero_object
 
-lemma _root_.category_theory.limits.exists_discrete_walking_pair_exists_iso_pair
+lemma limits.exists_discrete_walking_pair_exists_iso_pair
   {C : Type*} [category C] (F : discrete walking_pair ⥤ C) :
   ∃ (X₁ X₂ : C), nonempty (F ≅ pair X₁ X₂) :=
 ⟨F.obj (discrete.mk walking_pair.left), F.obj (discrete.mk walking_pair.right),
   ⟨discrete.nat_iso_functor ≪≫ eq_to_iso (by { congr' 1, ext j, cases j, tidy, })⟩⟩
+
+lemma shift_compatibility_add_comm {C A : Type*} [category C] [add_comm_group A] [has_shift C A]
+  (X : C) (a b c : A) (h : a = b + c):
+  (shift_functor_add' C a (-b) c (by simp [h])).inv.app (X⟦b⟧) ≫
+    (shift_functor_add' C b c a h).inv.app X =
+  ((shift_functor_add_comm C b a).hom.app X)⟦-b⟧' ≫ (shift_shift_neg (X⟦a⟧) b).hom :=
+begin
+  dsimp [shift_functor_add'],
+  sorry,
+end
 
 section
 
@@ -373,8 +383,6 @@ begin
       iso.hom_inv_id_app_assoc, eq_to_hom_trans], },
 end
 
-example : ℕ := 42
-
 lemma ex₁ :
   (short_complex.mk (δ F T n₀ n₁ h) (F.map (T.mor₁⟦n₁⟧')) (δ_comp F T hT n₀ n₁ h)).exact :=
 begin
@@ -401,11 +409,11 @@ begin
     rw smul_smul,
     simp only [h, zpow_add, zpow_one, mul_neg, units.coe_neg, neg_smul, neg_neg, mul_one,
       int.units_coe_mul_self, one_smul, ← F.map_comp],
-    congr' 1,
-    dsimp only [shift_functor_add', eq_to_iso, iso.trans, nat_trans.comp_app],
-    simp only [eq_to_hom_app, assoc],
-    simp only [shift_functor_add_comm_hom_app],
-    sorry, },
+    erw ← nat_trans.naturality_assoc,
+    rw [(shift_functor C (-1 : ℤ)).map_comp, assoc],
+    dsimp only [functor.comp_map],
+    congr' 2,
+    apply shift_compatibility_add_comm, },
   { dsimp,
     simp only [id_comp, comp_id, F.map_zsmul, preadditive.comp_zsmul, smul_smul, id_comp,
       preadditive.zsmul_comp, h, zpow_add, zpow_one, mul_neg, mul_one, units.coe_neg, neg_neg], },
