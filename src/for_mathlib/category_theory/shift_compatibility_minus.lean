@@ -1,5 +1,7 @@
 import for_mathlib.category_theory.triangulated.shift_compatibility
 import for_mathlib.category_theory.shift_misc
+import algebra.group.commute
+import tactic.abel
 
 noncomputable theory
 
@@ -7,7 +9,8 @@ namespace category_theory
 
 open category
 
-variables (C : Type*) {A : Type*} [category C] [add_monoid A] [has_shift C A]
+variables (C : Type*) {A G : Type*} [category C] [add_monoid A] [add_comm_group G]
+  [has_shift C A] [has_shift C G]
 
 def shift_functor_add₃' (a₁ a₂ a₃ : A) (b : A) (h : b = a₁+a₂+a₃) :
   shift_functor C b ≅ shift_functor C a₁ ⋙
@@ -72,6 +75,33 @@ begin
   subst h₂₃,
   simpa only [shift_functor_add₃'_hom_app' _ _ _ _ h _ rfl,
     iso.inv_hom_id_app_assoc, iso.inv_hom_id_app],
+end
+
+lemma shift_shift_neg_hom_of_shift (X : C) (a b : G) :
+  (shift_shift_neg (X⟦a⟧) b).hom = (shift_functor_add₃' C a b (-b) a (by simp)).inv.app X :=
+begin
+  rw shift_functor_add₃'_inv_app' a b (-b) a (by abel) 0 (by abel),
+  dsimp [shift_functor_add'],
+  simp only [assoc, ε_inv_app_obj, eq_to_hom_map],
+  congr' 3,
+  erw eq_to_hom_map,
+end
+
+lemma shift_compatibility_add_comm (X : C) (a b c : G) (h : a = b + c):
+  (shift_functor_add' C a (-b) c (by rw [h, add_neg_cancel_comm])).inv.app (X⟦b⟧) ≫
+    (shift_functor_add' C b c a h).inv.app X =
+  ((shift_functor_add_comm C b a).hom.app X)⟦-b⟧' ≫ (shift_shift_neg (X⟦a⟧) b).hom :=
+begin
+  rw ← shift_functor_add₃'_inv_app' b a (-b) a (by abel) c,
+  rw shift_shift_neg_hom_of_shift,
+  rw shift_functor_add₃'_inv_app b a (-b) a (by abel) (a+b) (by abel),
+  rw shift_functor_add₃'_inv_app a b (-b) a (by abel) (a+b) (by abel),
+  simp only [← functor.map_comp_assoc],
+  congr' 2,
+  simp only [shift_functor_add_comm_hom_app, shift_functor_add'_eq_shift_functor_add,
+    assoc, iso.hom_inv_id_app, comp_id],
+  dsimp only [shift_functor_add'],
+  simp only [iso.trans_inv, eq_to_iso.inv, nat_trans.comp_app, eq_to_hom_app],
 end
 
 end category_theory

@@ -4,6 +4,7 @@ import for_mathlib.category_theory.localization.triangulated_subcategory
 import for_mathlib.category_theory.shift_misc
 import for_mathlib.category_theory.preadditive.misc
 import category_theory.limits.preserves.shapes.zero
+import for_mathlib.category_theory.shift_compatibility_minus
 
 noncomputable theory
 
@@ -17,16 +18,6 @@ lemma limits.exists_discrete_walking_pair_exists_iso_pair
   ∃ (X₁ X₂ : C), nonempty (F ≅ pair X₁ X₂) :=
 ⟨F.obj (discrete.mk walking_pair.left), F.obj (discrete.mk walking_pair.right),
   ⟨discrete.nat_iso_functor ≪≫ eq_to_iso (by { congr' 1, ext j, cases j, tidy, })⟩⟩
-
-lemma shift_compatibility_add_comm {C A : Type*} [category C] [add_comm_group A] [has_shift C A]
-  (X : C) (a b c : A) (h : a = b + c):
-  (shift_functor_add' C a (-b) c (by simp [h])).inv.app (X⟦b⟧) ≫
-    (shift_functor_add' C b c a h).inv.app X =
-  ((shift_functor_add_comm C b a).hom.app X)⟦-b⟧' ≫ (shift_shift_neg (X⟦a⟧) b).hom :=
-begin
-  dsimp [shift_functor_add'],
-  sorry,
-end
 
 section
 
