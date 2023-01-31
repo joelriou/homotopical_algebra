@@ -243,6 +243,59 @@ begin
   rw ← shift_functor_add₃'_inv_app' (1 : ℤ) n₀ 1,
 end
 
+local attribute [instance] has_shift_op_neg_ℤ
+
+lemma triangle_op_dist : ex.triangle.op ∈ dist_triang (derived_category C)ᵒᵖ :=
+by simpa only [ ← pretriangulated.mem_dist_triang_iff_op] using ex.triangle_dist
+
+lemma Ext_ex₁₂ (Y : C) (n : ℕ) :
+  (short_complex.mk (AddCommGroup.of_hom (Ext_map₁ n S.g Y))
+    (AddCommGroup.of_hom (Ext_map₁ n S.f Y)) begin
+      ext x,
+      simp only [comp_apply, AddCommGroup.of_hom_apply, AddCommGroup.zero_apply],
+      rw [← add_monoid_hom.comp_apply, ← Ext_map₁_comp, S.zero, Ext_map₁_zero,
+        add_monoid_hom.zero_apply],
+    end).exact :=
+functor.is_homological.map_distinguished (preadditive_yoneda.obj
+  (((single_functor C 0).obj Y)⟦(n : ℤ)⟧)) _ ex.triangle_op_dist
+
+lemma Ext_ex₁₂' {Y : C} {n : ℕ} (x₂ : Ext n S.X₂ Y)
+  (hx₂ : Ext_map₁ n S.f Y x₂ = 0) :
+  ∃ (x₃ : Ext n S.X₃ Y), Ext_map₁ n S.g Y x₃ = x₂ :=
+begin
+  have h := ex.Ext_ex₁₂ Y n,
+  rw AddCommGroup_exact_iff at h,
+  exact h x₂ hx₂,
+end
+
+/- This should be done by first developping notions about homological functors
+in two variables `C ⥤ D ⥤ A` with `C`, `D` triangulated categories and `A` abelian.
+
+lemma Ext_ex₁₁ (Y : C) (n₀ n₁ : ℕ) (h : n₁ = n₀+1) :
+  (short_complex.mk (AddCommGroup.of_hom (Ext_map₁ n₀ S.f Y))
+    (AddCommGroup.of_hom (ex.Ext_δ₁ Y n₀ n₁ h)) begin
+      ext x,
+      simp only [comp_apply, AddCommGroup.of_hom_apply, AddCommGroup.zero_apply],
+      rw [← add_monoid_hom.comp_apply, Ext_δ₁_comp, add_monoid_hom.zero_apply],
+    end).exact :=
+begin
+  refine (exact_iff_of_iso _ ).1 (functor.is_homological.map_distinguished
+    (preadditive_yoneda.obj (((single_functor C 0).obj Y)⟦(n₀ : ℤ)⟧)) ex.triangle.op.rotate
+      (by simpa only [← pretriangulated.rotate_distinguished_triangle] using ex.triangle_op_dist)),
+  refine short_complex.mk_iso (iso.refl _) (iso.refl _) _ sorry sorry,
+  dsimp [Ext, pretriangulated.triangle.op, short_complex.short_exact.triangle, triangle_of_ses],
+  sorry,
+end
+
+lemma Ext_ex₁₁' {Y : C} (n₀ n₁ : ℕ) (h : n₁ = n₀+1) (x₁ : Ext n₀ S.X₁ Y)
+  (hx₁ : ex.Ext_δ₁ Y n₀ n₁ h x₁ = 0) :
+  ∃ (x₃ : Ext n₀ S.X₂ Y), Ext_map₁ n₀ S.f Y x₃ = x₁ :=
+begin
+  have h := ex.Ext_ex₁₁ Y n₀ n₁ h,
+  rw AddCommGroup_exact_iff at h,
+  exact h x₁ hx₁,
+end-/
+
 end short_exact
 
 end short_complex

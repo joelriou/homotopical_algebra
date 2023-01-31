@@ -86,95 +86,85 @@ namespace triangle_op_equivalence
 @[simps]
 def functor : (triangle C)ᵒᵖ ⥤ triangle Cᵒᵖ :=
 { obj := λ T,
-  { obj₁ := opposite.op (T.unop.obj₁⟦(1 : ℤ)⟧),
-    obj₂ := opposite.op T.unop.obj₃,
-    obj₃ := opposite.op T.unop.obj₂,
-    mor₁ := T.unop.mor₃.op,
-    mor₂ := T.unop.mor₂.op,
-    mor₃ := -T.unop.mor₁.op ≫ ((shift_equiv C (1 : ℤ)).unit_iso.inv.app T.unop.obj₁).op, },
+  { obj₁ := opposite.op T.unop.obj₃,
+    obj₂ := opposite.op T.unop.obj₂,
+    obj₃ := opposite.op T.unop.obj₁,
+    mor₁ := T.unop.mor₂.op,
+    mor₂ := T.unop.mor₁.op,
+    mor₃ := ((shift_equiv C (1 : ℤ)).unit_iso.inv.app T.unop.obj₁).op ≫
+      (T.unop.mor₃⟦(-1 : ℤ)⟧').op, },
   map := λ T₁ T₂ f,
-  { hom₁ := (f.unop.hom₁⟦(1 : ℤ)⟧').op,
-    hom₂ := f.unop.hom₃.op,
-    hom₃ := f.unop.hom₂.op,
-    comm₁' := quiver.hom.unop_inj f.unop.comm₃.symm,
-    comm₂' := quiver.hom.unop_inj f.unop.comm₂.symm,
+  { hom₁ := f.unop.hom₃.op,
+    hom₂ := f.unop.hom₂.op,
+    hom₃ := f.unop.hom₁.op,
+    comm₁' := quiver.hom.unop_inj f.unop.comm₂.symm,
+    comm₂' := quiver.hom.unop_inj f.unop.comm₁.symm,
     comm₃' := quiver.hom.unop_inj begin
       dsimp only,
-      simp only [category_theory.shift_functor_op_map, shift_equiv_unit_iso,
-        add_neg_equiv_unit_iso_inv, unit_of_tensor_iso_unit_hom_app, op_comp, quiver.hom.unop_op,
-        preadditive.neg_comp, assoc, unop_neg, unop_comp, μ_naturality, nat_trans.naturality,
-        functor.id_map, triangle_morphism.comm₁],
+      have h := (shift_equiv C (1 : ℤ)).unit_iso.inv.naturality f.unop.hom₁,
+      simp only [category_theory.shift_functor_op_map, unop_comp, quiver.hom.unop_op, assoc],
+      erw ← (shift_equiv C (1 : ℤ)).unit_iso.inv.naturality f.unop.hom₁,
+      dsimp only [shift_equiv, functor.comp_map],
+      simp only [← assoc, ← functor.map_comp, f.unop.comm₃],
     end, }, }
 
 @[simps]
 def inverse : triangle Cᵒᵖ ⥤ (triangle C)ᵒᵖ :=
 { obj := λ T, opposite.op
-  { obj₁ := T.obj₁.unop⟦(-1 : ℤ)⟧,
-    obj₂ := T.obj₃.unop,
-    obj₃ := T.obj₂.unop,
-    mor₁ := -T.mor₃.unop,
-    mor₂ := T.mor₂.unop,
-    mor₃ := T.mor₁.unop ≫ (shift_equiv C (1 : ℤ)).counit_iso.inv.app T.obj₁.unop, },
+  { obj₁ := T.obj₃.unop,
+    obj₂ := T.obj₂.unop,
+    obj₃ := T.obj₁.unop,
+    mor₁ := T.mor₂.unop,
+    mor₂ := T.mor₁.unop,
+    mor₃ := (shift_equiv C (1 : ℤ)).counit_iso.inv.app T.obj₁.unop ≫ T.mor₃.unop⟦(1 : ℤ)⟧', },
   map := λ T₁ T₂ f, quiver.hom.op
-  { hom₁ := f.hom₁.unop⟦(-1 : ℤ)⟧',
-    hom₂ := f.hom₃.unop,
-    hom₃ := f.hom₂.unop,
-    comm₁' := quiver.hom.op_inj begin
-      dsimp,
-      simpa only [preadditive.comp_neg, preadditive.neg_comp, neg_inj] using f.comm₃.symm,
-    end,
-    comm₂' := quiver.hom.op_inj f.comm₂.symm,
+  { hom₁ := f.hom₃.unop,
+    hom₂ := f.hom₂.unop,
+    hom₃ := f.hom₁.unop,
+    comm₁' := quiver.hom.op_inj f.comm₂.symm,
+    comm₂' := quiver.hom.op_inj f.comm₁.symm,
     comm₃' := begin
-      dsimp,
-      slice_rhs 1 2 { rw [← unop_comp, f.comm₁, unop_comp], },
-      simp only [assoc],
-      erw ← nat_trans.naturality,
+      dsimp only,
+      have h := functor.congr_map (shift_functor C (1 : ℤ)) (congr_arg quiver.hom.unop f.comm₃),
+      simp only [unop_comp, functor.map_comp] at h,
+      simp only [assoc, ← h],
+      erw ← nat_trans.naturality_assoc,
       refl,
     end, }, }
-
-@[simps]
-def counit_iso : inverse C ⋙ functor C ≅ 𝟭 _ :=
-nat_iso.of_components (λ T, begin
-  refine triangle.mk_iso _ _ (((shift_equiv C (1 : ℤ)).counit_iso.app T.obj₁.unop).symm.op)
-    (iso.refl _) (iso.refl _) (by tidy) (by tidy) (quiver.hom.unop_inj _),
-  change ((shift_equiv C (1 : ℤ)).counit_iso.inv.app T.obj₁.unop)⟦(-1 : ℤ)⟧' ≫
-    (-((shift_equiv C (1 : ℤ)).unit_iso.inv.app (T.obj₁.unop⟦(-1 : ℤ)⟧) ≫ -T.mor₃.unop)) =
-    T.mor₃.unop ≫ 𝟙 _,
-  simp only [preadditive.comp_neg, neg_neg, comp_id],
-  have eq := (shift_equiv C (1 : ℤ)).inverse_counit_inv_comp (opposite.unop T.obj₁) =≫ T.mor₃.unop,
-  erw [id_comp, assoc] at eq,
-  exact eq,
-end)
-(λ T₁ T₂ f, begin
-  ext; apply quiver.hom.unop_inj,
-  { exact ((shift_equiv C (1 : ℤ)).counit_iso.inv.naturality f.hom₁.unop).symm, },
-  { dsimp, rw [id_comp, comp_id], },
-  { dsimp, rw [id_comp, comp_id], },
-end)
 
 @[simps]
 def unit_iso : 𝟭 _ ≅ functor C ⋙ inverse C :=
 nat_iso.of_components (λ T, begin
   refine iso.op (_ : opposite.unop _ ≅ opposite.unop T),
-  refine triangle.mk_iso _ _ (((shift_equiv C (1 : ℤ)).unit_iso.app T.unop.obj₁).symm)
-    (iso.refl _) (iso.refl _) _ _ _,
-  { tidy, },
-  { tidy, },
-  { change (T.unop.mor₃ ≫
-      ((shift_equiv C (1 : ℤ)).counit_iso).inv.app ((opposite.unop T).obj₁⟦(1 : ℤ)⟧)) ≫
-      ((shift_equiv C (1 : ℤ)).unit_iso.inv.app (opposite.unop T).obj₁)⟦(1 : ℤ)⟧' =
-      𝟙 _ ≫ T.unop.mor₃,
-    rw [id_comp, assoc],
-    have eq := T.unop.mor₃ ≫= (shift_equiv C (1 : ℤ)).counit_inv_functor_comp (opposite.unop T).obj₁,
-    erw [comp_id] at eq,
-    exact eq, },
-end)
-(λ T₁ T₂ f, quiver.hom.unop_inj begin
-  ext,
-  { exact ((shift_equiv C (1 : ℤ)).unit_iso.inv.naturality f.unop.hom₁).symm, },
-  { dsimp, rw [id_comp, comp_id], },
-  { dsimp, rw [id_comp, comp_id], },
-end)
+  refine triangle.mk_iso _ _ (iso.refl _) (iso.refl _) (iso.refl _) (by tidy) (by tidy) _,
+  dsimp only [iso.refl],
+  rw [functor.map_id, comp_id, id_comp],
+  change (shift_equiv C (1 : ℤ)).counit_iso.inv.app T.unop.obj₃ ≫
+    (shift_functor C (1 : ℤ)).map (((shift_functor C (-1 : ℤ)).map T.unop.mor₃) ≫
+      ((shift_equiv C (1 : ℤ)).unit_iso.inv.app T.unop.obj₁)) = T.unop.mor₃,
+  erw [functor.map_comp, (shift_equiv C (1 : ℤ)).fun_inv_map],
+  simp only [assoc],
+  erw (shift_equiv C (1 : ℤ)).counit_inv_functor_comp,
+  erw comp_id,
+  erw iso.inv_hom_id_app_assoc,
+end) (λ X Y f, quiver.hom.unop_inj (by tidy))
+
+@[simps]
+def counit_iso : inverse C ⋙ functor C ≅ 𝟭 _ :=
+nat_iso.of_components (λ T, begin
+  refine triangle.mk_iso _ _ (iso.refl _) (iso.refl _) (iso.refl _)
+    (by tidy) (by tidy) (quiver.hom.unop_inj _),
+  dsimp only [iso.refl],
+  rw [functor.map_id, id_comp, comp_id],
+  change ((shift_equiv C (1 : ℤ)).counit_iso.inv.app (opposite.unop T.obj₁) ≫
+    T.mor₃.unop⟦(1 : ℤ)⟧')⟦(-1 : ℤ)⟧' ≫
+    ((shift_equiv C (1 : ℤ)).unit_iso.inv.app T.obj₃.unop) = T.mor₃.unop,
+  erw [functor.map_comp, (shift_equiv C (1 : ℤ)).inv_fun_map],
+  simp only [assoc, iso.hom_inv_id_app],
+  erw comp_id,
+  slice_lhs 1 2 { erw (shift_equiv C (1 : ℤ)).inverse_counit_inv_comp, },
+  erw id_comp,
+end) (by tidy)
 
 end triangle_op_equivalence
 
@@ -183,13 +173,7 @@ def triangle_op_equivalence : (triangle C)ᵒᵖ ≌ triangle Cᵒᵖ :=
 { functor := triangle_op_equivalence.functor C,
   inverse := triangle_op_equivalence.inverse C,
   unit_iso := triangle_op_equivalence.unit_iso C,
-  counit_iso := triangle_op_equivalence.counit_iso C,
-  functor_unit_iso_comp' := λ T, begin
-    ext,
-    { exact quiver.hom.unop_inj ((shift_equiv C (1 : ℤ)).counit_inv_functor_comp T.unop.obj₁), },
-    { dsimp, rw id_comp, },
-    { dsimp, rw id_comp, },
-  end, }
+  counit_iso := triangle_op_equivalence.counit_iso C, }
 
 variable {C}
 
@@ -205,28 +189,34 @@ def triangle.unop_op (T : triangle C) : T.op.unop ≅ T :=
 def triangle.op_unop (T : triangle Cᵒᵖ) : T.unop.op ≅ T :=
 (triangle_op_equivalence C).counit_iso.app T
 
-def triangle.unop_rotate (T : triangle Cᵒᵖ) : T.rotate.unop ≅ T.unop.inv_rotate :=
-begin
-  refine triangle.mk_iso _ _ (iso.refl _) (preadditive.mul_iso (-1) (iso.refl _)) (iso.refl _) _ _ _,
-  { change (-(-(shift_functor C (-1 : ℤ)).map T.mor₁.unop)) ≫ ((-1 : ℤ) • 𝟙 _) =
-      𝟙 _ ≫ -((T.mor₁.unop ≫
-        (shift_equiv C (1 : ℤ)).counit_iso.inv.app T.obj₁.unop)⟦(-1 : ℤ)⟧' ≫
-        (shift_shift_neg T.unop.obj₁ (1 : ℤ)).hom),
-    rw [neg_zsmul, one_smul, neg_neg, preadditive.comp_neg,
-      id_comp, neg_inj, functor.map_comp, assoc],
-    exact T.mor₁.unop⟦(-1 : ℤ)⟧' ≫=
-      ((shift_equiv C (1 : ℤ)).inverse_counit_inv_comp T.obj₁.unop).symm, },
-  { dsimp [triangle.rotate, triangle.unop],
-    simp only [comp_id, neg_smul, one_zsmul, preadditive.neg_comp, id_comp, neg_neg], },
-  { dsimp [triangle.rotate, triangle.unop],
-    rw [functor.map_id, comp_id, id_comp],
-    refl, },
-end
-
 variables [∀ (n : ℤ), (shift_functor C n).additive]
 
 instance shift_functor_op_additive (n : ℤ) : (shift_functor Cᵒᵖ n).additive :=
 (infer_instance : (shift_functor C (-n)).op.additive)
+
+def triangle.unop_rotate (T : triangle Cᵒᵖ) : T.rotate.unop ≅ T.unop.inv_rotate :=
+begin
+  refine triangle.mk_iso _ _ (preadditive.mul_iso (-1) (iso.refl _)) (iso.refl _) (iso.refl _) _ _ _,
+  { change T.mor₃.unop ≫ 𝟙 _ = ((-1 : ℤ) • 𝟙 _) ≫
+      -((shift_equiv C (1 : ℤ)).counit_iso.inv.app T.obj₁.unop ≫ T.mor₃.unop⟦(1 : ℤ)⟧')⟦(-1:ℤ)⟧' ≫
+      (shift_equiv C (1 : ℤ)).unit_iso.inv.app T.obj₃.unop,
+    simp only [comp_id, neg_smul, one_smul, preadditive.comp_neg, preadditive.neg_comp, neg_neg,
+      id_comp, functor.map_comp, assoc],
+    erw (shift_equiv C (1 : ℤ)).inv_fun_map,
+    slice_rhs 1 2 { erw (shift_equiv C (1 : ℤ)).inverse_counit_inv_comp, },
+    simp only [assoc, iso.hom_inv_id_app],
+    erw [id_comp, comp_id], },
+  { dsimp only [iso.refl],
+    rw [id_comp, comp_id],
+    refl, },
+  { change ((shift_equiv C (1 : ℤ)).counit_iso.inv.app T.obj₂.unop ≫
+      (-(T.mor₁).unop⟦(-1 : ℤ)⟧')⟦(1 : ℤ)⟧') ≫ ((-1 : ℤ) • 𝟙 _)⟦(1 : ℤ)⟧' =
+        𝟙 _ ≫ T.mor₁.unop ≫ (shift_equiv C (1 : ℤ)).counit_iso.inv.app T.obj₁.unop,
+    simp only [functor.map_neg, neg_smul, one_smul, functor.map_id, preadditive.comp_neg,
+      preadditive.neg_comp, neg_neg, comp_id, id_comp],
+    erw ← nat_trans.naturality,
+    refl, },
+end
 
 end pretriangulated
 
