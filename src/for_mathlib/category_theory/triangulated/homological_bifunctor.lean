@@ -13,7 +13,7 @@ variables {C₁ C₂ D : Type*} [category C₁] [category C₂] [category D]
 
 section
 
-variables (F : C₁ ⥤ C₂ ⥤ D) {A : Type*} [add_comm_monoid A]
+variables (F : C₁ ⥤ C₂ ⥤ D) {A G : Type*} [add_comm_monoid A]
   [has_shift C₁ A] [has_shift C₂ A]
 
 def shift_swap (a : A) :=
@@ -120,39 +120,6 @@ class has_shift_swap :=
 (iso_zero : iso 0 = shift_swap.zero F A)
 (iso_add : ∀ (a b : A), iso (a+b) = shift_swap.add (iso a) (iso b))
 
-variable {A}
-
-def shift_cancel (a : A) :=
-  (shift_functor C₁ a) ⋙ F ⋙ (whiskering_left _ _ D).obj (shift_functor C₂ a) ≅ F
-
-namespace shift_cancel
-
-variable (A)
-
-def zero : shift_cancel F (0 : A) :=
-iso_whisker_right (shift_functor_zero C₁ A) _ ≪≫ (functor.associator _ _ _).symm ≪≫
-  iso_whisker_right (F.left_unitor) _ ≪≫
-  iso_whisker_left F ((whiskering_left _ _ D).map_iso (shift_functor_zero C₂ A)) ≪≫
-  iso_whisker_left F (whiskering_left_id _ _) ≪≫ F.right_unitor
-
-variables {F A} {a b : A} (e₁ : shift_cancel F a) (e₂ : shift_cancel F b)
-
-def add' (c : A) (h : c = a+b) :
-  shift_cancel F c :=
-iso_whisker_right (shift_functor_add' C₁ a b c h) _ ≪≫
-  iso_whisker_left _ (iso_whisker_left _ ((whiskering_left _ _ D).map_iso (shift_functor_add' C₂ a b c h))) ≪≫ (by refl) ≪≫ iso_whisker_left _ (iso_whisker_right e₂ _) ≪≫ e₁
-
-def add : shift_cancel F (a+b) := add' e₁ e₂ (a+b) rfl
-
-end shift_cancel
-
-variables (F A)
-
-class has_shift_cancel :=
-(iso : Π (a : A), F.shift_cancel a)
-(iso_zero : iso 0 = shift_cancel.zero F A)
-(iso_add : ∀ (a b : A), iso (a+b) = shift_cancel.add (iso a) (iso b))
-
 end
 
 section
@@ -169,7 +136,6 @@ nat_iso.of_components (λ X₁, nat_iso.of_components (λ X₂, begin
     sorry,
   end)
   sorry) sorry
-#exit
 
 lemma hom_functor_has_shift_swap : (yoneda : C ⥤ _).has_shift_swap ℤ :=
 { iso := yoneda_shift_swap C,
