@@ -199,14 +199,14 @@ begin
   exact h x₁ hx₁,
 end
 
--- there should be a sign here: (-1)^n₀ or (-1)^n₁ ???
 def Ext_δ₁ (Y : C) (n₀ n₁ : ℕ) (h : n₁ = n₀+1) :
   Ext n₀ S.X₁ Y →+ Ext n₁ S.X₃ Y :=
-{ to_fun := λ x, ex.triangle.mor₃ ≫ x⟦(1 : ℤ)⟧' ≫
+{ to_fun := λ x, ((-1 : units ℤ)^n₁) • ex.triangle.mor₃ ≫ x⟦(1 : ℤ)⟧' ≫
     (shift_functor_add' (derived_category C) (n₀ : ℤ) 1 n₁
       (by rw [h, nat.cast_add, algebra_map.coe_one])).inv.app _,
-  map_zero' := by rw [functor.map_zero, zero_comp, comp_zero],
-  map_add' := λ a b, by simp only [functor.map_add, preadditive.add_comp, preadditive.comp_add], }
+  map_zero' := by simp only [functor.map_zero, zero_comp, comp_zero, smul_zero],
+  map_add' := λ a b, by simp only [functor.map_add, preadditive.add_comp,
+    preadditive.comp_add, smul_add], }
 
 lemma Ext_δ₁_comp (Y : C) (n₀ n₁ : ℕ) (h : n₁ = n₀+1) :
   (ex.Ext_δ₁ Y n₀ n₁ h).comp (Ext_map₁ n₀ S.f Y) = 0 :=
@@ -214,7 +214,7 @@ begin
   ext x,
   dsimp [Ext_δ₁, Ext_map₁],
   simp only [assoc, functor.map_comp],
-  erw [pretriangulated.triangle.comp_zero₃₁_assoc _ ex.triangle_dist, zero_comp],
+  erw [pretriangulated.triangle.comp_zero₃₁_assoc _ ex.triangle_dist, zero_comp, smul_zero],
 end
 
 lemma Ext_comp_δ₁ (Y : C) (n₀ n₁ : ℕ) (h : n₁ = n₀+1) :
@@ -222,7 +222,25 @@ lemma Ext_comp_δ₁ (Y : C) (n₀ n₁ : ℕ) (h : n₁ = n₀+1) :
 begin
   ext x,
   dsimp [Ext_map₁, Ext_δ₁],
-  erw [pretriangulated.triangle.comp_zero₂₃_assoc _ ex.triangle_dist, zero_comp],
+  erw [preadditive.comp_zsmul, pretriangulated.triangle.comp_zero₂₃_assoc _ ex.triangle_dist,
+    zero_comp, zsmul_zero],
+end
+
+lemma Ext_δ₁_δ₂ {S' : short_complex C} (ex' : S'.short_exact) (n₀ n₁ n₂ : ℕ)
+  (hn₁ : n₁ = n₀+1) (hn₂ : n₂ = n₁+1) :
+  (ex.Ext_δ₁ S'.X₁ n₁ n₂ hn₂).comp (ex'.Ext_δ₂ S.X₁ n₀ n₁ hn₁) =
+    -(ex'.Ext_δ₂ S.X₃ n₁ n₂ hn₂).comp (ex.Ext_δ₁ S'.X₃ n₀ n₁ hn₁) :=
+begin
+  ext x,
+  dsimp [Ext_δ₁, Ext_δ₂],
+  simp only [hn₂, pow_add, pow_one, mul_neg, mul_one],
+  erw preadditive.zsmul_comp,
+  rw units.neg_smul,
+  simp only [assoc, functor.map_comp],
+  erw ← nat_trans.naturality_assoc,
+  congr' 5,
+  erw ← shift_functor_add₃'_inv_app (1 : ℤ) n₀ 1 n₂ (by linarith) n₁ (by linarith),
+  rw ← shift_functor_add₃'_inv_app' (1 : ℤ) n₀ 1,
 end
 
 end short_exact
